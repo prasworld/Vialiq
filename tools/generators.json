@@ -1,0 +1,12 @@
+{
+  "create-lib": {
+    "implementation": "./tools/generators/create-lib/index",
+    "schema": "./tools/generators/create-lib/schema.json",
+    "description": "Generate a library under libs/<name> with sensible defaults."
+  },
+  "create-app": {
+    "implementation": "./tools/generators/create-app/index",
+    "schema": "./tools/generators/create-app/schema.json",
+    "description": "Generate an Angular application under apps/<name> with sensible defaults."
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "title": "Workspace library generator",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "The name of the library to generate."
+    },
+    "bundler": {
+      "type": "string",
+      "enum": ["swc", "tsc", "rollup", "vite", "esbuild", "none"],
+      "default": "tsc",
+      "description": "The bundler to use."
+    },
+    "linter": {
+      "type": "string",
+      "enum": ["none", "eslint"],
+      "default": "eslint",
+      "description": "The linter to use."
+    },
+    "unitTestRunner": {
+      "type": "string",
+      "enum": ["none", "jest", "vitest"],
+      "default": "vitest",
+      "description": "Unit test runner to use."
+    },
+    "tags": {
+      "type": "string",
+      "description": "Comma-separated tags for the library."
+    },
+    "publishable": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the library should be publishable."
+    },
+    "importPath": {
+      "type": "string",
+      "description": "NPM import path (required when publishable)."
+    }
+  },
+  "required": ["name"],
+  "additionalProperties": false
+}

@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "title": "Workspace Angular application generator",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "The name of the application."
+    },
+    "style": {
+      "type": "string",
+      "enum": ["css", "scss", "sass", "less"],
+      "default": "scss",
+      "description": "Stylesheet format."
+    },
+    "routing": {
+      "type": "boolean",
+      "description": "Enable routing.",
+      "default": false
+    },
+    "tags": {
+      "type": "string",
+      "description": "Comma-separated tags."
+    }
+  },
+  "required": ["name"],
+  "additionalProperties": false
+}

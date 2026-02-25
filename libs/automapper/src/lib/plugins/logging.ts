@@ -1,0 +1,59 @@
+import { MappingConfig } from '../builder';
+import { MapperRegistry } from '../core';
+import { MapperOptions } from '../options';
+import { MappingStrategy } from '../strategy';
+
+/**
+ * Simple example strategy that logs every mapping invocation.
+ * This demonstrates how to write a plugin: implement `MappingStrategy`
+ * and register it with `mapper.addStrategy()`.
+ */
+/**
+ * Simple example strategy that logs every mapping invocation.
+ * This demonstrates how to write a plugin: implement `MappingStrategy`
+ * and register it with `mapper.addStrategy()`.
+ */
+export class LoggingStrategy implements MappingStrategy {
+  constructor(private readonly logger: (msg: string) => void = console.log) {}
+
+  canHandle(
+    source: unknown,
+    destType: unknown,
+    _config?: MappingConfig<unknown, unknown>
+  ): boolean {
+    // this strategy can handle anything; it's purely orthogonal
+    return true;
+  }
+
+  map<S, D>(
+    registry: MapperRegistry,
+    src: S,
+    destType: unknown,
+    config: MappingConfig<S, D> | undefined,
+    options: MapperOptions,
+    visited: WeakSet<object>
+  ): D | Promise<D> {
+    const srcName = src && typeof src === 'object' ? (src as object).constructor.name : String(src);
+    const destName = typeof destType === 'string' ? destType : (destType as { name: string }).name || 'Unknown';
+    this.logger(`[LoggingStrategy] mapping ${srcName} -> ${destName}`);
+
+    // delegate to default behaviour (use existing strategies by reusing registry)
+    // in a more complex plugin you might perform transformations before/after
+
+    // find the next strategy in line (skipping this one)
+    const next = (registry as any)['strategies'].find((s: MappingStrategy) => s !== this);
+    if (!next) {
+      throw new Error('No underlying strategy found');
+    }
+    const result = next.map(registry, src, destType, config, options, visited);
+    // if it's a promise, log when resolved
+    if (result instanceof Promise) {
+      return result.then(r => {
+        this.logger(`[LoggingStrategy] finished ${srcName} -> ${destName}`);
+        return r;
+      }) as Promise<D>;
+    }
+    this.logger(`[LoggingStrategy] finished ${srcName} -> ${destName}`);
+    return result;
+  }
+}
