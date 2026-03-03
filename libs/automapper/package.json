@@ -1,7 +1,7 @@
 {
   "name": "@vi/automapper",
   "version": "0.0.1",
-  "type": "commonjs",
+  "type": "module",
   "main": "./index.cjs",
   "types": "./index.d.ts",
   "dependencies": {}

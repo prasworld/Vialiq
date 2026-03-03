@@ -1,0 +1,55 @@
+name: Automapper Build & Publish
+
+on:
+  push:
+    branches: [ main ]
+    tags: ['v*', 'release/*']
+  workflow_dispatch:
+    inputs:
+      pack:
+        description: 'Run npm pack in dist/libs/automapper'
+        required: false
+        default: 'false'
+      publish:
+        description: 'Run npm publish --access public (requires NPM_TOKEN secret)'
+        required: false
+        default: 'false'
+
+jobs:
+  build-and-prepare:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build automapper
+        run: npx nx build automapper --skip-nx-cache
+
+      - name: Run postbuild-publish (copy publish-package.json into dist)
+        run: npx nx run automapper:postbuild-publish
+
+      - name: Pack (optional)
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.pack == 'true' }}
+        run: |
+          cd dist/libs/automapper
+          npm pack
+
+      - name: Publish to npm (optional)
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.publish == 'true' && secrets.NPM_TOKEN != '' }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          cd dist/libs/automapper
+          npm publish --access public

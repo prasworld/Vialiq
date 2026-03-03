@@ -20,9 +20,18 @@
         "main": "libs/automapper/src/index.ts",
         "tsConfig": "libs/automapper/tsconfig.lib.json",
         "assets": ["libs/*.md"],
-        "format": ["cjs"],
-        "generatePackageJson": true
+        "format": ["esm"]
       }
+    },
+    "postbuild-publish": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "cp libs/automapper/publish-package.json dist/libs/automapper/package.json"
+        ],
+        "parallel": false
+      },
+      "outputs": ["dist/libs/automapper/package.json"]
     },
     "test": {
       "executor": "@nx/vitest:test",
