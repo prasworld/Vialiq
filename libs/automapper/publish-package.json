@@ -1,0 +1,19 @@
+{
+  "name": "@vi/automapper",
+  "version": "0.0.1",
+  "description": "Automapper library (publish package template)",
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./index.js"
+    }
+  },
+  "types": "./index.d.ts",
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "README.md",
+    "LICENSE"
+  ],
+  "license": "MIT"
+}

@@ -12,7 +12,9 @@
     "lint": "nx lint shell",
     "format": "nx format:write",
     "affected:build": "nx affected:build",
-    "affected:test": "nx affected:test"
+    "affected:test": "nx affected:test",
+    "build:automapper:publish": "node libs/automapper/build.js",
+    "build:prod": "npx nx build automapper --configuration=production --skip-nx-cache && cp libs/automapper/publish-package.json dist/libs/automapper/package.json && (cd dist/libs/automapper && npm pack)"
   },
   "private": true,
   "dependencies": {
