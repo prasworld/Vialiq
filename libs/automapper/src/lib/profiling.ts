@@ -27,7 +27,7 @@ export class ProfilingStrategy implements MappingStrategy {
     destType: unknown,
     config: MappingConfig<S, D> | undefined,
     options: MapperOptions,
-    visited: WeakSet<object>
+    visited: WeakSet<Record<string, unknown>>
   ): D | Promise<D> {
     const start = Date.now();
     const result = this.strategy.map(
@@ -53,7 +53,7 @@ export class ProfilingStrategy implements MappingStrategy {
   private report(src: unknown, destType: unknown, duration: number) {
     const srcName =
       src && typeof src === 'object'
-        ? (src as object).constructor.name
+        ? ((src as unknown) as Record<string, unknown>).constructor.name
         : String(src);
     const destName =
       typeof destType === 'string'

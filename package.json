@@ -9,6 +9,7 @@
     "build": "nx build shell --configuration=production",
     "build:dev": "nx build shell --configuration=development",
     "test": "nx test shell",
+    "test:automapper:cov": "npx nx test automapper --skip-nx-cache -- --coverage --reporter verbose",
     "lint": "nx lint shell",
     "format": "nx format:write",
     "affected:build": "nx affected:build",

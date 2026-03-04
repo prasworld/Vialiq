@@ -648,16 +648,7 @@ Categories:
 
 #### Maintained by CI
 
-Add GitHub Actions / pipeline step:
-```yaml
-- name: Generate API docs
-  run: npx nx run automapper:docs
-- name: Upload docs artifact
-  uses: actions/upload-artifact@v4
-  with:
-    name: automapper-api-docs
-    path: libs/automapper/docs/api
-```
+(CI automation steps omitted)
 
 ---
 

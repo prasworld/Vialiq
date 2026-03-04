@@ -31,17 +31,17 @@ export class LoggingStrategy implements MappingStrategy {
     destType: unknown,
     config: MappingConfig<S, D> | undefined,
     options: MapperOptions,
-    visited: WeakSet<object>
+    visited: WeakSet<Record<string, unknown>>
   ): D | Promise<D> {
-    const srcName = src && typeof src === 'object' ? (src as object).constructor.name : String(src);
+    const srcName = src && typeof src === 'object' ? ((src as unknown) as Record<string, unknown>).constructor.name : String(src);
     const destName = typeof destType === 'string' ? destType : (destType as { name: string }).name || 'Unknown';
     this.logger(`[LoggingStrategy] mapping ${srcName} -> ${destName}`);
 
     // delegate to default behaviour (use existing strategies by reusing registry)
     // in a more complex plugin you might perform transformations before/after
 
-    // find the next strategy in line (skipping this one)
-    const next = (registry as any)['strategies'].find((s: MappingStrategy) => s !== this);
+    // find the next strategy in line (skipping this one) via public accessor
+    const next = registry.getStrategies().find((s: MappingStrategy) => s !== this);
     if (!next) {
       throw new Error('No underlying strategy found');
     }
@@ -55,5 +55,32 @@ export class LoggingStrategy implements MappingStrategy {
     }
     this.logger(`[LoggingStrategy] finished ${srcName} -> ${destName}`);
     return result;
+  }
+}
+
+// Backing plugin wrapper that conforms to MapperPlugin contract
+import { PLUGIN_API_VERSION, MapperPlugin, PluginMetadata } from '../plugin';
+
+export class LoggingPlugin implements MapperPlugin {
+  readonly metadata: PluginMetadata = {
+    id: 'com.vi.logging',
+    name: 'Logging Plugin',
+    version: '1.0.0',
+    apiVersion: PLUGIN_API_VERSION,
+    description: 'Logs mapping start/end events',
+  };
+
+  readonly strategy: MappingStrategy;
+
+  constructor(private readonly logger: (msg: string) => void = console.log) {
+    this.strategy = new LoggingStrategy(this.logger);
+  }
+
+  onInstall(): void {
+    this.logger('[automapper] LoggingPlugin installed.');
+  }
+
+  onMapError(_src: unknown, _dest: unknown, err: Error): void {
+    this.logger(`[automapper] ERROR: ${err.message}`);
   }
 }

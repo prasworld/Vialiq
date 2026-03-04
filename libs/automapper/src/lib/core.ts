@@ -8,7 +8,9 @@ import {
 } from './converters';
 import { Constructor } from './types';
 import { DefaultStrategy, MappingStrategy } from './strategy';
+import { MapperPlugin, PluginAwareRegistry, PLUGIN_API_VERSION, PluginMetadata } from './plugin';
 import { checkCircular, CIRCULAR_IGNORE, NOT_CIRCULAR } from './utils';
+import { createContext } from './context';
 
 /**
  * A function used to configure mappings between a source and destination
@@ -40,7 +42,7 @@ export interface MapperRegistry {
     source: Constructor<S> | string,
     dest: Constructor<D> | string
   ): Mapper<S, D>;
-  map<S, D>(src: S, destType: Constructor<D> | string, visited?: WeakSet<object>): D | Promise<D>;
+  map<S, D>(src: S, destType: Constructor<D> | string, visited?: WeakSet<Record<string, unknown>>): D | Promise<D>;
   mapArray<S, D>(src: S[], destType: Constructor<D> | string): D[] | Promise<D[]>;
   addStrategy(strategy: MappingStrategy): void;
   registerConverter<TS, TD>(
@@ -48,16 +50,19 @@ export interface MapperRegistry {
     destType: ConverterToken<TD>,
     converter: TypeConverter<TS, TD>
   ): void;
+  /** Expose current strategy pipeline (read-only) for plugins/tools. */
+  getStrategies(): MappingStrategy[];
 }
 
 function getTypeKey(type: Constructor<unknown> | string): string {
   return typeof type === 'string' ? type : type.name;
 }
 
-class MapperRegistryImpl implements MapperRegistry {
+class MapperRegistryImpl implements MapperRegistry, PluginAwareRegistry {
   private profiles = new Map<string, MappingConfig<unknown, unknown>>();
   private strategies: MappingStrategy[] = [new DefaultStrategy()];
   private converters = new ConverterRegistry();
+  private pluginRegistry = new Map<string, MapperPlugin>();
 
   constructor(private options: MapperOptions = {}) {
     // copy defaults
@@ -81,6 +86,10 @@ class MapperRegistryImpl implements MapperRegistry {
     const config = builder.build();
     const key = this.getProfileKey(source, dest);
     this.profiles.set(key, config as MappingConfig<unknown, unknown>);
+    // notify plugins about new profile
+    for (const p of this.pluginRegistry.values()) {
+      p.onProfileAdded?.(key, config as unknown);
+    }
   }
 
   getMapper<S, D>(
@@ -93,16 +102,17 @@ class MapperRegistryImpl implements MapperRegistry {
   map<S, D>(
     src: S,
     destType: Constructor<D> | string,
-    visited: WeakSet<object> = new WeakSet()
+    visited: WeakSet<Record<string, unknown>> = new WeakSet(),
+    ctx?: import('./context').MappingContext
   ): D | Promise<D> {
     if (src === null || src === undefined) {
       return src as unknown as D;
     }
     if (src && typeof src === 'object') {
-      const check = checkCircular(src, visited, this.options.circularRefBehavior);
+      const check = checkCircular(src as Record<string, unknown>, visited, this.options.circularRefBehavior);
       if (check !== NOT_CIRCULAR) return check as D;
     }
-    const srcType = (src as object).constructor as Constructor<S>;
+    const srcType = ((src as unknown) as Record<string, unknown>).constructor as Constructor<S>;
     const key = this.getProfileKey(srcType, destType);
     const config = this.profiles.get(key) as MappingConfig<S, D> | undefined;
 
@@ -111,11 +121,72 @@ class MapperRegistryImpl implements MapperRegistry {
       throw new Error(`No strategy found to map ${srcType} to ${destType}`);
     }
 
-    return strat.map(this, src, destType, config, this.options, visited);
+    // Ensure a MappingContext exists so hooks and resolvers can use it.
+    ctx = ctx ?? createContext({});
+
+    // Notify plugins about map start and report end/error. Keep mapping
+    // result semantics (sync vs async) intact by wrapping promises.
+    const start = Date.now();
+    for (const p of this.pluginRegistry.values()) {
+      try {
+        p.onMapStart?.(src as unknown, destType as unknown);
+      } catch {
+        // plugin errors shouldn't break mapping
+      }
+    }
+
+    let result: D | Promise<D>;
+    try {
+      result = strat.map(this, src, destType, config, this.options, visited, ctx);
+    } catch (err) {
+      // synchronous error from strategy: notify plugins and rethrow
+      for (const p of this.pluginRegistry.values()) {
+        try {
+          p.onMapError?.(src as unknown, destType as unknown, err as Error);
+        } catch {
+          /* noop */
+        }
+      }
+      throw err;
+    }
+    const reportEnd = (res: unknown) => {
+      const duration = Date.now() - start;
+      for (const p of this.pluginRegistry.values()) {
+        try {
+          p.onMapEnd?.(src as unknown, (res as unknown) as unknown, duration);
+        } catch {
+          // swallow plugin errors
+        }
+      }
+      return res as D;
+    };
+    const reportError = (err: Error) => {
+      for (const p of this.pluginRegistry.values()) {
+        try {
+          p.onMapError?.(src as unknown, destType as unknown, err);
+        } catch {
+          /* noop */
+        }
+      }
+      throw err;
+    };
+
+    if (result instanceof Promise) {
+      return result.then(reportEnd).catch((e) => {
+        reportError(e);
+        throw e;
+      }) as Promise<D>;
+    }
+
+    try {
+      return reportEnd(result as unknown) as D;
+    } catch (e) {
+      return reportError(e as Error) as never;
+    }
   }
 
   mapArray<S, D>(src: S[], destType: Constructor<D> | string): D[] | Promise<D[]> {
-    const visited = new WeakSet<object>();
+    const visited = new WeakSet<Record<string, unknown>>();
     const results = src.map(s => this.map(s, destType, visited));
     if (results.some(r => r instanceof Promise)) {
       return Promise.all(results).then((res) =>
@@ -127,6 +198,51 @@ class MapperRegistryImpl implements MapperRegistry {
 
   addStrategy(s: MappingStrategy) {
     this.strategies.unshift(s);
+  }
+
+  getStrategies(): MappingStrategy[] {
+    return [...this.strategies];
+  }
+
+  use(plugin: MapperPlugin): void {
+    const validation = this.options.pluginValidation ?? 'warn';
+    if (plugin.metadata.apiVersion !== PLUGIN_API_VERSION) {
+      if (validation === 'error') {
+        throw new Error(
+          `[automapper] Plugin "${plugin.metadata.id}" targets API ${plugin.metadata.apiVersion} but current API is ${PLUGIN_API_VERSION}. Install aborted.`
+        );
+      }
+      if (validation === 'warn') {
+        console.warn(
+          `[automapper] Plugin "${plugin.metadata.id}" targets API ${plugin.metadata.apiVersion} but current API is ${PLUGIN_API_VERSION}. This may cause issues.`
+        );
+      }
+      // when 'off', do nothing
+    }
+    if (this.pluginRegistry.has(plugin.metadata.id)) {
+      throw new Error(`Plugin "${plugin.metadata.id}" is already installed.`);
+    }
+    this.pluginRegistry.set(plugin.metadata.id, plugin);
+    this.strategies.unshift(plugin.strategy);
+    // Call onInstall but rollback if it throws to avoid leaving the
+    // registry in a partially installed state.
+    try {
+      plugin.onInstall?.(this as PluginAwareRegistry);
+    } catch (err) {
+      // remove plugin and its strategy (first occurrence)
+      this.pluginRegistry.delete(plugin.metadata.id);
+      const idx = this.strategies.indexOf(plugin.strategy);
+      if (idx !== -1) this.strategies.splice(idx, 1);
+      throw err;
+    }
+  }
+
+  installedPlugins(): PluginMetadata[] {
+    return [...this.pluginRegistry.values()].map((p) => p.metadata);
+  }
+
+  hasPlugin(id: string): boolean {
+    return this.pluginRegistry.has(id);
   }
 
   registerConverter<TS, TD>(
