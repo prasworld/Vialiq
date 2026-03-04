@@ -43,4 +43,12 @@ export interface MapperOptions {
    * Strategy for handling circular references during mapping.
    */
   circularRefBehavior?: CircularRefBehavior;
+  /**
+   * How strictly to enforce plugin API version compatibility.
+   * - `'warn'` (default): emit a console warning when plugin `apiVersion`
+   *   differs from the runtime `PLUGIN_API_VERSION`.
+   * - `'error'`: throw when the versions differ.
+   * - `'off'`: do not validate plugin API versions.
+   */
+  pluginValidation?: 'warn' | 'error' | 'off';
 }

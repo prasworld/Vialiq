@@ -4,8 +4,8 @@ export const CIRCULAR_IGNORE = Symbol('CIRCULAR_IGNORE');
 export const NOT_CIRCULAR = Symbol('NOT_CIRCULAR');
 
 export function checkCircular(
-  val: object,
-  visited: WeakSet<object>,
+  val: Record<string, unknown>,
+  visited: WeakSet<Record<string, unknown>>,
   behavior?: CircularRefBehavior
 ): unknown {
   if (visited.has(val)) {

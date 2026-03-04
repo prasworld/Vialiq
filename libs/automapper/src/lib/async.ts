@@ -1,9 +1,10 @@
 import { DefaultStrategy } from './strategy';
-import { MappingConfig } from './builder';
+import { MappingConfig, MemberRule } from './builder';
 import { MapperRegistry } from './core';
+import { Constructor } from './types';
 import { MapperOptions } from './options';
 import { applyNamingConvention } from './naming';
-import { checkCircular, NOT_CIRCULAR, CIRCULAR_IGNORE } from './utils';
+import { setPath, checkCircular, NOT_CIRCULAR, CIRCULAR_IGNORE } from './utils';
 
 /**
  * Strategy that extends the default synchronous behaviour to support
@@ -26,17 +27,18 @@ export class AsyncStrategy extends DefaultStrategy {
     destType: unknown,
     config: MappingConfig<S, D> = { memberRules: [] },
     options: MapperOptions = {},
-    visited: WeakSet<object>
+    visited: WeakSet<Record<string, unknown>>,
+    ctx?: import('./context').MappingContext
   ): Promise<D> {
-    const dest = {} as Record<string, unknown>;
+    const dest: Partial<D> = {} as Partial<D>;
 
-    config.beforeMap?.(src);
+    config.beforeMap?.(src, ctx);
 
     // Optimization: Identify keys handled by member rules to skip in autoMap
     const explicitKeys = new Set(config.memberRules.map((r) => r.destKey));
 
     if (options.autoMap !== false) {
-      const keys = Object.keys(src as object);
+      const keys = Object.keys(src as Record<string, unknown>);
       for (const k of keys) {
         const transformed = applyNamingConvention(k, options.namingConvention);
         if (explicitKeys.has(transformed)) {
@@ -50,44 +52,51 @@ export class AsyncStrategy extends DefaultStrategy {
           options
         );
         if (mappedValue !== CIRCULAR_IGNORE) {
-          dest[transformed] = mappedValue;
+          (dest as unknown as Record<string, unknown>)[transformed] = mappedValue;
         }
       }
     }
 
-    for (const r of config.memberRules) {
+    const typedRules = config.memberRules as MemberRule<S, D, keyof D & string>[];
+    for (const r of typedRules) {
       if (r.ignore) {
-        delete dest[r.destKey];
+        delete (dest as Partial<Record<string, unknown>>)[r.destKey];
         continue;
       }
 
       let value: unknown;
       if (r.mapFromAsync) {
-        value = await r.mapFromAsync(src);
+        value = await r.mapFromAsync(src, ctx);
+      } else if ((r as any).mapWith) {
+        value = (r as any).mapWith(src);
       } else if (r.mapFrom) {
-        value = r.mapFrom(src);
+        value = r.mapFrom(src, ctx);
       }
 
-      if (value !== undefined) {
-        this.setValue(dest, r.destKey, value);
+      if (value === undefined) continue;
+      if (r.destKey.includes('.')) {
+        setPath(dest as unknown as Record<string, unknown>, r.destKey, value as unknown);
+      } else {
+        (dest as Partial<D>)[r.destKey as keyof D] = value as unknown as D[keyof D];
       }
     }
 
-    if (options.strict) {
+      if (options.strict) {
       let allowedKeys: string[] | undefined;
       if (typeof destType === 'function') {
         try {
-          allowedKeys = Object.keys(new (destType as any)());
+          const inst = new (destType as Constructor<unknown>)() as Record<string, unknown>;
+          allowedKeys = Object.keys(inst);
         } catch {
           allowedKeys = undefined;
         }
       }
-      const srcName = (src as object).constructor.name;
+      const srcName = ((src as unknown) as Record<string, unknown>).constructor.name;
       const destName =
         typeof destType === 'string'
           ? destType
           : (destType as { name?: string }).name || 'Unknown';
-      Object.getOwnPropertyNames(src as object).forEach((k) => {
+      Object.getOwnPropertyNames(src as Record<string, unknown>).forEach((k) => {
         const transformed = applyNamingConvention(k, options.namingConvention);
         if (allowedKeys) {
           if (!allowedKeys.includes(transformed)) {
@@ -96,7 +105,7 @@ export class AsyncStrategy extends DefaultStrategy {
             );
           }
         } else {
-          if (dest[transformed] === undefined) {
+          if ((dest as unknown as Record<string, unknown>)[transformed] === undefined) {
             throw new Error(
               `Strict mapping failed: property '${k}' was not mapped to destination ${destName} from source ${srcName}`
             );
@@ -105,7 +114,7 @@ export class AsyncStrategy extends DefaultStrategy {
       });
     }
 
-    config.afterMap?.(dest);
+    config.afterMap?.(dest as D, ctx);
 
     return dest as D;
   }
@@ -114,17 +123,17 @@ export class AsyncStrategy extends DefaultStrategy {
     registry: MapperRegistry,
     val: unknown,
     depth: number,
-    visited: WeakSet<object>,
+    visited: WeakSet<Record<string, unknown>>,
     options: MapperOptions
   ): Promise<unknown> {
     if (val === null || val === undefined) return val;
 
     if (val && typeof val === 'object') {
-      const circularCheck = checkCircular(val as object, visited, options.circularRefBehavior);
+      const circularCheck = checkCircular(val as Record<string, unknown>, visited, options.circularRefBehavior);
       if (circularCheck !== NOT_CIRCULAR) {
         return circularCheck;
       }
-      
+
       if (options.maxDepth !== undefined && depth >= options.maxDepth) {
         return val;
       }
@@ -137,7 +146,7 @@ export class AsyncStrategy extends DefaultStrategy {
       }
 
       const obj = {} as Record<string, unknown>;
-      const keys = Object.keys(val as object);
+      const keys = Object.keys(val as Record<string, unknown>);
       for (const k of keys) {
         const transformed = applyNamingConvention(k, options.namingConvention);
         const res = await this.mapValueAsync(
