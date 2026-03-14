@@ -37,7 +37,8 @@
       "executor": "@nx/vitest:test",
       "outputs": ["{options.reportsDirectory}"],
       "options": {
-        "reportsDirectory": "coverage/automapper"
+        "vitestConfig": "libs/automapper/vitest.config.mts",
+        "reportsDirectory": "../../coverage/automapper"
       }
     },
     "lint": {
