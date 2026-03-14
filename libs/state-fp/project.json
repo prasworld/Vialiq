@@ -1,0 +1,43 @@
+{
+  "name": "state-fp",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/state-fp/src",
+  "projectType": "library",
+  "tags": ["scope:state", "type:lib"],
+  "targets": {
+    "build": {
+      "executor": "@nx/esbuild:esbuild",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/state-fp",
+        "main": "libs/state-fp/src/index.ts",
+        "tsConfig": "libs/state-fp/tsconfig.lib.json",
+        "assets": ["libs/state-fp/README.md", "libs/state-fp/package.json"],
+        "format": ["esm"],
+        "additionalEntryPoints": [
+          "libs/state-fp/src/core/index.ts",
+          "libs/state-fp/src/kernel/index.ts",
+          "libs/state-fp/src/storage/index.ts",
+          "libs/state-fp/src/sync/index.ts",
+          "libs/state-fp/src/devtools/index.ts",
+          "libs/state-fp/src/adapter/index.ts"
+        ]
+      }
+    },
+    "test": {
+      "executor": "@nx/vitest:test",
+      "outputs": ["{options.reportsDirectory}"],
+      "options": {
+        "reportsDirectory": "coverage/state-fp",
+        "configFile": "libs/state-fp/vitest.config.mts"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["libs/state-fp/**/*.ts"]
+      }
+    }
+  }
+}

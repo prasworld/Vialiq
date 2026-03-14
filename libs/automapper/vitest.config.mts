@@ -4,7 +4,7 @@ import { nxCopyAssetsPlugin } from '@nx/vite/plugins/nx-copy-assets.plugin';
 
 export default defineConfig(() => ({
   root: __dirname,
-  cacheDir: '../node_modules/.vite/libs',
+  cacheDir: '../../node_modules',
   plugins: [nxViteTsPaths(), nxCopyAssetsPlugin(['*.md'])],
   test: {
     name: 'libs',
