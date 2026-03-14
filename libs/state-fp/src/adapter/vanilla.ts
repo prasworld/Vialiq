@@ -94,7 +94,7 @@ export function createAdapter(kernel: Kernel): VanillaAdapter {
     },
 
     query<S, Q extends Query, R>(atom: Atom<S>, q: Q): R {
-      return kernel.query<R>(atom, q);
+      return kernel.query<R>(atom as Atom<any>, q);
     },
 
     destroy(): void {

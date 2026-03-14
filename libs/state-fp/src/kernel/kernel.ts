@@ -248,7 +248,7 @@ export function createKernel(options: KernelOptions = {}): Kernel {
     executeAsync<S>(
       atom:    Atom<S>,
       cmd:     Command,
-      options?: { signal?: AbortSignal },
+      options?: { signal?: AbortSignal; instanceId?: string },
     ): Promise<Either<CommandError, S>> {
       const atomKey      = atom.definition.key;
       const asyncHandler = asyncHandlerMap.get(`${atomKey}::${cmd.type}`) as
