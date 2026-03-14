@@ -246,9 +246,9 @@ export function createKernel(options: KernelOptions = {}): Kernel {
     },
 
     executeAsync<S>(
-      atom:    Atom<S>,
-      cmd:     Command,
-      options?: { signal?: AbortSignal; instanceId?: string },
+      atom:       Atom<S>,
+      cmd:        Command,
+      execOptions?: { signal?: AbortSignal },
     ): Promise<Either<CommandError, S>> {
       const atomKey      = atom.definition.key;
       const asyncHandler = asyncHandlerMap.get(`${atomKey}::${cmd.type}`) as
@@ -260,7 +260,7 @@ export function createKernel(options: KernelOptions = {}): Kernel {
         return Promise.resolve(this.execute(atom, cmd));
       }
 
-      const signal = options?.signal ?? new AbortController().signal;
+      const signal = execOptions?.signal ?? new AbortController().signal;
       if (signal.aborted) {
         return Promise.resolve({
           _tag: 'Left' as const,
@@ -279,8 +279,8 @@ export function createKernel(options: KernelOptions = {}): Kernel {
           ...(cmd.meta?.causationId !== undefined && { causationId: cmd.meta.causationId }),
           ...(cmd.meta?.issuedBy !== undefined
             ? { issuedBy: cmd.meta.issuedBy }
-            : options?.instanceId !== undefined
-              ? { issuedBy: (options as { instanceId?: string }).instanceId }
+            : options.instanceId !== undefined
+              ? { issuedBy: options.instanceId }
               : {}),
         },
       };
@@ -290,7 +290,7 @@ export function createKernel(options: KernelOptions = {}): Kernel {
         correlationId: (fullCmd.meta as CommandMeta).correlationId,
       };
 
-      return asyncHandler.handleAsync(currentState, fullCmd, ctx).then(
+      return asyncHandler.handleAsync(currentState, fullCmd as any, ctx).then(
         (result) => {
           if (signal.aborted) {
             return {
@@ -487,6 +487,7 @@ export function createKernel(options: KernelOptions = {}): Kernel {
       asyncHandlerMap.clear();
       plugins.forEach(p => p.onDestroy?.());
       plugins.length = 0;
+      debugLayer = noopDebug;
     },
 
     use(plugin: KernelPlugin): void {

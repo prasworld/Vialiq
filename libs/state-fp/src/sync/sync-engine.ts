@@ -162,6 +162,8 @@ export function createSyncEngine({ kernel }: SyncEngineOptions): SyncEngine {
 
           syncState.version = merge(syncState.version, remoteVersion);
           // Apply winning state directly (bypass CQRS for sync-originated updates)
+          // Mark to skip re-broadcasting this state to prevent echo loop
+          _ignoreNext = true;
           atom._setState(winning as S);
           break;
         }
