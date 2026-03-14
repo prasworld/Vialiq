@@ -1562,5 +1562,36 @@ Phase 8 (CRDT) requires Phase 4 (version vectors + SyncEngine) and Phase 2 (Stor
 
 ---
 
+## Tech Debt & Known Issues
+
+### Phase 1 — Applier Composition Order (Phase 2 candidate)
+
+**Issue:** When `kernel.register()` is called multiple times for the same atom with different handlers, the appliers are composed in registration order:
+```typescript
+const composed: EventApplier<S> = (state, event) =>
+  applier(existing(state, event), event);
+```
+
+This creates a chain where the newest applier operates on the post-modified state from all previous appliers, even for event types it doesn't handle. While the convention is that unknown events return state unchanged, this composition order has two implications:
+
+1. **Order dependency:** Behavior depends on which applier was registered first, not explicit priority
+2. **Last-wins semantic:** If two appliers handle the same event type, the most recently registered one "wins" because it sees the modified state first
+
+**Impact:**
+- Works correctly for the common case: appliers handle **disjoint event types**
+- Surprising behavior if appliers overlap or have stateful side-effects
+- Not documented, making accidental misuse possible
+
+**Mitigation (Phase 1):** Document that appliers should handle disjoint event types. Tests confirm all applied events are from registered handlers.
+
+**Resolution (Phase 2+):** One of:
+1. **Validation:** Throw error at registration time if overlapping event types detected
+2. **Independent appliers:** Collect all appliers and apply each independently (not composed)
+3. **Event routing:** Route each event to exactly one applier based on type
+
+**Ticket:** Track as Phase 2 enhancement — `feature/explicit-event-routing`
+
+---
+
 *This document is the authoritative development roadmap for @vi/state-fp.*  
 *Update phase checkboxes as items are completed.*
