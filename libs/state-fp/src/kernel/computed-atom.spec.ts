@@ -132,6 +132,37 @@ describe('Phase 2.5 — Computed Atoms', () => {
       expect(notified).toEqual([true, false, true]);
       expect(computeCount).toBe(3);
     });
+
+    it('should not recompute if dependency reference stays identical', () => {
+      const stableState = { value: 0 };
+      const stableAtom = defineAtom<CounterState>({
+        key: 'vi/stable',
+        initialState: stableState,
+      });
+
+      const noOpApplier: EventApplier<CounterState> = (state) => state;
+      const noOpHandler: CommandHandler<CounterState> = {
+        commandType: 'stable/noop',
+        handle: () => ({ _tag: 'Right', right: [domainEvent('stable/noop', {})] }),
+      };
+      kernel.register(stableAtom, noOpHandler, noOpApplier);
+
+      let computeCount = 0;
+      const computed = defineComputedAtom({
+        key: 'vi/stable-computed',
+        deps: [stableAtom],
+        compute: () => {
+          computeCount++;
+          return 'ok';
+        },
+      });
+
+      kernel.registerComputed(computed);
+      expect(computeCount).toBe(1);
+
+      kernel.execute(stableAtom, { _kind: 'Command', type: 'stable/noop', meta: { correlationId: 'x', timestamp: Date.now() } });
+      expect(computeCount).toBe(1); // should not recompute
+    });
   });
 
   describe('error handling', () => {

@@ -82,6 +82,8 @@ export function createKernel(options: KernelOptions = {}): Kernel {
   const asyncHandlerMap = new Map<string, AsyncCommandHandler<unknown>>();
   /** Phase 2.5 — maps atomKey → set of computed atoms that depend on it */
   const computedDependencies = new Map<string, Set<ComputedAtom<any>>>();
+  /** Phase 2.5 — cache last dependency references for each computed atom */
+  const computedDepRefs = new Map<ComputedAtom<any>, readonly any[]>();
   /** Phase 2.5 — all registered computed atoms */
   const computedAtoms = new Set<ComputedAtom<any>>();
 
@@ -169,11 +171,22 @@ export function createKernel(options: KernelOptions = {}): Kernel {
     for (const computed of dependents) {
       // Get fresh dep states
       const depStates = computed.definition.deps.map(dep => dep.get());
-      const depReferences = depStates; // Use actual refs for comparison
 
-      // Get current value to check for changes
+      // Memoise: only recompute when one of the dependency references changes.
+      const prevDeps = computedDepRefs.get(computed);
+      const depsUnchanged =
+        prevDeps !== undefined &&
+        prevDeps.length === depStates.length &&
+        prevDeps.every((prev, i) => Object.is(prev, depStates[i]));
+
+      if (depsUnchanged) continue;
+
+      // Store latest dep references (for subsequent calls)
+      computedDepRefs.set(computed, depStates);
+
+      // Get current computed value to check for changes
       const prevValue = computed.get();
-      const nextValue = computed.definition.compute(depReferences as readonly any[]);
+      const nextValue = computed.definition.compute(depStates as readonly any[]);
 
       // Notify subscribers if compute function returned a different value
       if (!Object.is(prevValue, nextValue)) {
@@ -664,8 +677,10 @@ export function createKernel(options: KernelOptions = {}): Kernel {
         dependents.add(computed);
       }
 
-      // Initial compute
+      // Initial compute & cache dependency references.
       const depStates = computed.definition.deps.map(dep => dep.get());
+      computedDepRefs.set(computed, depStates);
+
       const initialValue = computed.definition.compute(depStates as readonly any[]);
       computed._setComputed(initialValue);
     },
