@@ -131,10 +131,11 @@ import { KERNEL_TOKEN }                     from '@/state-tokens';
 
 // Create once at app init
 const devtools = isDevMode() ? createDevTools({ maxEventLogSize: 500 }) : noopDevTools;
-const kernel   = createKernel({ devtools });
+const kernel   = createKernel({ debug: isDevMode() });
+if (isDevMode()) kernel.use(devtools.plugin);
 
 // Angular adapter — wire Angular APIs at the point of creation
-export const ngAdapter = createAngularAdapter({ signal, effect, DestroyRef, inject });
+export const ngAdapter = createAngularAdapter({ signal, inject, DestroyRef });
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -165,11 +166,10 @@ export const appConfig: ApplicationConfig = {
       provide: KERNEL_TOKEN,
       useFactory: () => {
         const remoteKernel = createKernel();
-        // Borrow shell atoms via sync protocol
-        createSyncEngine({ channel: 'vi-state', kernel: remoteKernel })
-          .borrow(authAtom)
-          .borrow(themeAtom)
-          .start();
+        // Receive shell atoms by sharing on the same per-atom channels
+        const sync = createSyncEngine({ kernel: remoteKernel });
+        sync.share(authAtom,  { channel: 'vi-auth',  conflict: 'owner-wins' });
+        sync.share(themeAtom, { channel: 'vi-theme', conflict: 'owner-wins' });
         return remoteKernel;
       },
     },
@@ -197,7 +197,7 @@ export class UserBadgeComponent {
 
   // Reactive signal — updates whenever authAtom state changes
   // Auto-unsubscribes on component destroy via DestroyRef
-  readonly auth = ngAdapter.toSignal(this.kernel, authAtom);
+  readonly auth = ngAdapter.toSignal(authAtom, this.kernel);
 }
 ```
 
@@ -214,7 +214,7 @@ readonly displayName = computed(() => {
 For values that require a full `QueryHandler` (complex projections, cross-atom derivations):
 
 ```ts
-readonly cartTotal = ngAdapter.toQuerySignal(this.kernel, cartAtom, BuildTotal());
+readonly cartTotal = ngAdapter.toQuerySignal(cartAtom, this.kernel, BuildTotal);
 ```
 
 ### 3.3 Dispatching Commands
@@ -223,8 +223,8 @@ readonly cartTotal = ngAdapter.toQuerySignal(this.kernel, cartAtom, BuildTotal()
 @Component({ ... })
 export class CartComponent {
   private kernel   = inject(KERNEL_TOKEN);
-  readonly cart    = ngAdapter.toSignal(this.kernel, cartAtom);
-  readonly addItem = ngAdapter.commandDispatcher(this.kernel, cartAtom);
+  readonly cart    = ngAdapter.toSignal(cartAtom, this.kernel);
+  readonly addItem = ngAdapter.commandDispatcher(cartAtom, this.kernel);
 
   onAddToCart(sku: string, qty: number) {
     const result = this.addItem(AddItem({ sku, qty }));
@@ -392,8 +392,8 @@ export function registerCartAtom(kernel: Kernel) {
 export class CartSummaryComponent {
   private kernel = inject(KERNEL_TOKEN);
 
-  readonly cart  = ngAdapter.toSignal(this.kernel, cartAtom);
-  readonly total = ngAdapter.toQuerySignal(this.kernel, cartAtom, BuildTotal());
+  readonly cart  = ngAdapter.toSignal(cartAtom, this.kernel);
+  readonly total = ngAdapter.toQuerySignal(cartAtom, this.kernel, BuildTotal);
 }
 ```
 
@@ -418,7 +418,8 @@ export const devtools = isProduction
   ? noopDevTools
   : createDevTools({ maxEventLogSize: 300 });
 
-export const kernel = createKernel({ devtools });
+export const kernel = createKernel({ debug: !isProduction });
+if (!isProduction) kernel.use(devtools.plugin);
 
 // Create the adapter once — inject React hooks
 export const reactAdapter = createReactAdapter({
@@ -443,12 +444,12 @@ the setup is identical but the kernel is configured as a borrower:
 
 ```tsx
 // apps/cart-remote/src/state/kernel.ts
-const remoteKernel = createKernel({ devtools });
+const remoteKernel = createKernel({ debug: !isProduction });
+if (!isProduction) remoteKernel.use(devtools.plugin);
 
-// Borrow auth from shell — no direct import from shell bundle
-createSyncEngine({ channel: 'vi-state', kernel: remoteKernel })
-  .borrow(authAtom)
-  .start();
+// Receive auth from shell via BroadcastChannel — no direct import from shell bundle
+const remoteSync = createSyncEngine({ kernel: remoteKernel });
+remoteSync.share(authAtom, { channel: 'vi-auth', conflict: 'owner-wins' });
 
 export { remoteKernel as kernel };
 ```
@@ -777,17 +778,17 @@ shared atoms. That is the **shell**. The shell:
 import { createKernel }    from '@vi/state-fp/kernel';
 import { createSyncEngine} from '@vi/state-fp/sync';
 
-export const kernel = createKernel({ devtools });
+export const kernel = createKernel({ debug: isDevMode() });
+if (isDevMode()) kernel.use(devtools.plugin);
 
 // Register shell atoms
 kernel.register(authAtom, authCommandHandlers, authApplier);
 kernel.register(themeAtom, themeCommandHandlers, themeApplier);
 
 // Share with all remotes via BroadcastChannel
-const sync = createSyncEngine({ channel: 'vi-state', kernel });
-sync.share(authAtom,  { conflict: 'owner-wins' });
-sync.share(themeAtom, { conflict: 'owner-wins' });
-sync.start();
+const sync = createSyncEngine({ kernel });
+sync.share(authAtom,  { channel: 'vi-auth',  conflict: 'owner-wins' });
+sync.share(themeAtom, { channel: 'vi-theme', conflict: 'owner-wins' });
 
 // Hydrate from storage on startup
 await kernel.hydrate();
@@ -802,20 +803,20 @@ of a shared atom — it only borrows the ownership.
 ```ts
 // apps/cart-remote/src/state/kernel.ts
 
-const remoteKernel = createKernel({ devtools });
+const remoteKernel = createKernel({ debug: isDevMode() });
+if (isDevMode()) remoteKernel.use(devtools.plugin);
 
 // Register atoms OWNED by this remote
 remoteKernel.register(cartAtom, cartCommandHandlers, cartApplier);
 
-// Borrow atoms FROM the shell — read-only
-const sync = createSyncEngine({ channel: 'vi-state', kernel: remoteKernel });
-sync.borrow(authAtom);   // receives auth state updates from shell automatically
-sync.borrow(themeAtom);
+// Receive shell atoms — share on the same per-atom channels the shell uses
+const sync = createSyncEngine({ kernel: remoteKernel });
+sync.share(authAtom,  { channel: 'vi-auth',  conflict: 'owner-wins' });
+sync.share(themeAtom, { channel: 'vi-theme', conflict: 'owner-wins' });
 
-// Share this remote's owned atoms with the header remote that needs cart item count
-sync.share(cartAtom, { conflict: 'owner-wins' });
+// Share this remote's owned atoms with peers
+sync.share(cartAtom, { channel: 'vi-cart', conflict: 'owner-wins' });
 
-sync.start();
 await remoteKernel.hydrate();
 ```
 
@@ -870,7 +871,7 @@ providers: [
   provideStore(),
   provideEffects(),
   // New — @vi/state-fp kernel for cross-MFE state
-  { provide: KERNEL_TOKEN, useValue: createKernel({ devtools }) },
+  { provide: KERNEL_TOKEN, useValue: kernel },
 ]
 ```
 
@@ -908,7 +909,7 @@ For each NgRx feature slice you want to migrate:
 | `Effect (async)` | `AsyncCommandHandler` |
 | `Selector` | `QueryHandler` (+ memoisation option) |
 | `createEffect` (side effects) | `KernelPlugin.afterExecute` |
-| `@ngrx/signals SignalStore` | `ngAdapter.toSignal(kernel, atom)` |
+| `@ngrx/signals SignalStore` | `ngAdapter.toSignal(atom, kernel)` |
 | `Redux DevTools Extension` | `createReduxDevToolsBridge()` in devtools |
 
 ---
@@ -1088,13 +1089,13 @@ copy(window.__VI_STATE_FP__.exportLog())
 
 ```ts
 // Setup
-export const ngAdapter = createAngularAdapter({ signal, effect, DestroyRef, inject });
-const kernel = createKernel({ devtools });
+export const ngAdapter = createAngularAdapter({ signal, inject, DestroyRef });
+const kernel = createKernel({ debug: true });
 
 // In a component
-readonly state = ngAdapter.toSignal(kernel, myAtom);
-readonly derived = ngAdapter.toQuerySignal(kernel, myAtom, MyQuery());
-readonly dispatch = ngAdapter.commandDispatcher(kernel, myAtom);
+readonly state = ngAdapter.toSignal(myAtom, kernel);
+readonly derived = ngAdapter.toQuerySignal(myAtom, kernel, MyQuery);
+readonly dispatch = ngAdapter.commandDispatcher(myAtom, kernel);
 ```
 
 ### React
@@ -1148,13 +1149,11 @@ export const myAtom = defineAtom<MyState>({
 ### Cross-MFE sync
 
 ```ts
-// Shell — owner
-const sync = createSyncEngine({ channel: 'vi-state', kernel });
-sync.share(myAtom, { conflict: 'owner-wins' });
-sync.start();
+// Shell — owner: share on a per-atom named channel
+const shellSync = createSyncEngine({ kernel });
+shellSync.share(myAtom, { channel: 'vi-my-atom', conflict: 'owner-wins' });
 
-// Remote — borrower
-const sync = createSyncEngine({ channel: 'vi-state', kernel: remoteKernel });
-sync.borrow(myAtom);
-sync.start();
+// Remote — receiver: share on the same channel; shell's 'owner-wins' policy applies
+const remoteSync = createSyncEngine({ kernel: remoteKernel });
+remoteSync.share(myAtom, { channel: 'vi-my-atom', conflict: 'owner-wins' });
 ```

@@ -2,7 +2,8 @@
 
 > **Status:** Revised — Modular CQRS Architecture  
 > **Pattern:** CQRS (Command Query Responsibility Segregation)  
-> **Guiding law:** *Build the minimum needed. Leave room for complexity.*
+> **Guiding law:** *Build the minimum needed. Leave room for complexity.*  
+> **Test Coverage:** 318 tests | 86.32% branch coverage ✅ | See [Feature Comparison](./feature-comparison.md)
 
 ---
 
@@ -28,6 +29,7 @@
 18. [Composition Examples](#18-composition-examples)
 19. [Design Invariants](#19-design-invariants)
 20. [Phase-Wise Scope Boundaries](#20-phase-wise-scope-boundaries)
+21. **[Feature Coverage & Comparison](./feature-comparison.md)** — see separate doc
 
 ---
 
@@ -74,10 +76,10 @@ With CQRS:
 @vi/state-fp/core      — FP primitives (Maybe, Either, IO, Task, Reader, StateM, Lens, pipe)
 @vi/state-fp/kernel    — CQRS engine: CommandBus, QueryBus, DomainEventBus, Atom, Kernel, KernelPlugin
 @vi/state-fp/storage   — StorageAdapter interface + Memory, LocalStorage, SessionStorage, IndexedDB,
-                          ObfuscatedAdapter, EncryptedAdapter
+                          ObfuscatedAdapter
 @vi/state-fp/sync      — Cross-MFE sync: BroadcastChannel, conflict resolution, versioning
 @vi/state-fp/devtools  — EventLog, Snapshots, TimeTravelController, DevToolsBridge, DevExtension
-@vi/state-fp/adapter   — Framework wrappers: Angular (Signals), React (hooks), Lit (ReactiveController), Vanilla
+@vi/state-fp/adapter   — Framework wrappers: Angular (Signals), Vanilla (shipped); React hooks + Lit (Phase 5 — stubs only)
 ```
 
 Each module is a separate entry-point in `package.json#exports`. Modules compose upward — never downward.
@@ -102,7 +104,7 @@ Each module is a separate entry-point in `package.json#exports`. Modules compose
     │ @vi/state-fp/storage│  │@vi/state-fp/devtools │  │ @vi/state-fp/sync │
     │ Memory/Local/Session│  │ EventLog · Snapshots │  │ Broadcast·Conflict│
     │ IndexedDB adapters  │  │ TimeTravel · Bridge  │  │ Versioning        │
-    │ Obfuscated·Encrypted│  │ DevExtension proto.  │  │                   │
+    │ Obfuscated          │  │ DevExtension proto.  │  │                   │
     └────────────┬────────┘  └──────────┬───────────┘  └─────────┬─────────┘
                  │                      │                         │
           ┌──────▼──────────────────────▼─────────────────────────▼──────────┐
@@ -505,21 +507,31 @@ type CustomConflictResolver<S> = (
 ) => S;
 ```
 
-### SyncEngine API (minimal)
+### SyncEngine API
 
 ```ts
-interface SyncEngine {
-  start(): void;
-  stop(): void;
-  share(atom: Atom<unknown>, options?: ShareOptions): void;
-  borrow(atom: Atom<unknown>): void;
-}
+type SyncEngine = {
+  // Start synchronising an atom — returns unsync() to stop just that atom
+  share<S>(atom: Atom<S>, options?: ShareOptions<S>): Unsubscribe;
 
-type ShareOptions = {
-  conflict?: ConflictStrategy;
-  debounce?: number;
+  // Inspect current sync state (version, peers, conflicts) for an atom
+  getState<S>(atomKey: string): SyncState<S> | undefined;
+
+  // Tear down all channels and subscriptions
+  destroy(): void;
+};
+
+type ShareOptions<S> = {
+  conflict?:  ConflictStrategy<S>;  // default: 'last-write-wins'
+  peerId?:    string;               // default: random uuid
+  channel?:   string;               // BroadcastChannel name; default: atom.key
+  propagate?: boolean;              // reply to hello messages; default: true
 };
 ```
+
+> **No `borrow()`, `start()`, or `stop()` methods.** Ownership asymmetry (owner vs borrower)
+> is achieved via `propagate: true` (shell MFEs that own an atom) vs `propagate: false`
+> (remote MFEs that just want to receive updates).
 
 ### Version checking
 
@@ -545,25 +557,31 @@ devtools/
   index.ts
 ```
 
-### DebugEntry
+### DebugEntry (actual type in `devtools/types.ts`)
 
 ```ts
+// One DebugEntry per DomainEvent emitted. A single execute() call emitting
+// N events produces N DebugEntry objects in the EventLog.
 type DebugEntry = {
-  id:              string;
-  correlationId:   string;
-  causationId:     string;
-  atomKey:         string;
-  commandType:     string;
-  events:          DomainEvent[];
-  prevState:       unknown;
-  nextState:       unknown;
-  diff:            Patch[];
-  timestamp:       number;
-  durationMs:      number;
-  error?:          CommandError;
-  sourceLocation?: SourceLocation;
+  readonly id:            string;           // uuid — unique per entry
+  readonly atomKey:       string;           // e.g. 'vi/cart'
+  readonly correlationId: string;           // groups all entries from one user action
+  readonly causationId:   string | undefined; // parent command's correlationId (if any)
+  readonly commandType:   string | undefined; // e.g. 'cart/addItem'
+  readonly event:         DomainEvent;      // the individual DomainEvent
+  readonly stateBefore:   unknown;          // deep-clone before event applied
+  readonly stateAfter:    unknown;          // deep-clone after event applied
+  readonly timestamp:     number;           // wall-clock ms
+  readonly version:       number;           // atom version at time of event
+  // NOTE: No 'diff', no 'durationMs', no 'error', no 'sourceLocation'
+  // Duration is available on KernelPlugin.onExecute params (separate from DevTools)
 };
 ```
+
+> **`KernelDebugEntry` vs `DebugEntry`:** The kernel has its own internal
+> `KernelDebugEntry` (fed to `debug.record()`) that includes `durationMs` and `error?`.
+> The devtools module creates the richer per-event `DebugEntry` objects in its
+> `KernelPlugin.onExecute` hook — these are what `eventLog.getAll()` returns.
 
 ### DevTools bridge
 
@@ -578,15 +596,27 @@ window.__VI_STATE_FP__.importLog(json)
 ### Attaching devtools to the kernel
 
 ```ts
-import { createKernel } from '@vi/state-fp/kernel';
+import { createKernel }   from '@vi/state-fp/kernel';
 import { createDevTools } from '@vi/state-fp/devtools';
 
-const kernel = createKernel({ debug: false });           // production
-const kernel = createKernel({ debug: true });            // development
-// — or — explicit:
-const devtools = createDevTools({ maxEvents: 500, maxSnapshots: 20 });
-const kernel   = createKernel({ devtools });
+// Development — full devtools
+const devtools = createDevTools({ maxLogSize: 500, snapshotEvery: 50 });
+const kernel   = createKernel({ debug: true });
+kernel.use(devtools.plugin);     // connect via KernelPlugin (onRegister + onExecute)
+
+// Access the devtools instance:
+devtools.eventLog.getAll()       // ReadonlyArray<DebugEntry>
+devtools.snapshots.list()        // ReadonlyArray<Snapshot>
+devtools.timeTravel.goTo(id)     // replay to any point
+
+// Production — zero overhead (no devtools plugin; noopDebug object)
+const kernel = createKernel();   // debug defaults to false; noopDebug object used
 ```
+
+> **Pattern detail:** `createDevTools()` returns a `DevToolsInstance` — not a
+> `KernelOptions` value. The `devtools.plugin` (a `KernelPlugin`) is what you pass to
+> `kernel.use()`. The `debug: true` option on `KernelOptions` separately controls the
+> kernel's internal `DebugInterface` recording for `KernelDebugEntry` objects.
 
 ---
 
@@ -603,22 +633,23 @@ const kernel   = createKernel({ devtools });
 
 ```ts
 import { createAngularAdapter, type AngularAPIs } from '@vi/state-fp/adapter';
-import { signal, effect, DestroyRef, inject } from '@angular/core';
+import { signal, DestroyRef, inject } from '@angular/core';
 import { createKernel } from '@vi/state-fp/kernel';
 
 // Create the adapter once (e.g. in a service or factory provider)
-const adapter = createAngularAdapter({ signal, effect, DestroyRef, inject });
-const kernel  = createKernel({ devtools: environment.production ? noopDevTools : createDevTools() });
+const adapter = createAngularAdapter({ signal, inject, DestroyRef });
+const kernel  = createKernel({ debug: !environment.production });
+if (!environment.production) { kernel.use(createDevTools().plugin); }
 
 // component
 @Component({ ... })
 class CounterComponent {
   // Reactive atom as a signal — auto-unsubscribes on component destroy
-  readonly count  = adapter.toSignal(kernel, counterAtom);
+  readonly count  = adapter.toSignal(counterAtom, kernel);
   // Derived query as a computed signal
-  readonly name   = adapter.toQuerySignal(kernel, userAtom, GetDisplayName());
+  readonly name   = adapter.toQuerySignal(userAtom, kernel, GetDisplayName);
   // Bound command dispatcher
-  readonly incr   = adapter.commandDispatcher(kernel, counterAtom);
+  readonly incr   = adapter.commandDispatcher(counterAtom, kernel);
 
   increment() {
     this.incr(IncrementBy(1));
@@ -626,49 +657,28 @@ class CounterComponent {
 }
 ```
 
-### React
+### React (Phase 5 — stub only)
 
-```tsx
-import { StateFpProvider, useAtom, useCommand, useQuery } from '@vi/state-fp/adapter';
+> **Status: type stubs only.** `src/adapter/react.ts` exports type declarations but no
+> implementation is shipped. React hooks will be added in Phase 5.4.
 
-// Root — provides the kernel to the subtree via Context
-<StateFpProvider kernel={kernel}>
-  <App />
-</StateFpProvider>
-
-// Inside a component
-function CounterComponent() {
-  const [state]  = useAtom(counterAtom);           // re-renders on state change
-  const dispatch = useCommand(counterAtom);        // stable reference
-  const total    = useQuery(counterAtom, TotalQ()); // memoised derived value
-
-  return <button onClick={() => dispatch(IncrementBy(1))}>{state.count}</button>;
-}
-```
-
-### Lit
-
-> **Reactive Controller pattern** — integrates with Lit's reactive update lifecycle without any compile-time Lit dependency.
+Planned API (factory pattern, same as Angular adapter):
 
 ```ts
-import { createLitController } from '@vi/state-fp/adapter';
-import { LitElement, html } from 'lit';
-import { customElement } from 'lit/decorators.js';
-
-@customElement('my-counter')
-class CounterElement extends LitElement {
-  // AtomController implements Lit ReactiveController — auto-subscribes and
-  // schedules requestUpdate() on every state change; cleans up on disconnect
-  private counter = createLitController(this, kernel, counterAtom);
-
-  render() {
-    return html`
-      <p>Count: ${this.counter.state.count}</p>
-      <button @click=${() => this.counter.dispatch(IncrementBy(1))}>+</button>
-    `;
-  }
-}
+// Phase 5.4 — planned
+export declare function useAtom<S>(atom: Atom<S>): [S, (cmd: Command) => void];
+export declare function useQuery<S, R>(atom: Atom<S>, q: Query): R;
+export declare function useCommandDispatcher<S>(
+  atom: Atom<S>,
+  kernel: Kernel,
+): (cmd: Command) => Either<CommandError, S>;
 ```
+
+### Lit (Phase 5 — not yet implemented)
+
+> **Status: no implementation.** `src/adapter/lit.ts` does not exist. A Lit
+> `ReactiveController` adapter is planned for Phase 5.5. Use the `VanillaAdapter`
+> for web-component integration in Lit elements until Phase 5.5 ships.
 
 ### Vanilla JS
 
@@ -694,29 +704,45 @@ Full sequence from user action to persisted, notified, traced state:
 ```
 Component → kernel.execute(cartAtom, AddItem({ sku: 'ABC', qty: 2 }))
   │
-  1. Stamp command metadata (correlationId, timestamp)
+  1. Stamp command metadata (correlationId, timestamp, issuedBy)
+  │  Guard: if atom is ComputedAtom → return Left({ code: 'COMPUTED_ATOM' })
   │
   2. Route to CommandHandler
   │   addItemHandler.handle(state, cmd)
-  │   └─ Left(err)  → record + return Left(CommandError)
+  │   └─ Left(err)  → plugins.onError + debugLayer.record → return Left(CommandError)
   │   └─ Right([ItemAdded{...}]) ↓
   │
   3. For each DomainEvent:
-  │   a. Stamp meta (id, causationId, version)
-  │   b. cartApplier(state, ItemAdded) → CartState
+  │   a. Stamp meta (id, causationId, version, atomKey)
+  │   b. cartApplier(state, ItemAdded) → CartState (EventApplier — pure fn)
   │
-  4. atom._setState(newCartState)
+  4. atom._setState(newCartState)   ← synchronous in-memory update
   │
-  5. StorageAdapter.set(key, state)   [async, non-blocking]
+  4.5 recomputeDependents(atomKey) [Phase 2.5]  ← synchronous, before storage
+  │   For each ComputedAtom depending on cartAtom:
+  │     compute new value → if changed → computed._setComputed(nextValue)
+  │     → computed subscribers notified before source atom subscribers
   │
-  6. Notify subscribers (sync push)
+  5. StorageAdapter.set(key, state)   [async, non-blocking — fire-and-forget]
+  │   storage errors → plugins.onError({ code: 'STORAGE_WRITE_ERROR' })
   │
-  7. Emit on DomainEventBus
+  6. eventBus.emit(stampedEvents)     [for SyncEngine + onEvent( ) listeners]
   │
-  8. DevTools.record(entry)           [only if devtools attached]
+  7. plugins.forEach(p => p.onExecute?.(params))   [devtools records here]
+  │   params: { command, events, prevState, nextState, atomKey, durationMs }
+  │
+  8. if debugLayer.isEnabled:
+  │   debugLayer.record({ ... sanitize(atomKey, prevState), sanitize(atomKey, nextState) ... })
   │
   9. Return Right(newCartState)
 ```
+
+**Performance notes:**
+
+- Steps 1–7 are synchronous. `execute()` returns before the `Promise` from step 5 resolves.
+- Step 4.5 adds an O(deps) synchronous pass — each computed dep runs `Object.is` before recomputing.
+- Steps 6 and 7 are O(listeners) synchronous pushes.
+- The `noopDebug` object at step 8 is a no-op object call — zero branching overhead in production.
 
 ---
 
@@ -758,9 +784,7 @@ The Phase 1 implementation does not prevent moving to full event sourcing — th
 
 ## 14. Storage Strategy
 
-Each atom declares `storage.adapter` + `storage.key` + optional `storage.ttl`. No storage = `MemoryAdapter` (default). `kernel.hydrate()` reads from declared adapter; falls back to `initialState`. Write-through: storage is written on every successful `execute()`.
-
-`storageErrorBehavior`: `'warn'` (default) | `'throw'` | `'ignore'`
+Each atom declares `storage.adapter` + `storage.key` + optional `storage.ttl`. No storage = `MemoryAdapter` (default). `kernel.hydrate()` reads from each atom's declared adapter; falls back to `initialState`. Write-through: storage is written fire-and-forget on every successful `execute()`. Storage write errors are surfaced to plugins via `onError()` but never block execution.
 
 ---
 
@@ -794,7 +818,7 @@ Command  → CommandHandler → DomainEvent[] → EventApplier → next state
   logged        logged             logged          logged
 ```
 
-A single `DebugEntry` links: the **command** (intent), the **domain events** (facts), the **state diff** (change), and the **duration** (perf) in one record. Debugging does not require a browser extension.
+A single `DebugEntry` captures: the **command** (intent), one **domain event** (fact), and the full **before/after state** (change) in one record. A command that emits N events produces N entries — all sharing the same `correlationId`. Causality chains are tracked via `causationId`. Debugging does not require a browser extension.
 
 ---
 
@@ -816,49 +840,68 @@ uuid, now, deepClone, shallowDiff
 ### @vi/state-fp/kernel
 ```ts
 defineAtom
-command, domainEvent, query            // constructors
+defineComputedAtom              // Phase 2.5 — computed (read-only) projection from multiple atoms
+command, domainEvent, query     // constructors
 createKernel
 createCommandHandler
+createAsyncCommandHandler       // Phase 1.4 — async handler with AbortSignal support
 createEventApplier
 createQueryHandler
+// Kernel instance methods (all phases)
+// kernel.execute(atom, cmd)                           → Either<CommandError, S>
+// kernel.executeAsync(atom, cmd, opts?)               → Promise<Either<CommandError, S>>
+// kernel.executeOptimistic(atom, cmd, opts)           → Promise<Either<CommandError, S>>
+// kernel.query(atom, q)                               → R
+// kernel.register(atom, handler, applier)
+// kernel.register(atom)                               → co-located form
+// kernel.registerAsync(atom, asyncHandler, applier)
+// kernel.registerQuery(atom, handler)
+// kernel.registerComputed(computedAtom)
+// kernel.subscribe(atom, listener)                    → Unsubscribe
+// kernel.subscribeComputed(computedAtom, listener)    → Unsubscribe
+// kernel.onEvent(listener)                            → Unsubscribe
+// kernel.hydrate()                                    → Promise<void>
+// kernel.destroy()                                    → Promise<void>
+// kernel.use(plugin)
+// kernel.debug                                        → DebugInterface (read-only)
 // Extension (OCP)
-KernelPlugin                           // interface — implement to extend kernel behaviour
+KernelPlugin                    // type — implement to extend kernel behaviour
 ```
 
 ### @vi/state-fp/storage
 ```ts
 MemoryAdapter, LocalAdapter, SessionAdapter, IndexedDbAdapter
 ObfuscatedAdapter                      // wraps any adapter; SHA-256 hashes storage keys
-EncryptedAdapter                       // wraps any adapter; AES-GCM encrypts values + obfuscates keys
-StorageSecurityPolicy                  // enum: 'visible' | 'obfuscated' | 'encrypted' | 'memory-only'
+StorageSecurityPolicy                  // 'visible' | 'obfuscated' | 'memory-only'
 ```
 
 ### @vi/state-fp/sync
 ```ts
-createSyncEngine, shareAtom, borrowAtom
+createSyncEngine    // factory: createSyncEngine({ kernel }) → SyncEngine
+// SyncEngine methods: .share(atom, opts), .getState(atomKey), .destroy()
+// ShareOptions: conflict, peerId, channel, propagate
 ```
 
 ### @vi/state-fp/devtools
 ```ts
-createDevTools, noopDevTools
-attachBridge, detachBridge
-DevExtension                           // interface — implement to plug in custom state visualizers
+createDevTools      // factory: createDevTools(opts?) → DevToolsInstance
+// DevToolsInstance: { plugin, eventLog, snapshots, timeTravel, uninstall }
+// plugin: KernelPlugin — pass to kernel.use(devtools.plugin)
+// eventLog: EventLog — .getAll(), .getByAtom(), .getByCorrelation(), etc.
+// snapshots: SnapshotManager — .list(), .nearestBefore(), .export(), .import()
+// timeTravel: TimeTravelController — .goTo(entryId)
 ```
 
 ### @vi/state-fp/adapter
 ```ts
-// Angular (factory pattern — zero @angular/core compile dependency)
+// Angular (factory pattern — zero @angular/core compile dependency) — SHIPPED
 createAngularAdapter
 AngularAPIs, AngularKernelAdapter, WriteableSignalLike, DestroyRefLike
-// React (Context + hooks)
-StateFpProvider, useAtom, useCommand, useQuery
-ReactAPIs, ReactKernelAdapter
-// Lit (Reactive Controller)
-createLitController
-AtomController, LitKernelAdapter
-// Vanilla
+// Vanilla — SHIPPED
 createAdapter
 VanillaAdapter
+// React (Context + hooks) — Phase 5 STUB ONLY (no implementation)
+// Lit (ReactiveController) — Phase 5.5 NOT YET IMPLEMENTED
 ```
 
 ---
@@ -924,10 +967,11 @@ await kernel.hydrate(); // restore from localStorage
 ```ts
 import { createDevTools } from '@vi/state-fp/devtools';
 
-const kernel = createKernel({
-  devtools: createDevTools({ maxEvents: 500 }),
-});
-// window.__VI_STATE_FP__.timeTravelTo(eventId) in browser console
+// createDevTools() returns DevToolsInstance — connect via kernel.use()
+const devtools = createDevTools({ maxLogSize: 500 });
+const kernel   = createKernel({ debug: true });
+kernel.use(devtools.plugin);
+// window.__VI_STATE_FP__.timeTravelTo(entryId) in browser console
 ```
 
 ### With MFE sync (Phase 4)
@@ -935,9 +979,26 @@ const kernel = createKernel({
 ```ts
 import { createSyncEngine } from '@vi/state-fp/sync';
 
-const sync = createSyncEngine({ channel: 'vi-state', kernel });
-sync.share(authAtom, { conflict: 'owner-wins' });
-sync.start();
+// channel is per-atom (in ShareOptions), not global
+const sync = createSyncEngine({ kernel });
+
+// shell MFE — owns the atom and broadcasts updates
+const unsync = sync.share(authAtom, {
+  conflict:  'owner-wins',
+  channel:   'vi-auth',    // BroadcastChannel name
+  propagate: true,
+});
+
+// remote MFE — receives updates without broadcasting
+const unsyncRemote = sync.share(authAtom, {
+  conflict:  'owner-wins',
+  channel:   'vi-auth',
+  propagate: false,        // do not reply to hello messages
+});
+
+// Clean up
+unsync();
+sync.destroy();
 ```
 
 ---
@@ -968,16 +1029,19 @@ sync.start();
 
 ## 20. Phase-Wise Scope Boundaries
 
-| Phase | Module(s) | What ships | Minimum usable? |
+| Phase | Module(s) | What ships | Status |
 |---|---|---|---|
-| **1 — FP Core** | `core`, `kernel` | Atom, Command, DomainEvent, EventApplier, Query, Kernel (memory-only) | ✅ Yes |
-| **2 — Persistence** | `storage` | All adapters, TTL, hydration, SSR guards, ObfuscatedAdapter, EncryptedAdapter | ✅ Yes |
-| **3 — Observability** | `devtools` | EventLog, Snapshots, TimeTravelController, DevToolsBridge, DevExtension, SSR hydration | ✅ Yes |
-| **4 — MFE Sync** | `sync` | BroadcastChannel, conflict resolution, versioning, Universal transport (SSR/Node.js/cross-origin), EphemeralStream | ✅ Yes |
-| **5 — Framework** | `adapter` | Angular adapter (Signals + DI), React adapter (hooks + useEphemeral), Lit adapter (ReactiveController), Vanilla | ✅ Yes |
-| **8 — Offline-First** | `sync+`, `core+` | CRDT merge strategies (6 types), offline event queue, sync-on-reconnect, merge composition with Lens | ✅ Yes (opt-in) |
+| **1 — FP Core** | `core`, `kernel` | Atom, Command, DomainEvent, EventApplier, Query, Kernel (memory-only), co-located registration, `AsyncCommandHandler` with `AbortSignal` | ✅ Shipped |
+| **2 — Persistence** | `storage`, `kernel` | All 5 storage adapters, TTL, hydration, TTL sweep, `ObfuscatedAdapter`, security policies (`visible`/`obfuscated`/`memory-only`); `defineComputedAtom`, `executeOptimistic`, `stateSanitizer` | ✅ Shipped |
+| **3 — Observability** | `devtools` | `EventLog`, `SnapshotManager`, `TimeTravelController`, `DevToolsBridge` (`window.__VI_STATE_FP__`), `DevExtension` plugin | ✅ Shipped |
+| **4 — MFE Sync** | `sync` | `createSyncEngine` — `BroadcastChannel` transport, version vectors, 4 conflict strategies (`last-write-wins`, `first-write-wins`, `owner-wins`, `version-wins`), cross-MFE `share()` | ⚠️ Partial — Universal/SSR transport, `EphemeralStream`, and extended peer protocols are planned (Phase 4.6–4.8) |
+| **5 — Framework** | `adapter` | Angular adapter (`createAngularAdapter` — `toSignal`, `toQuerySignal`, `commandDispatcher`); Vanilla adapter (`createAdapter` — `watch`, `run`, `read`, `query`, `destroy`) | ⚠️ Partial — React (hooks) and Lit (`ReactiveController`) adapters are Phase 5 planned (stubs only in source) |
+| **6 — Tooling** | `tools/` | Nx generators (`create-app`, `create-lib`) | ⏳ Planned |
+| **7 — Saga / Process Manager** | `kernel+` | Process manager for multi-step command sequences | ⏳ Planned |
+| **8 — Offline-First** | `sync+`, `core+` | CRDT merge strategies, offline event queue, sync-on-reconnect | ⏳ Planned |
 
-Each phase is independently shippable as a semver minor release.
+Each phase is independently shippable as a semver minor release. Shipped phases are
+backward-compatible; planned phases are subject to design change.
 
 ---
 
@@ -988,91 +1052,112 @@ Each phase is independently shippable as a semver minor release.
 
 ### KernelPlugin Interface
 
+The actual `KernelPlugin` type (from `kernel/types.ts`):
+
 ```ts
 /**
  * A KernelPlugin is the single extension point for the kernel.
  * Plugins are registered via `kernel.use(plugin)` and receive lifecycle hooks.
  * All hooks are optional — implement only the ones you need.
  */
-interface KernelPlugin {
-  /** Human-readable name — appears in debug traces */
+type KernelPlugin = {
+  /** Human-readable name — appears in error messages and debug traces. */
   readonly name: string;
 
   /**
-   * Called before a command is routed to its handler.
-   * Returning Left short-circuits execution with the error.
-   * Returning a Command replaces the original (use for command decoration).
-   * Returning void passes through unchanged.
+   * Called when any atom is registered via kernel.register() or registerComputed().
+   * Used by the devtools plugin to track atoms for time-travel.
    */
-  beforeExecute?<S>(
-    atom: Atom<S>,
-    cmd:  Command,
-  ): Command | Left<CommandError> | void;
+  onRegister?: (atom: Atom<unknown>) => void;
 
   /**
-   * Called after a successful command execution (Right path only).
+   * Called after every successful execute() cycle (sync, async, and optimistic).
    * Use for analytics, logging, or triggering side effects.
-   * Cannot modify the result.
+   * Cannot modify the result — purely observational.
+   *
+   * Params include: command, emitted events, prevState, nextState, atomKey, durationMs.
    */
-  afterExecute?<S>(
-    atom:   Atom<S>,
-    cmd:    Command,
-    result: S,
-    events: DomainEvent[],
-  ): void;
+  onExecute?: (params: {
+    command:    Command;
+    events:     DomainEvent[];
+    prevState:  unknown;
+    nextState:  unknown;
+    atomKey:    string;
+    durationMs: number;
+  }) => void;
 
   /**
-   * Called on every domain event emitted by the event bus.
-   * Receives all events from all atoms — filter by atomKey or type.
+   * Called when a command handler returns Left (validation failure) or when
+   * a storage write fails.
+   * Use for error telemetry, user-facing notifications, or retry logic.
    */
-  onEvent?(event: DomainEvent): void;
+  onError?: (params: {
+    command: Command;
+    error:   CommandError;
+    atomKey: string;
+  }) => void;
 
   /**
-   * Called once after `kernel.hydrate()` completes.
-   * Receives the initial state of all atoms after hydration.
+   * Called once when kernel.destroy() is invoked — clean up plugin resources.
    */
-  onHydrate?(snapshot: Record<string, unknown>): void;
-
-  /**
-   * Called when a command handler returns Left (validation failure).
-   * Use for error telemetry or user-facing notifications.
-   */
-  onCommandError?(atom: Atom<unknown>, cmd: Command, error: CommandError): void;
-
-  /**
-   * Called when `kernel.destroy()` is invoked — clean up plugin resources.
-   */
-  onDestroy?(): void;
-}
+  onDestroy?: () => void;
+};
 ```
 
-### Built-In Plugins
+> **What's NOT in `KernelPlugin`:**
+> - No `beforeExecute` / `afterExecute` — no way to intercept/reject commands via plugin
+> - No `onEvent` — subscribe to domain events via `kernel.onEvent()` instead
+> - No `onHydrate` — hook `kernel.hydrate()` externally if needed
+> - No `onCommandError` alias — it's `onError`
+>
+> If you need pre-execute interception (e.g. command validation outside the handler),
+> that pattern belongs in a command middleware layer in front of the kernel, not inside it.
+
+### Shipped Plugins
 
 | Plugin | Source | Purpose |
 |---|---|---|
-| `createLoggingPlugin()` | `@vi/state-fp/kernel` | `console.log` every command + event |
-| `createAnalyticsPlugin(tracker)` | `@vi/state-fp/kernel` | Forwards commands/events to an analytics sink |
-| `createReduxDevToolsBridge()` | `@vi/state-fp/devtools` | Connects to Redux DevTools browser extension |
-| `createDevExtensionPlugin(ext)` | `@vi/state-fp/devtools` | Bridges any `DevExtension` implementor into the kernel |
+| `createDevTools().plugin` | `@vi/state-fp/devtools` | Records DebugEntry per event; manages EventLog, Snapshots, Bridge |
+
+> **Planned for future phases:**
+> - `createLoggingPlugin()` (Phase 3+) — `console.log` every command + event
+> - `createAnalyticsPlugin(tracker)` (Phase 3+) — forwards to analytics sink
+> - `createReduxDevToolsBridge()` (Phase 3+) — connects to Redux DevTools extension
 
 ### Plugin Registration
 
 ```ts
-const kernel = createKernel();
+import { createKernel }   from '@vi/state-fp/kernel';
+import { createDevTools } from '@vi/state-fp/devtools';
 
-// Logging (dev only)
-if (!environment.production) {
-  kernel.use(createLoggingPlugin({ verbose: true }));
-}
+const kernel   = createKernel({ debug: true });
+const devtools = createDevTools({ maxLogSize: 500 });
 
-// Analytics (prod + dev)
-kernel.use(createAnalyticsPlugin(analyticsService));
+// Register the devtools plugin
+kernel.use(devtools.plugin);
 
-// Custom plugin — conforms to KernelPlugin interface
+// Custom plugin — implements only the hooks you need
 kernel.use({
   name: 'my-audit-log',
-  afterExecute(atom, cmd, result, events) {
-    auditService.log({ atom: atom.definition.key, cmd: cmd.type, events });
+  onExecute(params) {
+    // params: { command, events, prevState, nextState, atomKey, durationMs }
+    auditService.log({
+      atomKey:    params.atomKey,
+      command:    params.command.type,
+      eventTypes: params.events.map(e => e.type),
+      durationMs: params.durationMs,
+    });
+  },
+  onError(params) {
+    errorTracker.capture(params.error, { atomKey: params.atomKey });
+  },
+});
+
+// Plugin for analytics (prod + dev)
+kernel.use({
+  name: 'analytics',
+  onExecute({ command, atomKey }) {
+    analytics.track('kernel.execute', { command: command.type, atom: atomKey });
   },
 });
 ```
@@ -1107,24 +1192,51 @@ For compliance-sensitive applications (HIPAA, PCI-DSS, GDPR), this is a requirem
 ### StorageSecurityPolicy
 
 ```ts
+/**
+ * | Policy       | Keys in DevTools | Values in DevTools | Persisted? |
+ * |--------------|------------------|--------------------|------------|
+ * | 'visible'    | Plaintext        | Plaintext          | Yes        |
+ * | 'obfuscated' | SHA-256 hash     | Plaintext          | Yes        |
+ * | 'memory-only'| N/A              | N/A (JS heap only) | No         |
+ */
 type StorageSecurityPolicy =
-  | 'visible'      // default — keys + values readable in browser DevTools
-  | 'obfuscated'   // keys are SHA-256 hashed — structure hidden, values still plain
-  | 'encrypted'    // keys hashed + values AES-GCM encrypted via SubtleCrypto
-  | 'memory-only'; // MemoryAdapter only — completely invisible, lost on page reload
+  | 'visible'      // default — keys + values readable in DevTools; suitable for non-sensitive state
+  | 'obfuscated'   // keys SHA-256 hashed; values still plaintext — hides application structure
+  | 'memory-only'; // stays in JS heap only — invisible to DevTools, not persisted across reloads
 ```
 
-Declare the policy on the atom:
+> **Why there is no `'encrypted'` policy:** Client-side encryption is NOT a security control
+> for browser DevTools visibility. The encryption key must arrive in JavaScript as a plaintext
+> string — any debugger breakpoint exposes it. After decryption the plaintext lives in the
+> JS heap and is visible to the Memory profiler. An attacker can call `crypto.subtle.decrypt()`
+> themselves with the IV and ciphertext from the Application tab.
+>
+> Redux, NgRx, MobX, and Zustand all reached this same conclusion — none of them offer
+> encryption. The correct controls are `stateSanitizer` (redact DevTools output) and
+> `memory-only` (never persist sensitive state).
+
+Declare the policy on the atom's `storage.security` field:
 
 ```ts
+// Sensitive credentials — never write to browser storage
 const authAtom = defineAtom<AuthState>({
   key: 'vi/auth',
   initialState: guestState,
   storage: {
-    adapter: new LocalAdapter(),
+    adapter: new LocalAdapter(),   // adapter is ignored at runtime when memory-only
     key:     'vi:auth',
-    ttl:     8 * 60 * 60 * 1000,
-    security: 'encrypted',  // ← values will be AES-GCM encrypted before writing
+    security: 'memory-only',       // ← kernel enforces: no hydrate, no write-through
+  },
+});
+
+// Non-sensitive preferences — obfuscate structure, value is still plaintext
+const prefsAtom = defineAtom<UserPrefs>({
+  key: 'vi/prefs',
+  initialState: defaultPrefs,
+  storage: {
+    adapter: new ObfuscatedAdapter(new LocalAdapter(), { salt: appVersion }),
+    key:     'vi:prefs',
+    security: 'obfuscated',
   },
 });
 ```
@@ -1144,53 +1256,93 @@ const adapter = new ObfuscatedAdapter(new LocalAdapter(), { salt: appVersion });
 Use when: the data itself is not sensitive but you want to prevent casual inspection
 of what atoms exist.
 
-### EncryptedAdapter
+### stateSanitizer — Redacting Sensitive Fields from DevTools
 
-Wraps any `StorageAdapter`. Derives an AES-GCM key via PBKDF2 from a provided
-secret (typically derived from a session token or server-provided nonce), encrypts
-values before writing, and decrypts on read. Keys are also hashed.
+The `stateSanitizer` option on `KernelOptions` is the correct way to prevent sensitive
+fields from appearing in the DevTools debug log. It is the same pattern used by
+Redux DevTools Extension and NgRx `@ngrx/store-devtools`.
+
+**Critical:** `stateSanitizer` only affects the DevTools snapshot — the real in-memory
+state is **never modified**. Components always see the full, unsanitized state.
 
 ```ts
-import { EncryptedAdapter, LocalAdapter } from '@vi/state-fp/storage';
-
-// Secret should be derived from a server-provided session nonce, NOT a
-// hardcoded string — hardcoded secrets are easily extracted from bundle.
-const adapter = new EncryptedAdapter(new LocalAdapter(), {
-  secretProvider: () => sessionTokenService.getNonce(), // async fn → string
-  algorithm:      'AES-GCM',
-  keyDerivation:  'PBKDF2',
-  iterations:     100_000,
+const kernel = createKernel({
+  debug: true,
+  stateSanitizer: (atomKey, state) => {
+    // Redact auth state in DevTools — real state in memory is untouched
+    if (atomKey === 'vi/auth') {
+      return { ...(state as AuthState), token: '[REDACTED]', refreshToken: '[REDACTED]' };
+    }
+    // Redact PII fields wherever they appear
+    if (atomKey === 'vi/user') {
+      return { ...(state as UserState), email: '[REDACTED]', phoneNumber: '[REDACTED]' };
+    }
+    // All other atoms pass through unchanged
+    return state;
+  },
 });
+
+// Attach devtools as a plugin (separate from kernel creation)
+const devtools = createDevTools();
+kernel.use(devtools.plugin);
 ```
 
-> **Security note:** The `EncryptedAdapter` uses the browser's `SubtleCrypto` API — no
-> third-party crypto library is needed. The derived key is held in memory only (never stored).
-> The nonce used for each encryption operation is stored alongside the ciphertext.
+When `stateSanitizer` is provided, **all 7 paths** where the kernel calls
+`debugLayer.record()` route state through it first:
+
+```
+execute() success path   → sanitize(atomKey, prevState) + sanitize(atomKey, nextState)
+execute() failure path   → sanitize(atomKey, prevState) (nextState = prevState on error)
+executeAsync() success   → same
+executeAsync() failure   → same
+executeAsync() abort     → same
+```
+
+**When `debug: true` is not set in `KernelOptions`**, `stateSanitizer` is never called —
+zero overhead in production.
 
 ### Memory-Only (Maximum Security)
 
-The most secure option for sensitive state is to **never persist it** — use `MemoryAdapter`.
+The most secure option for sensitive state is to **never persist it**.
 State is lost on page reload but can be restored by re-authenticating.
 
 ```ts
+// No storage config at all → MemoryAdapter is the default
 const authAtom = defineAtom<AuthState>({
   key: 'vi/auth',
-  initialState: guestState,
-  // No storage config → MemoryAdapter is the default
-  // State is invisible to DevTools; restored by re-auth on reload
+  initialState: { isAuthenticated: false, token: null, userId: null },
+  // State exists only in the JS heap — invisible to browser DevTools
+  // Restored by re-authentication after page reload
 });
+
+// Explicit memory-only with BroadcastChannel sync (new tabs receive state from owner)
+// In the shell — share auth state across tabs without persisting to browser storage
+// sync.share(authAtom, { conflict: 'owner-wins', syncOnOpen: true });
 ```
 
 ### Recommended Policy Per Data Category
 
 | Data category | Recommended policy | Rationale |
 |---|---|---|
-| Auth token / session | `memory-only` | Invisible; short-lived; restored by re-auth |
-| User PII (name, email) | `encrypted` | Must persist but not readable in DevTools |
+| Auth token / session | `memory-only` | Invisible to DevTools; non-persistent; restored by re-auth |
+| PII (name, email, address) | `memory-only` or server-fetch | Client-side PII storage carries GDPR risk regardless of policy |
+| Sensitive business data (health, financial) | `memory-only` | Never persist client-side — fetch from server after auth |
 | User preferences (theme, locale) | `visible` or `obfuscated` | Not sensitive |
 | Shopping cart | `obfuscated` | Low sensitivity; key hiding prevents casual inspection |
 | Pagination / scroll offset | `visible` (MemoryAdapter) | Ephemeral; no persistence needed |
 | Feature flags | `visible` | Not sensitive |
+
+### Browser DevTools Visibility Matrix
+
+| Adapter | Visible in DevTools? | Notes |
+|---|---|---|
+| `MemoryAdapter` | ❌ Never | JS heap only — no DevTools surface |
+| `SessionAdapter` | ✅ Always (plaintext) | Application → Session Storage |
+| `LocalAdapter` | ✅ Always (plaintext) | Application → Local Storage |
+| `IndexedDbAdapter` | ✅ Always (plaintext) | Application → IndexedDB |
+| `ObfuscatedAdapter(Local)` | ⚠️ Key hidden, value plain | Application → Local Storage |
+| Any adapter + `memory-only` policy | ❌ Never | Adapter ignored at runtime by kernel |
+| Any atom + `stateSanitizer` | ✅ DevTools shows sanitized value only | Real state in memory is always full |
 
 ---
 
@@ -1235,36 +1387,59 @@ export function attachBridge(devtools: DevTools): void {
 }
 ```
 
-### Sync transport SSR guard
+### Sync transport in SSR contexts
 
-See Section 4.6 in the phases document for the full `createAutoTransport` design.
-In SSR contexts, `createSyncEngine` automatically selects `createNoopTransport` —
-all `sync.share()` and `sync.borrow()` calls become no-ops without throwing:
+The shipped `createSyncEngine` uses `BroadcastChannel` for cross-MFE communication.
+In SSR / Node.js environments, `BroadcastChannel` is unavailable. The recommended
+pattern is to **not attach the sync engine on the server** — only call `createSyncEngine`
+in browser-only code paths:
 
 ```ts
-function createAutoTransport<S>(channelName: string): SyncTransport<S> {
-  if (typeof BroadcastChannel !== 'undefined') return createBroadcastBridge(channelName);
-  if (typeof window           === 'undefined') return createNoopTransport();  // SSR / Node.js
-  return createPostMessageTransport(channelName);
+// Only attach sync in browser environments
+if (typeof BroadcastChannel !== 'undefined') {
+  const sync = createSyncEngine({ kernel });
+  sync.share(cartAtom, { channel: 'vi/cart', conflict: 'last-write-wins' });
 }
 ```
 
-### SSR hydration flow (Angular Universal / Next.js)
+> **Planned (Phase 4.6):** A `createAutoTransport` utility that selects the appropriate
+> transport automatically (BroadcastChannel → PostMessage → NoopTransport) based on the
+> runtime environment. Not yet shipped.
 
-```
-Server:
-  1. Execute command handlers against in-memory atoms (no storage, no sync)
-  2. Collect atom states: kernel.snapshotAll()
-  3. Serialize to HTML: <script>window.__INITIAL_STATE__ = { ... }</script>
+### SSR hydration pattern
 
-Client:
-  1. createKernel({ ssr: { source: () => window.__INITIAL_STATE__, priority: 'ssr-first' } })
-  2. kernel.hydrate()
-     a. Reads SSR payload first (priority: 'ssr-first')
-     b. Then overlays with browser storage adapters (avoids stale cache overwriting fresh SSR data)
-  3. Attaches devtools bridge (dev-only)
-  4. Starts sync engine (BroadcastChannel available now)
+The kernel is safe to use on the server. Use `MemoryAdapter` (the default) so storage
+writes are no-ops. Serialize atom state to the HTML payload and rehydrate on the client:
+
+```ts
+// Server side — run commands against in-memory atoms
+const kernel = createKernel({ debug: false });
+await kernel.hydrate();
+// ... execute commands, build page state ...
+
+// Serialize state to transfer to client
+// (Manual snapshot: iterate known atoms and call atom.get())
+const payload = {
+  cart:     cartAtom.get(),
+  settings: settingsAtom.get(),
+};
+// Embed in HTML: <script>window.__INITIAL_STATE__ = { ... }</script>
+
+// Client side — boot kernel with pre-hydrated values
+const kernel = createKernel();
+const initialState = (window as any).__INITIAL_STATE__;
+if (initialState) {
+  // Seed atoms directly before first render
+  kernel.execute(cartAtom,     seedState(initialState.cart));
+  kernel.execute(settingsAtom, seedState(initialState.settings));
+}
+// Then hydrate from storage (browser storage overlays SSR data)
+await kernel.hydrate();
 ```
+
+> **Planned (Phase 5+):** Built-in `createKernel({ ssr: { source, priority } })` option
+> with `kernel.hydrate()` merging SSR state and browser storage automatically.
+> Not yet shipped — implement the manual pattern above.
 
 ### Invariants confirmed by this section
 
@@ -1274,6 +1449,10 @@ Client:
 ---
 
 ## 24. High-Frequency UI State (EphemeralStream)
+
+> **Status: Planned — Phase 4.7 design proposal. Not yet implemented in source.**
+> The APIs below (`createEphemeralStream`, `subscribeAnimated`, `useEphemeral`) do not
+> exist in the current codebase. This section documents the design intent.
 
 Not all UI state belongs in an atom. Atoms are optimised for **business-logic state**:
 they have a full CQRS cycle (command → handler → events → applier), are persisted,
@@ -1296,47 +1475,49 @@ atom._setState(newState)
 At 60 fps, this fires 3 600 times per minute. `BroadcastChannel.postMessage` and
 `structuredClone` on every mouse-move event would be catastrophic.
 
-### EphemeralStream<T> — the solution
+### EphemeralStream<T> — the planned solution (Phase 4.7)
 
-`EphemeralStream<T>` is a lightweight reactive primitive from `@vi/state-fp/core` that
-has **no CQRS overhead** — no command, no event, no applier, no storage, no sync:
+`EphemeralStream<T>` is designed as a lightweight reactive primitive from `@vi/state-fp/core`
+with **no CQRS overhead** — no command, no event, no applier, no storage, no sync.
 
-```
-stream.emit(value)
-  └─► subscribers.forEach(fn => fn(value))   ← that's it
-```
-
-For rendering, `subscribeAnimated` caps updates to one per animation frame,
-always delivering the **latest** value (not every intermediate position):
+Proposed API:
 
 ```ts
+// NOT YET IMPLEMENTED — Phase 4.7 design
 const mousePos = createEphemeralStream<{ x: number; y: number }>();
 
-// Chrome DevTools Performance panel: mousemove fires 300+/s
+// stream.emit(value) calls all subscribers synchronously — nothing else
 window.addEventListener('mousemove', e => mousePos.emit({ x: e.clientX, y: e.clientY }));
 
-// Component only re-renders at 60 fps regardless of event rate
+// subscribeAnimated caps updates to one per animation frame (rAF-based)
+mousePos.subscribeAnimated(pos => updateCursor(pos));
+
+// React hook (Phase 5) — component only re-renders at 60 fps
 const pos = reactAdapter.useEphemeral(mousePos);
 ```
+
+**Current workaround (no EphemeralStream yet):** For high-frequency events, use
+framework-native primitives directly (Angular `signal()`, React `useRef` / `useState`,
+Lit `@state`) and only write to a state-fp atom on throttled/debounced boundaries (e.g.,
+on `pointerup` or a `requestAnimationFrame` interval).
 
 ### Decision table
 
 | Question | Yes → | No → |
 |---|---|---|
-| Does this state need to outlive the page? | Atom | EphemeralStream |
-| Does this state need to be shared cross-MFE? | Atom | EphemeralStream |
-| Does this state update > 10 times/second? | EphemeralStream | Either |
-| Does this state need undo/time-travel? | Atom | EphemeralStream |
-| Is this triggered by a human action (click, form submit)? | Atom | EphemeralStream |
-| Is this driven by a browser API (scroll, resize, pointermove)? | EphemeralStream | Either |
+| Does this state need to outlive the page? | Atom | EphemeralStream (planned) |
+| Does this state need to be shared cross-MFE? | Atom | EphemeralStream (planned) |
+| Does this state update > 10 times/second? | EphemeralStream (planned) | Either |
+| Does this state need undo/time-travel? | Atom | EphemeralStream (planned) |
+| Is this triggered by a human action (click, form submit)? | Atom | EphemeralStream (planned) |
+| Is this driven by a browser API (scroll, resize, pointermove)? | EphemeralStream (planned) | Either |
 
-### Invariant I16 enforced
+### Invariant I16 (design intent)
 
-The kernel enforces **I16** structurally: there is no API to execute a command against
-an `EphemeralStream`. Streams are not registered with the kernel; they have no `key`
-property and no `_setState` method. Passing one to `kernel.execute()` is a compile-time
-type error.
+The planned `EphemeralStream` enforces **I16** structurally: there is no API to execute
+a command against a stream. Streams would have no `key` property and no `_setState`
+method — passing one to `kernel.execute()` would be a compile-time type error.
 
 ---
 
-*Last updated: v3 — Added I15-I17 invariants, Phase 8 (CRDT/offline-first), Section 23 (SSR/Universal), Section 24 (EphemeralStream / High-Frequency State).*
+*Last updated: v4 — Corrected Phase-Wise table (Phases 4/5/6/7/8 status), refactored Section 23 (SSR — removed unshipped APIs, added real BroadcastChannel guard pattern), labeled Section 24 (EphemeralStream) as Phase 4.7 planned design.*

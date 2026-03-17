@@ -32,6 +32,8 @@ export type {
   // Atom
   Atom,
   AtomDefinition,
+  ComputedAtom,
+  ComputedAtomDefinition,
   AtomStorageConfig,
   StorageAdapterLike,
   // Plugin + debug
@@ -39,6 +41,7 @@ export type {
   DebugInterface,
   KernelDebugEntry,
   KernelOptions,
+  ExecuteOptimisticOptions,
   // Kernel
   Kernel,
   // Utility
@@ -47,7 +50,7 @@ export type {
 
 // ─── Atom ─────────────────────────────────────────────────────────────────────
 
-export { defineAtom, statesAreEqual } from './atom.js';
+export { defineAtom, defineComputedAtom, statesAreEqual } from './atom.js';
 
 // ─── DomainEvent ──────────────────────────────────────────────────────────────
 

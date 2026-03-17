@@ -15,7 +15,7 @@ describe('command', () => {
 
   it('attaches payload when provided', () => {
     const cmd = command('counter/incrementBy', { n: 5 });
-    expect((cmd as { payload: { n: number } }).payload).toEqual({ n: 5 });
+    expect(cmd.payload).toEqual({ n: 5 });
   });
 
   it('auto-generates a correlationId', () => {
@@ -24,7 +24,7 @@ describe('command', () => {
     expect(cmd.meta!.correlationId.length).toBeGreaterThan(0);
   });
 
-  it('uses a provided correlationId', () => {
+  it('auto-generates a unique correlationId for each command', () => {
     const cmd = command('x');
     // correlationId is auto-assigned in factory — each call produces a UUID
     const cmd2 = command('x');
@@ -58,7 +58,7 @@ describe('CommandBus', () => {
   type CounterState = { count: number };
 
   const makeHandler = () =>
-    createCommandHandler<CounterState, Command<'inc'>>({
+    createCommandHandler<CounterState, Command>({
       commandType: 'inc',
       handle: (state) => right([domainEvent('counter/incremented')]),
     });
@@ -68,7 +68,9 @@ describe('CommandBus', () => {
     const cmd = command('unknown');
     const result = bus.execute('vi/counter', { count: 0 }, cmd);
     expect(result._tag).toBe('Left');
-    expect((result as { left: { code: string } }).left.code).toBe('NO_HANDLER');
+    if (result._tag === 'Left') {
+      expect(result.left.code).toBe('NO_HANDLER');
+    }
   });
 
   it('execute routes to the registered handler', () => {
@@ -82,14 +84,16 @@ describe('CommandBus', () => {
 
   it('handler returning Left propagates the error', () => {
     const bus = new CommandBus();
-    bus.register('vi/counter', createCommandHandler<CounterState, Command<'badCmd'>>({
+    bus.register('vi/counter', createCommandHandler<CounterState, Command>({
       commandType: 'badCmd',
       handle: () => left({ code: 'INVALID', message: 'nope' }),
     }));
 
     const result = bus.execute('vi/counter', { count: 0 }, command('badCmd'));
     expect(result._tag).toBe('Left');
-    expect((result as { left: { code: string } }).left.code).toBe('INVALID');
+    if (result._tag === 'Left') {
+      expect(result.left.code).toBe('INVALID');
+    }
   });
 
   it('supports different handlers on different atoms for the same command type', () => {
@@ -97,11 +101,11 @@ describe('CommandBus', () => {
     let atomAHit = false;
     let atomBHit = false;
 
-    bus.register('atomA', createCommandHandler<CounterState, Command<'inc'>>({
+    bus.register('atomA', createCommandHandler<CounterState, Command>({
       commandType: 'inc',
       handle: () => { atomAHit = true; return right([]); },
     }));
-    bus.register('atomB', createCommandHandler<CounterState, Command<'inc'>>({
+    bus.register('atomB', createCommandHandler<CounterState, Command>({
       commandType: 'inc',
       handle: () => { atomBHit = true; return right([]); },
     }));
@@ -117,6 +121,8 @@ describe('CommandBus', () => {
     bus.clear();
     const result = bus.execute('vi/counter', { count: 0 }, command('inc'));
     expect(result._tag).toBe('Left');
-    expect((result as { left: { code: string } }).left.code).toBe('NO_HANDLER');
+    if (result._tag === 'Left') {
+      expect(result.left.code).toBe('NO_HANDLER');
+    }
   });
 });

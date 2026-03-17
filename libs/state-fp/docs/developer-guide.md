@@ -25,6 +25,9 @@ If you are an experienced FP developer you may prefer to start with
    - [5.1 core module](#51-core-module)
    - [5.2 kernel module](#52-kernel-module)
    - [5.3 storage module](#53-storage-module)
+     - [5.3a Phase 2.5 — Computed Atoms](#53a-phase-25--computed-atoms)
+     - [5.3b Phase 2.6 — Optimistic Updates](#53b-phase-26--optimistic-updates)
+     - [5.3c Security — DevTools Visibility and State Protection](#53c-security--devtools-visibility-and-state-protection)
    - [5.4 devtools module](#54-devtools-module)
    - [5.5 sync module](#55-sync-module)
    - [5.6 adapter module](#56-adapter-module)
@@ -33,6 +36,14 @@ If you are an experienced FP developer you may prefer to start with
 8. [Read Path Walkthrough](#8-read-path-walkthrough)
 9. [Testing Patterns](#9-testing-patterns)
 10. [Decision Log](#10-decision-log)
+    - [D1: FP-first, no classes](#d1-why-functional-primitives-instead-of-classes)
+    - [D2: CQRS over simple atoms](#d2-why-cqrs-instead-of-reactive-atoms)
+    - [D3: fire-and-forget storage](#d3-why-fire-and-forget-storage-writes)
+    - [D4: no shared kernel singleton](#d4-why-no-shared-kernel-singleton)
+    - [D5: AbortSignal for async commands](#d5-why-abortsignal-for-async-command-cancellation)
+    - [D6: co-located atom registration](#d6-why-co-located-atom-registration)
+    - [D7: in-process devtools](#d7-why-in-process-devtools-instead-of-redux-devtools-extension)
+    - [D8: no EncryptedAdapter](#d8-why-there-is-no-encryptedadapter)
 
 ---
 
@@ -489,8 +500,54 @@ separately on the `Kernel` so that:
 2. Multiple atoms can share the same handler logic
 3. Testing is easier — you can register a mock handler without modifying the atom
 
-> **Phase 1.3 note:** Future versions will allow `defineAtom({ ..., commands: [...] })`
-> for co-location convenience. The kernel will read handlers from the definition.
+**Phase 1.3 — Co-located registration (shipped):**
+`defineAtom` accepts `commands`, `applier`, and `queries` directly to reduce bootstrapping
+ceremonial calls:
+
+```ts
+export const counterAtom = defineAtom<CounterState>({
+  key:          'vi/counter',
+  initialState: { count: 0 },
+  // Co-located handlers — kernel.register(counterAtom) reads these automatically
+  commands: [incrementHandler],
+  applier:  counterApplier,
+  queries:  [getCountHandler],
+});
+
+// Bootstrap: one call instead of three
+await kernel.register(counterAtom);   // reads .commands, .applier, .queries from definition
+```
+
+**Phase 2.5 — Computed atoms (shipped):**
+`defineComputedAtom` creates a read-only projection of one or more source atoms.
+The compute function is called only when a dependency changes; `Object.is` equality
+prevents spurious downstream notifications.
+
+```ts
+import { defineComputedAtom } from '@vi/state-fp/kernel';
+
+// cartAtom and discountAtom are regular Atom<S> instances
+export const cartTotalAtom = defineComputedAtom({
+  key:     'vi/cart-total',
+  deps:    [cartAtom, discountAtom],
+  compute: ([cart, discount]) =>
+    cart.items.reduce((sum, i) => sum + i.price * i.qty, 0) * (1 - discount.rate),
+});
+
+// Register with the kernel to wire up dependency tracking
+kernel.registerComputed(cartTotalAtom);
+
+// Subscribe like any other atom
+kernel.subscribe(cartTotalAtom, total => console.log('Cart total:', total));
+
+// Read synchronously
+const total = cartTotalAtom.get();
+```
+
+**Key rules for computed atoms:**
+- `compute` must be a pure function — no I/O, no side effects
+- `kernel.execute(cartTotalAtom, cmd)` is rejected with `Left({ code: 'COMPUTED_ATOM' })`
+- Dependency tracking is set up at `registerComputed` time; a computed atom not registered will never update
 
 ---
 
@@ -586,35 +643,204 @@ never mutate state, and never cause side effects.
 Implements `createKernel(options?)` — the main runtime that wires everything together.
 
 ```ts
-const kernel = createKernel({
-  devtools: process.env.NODE_ENV !== 'production'
-    ? createDevTools()
-    : noopDevTools,
-});
+import { createKernel } from '@vi/state-fp/kernel';
+import { createDevTools } from '@vi/state-fp/devtools';
+
+// Minimal — no devtools (production default)
+const kernel = createKernel();
+
+// With devtools (development)
+const devtools = createDevTools({ maxLogSize: 500 });
+const kernel   = createKernel({ debug: true });
+kernel.use(devtools.plugin);          // wire devtools into the kernel via the plugin API
 
 kernel.register(cartAtom, addItemHandler, cartApplier);
 kernel.registerQuery(cartAtom, cartTotalHandler);
 
-kernel.execute(cartAtom, addItem('SKU-123', 2));
+kernel.execute(cartAtom, addItem({ sku: 'SKU-123', name: 'Item', price: 9.99, qty: 2 }));
 kernel.query(cartAtom, getCartTotal());
 ```
 
-The Kernel interface (full):
+> **Note:** `createDevTools()` returns a `DevToolsInstance` — not a `KernelOptions`
+> value. It is connected via `kernel.use(devtools.plugin)`. The `debug: true` flag
+> on `KernelOptions` enables the internal `KernelDebugEntry` recording path which the
+> plugin also uses. Both serve different purposes: the kernel's built-in `DebugInterface`
+> records `KernelDebugEntry` objects; the devtools plugin records the richer `DebugEntry`
+> objects into the `EventLog` with per-event resolution.
+
+The **full Kernel interface** (as defined in `kernel/types.ts`):
 
 ```ts
 interface Kernel {
+  // ── Synchronous execute (Phase 1) ─────────────────────────────────────────
+  // Stamping → CommandHandler → EventApplier → atom._setState → storage(fire-and-forget)
+  // → recomputeDependents → plugins.onExecute → debugLayer.record
   execute<S>(atom: Atom<S>, cmd: Command): Either<CommandError, S>;
-  executeAsync<S>(atom: Atom<S>, cmd: Command): Promise<Either<CommandError, S>>;
-  query<R>(atom: Atom<unknown>, q: Query): R;
+
+  // ── Async execute with AbortSignal (Phase 1.4) ─────────────────────────────
+  // Falls back to synchronous execute() when no AsyncCommandHandler is registered.
+  executeAsync<S>(
+    atom:     Atom<S>,
+    cmd:      Command,
+    options?: { signal?: AbortSignal },
+  ): Promise<Either<CommandError, S>>;
+
+  // ── Optimistic execute with rollback (Phase 2.6) ───────────────────────────
+  // 1. optimisticApplier(state, cmd) → writes optimistic state immediately
+  // 2. confirm(optimisticState) → async API call
+  // 3a. Right(void)  → keep optimistic state, notify plugins.onExecute
+  // 3b. Left(error)  → atom._setState(preOptimisticState) directly (no commands),
+  //                    call onRollback(error), notify plugins.onError
+  executeOptimistic<S>(
+    atom: Atom<S>,
+    cmd:  Command,
+    opts: ExecuteOptimisticOptions<S>,
+  ): Promise<Either<CommandError, S>>;
+
+  // ── Query (Phase 1) ────────────────────────────────────────────────────────
+  query<R = unknown>(atom: Atom<unknown>, q: Query): R;
+
+  // ── Registration ───────────────────────────────────────────────────────────
+  // Explicit form
   register<S>(atom: Atom<S>, handler: CommandHandler<S, Command>, applier: EventApplier<S>): void;
-  registerQuery<S, R>(atom: Atom<S>, handler: QueryHandler<S, Query, R>): void;
+  // Co-located form (Phase 1.3): reads atom.definition.commands, .applier, .queries
+  register<S>(atom: Atom<S>): void;
+
+  // Register an AsyncCommandHandler (Phase 1.4)
+  registerAsync<S>(
+    atom:    Atom<S>,
+    handler: AsyncCommandHandler<S, Command>,
+    applier: EventApplier<S>,
+  ): void;
+
+  // Register a query handler
+  registerQuery<S, Q extends Query, R>(atom: Atom<S>, handler: QueryHandler<S, Q, R>): void;
+
+  // Phase 2.5 — register a computed atom (wires up dependency tracking)
+  registerComputed<R>(computed: ComputedAtom<R>): void;
+
+  // ── Subscriptions ──────────────────────────────────────────────────────────
   subscribe<S>(atom: Atom<S>, listener: (s: S) => void): Unsubscribe;
+  subscribeComputed<R>(computed: ComputedAtom<R>, listener: (v: R) => void): Unsubscribe;
   onEvent(listener: (e: DomainEvent) => void): Unsubscribe;
+
+  // ── Lifecycle ──────────────────────────────────────────────────────────────
   hydrate(): Promise<void>;
   destroy(): Promise<void>;
+
+  // ── Plugin system (OCP) ───────────────────────────────────────────────────
   use(plugin: KernelPlugin): void;
-  readonly debug: DebugInterface;
+
+  // ── Debug interface ───────────────────────────────────────────────────────
+  readonly debug: DebugInterface; // noopDebug unless debug:true in options
 }
+```
+
+**`KernelOptions`** (all fields):
+
+```ts
+type KernelOptions = {
+  /**
+   * Enable kernel-level debug recording.
+   * - `false` / absent — zero overhead (noopDebug object; no allocations)
+   * - `true`           — enables `isEnabled` flag; record() is still a no-op
+   *                       unless a plugin processes the KernelDebugEntry
+   * - `DebugInterface` — custom recorder; implement `record(KernelDebugEntry)` directly
+   */
+  debug?: boolean | DebugInterface;
+
+  /**
+   * MFE identifier — stamped onto `command.meta.issuedBy` for every executed command.
+   * Useful for cross-MFE audit logs and correlation.
+   */
+  instanceId?: string;
+
+  /**
+   * Redact sensitive atom state before it reaches the debug layer.
+   * Follows the Redux DevTools Extension / NgRx @ngrx/store-devtools pattern.
+   *
+   * Called before every debugLayer.record() invocation (7 call sites in kernel.ts).
+   * The real in-memory state is NEVER modified — only the debug snapshot is replaced.
+   * Not called at all when debug is disabled (noopDebug short-circuits).
+   *
+   * @param atomKey The atom's key (e.g. 'vi/auth').
+   * @param state   The raw state value (before or after the command).
+   * @returns       A safe-to-display version — e.g. with tokens redacted.
+   */
+  stateSanitizer?: (atomKey: string, state: unknown) => unknown;
+};
+```
+
+**`ExecuteOptimisticOptions<S>`** (Phase 2.6 — the exact API):
+
+```ts
+type ExecuteOptimisticOptions<S> = {
+  /**
+   * Pure function: apply the optimistic change to the current state synchronously.
+   * The result is written to the atom immediately before confirm() is called.
+   * Subscribers see this optimistic state while the confirmation is in flight.
+   *
+   * @param state  The atom's current state before the optimistic change.
+   * @param cmd    The command passed to executeOptimistic(), available for payload access.
+   * @returns      The new optimistic state.
+   */
+  optimisticApplier: (state: S, cmd: Command) => S;
+
+  /**
+   * Async function that confirms the change with an external source (API, DB, etc.).
+   * Receives the optimistic state so you can send it as the body of an API call.
+   *
+   * - Return `right(undefined)` to confirm and keep the optimistic state.
+   * - Return `left(error)` to trigger atomic rollback to the pre-optimistic state.
+   *   The `onRollback` callback (if provided) is then called with the error.
+   *
+   * Note: Never throw inside confirm() — wrap with try/catch and return left(…).
+   */
+  confirm: (optimisticState: S) => Promise<Either<CommandError, void>>;
+
+  /**
+   * Optional. Called when confirm() returns Left (rollback has already happened by
+   * the time this runs). Use for UI side-effects: toasts, error messages, logging.
+   * The atom state is already restored to the pre-optimistic value before this runs.
+   */
+  onRollback?: (error: CommandError) => void | Promise<void>;
+};
+```
+
+**`KernelPlugin`** (the Open/Closed extension point):
+
+```ts
+type KernelPlugin = {
+  /** Unique name for the plugin (used in error messages). */
+  readonly name: string;
+
+  /** Called when any atom is registered via kernel.register() or registerComputed(). */
+  onRegister?: (atom: Atom<unknown>) => void;
+
+  /**
+   * Called after every successful execute() cycle — both sync and async variants.
+   * Receives a rich params object: command, emitted events, before/after state,
+   * atom key, and wall-clock duration.
+   */
+  onExecute?: (params: {
+    command:    Command;
+    events:     DomainEvent[];
+    prevState:  unknown;
+    nextState:  unknown;
+    atomKey:    string;
+    durationMs: number;
+  }) => void;
+
+  /** Called when a command handler returns Left (validation error). */
+  onError?: (params: {
+    command: Command;
+    error:   CommandError;
+    atomKey: string;
+  }) => void;
+
+  /** Called once when kernel.destroy() is invoked. */
+  onDestroy?: () => void;
+};
 ```
 
 **Decision:** Why not combine register and defineAtom?
@@ -623,6 +849,73 @@ interface Kernel {
 makes sense when you have a Kernel running. Separating them means you can define atoms
 in a shared library file and register different handlers per environment
 (production vs test vs storybook).
+
+---
+
+#### Phase 1.4 — AsyncCommandHandler and `executeAsync`
+
+For commands that involve network calls, timers, or any async work, use `registerAsync` +
+`executeAsync`. The async handler runs outside the synchronous CQRS pipeline:
+
+```ts
+import { createAsyncCommandHandler } from '@vi/state-fp/kernel';
+import { right, left }               from '@vi/state-fp/core';
+
+// 1. Define the async handler type
+type SyncCart = Command<'cart/syncWithServer', { userId: string }>;
+
+// 2. Implement — receives { signal, correlationId } as context
+export const syncCartHandler = createAsyncCommandHandler<CartState, SyncCart>({
+  commandType: 'cart/syncWithServer',
+  handleAsync: async (currentState, cmd, ctx) => {
+    const { signal, correlationId } = ctx;
+
+    // Use signal for cancellation:
+    const response = await fetch(`/api/cart/${cmd.payload.userId}`, { signal });
+
+    if (signal.aborted) {
+      return left({ code: 'CANCELLED', message: 'Request was cancelled' });
+    }
+
+    if (!response.ok) {
+      return left({ code: 'API_ERROR', message: `HTTP ${response.status}` });
+    }
+
+    const serverCart: CartState = await response.json();
+    return right(serverCart);  // return the new state directly
+  },
+});
+
+// 3. Register with the kernel
+kernel.registerAsync(cartAtom, syncCartHandler, cartApplier);
+
+// 4. Execute with optional AbortSignal
+const controller = new AbortController();
+
+const result = await kernel.executeAsync(
+  cartAtom,
+  syncCart({ userId: 'user-123' }),
+  { signal: controller.signal },
+);
+
+// 5. Cancel if needed
+controller.abort();               // result will be Left({ code: 'CANCELLED' })
+```
+
+**Key differences vs synchronous handlers:**
+
+| Aspect | `CommandHandler` | `AsyncCommandHandler` |
+|---|---|---|
+| Return type | `Either<CommandError, DomainEvent[]>` | `Promise<Either<CommandError, S>>` |
+| Returns | Events (state derived via applier) | New state directly |
+| Cancellation | Not supported | `ctx.signal: AbortSignal` |
+| Fallback | N/A | If no async handler: falls back to sync `execute()` |
+| Storage write | Still fire-and-forget | Same |
+
+> **Fallback behaviour:** If `executeAsync()` is called for an atom+command type that
+> has no registered `AsyncCommandHandler`, it falls back to synchronous `execute()`
+> wrapped in `Promise.resolve()`. This means `executeAsync()` is safe to use for all
+> command dispatching even when mixing sync and async handlers.
 
 ---
 
@@ -687,12 +980,401 @@ await adapter.open(); // must be called before use
 **Decision:** Why four adapters instead of one?
 
 Different state has different durability requirements:
-- Auth token → `LocalAdapter` (persists across browser restarts)
+- Auth token → **NO persistent storage** — use `MemoryAdapter` (default, `memory-only` policy) and re-authenticate on page reload
+- User preferences (theme, locale) → `LocalAdapter` (persists across browser restarts, non-sensitive)
 - Cart in-progress → `SessionAdapter` (cleared when tab closes)
 - Offline product cache → `IndexedDbAdapter` (large, structured)
 - Computed intermediaries → `MemoryAdapter` (ephemeral)
 
+#### `obfuscated.ts`
+
+`ObfuscatedAdapter` — wraps any `StorageAdapter`. Computes a deterministic SHA-256 hash of
+the storage key before writing. Values are stored in plaintext; only the key is hidden.
+Requires `SubtleCrypto` (Node 18+, all modern browsers).
+
+```ts
+import { ObfuscatedAdapter, LocalAdapter } from '@vi/state-fp/storage';
+
+// localStorage key will show "3af29b1d..." instead of "vi:user"
+const adapter = new ObfuscatedAdapter(new LocalAdapter(), {
+  salt: `${appName}@${appVersion}`,  // salt makes key unique across deploy versions
+});
+```
+
+Use when: the data value is not sensitive, but you don’t want DevTools to reveal
+your application’s internal atom key structure.
 ---
+
+### 5.3a Phase 2.5 — Computed Atoms
+
+Computed atoms are **read-only projections** derived from one or more source atoms.
+They sit at the intersection of CQRS (read model) and reactive primitives (auto-update).
+
+#### Defining a computed atom
+
+```ts
+import { defineComputedAtom } from '@vi/state-fp/kernel';
+
+// Source atoms (regular mutable atoms)
+const cartAtom     = defineAtom<CartState>(/* ... */);
+const discountAtom = defineAtom<DiscountState>(/* ... */);
+
+// Computed atom — automatically re-derives when either dep changes
+export const cartTotalAtom = defineComputedAtom({
+  key:  'vi/cart-total',
+  deps: [cartAtom, discountAtom],
+  compute: ([cart, discount]) =>
+    cart.items.reduce((sum, i) => sum + i.price * i.qty, 0)
+    * (1 - discount.rate),
+});
+```
+
+#### Registering with the kernel
+
+```ts
+// Wire up dependency tracking so the kernel knows to recompute
+// when cartAtom or discountAtom changes
+kernel.registerComputed(cartTotalAtom);
+```
+
+`registerComputed` must be called before the first `execute()` that changes any
+dependency. Calling it after is safe for initial values but early state changes will
+not propagate if registration is deferred.
+
+#### Using a computed atom
+
+```ts
+// Synchronous read
+const total = cartTotalAtom.get(); // number
+
+// Subscribe to updates (same API as regular atoms)
+const off = kernel.subscribe(cartTotalAtom, total => {
+  document.getElementById('total').textContent = `$${total.toFixed(2)}`;
+});
+off(); // unsubscribe
+
+// Dispatching commands is rejected at runtime
+// kernel.execute(cartTotalAtom, someCommand()); // Left({ code: 'COMPUTED_ATOM' })
+```
+
+#### Memoization
+
+The compute function is called only when **at least one dependency state reference
+changes** (checked with `Object.is`). This means:
+
+- If `cartAtom.get()` returns the same object reference after an execute (because the
+  command left the state unchanged), `cartTotalAtom` will NOT recompute.
+- Computed atoms recompute synchronously on the same tick as the originating `execute()`
+  call — before subscribers are notified.
+
+> **Performance note:** The `compute` function receives the raw dep state objects. For
+> expensive computations with deps that frequently return new object references, stabilize
+> references in the EventApplier so the compute function can short-circuit via `Object.is`.
+
+#### Testing computed atoms
+
+```ts
+import { createKernel, defineAtom, defineComputedAtom } from '@vi/state-fp/kernel';
+
+const cartAtom  = defineAtom<CartState>({ key: 'vi/cart', initialState: { items: [] } });
+const totalAtom = defineComputedAtom({
+  key:  'vi/cart-total',
+  deps: [cartAtom],
+  compute: ([cart]) => cart.items.reduce((s, i) => s + i.price * i.qty, 0),
+});
+
+describe('cartTotalAtom', () => {
+  let kernel: Kernel;
+  beforeEach(() => {
+    kernel = createKernel();
+    kernel.register(cartAtom, addItemHandler, cartApplier);
+    kernel.registerComputed(totalAtom);
+  });
+
+  it('starts at 0', () => {
+    expect(totalAtom.get()).toBe(0);
+  });
+
+  it('recomputes after adding an item', () => {
+    kernel.execute(cartAtom, addItem({ sku: 'A', name: 'A', price: 10, qty: 2 }));
+    expect(totalAtom.get()).toBe(20);
+  });
+
+  it('notifies subscriber on change', () => {
+    const totals: number[] = [];
+    kernel.subscribe(totalAtom, t => totals.push(t));
+    kernel.execute(cartAtom, addItem({ sku: 'A', name: 'A', price: 5, qty: 1 }));
+    expect(totals).toEqual([5]);
+  });
+});
+```
+
+---
+
+### 5.3b Phase 2.6 — Optimistic Updates
+
+Optimistic updates allow the UI to reflect a state change **immediately**, before the
+server or async operation confirms it. If the operation fails, the kernel atomically
+restores the pre-optimistic state and calls your `onRollback` callback for side-effects.
+
+#### The pattern
+
+```
+1. optimisticApplier(state, cmd)   — pure fn: compute new state immediately
+   atom._setState(optimisticState)  — write to atom (subscribers notified NOW)
+   
+2. await confirm(optimisticState)  — async operation: API call, DB write, etc.
+
+3a.  Right(void)                   — Keep optimistic state as-is.
+                                     Notify plugins.onExecute.
+                                     Return Right(optimisticState).
+     
+3b.  Left(error)                   — Rollback: atom._setState(preOptimisticState) directly.
+                                     recomputeDependents() for computed atom propagation.
+                                     await onRollback?.(error)  — side-effects only.
+                                     Notify plugins.onError.
+                                     Return Left(error).
+```
+
+> **CQRS note:** Rollback does **NOT** dispatch a rollback command through the CQRS pipeline.
+> The kernel restores the pre-optimistic state via `atom._setState()` directly — a targeted,
+> atomic restoration. This is intentional: there is no rollback "event" in CQRS; the optimistic
+> state simply never happened as far as the audit trail is concerned.
+
+#### Usage
+
+```ts
+import { createKernel, defineAtom }  from '@vi/state-fp/kernel';
+import { right, left, isLeft }       from '@vi/state-fp/core';
+
+const result = await kernel.executeOptimistic(
+  cartAtom,
+  // Pass the originating command for context — payload accessible in optimisticApplier
+  addItem({ sku: 'WIDGET-1', name: 'Widget', price: 9.99, qty: 1 }),
+  {
+    // 1. Pure function — compute optimistic state from current + command payload
+    //    Subscribers see this result BEFORE confirm() is awaited
+    optimisticApplier: (state, cmd) => ({
+      ...state,
+      items: [
+        ...state.items,
+        { sku: cmd.payload.sku, name: cmd.payload.name,
+          price: cmd.payload.price, qty: cmd.payload.qty },
+      ],
+    }),
+
+    // 2. Async confirmation — call your API/backend
+    //    Return right(undefined) to keep optimistic state
+    //    Return left(error) to trigger atomic rollback
+    confirm: async (optimisticState) => {
+      try {
+        await cartApi.addItem('WIDGET-1', 1);
+        return right(undefined);
+      } catch (err) {
+        return left({ code: 'API_ERROR', message: String(err) });
+      }
+    },
+
+    // 3. Optional: called AFTER rollback is complete (for UI side-effects only)
+    //    Atom is already restored to pre-optimistic state when this runs
+    onRollback: (error) => {
+      toast.error(`Failed to add item: ${error.message}`);
+    },
+  },
+);
+
+if (isLeft(result)) {
+  // Atom state is already restored — onRollback already fired
+  console.log('Optimistic update failed:', result.left.code);
+}
+```
+
+#### Key design choices
+
+- **No rollback command.** Unlike a compensating CQRS command, rollback here is a direct
+  `atom._setState(preOptimisticState)` — atomic and zero-latency. This avoids the need for
+  a symmetrical undo command for every mutating command.
+- **`confirm()` returns `Right<void>`, not `Right<ServerState>`.** The optimistic state is
+  the intended final state. If the server returns a canonical state that differs from the
+  optimistic prediction, you should do a subsequent `kernel.execute()` after the confirmation.
+- **`onRollback` is for side-effects only.** It runs after the state is already restored.
+  Use it for toasts, error logging, and analytics — not for state mutation.
+- **`confirm()` must return `Either` — never throw.** Wrap API calls in `try/catch` and
+  return `left(...)`. An unhandled throw inside `confirm()` is treated as a rollback trigger.
+- **Subscribers are notified twice on failure.** Once when the optimistic state is applied,
+  and once when it is rolled back. Components must handle rapid bidirectional updates.
+
+#### Testing optimistic updates
+
+```ts
+import { createKernel } from '@vi/state-fp/kernel';
+import { right, left, isRight, isLeft } from '@vi/state-fp/core';
+
+describe('optimistic cart update', () => {
+  const testItem = { sku: 'WIDGET-1', name: 'Widget', price: 9.99, qty: 1 };
+
+  it('keeps optimistic state when confirm resolves Right', async () => {
+    const kernel = createKernel();
+    kernel.register(cartAtom, addItemHandler, cartApplier);
+
+    const result = await kernel.executeOptimistic(cartAtom, addItem(testItem), {
+      optimisticApplier: (state, cmd) => ({
+        ...state,
+        items: [...state.items, cmd.payload],
+      }),
+      confirm: async () => right(undefined),  // simulated success
+    });
+
+    expect(isRight(result)).toBe(true);
+    expect(cartAtom.get().items).toHaveLength(1);
+    expect(cartAtom.get().items[0].sku).toBe('WIDGET-1');
+  });
+
+  it('rolls back to pre-optimistic state when confirm returns Left', async () => {
+    const kernel = createKernel();
+    kernel.register(cartAtom, addItemHandler, cartApplier);
+    const initialState = cartAtom.get();
+
+    const result = await kernel.executeOptimistic(cartAtom, addItem(testItem), {
+      optimisticApplier: (state, cmd) => ({
+        ...state,
+        items: [...state.items, cmd.payload],
+      }),
+      confirm: async () => left({ code: 'API_ERROR', message: 'Network failure' }),
+    });
+
+    expect(isLeft(result)).toBe(true);
+    expect(cartAtom.get().items).toHaveLength(0);        // rolled back
+    expect(cartAtom.get()).toEqual(initialState);         // exact pre-optimistic state
+  });
+
+  it('calls onRollback with error after rollback completes', async () => {
+    const kernel = createKernel();
+    kernel.register(cartAtom, addItemHandler, cartApplier);
+    const rollbackErrors: CommandError[] = [];
+
+    await kernel.executeOptimistic(cartAtom, addItem(testItem), {
+      optimisticApplier: (state, cmd) => ({ ...state, items: [...state.items, cmd.payload] }),
+      confirm: async () => left({ code: 'API_ERROR', message: 'Server down' }),
+      onRollback: (err) => rollbackErrors.push(err),
+    });
+
+    expect(rollbackErrors).toHaveLength(1);
+    expect(rollbackErrors[0].code).toBe('API_ERROR');
+    // Verify rollback is complete before onRollback was called
+    expect(cartAtom.get().items).toHaveLength(0);
+  });
+
+  it('notifies subscribers on both optimistic apply and rollback', async () => {
+    const kernel = createKernel();
+    kernel.register(cartAtom, addItemHandler, cartApplier);
+    const snapshots: CartState[] = [];
+    kernel.subscribe(cartAtom, (s) => snapshots.push(s));
+
+    await kernel.executeOptimistic(cartAtom, addItem(testItem), {
+      optimisticApplier: (state, cmd) => ({ ...state, items: [...state.items, cmd.payload] }),
+      confirm: async () => left({ code: 'REJECTED', message: 'rejected' }),
+    });
+
+    expect(snapshots).toHaveLength(2);                   // optimistic + rollback
+    expect(snapshots[0].items).toHaveLength(1);          // optimistic state
+    expect(snapshots[1].items).toHaveLength(0);          // rolled back
+  });
+});
+```
+
+---
+
+### 5.3c Security — DevTools Visibility and State Protection
+
+> **`localStorage`, `sessionStorage`, and `IndexedDB` are fully readable in Chrome DevTools
+> → Application tab. Any value stored in plaintext is visible to anyone with DevTools access.**
+
+Two controls are available: `stateSanitizer` (DevTools redaction) and `memory-only`
+(no persistence). For the full rationale on why client-side encryption was not adopted,
+see Decision Log D8.
+
+#### stateSanitizer — Protecting DevTools Output
+
+`stateSanitizer` is an option on `KernelOptions`. It is the same pattern used by
+Redux DevTools Extension and NgRx `@ngrx/store-devtools`.
+
+**The guarantee:** The real in-memory state seen by your components is **never modified**.
+Only the DevTools snapshot is replaced with the sanitized version.
+
+```ts
+import { createKernel }   from '@vi/state-fp/kernel';
+import { createDevTools } from '@vi/state-fp/devtools';
+
+const devtools = createDevTools();
+const kernel   = createKernel({
+  debug: true,                        // enables debug recording path
+  stateSanitizer: (atomKey: string, state: unknown) => {
+    switch (atomKey) {
+      case 'vi/auth': {
+        const s = state as AuthState;
+        return { ...s, token: '[REDACTED]', refreshToken: '[REDACTED]' };
+      }
+      case 'vi/user': {
+        const s = state as UserState;
+        return { ...s, email: '[REDACTED]', ssn: '[REDACTED]' };
+      }
+      default: return state;  // non-sensitive atoms pass through unchanged
+    }
+  },
+});
+kernel.use(devtools.plugin);          // wire devtools in via plugin API
+
+// Components see the FULL state (stateSanitizer never touches this):
+authAtom.get(); // { isAuthenticated: true, token: 'eyJhbGci...', userId: 'u_12345' }
+
+// DevTools shows the SAFE version (via devtools.eventLog.getAll()):
+// stateBefore: { isAuthenticated: true, token: '[REDACTED]', userId: 'u_12345' }
+// stateAfter:  { isAuthenticated: true, token: '[REDACTED]', userId: 'u_12345' }
+```
+
+**Coverage:** All 7 paths where the kernel calls `debugLayer.record()` route state through
+the sanitizer before recording — both the success and error paths of `execute()`,
+`executeAsync()`, and `executeOptimistic()`.
+
+**Production behavior:** When `debug` is absent or `false`, `stateSanitizer` is
+never called — zero runtime overhead (the `noopDebug` object short-circuits).
+
+#### memory-only — Never Persisting Sensitive State
+
+For the highest-sensitivity atoms (auth tokens, credentials), the safest approach is to
+**never write to browser storage at all**.
+
+```ts
+// Option 1: No storage config (defaults to MemoryAdapter)
+const authAtom = defineAtom<AuthState>({
+  key:          'vi/auth',
+  initialState: { isAuthenticated: false, token: null, userId: null },
+  // State lives in JS heap only — invisible to all browser DevTools
+});
+
+// Option 2: Explicit memory-only (adapter declared, kernel enforces skip)
+const authAtom = defineAtom<AuthState>({
+  key:          'vi/auth',
+  initialState: { isAuthenticated: false, token: null, userId: null },
+  storage: {
+    adapter:  new LocalAdapter(),  // listed for documentation; ignored at runtime
+    key:      'vi:auth',
+    security: 'memory-only',       // kernel skips hydrate() and writeToStorage()
+  },
+});
+```
+
+#### Security policy decision table
+
+| Atom contains | Recommended policy |
+|---|---|
+| Auth token, session ID, refresh token | `memory-only` (never persist) |
+| PII (email, address, SSN) | `memory-only` preferred; `obfuscated` + `stateSanitizer` if persistence required |
+| Health / financial data | `memory-only` (never persist client-side) |
+| Application structure (key names) | `obfuscated` (SHA-256 key hash, value still plaintext) |
+| Non-sensitive UI state | `visible` (default — no overhead) |
+
 
 ### 5.4 devtools module
 
@@ -700,75 +1382,188 @@ Different state has different durability requirements:
 **Import path:** `@vi/state-fp/devtools`  
 **Purpose:** Zero-cost debug infrastructure — event log, snapshots, time-travel, browser bridge.
 
-#### `types.ts`
-
-Declares `DebugEntry`, `Snapshot`, `DebugInterface`, `Patch`, `SourceLocation`.
-
-`DebugEntry` is the unit of observability. One is produced per `kernel.execute()` call:
+#### Integration pattern
 
 ```ts
-// What a DebugEntry looks like after: kernel.execute(counterAtom, incrementBy(3))
+import { createKernel }   from '@vi/state-fp/kernel';
+import { createDevTools } from '@vi/state-fp/devtools';
+
+const devtools = createDevTools({
+  maxLogSize:    500,   // circular buffer size (default 500)
+  maxSnapshots:  30,    // max deep-clone snapshots (default 30)
+  snapshotEvery: 50,    // auto-snapshot every N events (default 50, 0 = never)
+  installBridge: true,  // window.__VI_STATE_FP__ (default: true in browser)
+});
+
+const kernel = createKernel({ debug: true }); // enable kernel debug recording
+kernel.use(devtools.plugin);                   // wire the devtools KernelPlugin in
+
+// Now you can access devtools on the returned DevToolsInstance:
+devtools.eventLog.getAll()               // ReadonlyArray<DebugEntry>
+devtools.eventLog.getByAtom('vi/cart')   // entries for one atom
+devtools.snapshots.list()                // ReadonlyArray<Snapshot>
+devtools.timeTravel.goTo(entryId)        // replay to any point
+devtools.uninstall()                     // remove window.__VI_STATE_FP__
+```
+
+`createDevTools()` returns a **`DevToolsInstance`**:
+
+```ts
+type DevToolsInstance = {
+  plugin:      KernelPlugin;       // pass to kernel.use()
+  eventLog:    EventLog;           // circular DebugEntry buffer
+  snapshots:   SnapshotManager;    // periodic deep-clone captures
+  timeTravel:  TimeTravelController;
+  uninstall(): void;               // remove window bridge
+};
+```
+
+#### `types.ts` — Core DevTools types
+
+**`DebugEntry`** — one entry per emitted DomainEvent (per `execute()` cycle that produced events):
+
+```ts
+type DebugEntry = {
+  readonly id:            string;    // uuid — unique per entry
+  readonly atomKey:       string;    // e.g. 'vi/cart'
+  readonly correlationId: string;    // groups all entries from one user action
+  readonly causationId:   string | undefined;  // parent command's correlationId (if any)
+  readonly commandType:   string | undefined;  // e.g. 'cart/addItem'
+  readonly event:         DomainEvent;         // the individual domain event
+  readonly stateBefore:   unknown;   // deep-clone of state before the event
+  readonly stateAfter:    unknown;   // deep-clone of state after the event
+  readonly timestamp:     number;    // wall-clock ms
+  readonly version:       number;    // atom version at time of event
+};
+```
+
+> **Important:** There is no `diff`, no `durationMs`, and no `sourceLocation` on `DebugEntry`.
+> Duration and error info live in the kernel's internal `KernelDebugEntry` (fed to
+> `debug.record()`). The devtools plugin creates `DebugEntry` objects from the
+> richer `onExecute` callback — separate from the kernel's debug recording.
+
+A concrete example after `kernel.execute(counterAtom, incrementBy(3))`:
+
+```ts
 {
-  id:            'a1b2-...',
-  correlationId: 'z9y8-...',
+  id:            'a1b2c3d4-...',
   atomKey:       'vi/counter',
+  correlationId: 'z9y8x7w6-...',   // same as cmd.meta.correlationId
+  causationId:   undefined,         // top-level command has no causation
   commandType:   'counter/incrementBy',
-  events:        [{ type: 'counter/incremented', payload: { by: 3 } }],
-  prevState:     { count: 0 },
-  nextState:     { count: 3 },
-  diff:          [{ op: 'replace', path: '/count', value: 3 }],
+  event:         { type: 'counter/incremented', payload: { by: 3 }, meta: { version: 4, ... } },
+  stateBefore:   { count: 0 },
+  stateAfter:    { count: 3 },
   timestamp:     1741200000000,
-  durationMs:    0.4,
+  version:       4,
 }
+```
+
+**`Snapshot`** — a full deep-clone of all registered atom states:
+
+```ts
+type Snapshot = {
+  readonly id:             string;
+  readonly timestamp:      number;
+  readonly eventCount:     number;           // total events in log at time of capture
+  readonly triggerEventId: string | undefined;  // entry id that triggered auto-snapshot
+  readonly state:          Readonly<Record<string, unknown>>;  // keyed by atom key
+  readonly label:          string | undefined;   // human label for manual snapshots
+};
 ```
 
 #### `event-log.ts`
 
-Bounded circular buffer with three O(1) indices:
-- By atom key
-- By correlation ID (to trace all effects of one user action)
-- By time range
+Bounded circular buffer with three O(1) secondary indices:
+- **By atom key** — all entries for `'vi/cart'`
+- **By correlation ID** — trace every state change caused by one user action
+- **By time range** — entries within a wall-clock window
 
-When the buffer is full (default 200 entries), the oldest entry is evicted. The total count
-is preserved (monotonically increasing) for time-ordering.
+When the buffer is full (default 500 entries), the oldest entry is evicted. The
+`totalCount` property is monotonically increasing — it tracks lifetime event count
+regardless of buffer eviction, enabling snapshot alignment.
+
+```ts
+// All EventLog methods:
+eventLog.getAll()                          // ReadonlyArray<DebugEntry>
+eventLog.getByAtom('vi/cart')              // entries for one atom — O(1)
+eventLog.getByCorrelation(correlationId)   // all side-effects of one command — O(1)
+eventLog.getByTimeRange(from, to)          // entries in a time window
+eventLog.last(n)                          // last N entries
+eventLog.latest()                         // Maybe<DebugEntry> — most recent
+eventLog.clear()
+eventLog.totalCount                        // monotonic; survives circular eviction
+```
 
 #### `snapshot.ts`
 
-Takes a full deep-clone of all atom states every N events (default 50). Snapshots are the
-starting points for time-travel replay — you never have to replay the entire event log
-from the beginning.
+`SnapshotManager` takes a deep-clone of all atom states every `snapshotEvery` events
+(default 50). Snapshots are the starting points for time-travel replay.
+
+```ts
+// SnapshotManager methods:
+snapshots.capture(atomStates, triggerEventId, totalEventCount, label?)   // → Snapshot
+snapshots.list()                     // ReadonlyArray<Snapshot> oldest-first
+snapshots.get(id)                    // Maybe<Snapshot>
+snapshots.nearestBefore(eventCount)  // Maybe<Snapshot> — for time-travel alignment
+snapshots.export()                   // JSON string for crash reports
+snapshots.import(json)               // restore from JSON
+```
 
 #### `time-travel.ts`
 
 Algorithm to replay events to any historical state:
 
-1. Find the target `DebugEntry` by ID
-2. Find the nearest `Snapshot` before that entry
-3. Reset all atoms to the snapshot state
-4. Re-run the event appliers (not command handlers!) from the snapshot forward
-5. Mark the kernel as `replayMode = true` (blocks new `execute()` calls)
+1. Find the target `DebugEntry` by ID in the event log
+2. Find the nearest `Snapshot` before that entry (`nearestBefore(entry.version)`)
+3. Reset all registered atoms to the snapshot state
+4. Re-run the `EventApplier` functions (NOT command handlers) from snapshot forward
+5. Mark the kernel as `replayMode = true` (blocks new `execute()` calls during replay)
 6. Notify subscribers with the replayed state
 
-**Important:** Time-travel does NOT write to storage. It is entirely in-memory and reversible.
+**Important invariants:**
+- Time-travel does NOT write to storage — entirely in-memory and reversible
+- EventAppliers are re-run (pure functions), not EventHandlers (which have validation side-effects)
+- Replay exits automatically when the target event is reached
 
 #### `bridge.ts`
 
 Attaches `window.__VI_STATE_FP__` in browser environments. This exposes the entire debug
 surface from the browser console — no extension required.
 
+```ts
+type DevToolsBridge = {
+  getLog():               ReadonlyArray<DebugEntry>;
+  getAtoms():             Record<string, unknown>;
+  timeTravelTo(id: string): Promise<void>;
+  exportLog():            string;
+  importLog(json: string): void;
+  readonly version:       string;
+};
+```
+
+```js
+// In browser console — no extension needed:
+window.__VI_STATE_FP__.getLog()                         // all debug entries
+window.__VI_STATE_FP__.getAtoms()                       // current atom states
+window.__VI_STATE_FP__.timeTravelTo('a1b2c3d4-...')    // replay to this point
+window.__VI_STATE_FP__.exportLog()                      // JSON for bug reports
+```
+
 #### `devtools.ts`
 
-`createDevTools(options?)` — wires event-log, snapshot manager, and time-travel together
-into a `DebugInterface` implementation.
+`createDevTools(options?)` — wires event-log, snapshot manager, time-travel, and bridge
+into a `DevToolsInstance`. The returned `plugin` is a `KernelPlugin` that hooks into
+`onRegister` (to track atoms for time-travel) and `onExecute` (to record `DebugEntry`
+objects). It does NOT hook into `onError` — command errors appear in the kernel's own
+debug layer via `debugLayer.record()`.
 
-`noopDevTools` — a `DebugInterface` where every method is a no-op. Zero allocations.
-Used in production.
-
-**Decision:** Why `noopDevTools` instead of `if (debug) { ... }` everywhere?
-
-Because `if` statements in hot code paths have overhead and prevent dead-code elimination.
-By using the `noopDevTools` object, TypeScript's type system and bundler tree-shaking can
-entirely remove the debug branch from production bundles.
+> **Why `noopDebug` instead of `if (debug) { ... }` everywhere?**
+>
+> `if` statements in hot code paths prevent dead-code elimination by bundlers. The
+> `noopDebug` object (`{ isEnabled: false, record: () => void 0 }`) enables bundler
+> tree-shaking to eliminate the entire debug branch from production bundles.
+> The `KernelPlugin` pattern achieves the same effect for the devtools layer.
 
 ---
 
@@ -778,68 +1573,134 @@ entirely remove the debug branch from production bundles.
 **Import path:** `@vi/state-fp/sync`  
 **Purpose:** Cross-MFE state synchronisation via BroadcastChannel.
 
-#### `types.ts`
+#### API overview
 
-Declares `SyncMessage`, `SyncState<S>`, `ConflictStrategy`, `ShareOptions`.
+```ts
+import { createSyncEngine } from '@vi/state-fp/sync';
+
+// Create the engine — requires a KernelLike (subscribe method)
+const sync = createSyncEngine({ kernel });
+
+// Begin synchronising an atom across tabs/workers
+// Returns an unsync() function — call it to stop sync for that atom
+const unsync = sync.share(authAtom, {
+  conflict:   'owner-wins',      // conflict resolution strategy
+  channel:    'vi-auth-channel', // BroadcastChannel name (defaults to atom key)
+  peerId:     'shell-mfe',       // unique peer identifier (defaults to random uuid)
+  propagate:  true,              // reply to hello messages with current state
+});
+
+// Inspect current sync state for an atom
+const state = sync.getState<AuthState>('vi/auth');
+// → { peerId, version, connected, peers, conflictsResolved, _pending }
+
+// Clean up all shared atoms, listeners, and BroadcastChannels
+sync.destroy();
+
+// Stop sync for one specific atom
+unsync();
+```
+
+**`SyncEngine` interface** (full):
+
+```ts
+type SyncEngine = {
+  // Start synchronising an atom across BroadcastChannel peers
+  share<S>(atom: Atom<S>, options?: ShareOptions<S>): Unsubscribe;
+
+  // Inspect sync state (version vector, peer list, conflicts) for an atom
+  getState<S>(atomKey: string): SyncState<S> | undefined;
+
+  // Tear down all channels, subscriptions, and resources
+  destroy(): void;
+};
+```
+
+**`ShareOptions<S>`** (per-atom options passed to `share()`):
+
+```ts
+type ShareOptions<S> = {
+  // Conflict resolution strategy. Default: 'last-write-wins'
+  conflict?: 'last-write-wins' | 'first-write-wins' | 'owner-wins' | 'version-wins'
+           | ((local: SyncState<S>, remote: SyncState<S>) => S);
+
+  // Unique ID for this peer. Default: random uuid
+  peerId?: string;
+
+  // BroadcastChannel name. Default: atom.key (so all peers sharing same atom
+  // automatically use the same channel)
+  channel?: string;
+
+  // Whether to reply to 'vi/sync/hello' messages with our current state.
+  // Default: true. Set to false for read-only borrowers.
+  propagate?: boolean;
+};
+```
+
+#### `types.ts`
 
 Messages sent over BroadcastChannel:
 ```ts
-// State broadcast (from owner to borrowers)
-{ type: 'vi/sync/state',   atomKey, state, version, correlationId, origin }
+// Announces presence and current version vector when connecting
+{ type: 'vi/sync/hello',   peerId, version, atoms: string[] }
 
-// Resync request (borrower has a gap in version history)
-{ type: 'vi/sync/request', atomKey, correlationId, origin }
+// Broadcasts full state after every write
+{ type: 'vi/sync/state',   peerId, atomKey, state, version, ts }
 
-// Hello (announce presence when connecting)
-{ type: 'vi/sync/hello',   atoms: string[], correlationId, origin }
+// Requests current state from peers (used when a version gap is detected)
+{ type: 'vi/sync/request', peerId, atomKey }
 ```
+
+> **Note:** There is no `vi/sync/event` message in the current implementation —
+> the sync engine broadcasts the resulting *state* (projection), not the commands
+> or events. This means receivers do not need to know the sender's command handlers.
 
 #### `version.ts`
 
-Vector-clock utilities: `isStale(incoming, local)` and `isGap(incoming, local)`.
+Vector-clock utilities for ordering concurrent updates:
 
-- Stale: incoming version ≤ local version → discard
-- Gap: incoming version > local + 1 → request full resync
-- Otherwise: apply and increment
+```ts
+isStale(incoming, local)      // incoming.version ≤ local.version → discard
+isConcurrent(v1, v2)          // neither is strictly ahead → conflict
+increment(vector, peerId)      // bump peerId's clock in the vector
+merge(v1, v2)                  // component-wise max of two vectors
+```
+
+**Version gap detection:** When `incoming.version > local.version + 1`, the engine
+requests a full resync from the other peer (`'vi/sync/request'` message).
 
 #### `conflict.ts`
 
-Four built-in conflict resolvers: `lastWriteWins`, `firstWriteWins`, `ownerWins`, `versionWins`.
+Four built-in conflict resolvers:
 
-For nuanced cases, pass a `CustomConflictResolver`:
+| Strategy | Behaviour |
+|---|---|
+| `last-write-wins` | Latest wall-clock timestamp wins (default — may cause data loss under clock skew) |
+| `first-write-wins` | Lowest timestamp wins |
+| `owner-wins` | The peer whose `peerId` matches the atom's declared owner wins |
+| `version-wins` | Higher vector clock version wins |
+
+For nuanced cases, pass a custom resolver function:
 
 ```ts
-createSyncEngine({
-  channel: 'vi-state',
-  kernel,
-  conflict: (local, remote) => local.version >= remote.version ? local.state : remote.state,
+sync.share(productCacheAtom, {
+  conflict: (local, remote) =>
+    local.version >= remote.version ? local.state : remote.state,
 });
 ```
 
 #### `broadcast.ts`
 
-Thin wrapper over `BroadcastChannel` that add serialisation and deserialization. In test
-environments, the `BroadcastBridge` can be replaced with an in-memory bus.
+Thin wrapper over `BroadcastChannel` with serialisation/deserialisation. In test
+environments, `BroadcastBridge` can be replaced with an in-memory bus to avoid
+the browser-only `BroadcastChannel` API.
 
-#### `sync-engine.ts`
-
-The main `createSyncEngine(options)` factory:
-
-```ts
-const sync = createSyncEngine({ channel: 'vi-state', kernel });
-
-sync.share(authAtom, { conflict: 'owner-wins' });  // shell broadcasts auth state
-sync.borrow(authAtom);                              // remote listens for updates
-sync.start();  // begins listening
-sync.stop();   // cleanup
-```
-
-**Decision:** Why share atom state over BroadcastChannel instead of events?
+**Decision:** Why propagate *state* instead of *events* over BroadcastChannel?
 
 Because propagating events (commands) cross-MFE boundary would require every receiving
 MFE to run the same command handlers. This creates tight version coupling. By broadcasting
-the *resulting state* (the projection), borrowers apply it directly. The receiver doesn't
-need to know about the sender's business rules.
+the *resulting state* (the projection), borrowers apply it directly — no business rule
+knowledge required. The receiving MFE accesses auth state without knowing the auth commands.
 
 ---
 
@@ -856,29 +1717,29 @@ The adapter is fully testable without `@angular/core`:
 
 ```ts
 import { createAngularAdapter } from '@vi/state-fp/adapter';
-import { signal, effect, DestroyRef, inject } from '@angular/core';
+import { signal, DestroyRef, inject } from '@angular/core';
 
-const adapter = createAngularAdapter({ signal, effect, DestroyRef, inject });
+const adapter = createAngularAdapter({ signal, inject, DestroyRef });
 ```
 
 Methods on the returned adapter:
 
 | Method | Description |
 |---|---|
-| `adapter.toSignal(kernel, atom)` | Returns an Angular `Signal<S>` that auto-unsubscribes via `DestroyRef` |
-| `adapter.toQuerySignal(kernel, atom, query)` | Returns a `computed(() => kernel.query(...))` signal |
-| `adapter.commandDispatcher(kernel, atom)` | Returns a typed `(cmd) => Either<CommandError, S>` function |
+| `adapter.toSignal(atom, kernel)` | Returns an Angular `Signal<S>` that auto-unsubscribes via `DestroyRef` |
+| `adapter.toQuerySignal(atom, kernel, queryFn)` | Returns a derived `Signal<R>` — re-evaluates `queryFn(state)` on every state change |
+| `adapter.commandDispatcher(atom, kernel)` | Returns a typed `(cmd: Command) => ReturnType<Kernel['execute']>` function |
 
 **How to use in a component:**
 
 ```ts
 @Component({ ... })
 class CartComponent {
-  private adapter = createAngularAdapter({ signal, effect, inject(DestroyRef), inject });
+  private adapter = createAngularAdapter({ signal, inject, DestroyRef });
 
-  readonly cartState = this.adapter.toSignal(this.kernel, cartAtom);
-  readonly total     = this.adapter.toQuerySignal(this.kernel, cartAtom, getCartTotal());
-  readonly addItem   = this.adapter.commandDispatcher(this.kernel, cartAtom);
+  readonly cartState = this.adapter.toSignal(cartAtom, this.kernel);
+  readonly total     = this.adapter.toQuerySignal(cartAtom, this.kernel, getCartTotal);
+  readonly addItem   = this.adapter.commandDispatcher(cartAtom, this.kernel);
 
   onAddClick(sku: string) {
     const result = this.addItem(AddItem(sku, 1));
@@ -898,14 +1759,16 @@ Angular APIs as parameters, allowing test code to pass mock objects:
 
 ```ts
 // In a unit test
-const mockSignal = <T>(v: T) => ({ value: v });
-const adapter = createAngularAdapter({ signal: mockSignal, effect: jest.fn(), ... });
+const mockSignal = <T>(v: T) => ({ value: v, set(x: T) { this.value = x; } });
+const mockDestroyRef = { onDestroy: (fn: () => void) => fn };
+const mockInject = (_token: unknown) => mockDestroyRef;
+const adapter = createAngularAdapter({ signal: mockSignal, inject: mockInject, DestroyRef: {} });
 // No TestBed needed
 ```
 
 #### `vanilla.ts`
 
-`createAdapter(kernel)` — returns a `VanillaAdapter` with `watch`, `run`, `read`, `snapshot`.
+`createAdapter(kernel)` — returns a `VanillaAdapter` with `watch`, `run`, `read`, `query`, `destroy`.
 
 ```ts
 const adapter = createAdapter(kernel);
@@ -928,16 +1791,28 @@ const currentState = adapter.snapshot(cartAtom);
 off();
 ```
 
-#### `react.ts` (stub)
+#### `react.ts` (Phase 5 stub — not yet implemented)
 
-Type declarations only for Phase 5:
+> **Status: Type stubs only.** `src/adapter/react.ts` exports typed declarations but
+> NO implementation is shipped yet. React hooks will be added in Phase 5.4.
+> Do NOT use `@vi/state-fp/adapter/react` in production — the functions will throw
+> at runtime.
+
+Planned API for Phase 5.4 (factory pattern, same as Angular adapter):
 
 ```ts
+// Planned — Phase 5.4
 export declare function useAtom<S>(atom: Atom<S>): [S, (cmd: Command) => void];
 export declare function useQuery<S, R>(atom: Atom<S>, q: Query): R;
+export declare function useCommandDispatcher<S>(
+  atom: Atom<S>,
+  kernel: Kernel,
+): (cmd: Command) => Either<CommandError, S>;
 ```
 
-Full React adapter via factory pattern is planned in Phase 5.4.
+> **No Lit adapter:** There is no `lit.ts` in `src/adapter/`. A Lit
+> `ReactiveController` adapter is planned for Phase 5.5. Until then, use the
+> `VanillaAdapter` for web-component integration in Lit elements.
 
 ---
 
@@ -1108,11 +1983,11 @@ await kernel.hydrate();
   <button (click)="add()">Add item</button>
 ` })
 class CartSummaryComponent {
-  private adapter = createAngularAdapter({ signal, effect, inject, DestroyRef: inject(DestroyRef) });
+  private adapter = createAngularAdapter({ signal, inject, DestroyRef });
 
-  readonly itemCount = this.adapter.toQuerySignal(kernel, cartAtom, getItemCount());
-  readonly total     = this.adapter.toQuerySignal(kernel, cartAtom, getTotal());
-  readonly dispatch  = this.adapter.commandDispatcher(kernel, cartAtom);
+  readonly itemCount = this.adapter.toQuerySignal(cartAtom, kernel, getItemCount);
+  readonly total     = this.adapter.toQuerySignal(cartAtom, kernel, getTotal);
+  readonly dispatch  = this.adapter.commandDispatcher(cartAtom, kernel);
 
   add() {
     const result = this.dispatch(addItem({ sku: 'DEMO-1', name: 'Demo Item', price: 9.99, qty: 1 }));
@@ -1125,42 +2000,81 @@ class CartSummaryComponent {
 
 ## 7. Write Path Walkthrough
 
-Tracing `kernel.execute(cartAtom, addItem('SKU-1', 1))`:
+Tracing `kernel.execute(cartAtom, addItem({ sku: 'SKU-1', name: 'Item', price: 9.99, qty: 1 }))` step by step through `kernel.ts`:
 
 ```
 1. Stamp command metadata
-   │ cmd.meta = { correlationId: uuid(), timestamp: Date.now(), ... }
+   │ fullCmd.meta = {
+   │   correlationId: cmd.meta?.correlationId ?? uuid(),
+   │   timestamp:     cmd.meta?.timestamp     ?? now(),
+   │   issuedBy:      options.instanceId (if set),
+   │ }
+   │ Guard: if atom is a ComputedAtom → return Left({ code: 'COMPUTED_ATOM' })
    │
-2. Look up CommandHandler for 'cart/addItem'
-   │ Found: addItemHandler
-   │ Not found → return Left({ code: 'NO_HANDLER' })
+2. commandBus.execute(atomKey, currentState, fullCmd)
+   │   → dispatches to registered CommandHandler by type
+   │   → Left(CommandError): plugins.onError() + debugLayer.record() → return Left
+   │   → Right(DomainEvent[]): continue
    │
-3. addItemHandler.handle(currentState, cmd)
-   │ → Left(error): record to DevTools, return Left(CommandError) immediately
-   │ → Right([cart/itemAdded{...}]): continue
+3. applyEvents(atom, rawEvents, correlationId, causationId)
+   │   For each event:
+   │     a. stampEvent(): assign id, correlationId, causationId, atomKey, version
+   │     b. applierMap.get("atomKey::*")(state, stampedEvent) → nextState
    │
-4. For each DomainEvent:
-   │ a. Stamp event meta: id, causationId, version, timestamp, atomKey
-   │ b. cartApplier(currentState, event) → nextState
-   │ c. atom._setState(nextState) — in-memory update
+4. atom._setState(nextState)   ← in-memory update
    │
-5. storageAdapter.set(key, nextState, ttl)    [if configured — async, non-blocking]
+4.5 recomputeDependents(atomKey) [PHASE 2.5]
+   │   For each ComputedAtom that depends on atomKey:
+   │     a. collect depStates: computed.definition.deps.map(d => d.get())
+   │     b. prevValue = computed.get()
+   │     c. nextValue = computed.definition.compute(depStates)
+   │     d. if !Object.is(prevValue, nextValue):
+   │           computed._setComputed(nextValue)
+   │           → computed atom subscribers notified
+   │   This runs synchronously, before storage write or subscriber notification
+   │   for the originating atom.
    │
-6. atom._subscribers.forEach(fn => fn(nextState))   [synchronous push]
+5. writeToStorage(atom, newState)   [fire-and-forget — non-blocking]
+   │   if !storageConfig → skip
+   │   if security === 'memory-only' → skip
+   │   storageConfig.adapter.set(key, state, ttl)
+   │   .catch(err → plugins.onError({ code: 'STORAGE_WRITE_ERROR', ... }))
    │
-7. domainEventBus.emit(events)   [for SyncEngine + DevTools listeners]
+6. eventBus.emit(stampedEvents)   [for SyncEngine subscribers + onEvent listeners]
    │
-8. devtools.record(debugEntry)   [only if devtools attached]
+7. plugins.forEach(p => p.onExecute?.(params))
+   │   params: { command, events, prevState, nextState, atomKey, durationMs }
+   │   This is where createDevTools().plugin records DebugEntry objects
+   │   into the EventLog.
    │
-9. Return Right(nextState)
+8. if debugLayer.isEnabled:
+   │   debugLayer.record({
+   │     commandType, correlationId, atomKey, events,
+   │     prevState: sanitize(atomKey, currentState),   ← stateSanitizer applied
+   │     nextState: sanitize(atomKey, newState),       ← stateSanitizer applied
+   │     durationMs, timestamp,
+   │   })
+   │
+9. Return Right(newState)
 ```
 
-**Important subtleties:**
+**Concurrency notes:**
 
-- Step 3's handler returns events, not state. State is computed in step 4.
-- Step 5 is async but does NOT block the return in step 9. If storage fails,
-  it is handled by `storageErrorBehavior` policy.
-- Step 6 is synchronous — subscribers see state changes before `execute()` returns.
+- **Step 4 is synchronous.** `atom._setState()` happens before step 5 returns. Subscribers
+  that read from `atom.get()` inside their callbacks will see the latest state.
+- **Step 4.5 is synchronous.** Computed atoms are updated before subscribers of the source
+  atom are called. When a source atom subscriber fires, computed atoms derived from it
+  are already reflecting the new value.
+- **Step 5 is async but detached.** `execute()` returns before the storage write resolves.
+  Storage errors are routed to `plugins.onError()` — they never throw into `execute()`.
+- **Steps 6 and 7 are both synchronous.** Event bus subscribers and plugin `onExecute`
+  hooks run before `execute()` returns `Right(newState)`.
+
+**What `execute()` does NOT do:**
+
+- Does NOT handle AbortSignal — use `executeAsync()` for cancellable operations
+- Does NOT apply `optimisticApplier` — use `executeOptimistic()` for optimistic updates
+- Does NOT dispatch a rollback command — use `executeOptimistic()` with `onRollback`
 
 ---
 
@@ -1182,7 +2096,8 @@ Tracing `kernel.query(cartAtom, getTotal())`:
 **Key rules:**
 - Queries are NEVER async
 - Queries NEVER call `execute()`
-- Queries complete in `O(state)` time — no external I/O
+- Queries NEVER cause side effects
+- Queries complete in O(state) time — no external I/O
 
 ---
 
@@ -1247,13 +2162,13 @@ describe('cartApplier', () => {
 ```ts
 // cart/cart.integration.spec.ts
 import { createKernel } from '@vi/state-fp/kernel';
-import { noopDevTools }  from '@vi/state-fp/devtools';
 
 describe('Cart integration', () => {
   let kernel: Kernel;
 
   beforeEach(() => {
-    kernel = createKernel({ devtools: noopDevTools });
+    // createKernel() with no options uses noopDebug — zero overhead in tests
+    kernel = createKernel();
     kernel.register(cartAtom, addItemHandler, cartApplier);
     kernel.registerQuery(cartAtom, cartTotalHandler);
   });
@@ -1276,18 +2191,74 @@ describe('Cart integration', () => {
 
 ### Testing with DevTools
 
+The correct pattern is to create a `DevToolsInstance` and wire it in via `kernel.use()`.
+The `eventLog.getAll()` method returns all `DebugEntry` objects (one per DomainEvent emitted):
+
 ```ts
-it('records debug entry on execute', () => {
-  const devtools = createDevTools();
-  const kernel   = createKernel({ devtools });
+import { createKernel } from '@vi/state-fp/kernel';
+import { createDevTools } from '@vi/state-fp/devtools';
+
+it('records DebugEntry on execute', () => {
+  const devtools = createDevTools({ installBridge: false }); // no window bridge in tests
+  const kernel   = createKernel({ debug: true });
+  kernel.use(devtools.plugin);                               // wire devtools in
   kernel.register(cartAtom, addItemHandler, cartApplier);
 
   kernel.execute(cartAtom, addItem({ sku: 'X', name: 'X', price: 5, qty: 1 }));
 
-  const entries = devtools.getLog().filter(e => e.atomKey === 'vi/cart');
+  const entries = devtools.eventLog.getByAtom('vi/cart');
   expect(entries).toHaveLength(1);
   expect(entries[0].commandType).toBe('cart/addItem');
-  expect(entries[0].nextState.items).toHaveLength(1);
+  expect(entries[0].stateAfter).toMatchObject({ items: [{ sku: 'X' }] });
+});
+
+it('stateSanitizer redacts sensitive fields in DevTools', () => {
+  const devtools = createDevTools({ installBridge: false });
+  const kernel   = createKernel({
+    debug: true,
+    stateSanitizer: (key, state) =>
+      key === 'vi/auth' ? { ...state as AuthState, token: '[REDACTED]' } : state,
+  });
+  kernel.use(devtools.plugin);
+  kernel.register(authAtom, loginHandler, authApplier);
+
+  kernel.execute(authAtom, login({ username: 'alice', token: 'eyJhbGci...' }));
+
+  const [entry] = devtools.eventLog.getByAtom('vi/auth');
+  // stateAfter in the event log has the token redacted
+  expect((entry.stateAfter as AuthState).token).toBe('[REDACTED]');
+  // But the real in-memory state is intact
+  expect(authAtom.get().token).toBe('eyJhbGci...');
+});
+```
+
+### Testing async commands
+
+```ts
+import { createKernel, defineAtom } from '@vi/state-fp/kernel';
+import { right, left, isRight, isLeft } from '@vi/state-fp/core';
+
+it('executeAsync falls back to synchronous execute if no async handler registered', async () => {
+  const kernel = createKernel();
+  kernel.register(counterAtom, incrementHandler, counterApplier);
+
+  const result = await kernel.executeAsync(counterAtom, increment(5));
+  expect(isRight(result)).toBe(true);
+  expect(counterAtom.get().count).toBe(5);
+});
+
+it('executeAsync respects AbortSignal', async () => {
+  const kernel     = createKernel();
+  const controller = new AbortController();
+  kernel.registerAsync(counterAtom, slowIncrementHandler, counterApplier);
+
+  controller.abort();   // abort before execute starts
+  const result = await kernel.executeAsync(counterAtom, increment(5), {
+    signal: controller.signal,
+  });
+
+  expect(isLeft(result)).toBe(true);
+  expect(result.left.code).toBe('CANCELLED');
 });
 ```
 
@@ -1428,6 +2399,39 @@ design seems strange and you want to understand the reasoning.
 3. `window.__VI_STATE_FP__` gives every developer the full debug surface from the browser
    console with no tooling installation. The correlation query
    `window.__VI_STATE_FP__.traceCorrelation(id)` has no equivalent in the extension model.
+
+### D8: Why there is no EncryptedAdapter
+
+**Rejected alternative:** `EncryptedAdapter` — an AES-GCM wrapper over any `StorageAdapter`
+that derives a key via PBKDF2 from a caller-provided secret.
+
+**Reason client-side encryption was removed:**
+
+1. **The encryption key must arrive as plaintext JavaScript.** No matter how the key is derived
+   (server nonce, session token, PBKDF2), it must arrive in the JavaScript runtime as a plain
+   string at some point. A DevTools breakpoint on the `secretProvider()` call exposes it before
+   it reaches `crypto.subtle`.
+
+2. **Post-decryption plaintext lives in the JS heap.** After `crypto.subtle.decrypt()` resolves,
+   the decrypted value lives in a JavaScript ArrayBuffer or string. The Memory profiler in Chrome
+   DevTools can capture live heap snapshots that include it.
+
+3. **Attackers can replay the decryption.** The IV and ciphertext are stored in `localStorage`
+   alongside the ciphertext. Anyone who steals the key (see step 1) can call
+   `crypto.subtle.decrypt()` directly in the DevTools console.
+
+4. **Redux, NgRx, MobX, and Zustand all reached the same conclusion.** None of them offer
+   client-side storage encryption. All of them recommend `stateSanitizer` + `memory-only` for
+   sensitive data.
+
+**What to use instead:**
+
+- `stateSanitizer` on `KernelOptions` — redacts sensitive fields before DevTools recording.
+  The real in-memory state is never modified. See Section 5.3c.
+- `memory-only` storage policy — for data that must never survive a page reload (auth tokens,
+  credentials, one-time session data).
+- Server-side data management — for HIPAA/GDPR regulated data, do not persist client-side at
+  all. Surface the data in a `memory-only` atom for the current session and refetch on re-auth.
 
 ---
 
