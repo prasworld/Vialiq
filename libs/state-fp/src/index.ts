@@ -99,9 +99,6 @@ export type {
 } from './storage/types.js';
 
 export { MemoryAdapter }    from './storage/memory.js';
-export { LocalAdapter }     from './storage/local.js';
-export { SessionAdapter }   from './storage/session.js';
-export { IndexedDbAdapter } from './storage/indexed-db.js';
 
 // ─── @vi/state-fp/sync ───────────────────────────────────────────────────────
 export type {

@@ -6,6 +6,7 @@
  */
 
 import type { Either, Maybe } from '../core/types.js';
+import type { StorageSecurityPolicy } from '../storage/types.js';
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
 
@@ -89,6 +90,23 @@ export type AtomStorageConfig<S = unknown> = {
   key?: string;
   /** TTL in milliseconds. Undefined = immortal. */
   ttl?: number;
+  /**
+   * Security policy controlling browser storage visibility.
+   *
+   * - `'visible'`     — plaintext in DevTools (default, suitable for non-sensitive state)
+   * - `'obfuscated'`  — wrap adapter with `ObfuscatedAdapter` to SHA-256 hash storage keys
+   * - `'memory-only'` — atom never written to browser storage; kernel ignores `adapter`
+   *
+   * When `'memory-only'`, the declared `adapter` is ignored entirely at runtime; the atom
+   * stays in the JavaScript heap and is completely invisible to browser DevTools.
+   *
+   * Note: There is no `'encrypted'` policy. Client-side encryption is not a real security
+   * control for DevTools visibility — the decryption key must arrive as plaintext JS, and
+   * post-decryption values live in the heap where the Memory profiler can capture them.
+   * Use `stateSanitizer` on `KernelOptions` to redact sensitive fields from the DevTools
+   * debug log, and `'memory-only'` for data that must never be persisted.
+   */
+  security?: StorageSecurityPolicy;
 };
 
 /**
@@ -118,6 +136,38 @@ export type AtomDefinition<S> = {
   readonly commands?: ReadonlyArray<CommandHandler<S, Command>>;
   readonly applier?:  EventApplier<S>;
   readonly queries?:  ReadonlyArray<QueryHandler<S, Query, unknown>>;
+};
+
+/**
+ * Phase 2.5 — Computed atoms.
+ * Read-only projections derived from one or more source atoms.
+ * Automatically recompute when any dependency changes.
+ * Cannot accept commands; strictly memoised subscriptions.
+ */
+export type ComputedAtomDefinition<R> = {
+  /** Globally unique key (namespaced, e.g. `vi/cart-total`). */
+  readonly key: string;
+  /** Source atoms this computed value depends on. */
+  readonly deps: ReadonlyArray<Atom<any>>;
+  /** Pure compute function. Called only when any dep state reference changes. */
+  readonly compute: (depStates: readonly any[]) => R;
+  /** Optional debug label for DevTools display. */
+  readonly debugLabel?: string;
+};
+
+/**
+ * The public handle to a computed atom.
+ * Read-only — no commands, only subscriptions and synchronous `get()`.
+ */
+export type ComputedAtom<R> = {
+  readonly definition: ComputedAtomDefinition<R>;
+  readonly key: string;
+  /** Get the current computed value synchronously. */
+  get(): R;
+  /** Subscribe to changes (recomputed values). */
+  subscribe(listener: (v: R) => void): Unsubscribe;
+  /** @internal — used only by the kernel. */
+  _setComputed(v: R): void;
 };
 
 /**
@@ -264,6 +314,56 @@ export type KernelOptions = {
   debug?: boolean | DebugInterface;
   /** MFE identifier — stamped on command.meta.issuedBy. */
   instanceId?: string;
+  /**
+   * Redact sensitive atom state before it is sent to the DevTools debug layer.
+   *
+   * Follows the same pattern used by Redux DevTools Extension and
+   * NgRx `@ngrx/store-devtools`:
+   *
+   * ```ts
+   * const kernel = createKernel({
+   *   debug: true,
+   *   stateSanitizer: (atomKey, state) => {
+   *     if (atomKey === 'vi/auth') return { ...state as AuthState, token: '[REDACTED]' };
+   *     return state;
+   *   },
+   * });
+   * ```
+   *
+   * The real in-memory state is NEVER modified — only the snapshot sent to the
+   * DevTools layer is replaced. Return the full state unchanged for non-sensitive atoms.
+   *
+   * @param atomKey  The atom's key (e.g. `'vi/counter'`).
+   * @param state    The current (or next) state snapshot.
+   * @returns        A safe-to-display version of the state.
+   */
+  stateSanitizer?: (atomKey: string, state: unknown) => unknown;
+};
+
+/**
+ * Phase 2.6 — Options for executeOptimistic.
+ * Applies optimistic changes immediately and confirms via async callback.
+ * On confirmation failure, atomically reverts to pre-optimistic state.
+ */
+export type ExecuteOptimisticOptions<S> = {
+  /**
+   * Applies optimistic changes to state immediately.
+   * Called synchronously before confirm().
+   */
+  optimisticApplier: (state: S, cmd: Command) => S;
+
+  /**
+   * Async function to confirm the optimistic changes.
+   * Typically calls a remote API. If it rejects or returns Left,
+   * state is reverted and onRollback is called.
+   */
+  confirm: (optimisticState: S) => Promise<Either<CommandError, void>>;
+
+  /**
+   * Optional callback invoked when confirm() fails.
+   * Receives the error — useful for notifications, logging, etc.
+   */
+  onRollback?: (error: CommandError) => void | Promise<void>;
 };
 
 /**
@@ -285,6 +385,24 @@ export interface Kernel {
     atom:    Atom<S>,
     cmd:     Command,
     options?: { signal?: AbortSignal },
+  ): Promise<Either<CommandError, S>>;
+
+  /**
+   * Phase 2.6 — Execute with optimistic update + rollback.
+   * 
+   * Applies optimistic state immediately via optimisticApplier(),
+   * then calls confirm() asynchronously to persist.
+   * On confirmation failure, atomically reverts to pre-optimistic state.
+   * 
+   * @param atom Target atom
+   * @param cmd Command (typically not dispatched to CommandHandler — used for context only)
+   * @param opts ExecuteOptimisticOptions with applier, confirm, and optional onRollback
+   * @returns Left(error) if confirm rejects; Right(finalState) on success
+   */
+  executeOptimistic<S>(
+    atom: Atom<S>,
+    cmd: Command,
+    opts: ExecuteOptimisticOptions<S>,
   ): Promise<Either<CommandError, S>>;
 
   // ── Read side ───────────────────────────────────────────────────────────────
@@ -313,10 +431,19 @@ export interface Kernel {
   /** Register a QueryHandler for an atom. */
   registerQuery<S, Q extends Query, R>(atom: Atom<S>, handler: QueryHandler<S, Q, R>): void;
 
+  /**
+   * Phase 2.5 — Register a computed atom.
+   * Automatically subscribes to all dependencies and recomputes when any change.
+   */
+  registerComputed<R>(computed: ComputedAtom<R>): void;
+
   // ── Subscriptions ───────────────────────────────────────────────────────────
 
   /** Subscribe to all state changes on an atom. */
   subscribe<S>(atom: Atom<S>, listener: (s: S) => void): Unsubscribe;
+
+  /** Subscribe to computed atom changes. */
+  subscribeComputed<R>(computed: ComputedAtom<R>, listener: (v: R) => void): Unsubscribe;
 
   /** Subscribe to all DomainEvents emitted by the kernel. */
   onEvent(listener: (e: DomainEvent) => void): Unsubscribe;

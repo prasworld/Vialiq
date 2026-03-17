@@ -8,9 +8,10 @@
 
 import type { StorageResult, StorageEntry, StorageAdapter } from './types.js';
 import type { Maybe } from '../core/types.js';
-import { left, right } from '../core/either.js';
+import { right } from '../core/either.js';
 import { just, nothing } from '../core/maybe.js';
-import { defaultSerialize, defaultDeserialize, now } from '../core/utils.js';
+import { now } from '../core/utils.js';
+
 
 type Entry = StorageEntry<unknown>;
 
@@ -36,12 +37,8 @@ export class MemoryAdapter implements StorageAdapter {
       this.#store.delete(key);
       return right(nothing<T>());
     }
-    try {
-      const value = defaultDeserialize<T>(defaultSerialize(entry.v));
-      return right(just<T>(value));
-    } catch (cause) {
-      return left({ code: 'DESERIALISE_ERROR', message: 'Failed to deserialise value', cause });
-    }
+    // In-memory adapter: return value directly (no serialization needed)
+    return right(just<T>(entry.v as T));
   }
 
   async set<T>(key: string, value: T, ttl?: number): StorageResult<void> {

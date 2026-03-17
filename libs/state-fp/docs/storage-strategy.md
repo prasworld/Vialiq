@@ -32,20 +32,40 @@ used interchangeably.
 
 ## 2. StorageAdapter Interface
 
+There are **two related interfaces** for storage adapters:
+
+**`StorageAdapterLike<S>`** (kernel-internal, in `@vi/state-fp/kernel/types`):  
+The minimal duck-type the kernel's `AtomStorageConfig.adapter` field expects. Its `get()` returns `Promise<Maybe<S>>` directly.
+
+**`StorageAdapter`** (full public interface, in `@vi/state-fp/storage`):  
+The richer interface implemented by `MemoryAdapter`, `LocalAdapter`, `SessionAdapter`, and `IndexedDbAdapter`. Its `get()` returns `Promise<Either<StorageError, Maybe<T>>>`.
+
+When using an adapter from `@vi/state-fp/storage` with `defineAtom`, wrap it or use it as a mock that conforms to `StorageAdapterLike<S>` by resolving directly to `Maybe<T>`. The kernel tests demonstrate this pattern with simple mock adapters:
+
+```ts
+const mockAdapter = {
+  get: vi.fn().mockResolvedValue(just(savedState)),  // Promise<Maybe<S>> — no Either wrapper
+  set: vi.fn().mockResolvedValue(undefined),
+};
+```
+
+### StorageAdapter (full interface)
+
 ```ts
 type StorageError = {
-  readonly code:    'NOT_FOUND' | 'SERIALISE_ERROR' | 'DESERIALISE_ERROR' | 'QUOTA_EXCEEDED' | 'UNKNOWN';
+  readonly code:    'DESERIALISE_ERROR' | 'SERIALISE_ERROR' | 'QUOTA_EXCEEDED' | 'NOT_AVAILABLE' | 'UNKNOWN';
   readonly message: string;
   readonly cause?:  unknown;
 };
 
+// Promise<Either<StorageError, T>>
 type StorageResult<T> = Promise<Either<StorageError, T>>;
 
 interface StorageAdapter {
-  /** Human-readable backend name — used in debug traces */
+  /** Human-readable backend name */
   readonly name: string;
 
-  /** Read a value by key. Returns Nothing on miss or expired entry. */
+  /** Read a value by key. Returns Right(Nothing) on miss or expired entry. */
   get<T>(key: string): StorageResult<Maybe<T>>;
 
   /** Write a value. TTL in milliseconds; undefined = no expiry. */
@@ -202,40 +222,43 @@ await adapter.open();
 At `kernel.hydrate()`, the kernel iterates all registered atoms and attempts
 to restore their state from storage in priority order.
 
-### Priority Order
+### How Hydration Works
 
-```
-IndexedDB → localStorage → sessionStorage → memory → initialState
-```
-
-Each adapter returns `Maybe<T>`:
-- `Just(value)` — hydration succeeds; store updates the atom
-- `Nothing`      — key absent or expired; fall through to next adapter
-- `Left(error)`  — adapter error; log warning, fall through to next
+Each atom declares its own storage adapter in its `storage.adapter` field. The kernel iterates all registered atoms and reads from each atom's declared adapter. There is no global priority chain — each atom independently configures its backend:
 
 ```ts
-async function hydrateAtom<S>(atom: Atom<S>, adapters: StorageAdapter[]): Promise<S> {
-  for (const adapter of adapters) {
-    const result = await adapter.get<S>(atom.definition.storage?.key ?? atom.definition.key);
-    if (isRight(result) && isJust(result.right)) {
-      return result.right.value; // ✅ restored
-    }
+// Simplified hydration (see kernel.ts for full implementation)
+async function hydrate(): Promise<void> {
+  const promises: Promise<void>[] = [];
+
+  for (const [, reg] of atoms) {
+    const { atom } = reg;
+    const storageConfig = atom.definition.storage;
+    if (!storageConfig) continue;                           // no storage → skip
+    if (storageConfig.security === 'memory-only') continue; // memory-only → skip
+
+    const key = storageConfig.key ?? atom.definition.key;
+    promises.push(
+      storageConfig.adapter.get(key).then((maybe) => {
+        if (maybe._tag === 'Just' && maybe.value !== undefined) {
+          atom._setState(maybe.value); // restore from storage
+        }
+        // Nothing → leave atom at initialState
+      }).catch(() => {
+        // Storage read failure → silently fall back to initialState
+      }),
+    );
   }
-  return atom.definition.initialState; // 🔄 fallback
+
+  await Promise.allSettled(promises);
 }
 ```
 
-### Parallel Hydration
-
-All atoms are hydrated in parallel using `Promise.allSettled`:
-
-```ts
-await Promise.allSettled(
-  kernel.listAtoms().map(atom => hydrateAtom(atom, adapters))
-);
-```
-
-Failures on individual atoms do not block other atoms from hydrating.
+**Notes:**
+- Atoms without a `storage` config are skipped entirely
+- All atoms hydrate concurrently via `Promise.allSettled` — failures on one atom do not block others
+- The adapter's `get()` should return `Promise<Maybe<S>>` (see `StorageAdapterLike<S>` in the kernel types)
+- `memory-only` security policy: adapter is ignored during both hydration and write-through
 
 ---
 
@@ -253,20 +276,11 @@ kernel.execute(atom, command)
 ```
 
 Storage write errors are:
-- Logged to the event log as a `DebugEntry` with `error.code: 'STORAGE_WRITE_ERROR'`
-- Surfaced according to the `storageErrorBehavior` setting — by default (`'warn'`) execution still
-  returns `Right(newState)` so the in-memory state is always consistent
+- Surfaced to kernel plugins via `onError()` as a synthetic `__storage_error__` command
+- **Never thrown** — the `execute()` call always returns `Right(newState)` even if storage write fails
+- In-memory atom state is always consistent; storage persistence is best-effort fire-and-forget
 
-### Write-Through Options
-
-```ts
-type StoreOptions = {
-  storageErrorBehavior:
-    | 'warn'   // log warning, return Right anyway (default)
-    | 'throw'  // throw StorageError (for strict environments)
-    | 'ignore' // silent — useful during tests
-};
-```
+There is no `storageErrorBehavior` option in `KernelOptions`. Storage errors are always non-blocking.
 
 ---
 
@@ -279,7 +293,7 @@ const userSessionAtom = defineAtom({
   key: 'vi/user-session',
   initialState: null,
   storage: {
-    backend: 'local',
+    adapter: new LocalAdapter(),
     key: 'vi:userSession',
     ttl: 30 * 60 * 1000, // 30 minutes
   },
@@ -305,11 +319,19 @@ against the atom — the write-through on each `kernel.execute()` will reset the
 
 ## 8. Data Invalidation
 
-### 8.1 Explicit Invalidation via Command
+> **Status: Planned — not yet implemented in source.** The APIs in sections 8.1–8.4
+> (`vi/invalidate` command, `kernel.addInvalidationRule`, `kernel.invalidateByPrefix`,
+> `kernel.invalidateAll`) are Phase 2+ design targets. They do not exist in the
+> current kernel.
+>
+> **Current workaround:** Dispatch a custom `reset` command whose handler returns
+> `{ state: atom.initialState }`, clears storage via `adapter.delete(key)`, and returns
+> an empty event list.
 
-> Phase 2 planned API
+### 8.1 Explicit Invalidation via Command (Planned)
 
 ```ts
+// PLANNED API — not yet implemented
 // Dispatching the built-in invalidate command resets the atom
 kernel.execute(userAtom, command('vi/invalidate', {}));
 
@@ -320,22 +342,20 @@ kernel.execute(userAtom, command('vi/invalidate', {}));
 // 4. Notify all atom subscribers
 ```
 
-### 8.2 Cascading Invalidation Rules
-
-> Phase 2 planned API
+### 8.2 Cascading Invalidation Rules (Planned)
 
 ```ts
+// PLANNED API — not yet implemented
 // When userAtom is invalidated, also invalidate these dependents
 kernel.addInvalidationRule(userAtom, [dashboardAtom, cartAtom]);
 ```
 
-Rules are evaluated breadth-first. Cycles are detected and stopped.
+Rules would be evaluated breadth-first. Cycles detected and stopped.
 
-### 8.3 Bulk Invalidation
-
-> Phase 2 planned API
+### 8.3 Bulk Invalidation (Planned)
 
 ```ts
+// PLANNED API — not yet implemented
 // Invalidate all atoms with a given prefix
 kernel.invalidateByPrefix('vi/user');
 
@@ -343,9 +363,9 @@ kernel.invalidateByPrefix('vi/user');
 kernel.invalidateAll();
 ```
 
-### 8.4 Cross-MFE Invalidation via BroadcastChannel
+### 8.4 Cross-MFE Invalidation via BroadcastChannel (Planned)
 
-When a storage entry is invalidated in one MFE, a message is broadcast
+When a storage entry is invalidated in one MFE, a message would be broadcast
 so peer MFEs can sync:
 
 ```ts
@@ -358,7 +378,7 @@ type InvalidateBroadcast = {
 };
 ```
 
-Receiving MFEs apply the invalidation without re-dispatching events
+Receiving MFEs would apply the invalidation without re-dispatching events
 (to avoid feedback loops).
 
 ---
@@ -368,26 +388,61 @@ Receiving MFEs apply the invalidation without re-dispatching events
 By default, values are serialised using a `JSON.stringify` / `JSON.parse`
 pair with a replacer that handles `Date`, `Map`, `Set`, and `BigInt`.
 
-For atoms with special types:
+The `AtomStorageConfig` type (the `storage:` field in `defineAtom`) currently supports:
 
 ```ts
+type AtomStorageConfig<S> = {
+  adapter:   StorageAdapterLike<S>; // required — the storage backend
+  key?:      string;                // optional — overrides the atom key as the storage key
+  ttl?:      number;                // optional — per-atom TTL in milliseconds
+  security?: StorageSecurityPolicy; // optional — 'visible' | 'obfuscated' | 'memory-only'
+};
+```
+
+There is **no built-in `serialize`/`deserialize` option** in `AtomStorageConfig` today.
+If your atom holds non-JSON-serialisable types (e.g. `Map`, `Set`, class instances),
+use a **custom adapter** that wraps serialisation internally:
+
+```ts
+import { defineAtom }   from '@vi/state-fp/kernel';
+import { LocalAdapter } from '@vi/state-fp/storage';
+
+// Custom adapter that handles Map<string, boolean> serialisation
+class MapLocalAdapter implements StorageAdapterLike<Map<string, boolean>> {
+  private inner = new LocalAdapter<string>();
+
+  async get(key: string): Promise<Maybe<Map<string, boolean>>> {
+    const raw = await this.inner.get(key);
+    return isNothing(raw) ? nothing : just(new Map(JSON.parse(raw.value) as [string, boolean][]));
+  }
+
+  async set(key: string, value: Map<string, boolean>, ttl?: number): Promise<void> {
+    await this.inner.set(key, JSON.stringify([...value.entries()]), ttl);
+  }
+
+  async delete(key: string): Promise<void> { await this.inner.delete(key); }
+  async clear():              Promise<void> { await this.inner.clear(); }
+}
+
 const settingsAtom = defineAtom({
-  key: 'vi/settings',
+  key:          'vi/settings',
   initialState: new Map<string, boolean>(),
   storage: {
-    backend: 'local',
-    key: 'vi:settings',
-    serialize:   (v: Map<string, boolean>) => JSON.stringify([...v.entries()]),
-    deserialize: (s: string) => new Map(JSON.parse(s) as [string, boolean][]),
+    adapter:  new MapLocalAdapter(),
+    key:      'vi:settings',
   },
 });
 ```
 
-Kernel-level custom serialiser (applies to all atoms unless overridden at atom-level):
+### Kernel-level serialiser (Planned)
 
-> Phase 2 planned API
+> **Status: Planned — not yet implemented.**
+
+A kernel-level `serialiser` option that applies to all atoms (unless overridden
+per-atom) is a Phase 2+ design target:
 
 ```ts
+// PLANNED API — not yet implemented
 const kernel = createKernel({
   serialiser: {
     serialize:   (v) => superjson.stringify(v),
@@ -396,23 +451,30 @@ const kernel = createKernel({
 });
 ```
 
+Until then, use custom adapters (as above) for non-JSON types.
+
 ---
 
 ## 10. Storage Quota Handling
 
 | Condition | Behavior |
 |---|---|
-| `DOMException: QuotaExceededError` | Returns `Left({ code: 'QUOTA_EXCEEDED' })` |
-| `storageErrorBehavior: 'warn'` | Latest state kept in memory; warning in event log |
-| `storageErrorBehavior: 'throw'` | `StorageError` thrown at call site |
-| Eviction policy | LRU eviction from the oldest atom-key entries, configurable via `maxStorageBytes` |
+| `DOMException: QuotaExceededError` | Adapter returns `Left({ code: 'QUOTA_EXCEEDED' })` |
+| Storage write error | `onError()` called on kernel plugins; `execute()` still returns `Right(newState)` |
+| Storage read failure (hydration) | Silently falls back to `atom.initialState` |
 
-> Phase 2 planned API
+> **Note:** There is no `storageErrorBehavior` or `maxStorageBytes` option in `KernelOptions`. Storage write errors are always non-blocking. The in-memory state is always authoritative.
+
+For environments where you want to log quota errors or react to storage failures, listen via `KernelPlugin.onError()`:
 
 ```ts
-const kernel = createKernel({
-  storageErrorBehavior: 'warn',
-  maxStorageBytes: 2 * 1024 * 1024, // 2 MB soft cap for MemoryAdapter
+kernel.use({
+  name: 'storage-error-logger',
+  onError({ command, error }) {
+    if (command.type === '__storage_error__') {
+      console.warn('Storage write failed:', error.message);
+    }
+  },
 });
 ```
 
@@ -470,20 +532,40 @@ constitutes a data handling violation.
 | `LocalAdapter` | ✅ Always (plaintext) | Application → Local Storage |
 | `IndexedDbAdapter` | ✅ Always (plaintext) | Application → IndexedDB |
 | `ObfuscatedAdapter(Local)` | ⚠️ Key hidden, value plain | Application → Local Storage |
-| `EncryptedAdapter(Local)` | ✅ Key hidden, value ciphertext | Application → Local Storage |
+| Any adapter + `memory-only` policy | ❌ Never | Adapter ignored at runtime — JS heap only |
+| Any atom + `stateSanitizer` | ✅ DevTools shows sanitized value | Real in-memory state is always full |
 
 ### StorageSecurityPolicy Types
 
 ```ts
 /**
- * Declares what level of protection is applied to a stored atom.
- * Set as `storage.security` on the atom definition.
+ * Declares the browser-storage visibility posture of an atom.
+ *
+ * | Policy       | Keys in DevTools | Values in DevTools | Persisted? |
+ * |--------------|------------------|--------------------|------------|
+ * | 'visible'    | Plaintext        | Plaintext          | Yes        |
+ * | 'obfuscated' | SHA-256 hash     | Plaintext          | Yes        |
+ * | 'memory-only'| N/A              | N/A (JS heap only) | No         |
+ *
+ * ### Why there is no 'encrypted' policy
+ *
+ * Client-side encryption is NOT a security control for browser DevTools visibility.
+ * The encryption key must arrive as a plaintext JavaScript string — any debugger
+ * breakpoint on the secret-fetching call exposes it before it reaches SubtleCrypto.
+ * Post-decryption plaintext lives in the JS heap and is visible in the Memory
+ * profiler. An attacker with DevTools access can also call crypto.subtle.decrypt()
+ * with the IV and ciphertext from the Application tab.
+ *
+ * Redux, NgRx, MobX, and Zustand all reached this same conclusion — none offer
+ * encryption. The correct controls are:
+ *   1. stateSanitizer on KernelOptions — redact sensitive fields in DevTools only.
+ *   2. memory-only policy — for data that must not survive a page reload.
+ *   3. Don't persist sensitive data client-side — refetch from server after auth.
  */
-type StorageSecurityPolicy =
-  | 'visible'      // default — keys + values readable; suitable for non-sensitive state
-  | 'obfuscated'   // keys SHA-256 hashed; values still plaintext — prevents structure inference
-  | 'encrypted'    // keys hashed + values AES-GCM encrypted via SubtleCrypto
-  | 'memory-only'; // MemoryAdapter regardless of declared adapter — invisible, non-persistent
+export type StorageSecurityPolicy =
+  | 'visible'      // default — keys + values readable in DevTools; suitable for non-sensitive state
+  | 'obfuscated'   // keys SHA-256 hashed; values still plaintext — hides application structure
+  | 'memory-only'; // stays in JS heap only — invisible to DevTools, not persisted across reloads
 ```
 
 ### ObfuscatedAdapter — Hiding the Key
@@ -511,42 +593,55 @@ const userPrefsAtom = defineAtom<UserPrefs>({
 
 **DevTools will show:** `3af29b1d...` → `{ "theme": "dark", "locale": "en" }` (value is still readable)
 
-### EncryptedAdapter — Full Value Encryption
+### stateSanitizer — Redacting Sensitive Fields from DevTools
 
-For sensitive data that must persist (PII, financial information, health data), wrap any
-adapter with `EncryptedAdapter`. Values are encrypted using AES-GCM via the browser's
-native `SubtleCrypto` API.
+The `stateSanitizer` option on `KernelOptions` is the correct way to prevent sensitive
+fields from appearing in the DevTools debug log. It is the same pattern used by
+Redux DevTools Extension (`stateSanitizer`/`actionSanitizer`) and NgRx `@ngrx/store-devtools`.
+
+**Key guarantee:** `stateSanitizer` only affects the DevTools snapshot that is recorded.
+The real in-memory state is **never modified** — components always see the full, unsanitized state.
 
 ```ts
-import { EncryptedAdapter, LocalAdapter } from '@vi/state-fp/storage';
+import { createKernel }   from '@vi/state-fp/kernel';
+import { createDevTools } from '@vi/state-fp/devtools';
 
-// The secret must NOT be hardcoded — derive it from a server-side nonce.
-// A common pattern: fetch a short-lived nonce from the auth endpoint on login,
-// store it ONLY in memory (not in storage), and use it as the encryption secret.
-const adapter = new EncryptedAdapter(new LocalAdapter(), {
-  secretProvider: async () => authService.getEncryptionNonce(), // returns Promise<string>
-  algorithm:      'AES-GCM',
-  keyDerivation:  'PBKDF2',
-  iterations:     100_000,   // NIST recommended minimum
-});
+// stateSanitizer is a KernelOptions field — separate from devtools
+const kernel = createKernel({
+  debug: true,
 
-const medicalRecordAtom = defineAtom<MedicalRecord>({
-  key: 'vi/medical-record',
-  initialState: emptyRecord,
-  storage: {
-    adapter,
-    key: 'vi:medical',
-    security: 'encrypted',
+  // Called before every debugLayer.record() — return a safe copy for DevTools
+  stateSanitizer: (atomKey: string, state: unknown) => {
+    if (atomKey === 'vi/auth') {
+      const s = state as AuthState;
+      // Replace sensitive fields with placeholder; other fields still visible in DevTools
+      return { ...s, token: '[REDACTED]', refreshToken: '[REDACTED]' };
+    }
+    if (atomKey === 'vi/user') {
+      const s = state as UserState;
+      return { ...s, email: '[REDACTED]', ssn: '[REDACTED]' };
+    }
+    return state; // non-sensitive atoms pass through unchanged
   },
 });
+
+// Then attach devtools as a plugin
+const devtools = createDevTools();
+kernel.use(devtools.plugin);
 ```
 
-**DevTools will show:** `9f3a2c...` → `<binary ciphertext>` — completely opaque in production.
+**When `debug: true` is not set in KernelOptions**, `stateSanitizer` is never called —
+zero runtime overhead in production builds.
 
-> ⚠️ **Hardcoded secrets are not secure.** If the `secretProvider` returns a value derived
-> from a constant in the bundle (e.g., `() => 'my-secret-key'`), an attacker who reads your
-> bundle can decrypt the stored values. The nonce must come from the server and exist only
-> in the JS runtime memory.
+**All kernel debug recording paths are covered:**
+
+```
+kernel.execute()  success path   → sanitize(atomKey, prevState) + sanitize(atomKey, nextState)
+kernel.execute()  error path     → sanitize(atomKey, prevState) (nextState = prevState)
+kernel.executeAsync() success    → same
+kernel.executeAsync() error      → same
+kernel.executeAsync() abort      → same
+```
 
 ### Memory-Only Pattern (Maximum Security)
 
@@ -577,11 +672,16 @@ sync.share(authAtom, {
 
 ### Decision Checklist
 
-Before choosing a storage adapter, answer these questions:
+Before choosing a storage adapter and security policy, answer these questions:
 
-- [ ] Does this atom contain PII (name, email, address, phone)?  → **`encrypted` or `memory-only`**
-- [ ] Does this atom contain credentials (token, session ID)?    → **`memory-only`**
-- [ ] Does this atom contain health or financial data?           → **`encrypted`** (regulatory requirement)
-- [ ] Is the data sensitive but the VALUE is not?                → **`obfuscated`** (hides structure)
-- [ ] Is this UI state only (theme, locale, scroll pos)?         → **`visible`** (no risk)
-- [ ] Is this ephemeral (per-session only)?                      → **`SessionAdapter` or `MemoryAdapter`**
+- [ ] Does this atom contain credentials (token, session ID, refresh token)?  → **`memory-only`** (never persist)
+- [ ] Does this atom contain health or financial data (HIPAA, PCI-DSS)?       → **`memory-only`** (never persist client-side — refetch from server)
+- [ ] Does this atom contain PII (name, email, address, phone)?               → **`memory-only`** preferred; `obfuscated` + `stateSanitizer` if persistence is required
+- [ ] Is the state sensitive but the VALUE itself is not a secret?            → **`obfuscated`** (hides application structure)
+- [ ] Should sensitive fields be hidden only from the DevTools debug log?     → **`stateSanitizer`** on `KernelOptions`
+- [ ] Is this UI-only state (theme, locale, scroll pos, feature flags)?       → **`visible`** (no risk)
+- [ ] Is this ephemeral (per-session, discardable on tab close)?              → **`SessionAdapter`** or `MemoryAdapter`
+
+> **Compliance note:** For HIPAA, PCI-DSS, and GDPR workloads, the recommended position is
+> **never store regulated data in browser storage** regardless of policy. Use the server as
+> the source of truth; surface data in atoms with `memory-only` for the current session only.

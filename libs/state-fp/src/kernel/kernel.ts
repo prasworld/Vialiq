@@ -16,6 +16,7 @@ import { uuid, now } from '../core/utils.js';
 import type { Either } from '../core/types.js';
 import type {
   Atom,
+  ComputedAtom,
   Command,
   CommandMeta,
   Query,
@@ -31,10 +32,12 @@ import type {
   DebugInterface,
   Unsubscribe,
   Kernel,
+  ExecuteOptimisticOptions,
 } from './types.js';
 import { CommandBus } from './command.js';
 import { QueryBus } from './query.js';
 import { DomainEventBus, stampEvent } from './event.js';
+import { assertApplicationStoragePolicy } from './storage-guard.js';
 
 // ─── No-op debug layer ────────────────────────────────────────────────────────
 
@@ -77,6 +80,10 @@ export function createKernel(options: KernelOptions = {}): Kernel {
   const applierMap      = new Map<string, EventApplier<unknown>>();
   /** Phase 1.4 — maps `"atomKey::commandType"` → AsyncCommandHandler */
   const asyncHandlerMap = new Map<string, AsyncCommandHandler<unknown>>();
+  /** Phase 2.5 — maps atomKey → set of computed atoms that depend on it */
+  const computedDependencies = new Map<string, Set<ComputedAtom<any>>>();
+  /** Phase 2.5 — all registered computed atoms */
+  const computedAtoms = new Set<ComputedAtom<any>>();
 
   // ── Debug layer ─────────────────────────────────────────────────────────────
 
@@ -86,6 +93,13 @@ export function createKernel(options: KernelOptions = {}): Kernel {
     debugLayer = { isEnabled: true, record: () => void 0 };
   } else if (options.debug && typeof options.debug === 'object') {
     debugLayer = options.debug;
+  }
+
+  // ── State sanitizer (Redux/NgRx pattern) ─────────────────────────────────
+  // Redacts sensitive atom state before it reaches the debug/DevTools layer.
+  // The real in-memory state is NEVER touched — only the debug snapshot is replaced.
+  function sanitize(atomKey: string, state: unknown): unknown {
+    return options.stateSanitizer ? options.stateSanitizer(atomKey, state) : state;
   }
 
   // ── Internal helpers ────────────────────────────────────────────────────────
@@ -131,6 +145,9 @@ export function createKernel(options: KernelOptions = {}): Kernel {
   function writeToStorage<S>(atom: Atom<S>, state: S): void {
     const storageConfig = atom.definition.storage;
     if (!storageConfig) return;
+    assertApplicationStoragePolicy(atom.definition.key, storageConfig);
+    // memory-only policy: never write to browser storage
+    if (storageConfig.security === 'memory-only') return;
     const key = storageConfig.key ?? atom.definition.key;
     storageConfig.adapter
       .set(key, state, storageConfig.ttl)
@@ -144,6 +161,27 @@ export function createKernel(options: KernelOptions = {}): Kernel {
       });
   }
 
+  /** Phase 2.5 — Recompute computed atoms that depend on a changed source atom. */
+  function recomputeDependents(changedAtomKey: string): void {
+    const dependents = computedDependencies.get(changedAtomKey);
+    if (!dependents) return;
+
+    for (const computed of dependents) {
+      // Get fresh dep states
+      const depStates = computed.definition.deps.map(dep => dep.get());
+      const depReferences = depStates; // Use actual refs for comparison
+
+      // Get current value to check for changes
+      const prevValue = computed.get();
+      const nextValue = computed.definition.compute(depReferences as readonly any[]);
+
+      // Notify subscribers if compute function returned a different value
+      if (!Object.is(prevValue, nextValue)) {
+        computed._setComputed(nextValue);
+      }
+    }
+  }
+
   // ── Kernel object ────────────────────────────────────────────────────────────
 
   const kernel: Kernel = {
@@ -151,6 +189,14 @@ export function createKernel(options: KernelOptions = {}): Kernel {
       const atomKey      = atom.definition.key;
       const startTime    = now();
       const currentState = atom.get();
+
+      // Guard: computed atoms are read-only; reject execute() calls at runtime
+      if (!('_setState' in atom)) {
+        return {
+          _tag: 'Left' as const,
+          left: { code: 'COMPUTED_ATOM', message: `Atom "${atomKey}" is a computed atom and cannot accept commands.` },
+        };
+      }
 
       // 1. Stamp command meta if needed
       const fullCmd: Command = {
@@ -176,8 +222,8 @@ export function createKernel(options: KernelOptions = {}): Kernel {
             correlationId: (fullCmd.meta as CommandMeta).correlationId,
             atomKey,
             events:        [],
-            prevState:     currentState,
-            nextState:     currentState,
+            prevState:     sanitize(atomKey, currentState),
+            nextState:     sanitize(atomKey, currentState),
             durationMs:    now() - startTime,
             error:         err,
             timestamp:     startTime,
@@ -198,6 +244,9 @@ export function createKernel(options: KernelOptions = {}): Kernel {
 
       // 4. Update atom state
       atom._setState(newState);
+
+      // 4.5 Phase 2.5 — Recompute dependent computed atoms
+      recomputeDependents(atomKey);
 
       // 5. Stamp events with proper causationId (command id acts as causation)
       const stampedEvents = rawEvents.map(e =>
@@ -235,8 +284,8 @@ export function createKernel(options: KernelOptions = {}): Kernel {
           correlationId: cmdMeta.correlationId,
           atomKey,
           events:        stampedEvents,
-          prevState:     currentState,
-          nextState:     newState,
+          prevState:     sanitize(atomKey, currentState),
+          nextState:     sanitize(atomKey, newState),
           durationMs,
           timestamp:     startTime,
         });
@@ -308,8 +357,8 @@ export function createKernel(options: KernelOptions = {}): Kernel {
                 correlationId: (fullCmd.meta as CommandMeta).correlationId,
                 atomKey,
                 events:        [],
-                prevState:     currentState,
-                nextState:     currentState,
+                prevState:     sanitize(atomKey, currentState),
+                nextState:     sanitize(atomKey, currentState),
                 durationMs:    now() - startTime,
                 error:         err,
                 timestamp:     startTime,
@@ -324,6 +373,9 @@ export function createKernel(options: KernelOptions = {}): Kernel {
             atom, rawEvents, cmdMeta.correlationId, cmdMeta.correlationId,
           );
           atom._setState(newState);
+
+          // Phase 2.5 — Recompute dependent computed atoms
+          recomputeDependents(atom.definition.key);
 
           const stampedEvents = rawEvents.map(e =>
             stampEvent(e as DomainEvent, {
@@ -355,8 +407,8 @@ export function createKernel(options: KernelOptions = {}): Kernel {
               correlationId: cmdMeta.correlationId,
               atomKey,
               events:        stampedEvents,
-              prevState:     currentState,
-              nextState:     newState,
+              prevState:     sanitize(atomKey, currentState),
+              nextState:     sanitize(atomKey, newState),
               durationMs,
               timestamp:     startTime,
             });
@@ -383,11 +435,152 @@ export function createKernel(options: KernelOptions = {}): Kernel {
       return queryBus.execute(atom.definition.key, atom.get(), q) as R;
     },
 
+    async executeOptimistic<S>(
+      atom: Atom<S>,
+      cmd: Command,
+      opts: ExecuteOptimisticOptions<S>,
+    ): Promise<Either<CommandError, S>> {
+      const atomKey = atom.definition.key;
+      const startTime = now();
+      const preOptimisticState = atom.get();
+
+      // Ensure command has metadata
+      const fullCmd: Command = {
+        ...cmd,
+        meta: {
+          correlationId: cmd.meta?.correlationId ?? uuid(),
+          timestamp: cmd.meta?.timestamp ?? startTime,
+          ...(cmd.meta?.causationId !== undefined && { causationId: cmd.meta.causationId }),
+          ...(cmd.meta?.issuedBy !== undefined
+            ? { issuedBy: cmd.meta.issuedBy }
+            : options.instanceId !== undefined
+              ? { issuedBy: options.instanceId }
+              : {}),
+        },
+      };
+
+      const cmdMeta = fullCmd.meta as CommandMeta;
+
+      try {
+        // 1. Apply optimistic state immediately
+        const optimisticState = opts.optimisticApplier(preOptimisticState, fullCmd);
+        atom._setState(optimisticState);
+
+        // Recompute dependent computed atoms with optimistic state
+        recomputeDependents(atomKey);
+
+        // Record optimistic entry in debug
+        if (debugLayer.isEnabled) {
+          debugLayer.record({
+            commandType: fullCmd.type,
+            correlationId: cmdMeta.correlationId,
+            atomKey,
+            events: [],
+            prevState: sanitize(atomKey, preOptimisticState),
+            nextState: sanitize(atomKey, optimisticState),
+            durationMs: 0, // Optimistic is synchronous
+            timestamp: startTime,
+          });
+        }
+
+        // 2. Call confirm asynchronously
+        const confirmResult = await opts.confirm(optimisticState);
+
+        // 3a. If confirmation succeeded, we're done (state stays optimistic)
+        if (confirmResult._tag === 'Right') {
+          const durationMs = now() - startTime;
+          plugins.forEach(p =>
+            p.onExecute?.({
+              command: fullCmd,
+              events: [],
+              prevState: preOptimisticState,
+              nextState: optimisticState,
+              atomKey,
+              durationMs,
+            }),
+          );
+
+          return { _tag: 'Right' as const, right: optimisticState };
+        }
+
+        // 3b. Confirmation failed — Roll back atomically
+        const error = confirmResult.left;
+        atom._setState(preOptimisticState);
+        recomputeDependents(atomKey);
+
+        // Call onRollback if provided
+        if (opts.onRollback) {
+          try {
+            await opts.onRollback(error);
+          } catch (callbackErr) {
+            // Log but don't throw — onRollback errors shouldn't prevent the main failure
+            console.error('Error in onRollback callback:', callbackErr);
+          }
+        }
+
+        // Notify plugins and debug about the rollback
+        plugins.forEach(p => p.onError?.({ command: fullCmd, error, atomKey }));
+
+        if (debugLayer.isEnabled) {
+          debugLayer.record({
+            commandType: fullCmd.type,
+            correlationId: cmdMeta.correlationId,
+            atomKey,
+            events: [],
+            prevState: sanitize(atomKey, preOptimisticState),
+            nextState: sanitize(atomKey, preOptimisticState),
+            durationMs: now() - startTime,
+            error,
+            timestamp: startTime,
+          });
+        }
+
+        return { _tag: 'Left' as const, left: error };
+      } catch (err: unknown) {
+        // Unexpected error during confirm — roll back
+        atom._setState(preOptimisticState);
+        recomputeDependents(atomKey);
+
+        const error: CommandError = {
+          code: 'HANDLER_ERROR',
+          message: `Optimistic update failed: ${String(err)}`,
+        };
+
+        if (opts.onRollback) {
+          try {
+            await opts.onRollback(error);
+          } catch (callbackErr) {
+            console.error('Error in onRollback callback:', callbackErr);
+          }
+        }
+
+        plugins.forEach(p => p.onError?.({ command: fullCmd, error, atomKey }));
+
+        if (debugLayer.isEnabled) {
+          debugLayer.record({
+            commandType: fullCmd.type,
+            correlationId: cmdMeta.correlationId,
+            atomKey,
+            events: [],
+            prevState: sanitize(atomKey, preOptimisticState),
+            nextState: sanitize(atomKey, preOptimisticState),
+            durationMs: now() - startTime,
+            error,
+            timestamp: startTime,
+          });
+        }
+
+        return { _tag: 'Left' as const, left: error };
+      }
+    },
+
     register<S>(
       atom:     Atom<S>,
       handler?: CommandHandler<S, Command>,
       applier?: EventApplier<S>,
     ): void {
+      assertApplicationStoragePolicy(atom.definition.key, atom.definition.storage);
+
       // Phase 1.3 — co-located registration: single-arg form reads from atom.definition
       if (!handler || !applier) {
         const def = atom.definition;
@@ -424,6 +617,8 @@ export function createKernel(options: KernelOptions = {}): Kernel {
       handler: AsyncCommandHandler<S, Command>,
       applier: EventApplier<S>,
     ): void {
+      assertApplicationStoragePolicy(atom.definition.key, atom.definition.storage);
+
       const atomKey = atom.definition.key;
       getAtomRegistration(atom);
       // Store typed async handler keyed by "atomKey::commandType"
@@ -444,7 +639,35 @@ export function createKernel(options: KernelOptions = {}): Kernel {
       atom:    Atom<S>,
       handler: QueryHandler<S, Q, R>,
     ): void {
+      assertApplicationStoragePolicy(atom.definition.key, atom.definition.storage);
       queryBus.register(atom.definition.key, handler);
+    },
+
+    /** Phase 2.5 — Register a computed atom and subscribe to its dependencies. */
+    registerComputed<R>(computed: ComputedAtom<R>): void {
+      computedAtoms.add(computed);
+
+      // Subscribe to all deps so we recompute when they change
+      for (const dep of computed.definition.deps) {
+        const depKey = dep.definition.key;
+        let dependents = computedDependencies.get(depKey);
+        if (!dependents) {
+          dependents = new Set();
+          computedDependencies.set(depKey, dependents);
+        }
+        dependents.add(computed);
+      }
+
+      // Initial compute
+      const depStates = computed.definition.deps.map(dep => dep.get());
+      const initialValue = computed.definition.compute(depStates as readonly any[]);
+      computed._setComputed(initialValue);
+    },
+
+    subscribeComputed<R>(computed: ComputedAtom<R>, listener: (v: R) => void): Unsubscribe {
+      // Immediately notify with current value, then subscribe to future updates
+      listener(computed.get());
+      return computed.subscribe(listener);
     },
 
     subscribe<S>(atom: Atom<S>, listener: (s: S) => void): Unsubscribe {
@@ -462,6 +685,9 @@ export function createKernel(options: KernelOptions = {}): Kernel {
         const { atom } = reg;
         const storageConfig = atom.definition.storage;
         if (!storageConfig) continue;
+        assertApplicationStoragePolicy(atom.definition.key, storageConfig);
+        // memory-only policy: never read from browser storage
+        if (storageConfig.security === 'memory-only') continue;
 
         const key = storageConfig.key ?? atom.definition.key;
         hydratePromises.push(
@@ -485,6 +711,8 @@ export function createKernel(options: KernelOptions = {}): Kernel {
       atoms.clear();
       applierMap.clear();
       asyncHandlerMap.clear();
+      computedAtoms.clear();
+      computedDependencies.clear();
       plugins.forEach(p => p.onDestroy?.());
       plugins.length = 0;
       debugLayer = noopDebug;

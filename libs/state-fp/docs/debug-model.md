@@ -6,117 +6,111 @@
 
 ## Overview
 
-Debuggability in `@vi/state-fp` is a **first-class feature**, not an
-afterthought or an external plugin. The library ships with a complete debug
-layer that includes:
+Debuggability in `@vi/state-fp` is a **first-class feature**, not an afterthought or an external plugin. The library ships with a complete debug layer that includes:
 
-- Structured, queryable **Event Log**
-- **Snapshot Manager** with configurable interval
-- **Time-Travel** replay for recreating any historical state
-- **DevTools Bridge** accessible from browser console without extensions
-- **Metrics** for performance monitoring
-- **Source Location Capture** linking state transitions to application code
+- Structured, queryable **Event Log** (circular buffer with O(1) secondary indices)
+- **Snapshot Manager** with configurable auto-interval and manual capture
+- **Time-Travel** controller for navigating to any historical atom state
+- **DevTools Bridge** attached to `window.__VI_STATE_FP__` in browser environments
+- **KernelPlugin API** for integrating the devtools stack with the kernel
 
-All debug infrastructure is zero-cost in production — it is tree-shaken
-out when `debug: false` (the default in production builds).
+All debug infrastructure is opt-in. Pass `debug: true` in `KernelOptions` to wire the kernel's internal `DebugInterface`, then attach the devtools plugin with `kernel.use(devtools.plugin)`. In production omit both — no devtools objects are allocated.
 
 ---
 
 ## 1. Debug Layer Activation
 
 ```ts
-import { createKernel } from '@vi/state-fp/kernel';
-import { createDevTools, noopDevTools } from '@vi/state-fp/devtools';
+import { createKernel }   from '@vi/state-fp/kernel';
+import { createDevTools } from '@vi/state-fp/devtools';
 
-// Development — explicit devtools
-const kernel = createKernel({
-  devtools: createDevTools({
-    maxEventLogSize:  500,   // rolling window; default 200
-    snapshotInterval: 50,   // snapshot every N events; default 50
-  }),
+// 1. Create the devtools instance (event log + snapshots + time-travel + bridge)
+const devtools = createDevTools({
+  maxLogSize:    500,   // rolling circular buffer size; default 500
+  maxSnapshots:  30,    // max snapshots retained; default 30
+  snapshotEvery: 50,    // auto-snapshot every N events; 0 = never; default 50
+  installBridge: true,  // install window.__VI_STATE_FP__ bridge; default true if window exists
 });
 
-// Production — no devtools allocated (zero cost)
-const kernel = createKernel({ devtools: noopDevTools });
+// 2. Create the kernel with debug mode enabled (enables internal DebugInterface)
+const kernel = createKernel({ debug: true });
 
-// Convenience shorthand — devtools enabled when env flag is set
-const kernel = createKernel({
-  devtools: process.env['NODE_ENV'] !== 'production'
-    ? createDevTools()
-    : noopDevTools,
-});
-
-// Access the debug interface via the plugin registry
-// (or by keeping a reference to the devtools object)
-const devtools = createDevTools();
-const dbg = devtools; // EventLog, SnapshotManager, TimeTravelController
+// 3. Connect devtools to the kernel via the KernelPlugin API
+kernel.use(devtools.plugin);
 ```
 
-When `noopDevTools` is used:
-- `devtools.record()` is a synchronous no-op (`() => void 0`)
-- All debug private fields (`EventLog`, `SnapshotManager`) are never allocated
-- Dead-code elimination removes the import entirely in bundled production builds
+**Why two separate steps?**  
+`createKernel({ debug: true })` enables the kernel's internal debug recording hooks (the `DebugInterface` wired to `kernel.debug`). These hooks call `record()` on any registered `DebugInterface`. The devtools plugin (`devtools.plugin`) is a `KernelPlugin` that implements `onRegister` and `onExecute` — connecting the devtools event log to those hooks. This decoupling means you can attach any custom `DebugInterface` without using the devtools module at all.
+
+**Production pattern:**  
+Simply omit `debug: true` and don't call `kernel.use(devtools.plugin)`. The kernel's debug path short-circuits immediately (`if (!this.#debug) return`) — no allocation, no string building, zero overhead.
 
 ---
 
 ## 2. DebugEntry — The Atomic Unit of Observability
 
-Every call to `kernel.execute()` produces exactly one `DebugEntry` (when devtools are attached).
+Every command execution that produces domain events results in one `DebugEntry` **per event** appended to the event log. A command that emits N events produces N entries — all sharing the same `correlationId`, linking them as part of one logical operation.
 
 ```ts
-type DebugEntry<S = unknown> = {
-  /** UUIDv4 — unique identifier for this entry */
-  readonly id:             string;
+type DebugEntry = {
+  /** UUIDv4 — unique identifier for this log entry */
+  readonly id:            string;
 
-  /** Shared across chained events (user action → effects → sub-dispatches) */
-  readonly correlationId:  string;
+  /** The atom key that was targeted by the command */
+  readonly atomKey:       string;
 
-  /** `id` of the event that caused this dispatch (causality chain) */
-  readonly prevEventId:    string | null;
+  /** Shared across all events from the same top-level command (causality root) */
+  readonly correlationId: string;
 
-  /** The atom that was targeted */
-  readonly atomKey:        string;
+  /** The `id` of a parent DebugEntry that caused this entry (`undefined` for root commands) */
+  readonly causationId:   string | undefined;
 
-  /** The event.type that was dispatched */
-  readonly eventType:      string;
+  /** The command type that triggered this event (`undefined` if driven by side-effect) */
+  readonly commandType:   string | undefined;
 
-  /** Full event payload (serialised copy) */
-  readonly event:          unknown;
+  /** The single domain event this entry records */
+  readonly event:         DomainEvent;
 
-  /** State before the reducer ran */
-  readonly prevState:      S;
+  /** Deep clone of atom state BEFORE the event applier ran */
+  readonly stateBefore:   unknown;
 
-  /** State after the reducer ran (same as prevState on error) */
-  readonly nextState:      S;
+  /** Deep clone of atom state AFTER the event applier ran */
+  readonly stateAfter:    unknown;
 
-  /** JSON-patch style diff between prevState and nextState */
-  readonly diff:           Patch[];
+  /** Wall-clock timestamp (ms since epoch) */
+  readonly timestamp:     number;
 
-  /** Wall-clock time of dispatch */
-  readonly timestamp:      number;
-
-  /** Time spent in CommandHandler + EventApplier + storage write (ms) */
-  readonly durationMs:     number;
-
-  /** Present only when CommandHandler returned an error */
-  readonly error?:         CommandError;
-
-  /** First non-library stack frame (dev mode only — null in production) */
-  readonly sourceLocation?: SourceLocation;
-};
-
-type Patch = {
-  op:    'add' | 'remove' | 'replace';
-  path:  string;    // JSON Pointer, e.g. "/count"
-  value?: unknown;  // absent for 'remove'
-};
-
-type SourceLocation = {
-  file:   string;
-  line:   number;
-  column: number;
+  /** Monotonically-increasing event version (from event.meta.version) */
+  readonly version:       number;
 };
 ```
+
+> **What is NOT in DebugEntry:**  
+> - No `diff: Patch[]` — compute diffs from `stateBefore`/`stateAfter` if needed  
+> - No `durationMs` — timing information lives in `KernelDebugEntry` (internal kernel type)  
+> - No `error` — failed commands produce no events and therefore no DebugEntry  
+> - No `sourceLocation` — not captured; not in the type  
+> - No `prevState`/`nextState` — the correct field names are `stateBefore`/`stateAfter`  
+
+### KernelDebugEntry (internal)
+
+The kernel maintains a separate `KernelDebugEntry` type for its own internal debug hook:
+
+```ts
+type KernelDebugEntry = {
+  readonly commandType:   string;
+  readonly correlationId: string;
+  readonly atomKey:       string;
+  readonly events:        DomainEvent[];  // all events from this command
+  readonly prevState:     unknown;
+  readonly nextState:     unknown;
+  readonly durationMs:    number;         // timing IS available at the kernel level
+  readonly error?:        CommandError;
+  readonly timestamp:     number;
+};
+```
+
+This type is used internally by `kernel.debug.record()` and powers the `onExecute` callback of `KernelPlugin`. The devtools plugin's `onExecute` hook receives `KernelDebugEntry`-shaped params and produces one `DebugEntry` per event.
 
 ---
 
@@ -127,14 +121,15 @@ The event log is an **append-only, indexed, bounded circular buffer**.
 ### Interface
 
 ```ts
-interface EventLog {
-  /** Append a new DebugEntry */
+// From EventLogInterface (devtools/types.ts)
+interface EventLogInterface {
+  /** Append a new DebugEntry (called by devtools plugin's onExecute) */
   append(entry: DebugEntry): void;
 
-  /** Retrieve all entries (oldest first) */
+  /** All buffered entries, oldest first */
   getAll(): ReadonlyArray<DebugEntry>;
 
-  /** Entries for a specific atom */
+  /** Entries for a specific atom, oldest first */
   getByAtom(atomKey: string): ReadonlyArray<DebugEntry>;
 
   /** Entries sharing a correlation ID (trace a user action's full impact) */
@@ -152,330 +147,303 @@ interface EventLog {
   /** Clear all entries */
   clear(): void;
 
-  /** Total number of events dispatched (monotonically increasing, even after clear) */
+  /** Total number of events appended (monotonically increasing, even after clear) */
   readonly totalCount: number;
-
-  /** Serialise log to JSON string for export */
-  export(): string;
 }
 ```
 
+The `EventLog` class also exposes `serialize(): string` and `deserialize(json: string): void` methods used internally by the bridge for `exportLog`/`importLog`.
+
 ### Circular Buffer Internals
 
-The event log uses a fixed-size circular buffer backed by a typed array index.
-When `maxEventLogSize` is reached, the oldest entry is evicted
-(FIFO). Secondary indices are maintained for efficient queries:
+The event log uses a fixed-size circular buffer backed by a plain array + a head pointer. When `maxLogSize` is reached the oldest entry is evicted (FIFO). Two secondary indices are maintained for efficient queries:
 
 ```
-Primary:          Array<DebugEntry>        O(1) append, O(n) full scan
-byAtom:           Map<atomKey, string[]>   O(1) lookup by atom
-byCorrelation:    Map<cid, string[]>       O(1) lookup by correlation
+Primary:          DebugEntry[]                     O(1) append, O(n) full scan
+#byAtom:          Map<atomKey, entryId[]>           O(1) lookup by atom key
+#byCorrelation:   Map<correlationId, entryId[]>     O(1) lookup by correlation ID
 ```
+
+Both secondary indices are updated on every append and pruned on every eviction, so the index size is always bounded by `maxLogSize`.
 
 ---
 
 ## 4. Snapshot Manager
 
-A snapshot is an immutable copy of all atom states at a single point.
-
-### When Snapshots Are Taken
-
-| Trigger | Condition |
-|---|---|
-| Automatic | Every `snapshotInterval` events (default 50) |
-| Manual | `devtools.snapshots.take('label')` — explicit programmer call |
-| Pre-hydration | Before `kernel.hydrate()` overwrites existing state |
-| Pre-invalidation | Before a bulk `kernel.invalidateAll()` |
+A snapshot is an immutable, deep-frozen copy of all atom states at a single point in time.
 
 ### Snapshot Shape
 
 ```ts
 type Snapshot = {
-  /** UUIDv4 */
-  readonly id:           string;
+  /** UUIDv4 — unique snapshot identifier */
+  readonly id:             string;
 
-  /** Wall-clock timestamp */
-  readonly timestamp:    number;
+  /** Wall-clock time when the snapshot was taken */
+  readonly timestamp:      number;
 
-  /** The DebugEntry.id that triggered this snapshot */
-  readonly triggerEventId: string;
+  /** Total event count in the log at capture time (used for time-travel ordering) */
+  readonly eventCount:     number;
 
-  /** Total event count at this point — used for time-travel ordering */
-  readonly eventCount:   number;
+  /** The DebugEntry id that triggered this snapshot; undefined for manual snapshots */
+  readonly triggerEventId: string | undefined;
 
-  /** Deep-cloned state of every registered atom */
-  readonly state:        Readonly<Record<string, unknown>>;
+  /** Deep-frozen copy of every registered atom's state, keyed by atom key */
+  readonly state:          Readonly<Record<string, unknown>>;
 
-  /** Human-readable label (set by `devtools.snapshots.take('label')`) */
-  readonly label?:       string;
+  /** Optional human-readable label set by manual `snapshots.capture(...)` calls */
+  readonly label:          string | undefined;
 };
 ```
 
-### Snapshot Manager Interface
+### When Snapshots Are Taken
+
+| Trigger | Condition |
+|---|---|
+| Automatic | Every `snapshotEvery` events (default 50); configurable in `DevToolsOptions` |
+| Manual | `devtools.snapshots.capture(atomStates, undefined, log.totalCount, 'my-label')` |
+| Test setup | Manually before executing commands to create a known baseline |
+
+> **Note:** There is no automatic pre-hydration or pre-invalidation snapshot — callers must
+> take a manual snapshot before `kernel.hydrate()` if they want a baseline.
+
+### SnapshotManager Interface
 
 ```ts
-interface SnapshotManager {
-  /** Take an explicit snapshot with an optional label */
-  take(label?: string): Snapshot;
+class SnapshotManager implements SnapshotManagerInterface {
+  /**
+   * Capture the current atom states into a new snapshot.
+   * Called automatically by the devtools plugin's onExecute hook every N events.
+   */
+  capture(
+    atomStates:      Record<string, unknown>,
+    triggerEventId:  string | undefined,
+    totalEventCount: number,
+    label?:          string,
+  ): Snapshot;
 
-  /** List all snapshots ordered by eventCount asc */
+  /** All snapshots ordered by eventCount ascending */
   list(): ReadonlyArray<Snapshot>;
 
-  /** Get a snapshot by id */
+  /** Get a specific snapshot by id */
   get(id: string): Maybe<Snapshot>;
 
-  /** Get the snapshot nearest to (but not after) a given event count */
+  /** The most recent snapshot whose eventCount is ≤ the given value */
   nearestBefore(eventCount: number): Maybe<Snapshot>;
 
-  /** Prune snapshots older than the head by N entries (rolling window) */
+  /** Evict oldest snapshots, keeping at most keepLast */
   prune(keepLast: number): void;
 
-  /** Serialise all snapshots to JSON */
+  /** Serialize all snapshots to a JSON string */
   export(): string;
 
-  /** Import previously exported snapshots (for replay in CI / bug reproduction) */
+  /** Replace the snapshot list from a previously exported JSON string */
   import(json: string): void;
 }
 ```
 
 ### Snapshot Retention
 
-By default, the last `maxSnapshots` (default 20) snapshots are retained.
-Older snapshots are pruned automatically after each new snapshot is taken.
-Pruned snapshots can be exported before removal.
+Snapshots are kept rolling via `prune(maxSnapshots)` called after every `capture()`. With default `maxSnapshots: 30` and `snapshotEvery: 50`, approximately the last 1500 events are covered by checkpoints — meaning time-travel to any event in that window replays at most 49 events from the nearest snapshot.
 
 ---
 
 ## 5. Time-Travel
 
-Time-travel allows the developer (or automated tests) to replay the event
-log to any historical point in time.
+Time-travel allows replaying the event log to re-materialize any historical atom state.
+
+### TimeTravelController Interface
+
+```ts
+type TimeTravelController = {
+  /** Whether the controller is currently in replay mode */
+  readonly replayMode:     boolean;
+
+  /** Current replay position (index into event log) — 0 when not in replay mode */
+  readonly replayPosition: number;
+
+  /** Jump to the state immediately after the event with the given id */
+  to(eventId: string): Promise<Either<TimeTravelError, void>>;
+
+  /** Jump to the atom states captured in a snapshot */
+  toSnapshot(snapshotId: string): Either<TimeTravelError, void>;
+
+  /** Advance one event forward (valid only in replay mode) */
+  stepForward(): Either<TimeTravelError, void>;
+
+  /** Step one event backward (valid only in replay mode) */
+  stepBackward(): Either<TimeTravelError, void>;
+
+  /** Exit replay mode and restore the live state saved before replay began */
+  exit(): void;
+};
+
+type TimeTravelError = {
+  code:    'EVENT_NOT_FOUND' | 'SNAPSHOT_NOT_FOUND' | 'REENTRANT_REPLAY' | 'UNKNOWN';
+  message: string;
+};
+```
 
 ### Algorithm
 
 ```
-timeTravelTo(targetEventId):
+timeTravel.to(targetEventId):
 
-1. Find the DebugEntry with id = targetEventId
-2. Identify its eventCount position N
-3. Find snapshot S = snapshotManager.nearestBefore(N)
-4. Reset all atoms to S.state (deep clone)
-5. Re-dispatch events from snapshot.eventCount + 1 to N
-   — each re-dispatch goes through the reducer pipeline
-   — storage writes are SKIPPED (read-only replay)
-   — subscribers ARE notified (so UI can reflect replayed state)
-6. Mark store.replayMode = true (new dispatches are blocked during replay)
-7. Return the final state snapshot
+1. Save current live atom states in preReplayState (deepClone of every atom.get())
+2. Find the DebugEntry with id = targetEventId; get its index N in the log
+3. Find snapshot S = snapshots.nearestBefore(N + 1)
+4. If S exists:
+     - Restore atom states from S.state via atom._setState()
+     - Re-apply log entries from S.eventCount to N (inclusive)
+   Else:
+     - Re-apply all entries from index 0 to N
+5. Set replayMode = true, replayPosition = N
 
-exitReplay():
-  Restore latest real state from before replay started
-  store.replayMode = false
+timeTravel.exit():
+  Restore preReplayState to all atoms via atom._setState()
+  Set replayMode = false, replayPosition = 0
 ```
 
-### Interface
+### Important Invariants
 
-```ts
-interface TimeTravelInterface {
-  /** Is the store currently in replay mode? */
-  readonly replayMode: boolean;
-
-  /** Travel to the state immediately after a specific event */
-  to(eventId: string): Promise<Either<TimeTravelError, void>>;
-
-  /** Travel to the state at a specific snapshot */
-  toSnapshot(snapshotId: string): Either<TimeTravelError, void>;
-
-  /** Step forward one event from current replay position */
-  stepForward(): Either<TimeTravelError, void>;
-
-  /** Step backward one event from current replay position */
-  stepBackward(): Either<TimeTravelError, void>;
-
-  /** Exit replay mode and restore current live state */
-  exit(): void;
-
-  /** Replay the entire log from scratch (useful for test verification) */
-  replayAll(): Promise<Either<TimeTravelError, void>>;
-}
-```
-
-### Constraints
-
-- Time-travel **does not write to storage** — it is a read-only operation
-- `kernel.execute()` is **blocked** while `replayMode === true`
-- Async effects are **not replayed** — only the resulting state transitions
-  are (because effects are IO boundaries, not pure functions)
-- Calling `timeTravelTo` from a subscriber callback will throw
-  `TimeTravelError { code: 'REENTRANT_REPLAY' }`
+- **Storage adapters are never written during replay** — `atom._setState()` bypasses the
+  kernel's CQRS pipeline entirely; no `execute()` call occurs.
+- **The kernel itself is not "blocked"** — there is no flag preventing `kernel.execute()` calls
+  during replay. However doing so will immediately mutate atoms that are mid-replay, producing
+  confusing results. Do not call `execute()` while `replayMode` is `true`.
+- **Async effects are not replayed** — only state transitions are; IO boundaries are not
+  idempotent and are outside the replay scope.
+- **Computed atoms are updated** — `atom._setState()` calls do not go through
+  `recomputeDependents()`. If computed atoms need to reflect historical state, their source
+  atoms must be set correctly first (the event applier entries already do this for direct atoms).
 
 ---
 
 ## 6. DevTools Bridge
 
-The DevTools Bridge is a structured `window.__VI_STATE_FP__` object
-attached to the global scope in browser environments when `attachBridge()` is called.
+The bridge exposes a read-oriented API on `window.__VI_STATE_FP__` in browser environments. It is installed automatically by `createDevTools()` unless `installBridge: false` is passed.
 
 ```ts
-import { createDevTools, attachBridge } from '@vi/state-fp/devtools';
+// From DevToolsBridge (devtools/types.ts)
+type DevToolsBridge = {
+  /** All entries in the event log, oldest-first */
+  getLog(): ReadonlyArray<DebugEntry>;
 
-const devtools = createDevTools();
-const kernel = createKernel({ devtools });
-attachBridge(devtools);  // window.__VI_STATE_FP__ is now available
-```
+  /** Current state of every registered atom, keyed by atom key */
+  getAtoms(): Record<string, unknown>;
 
-### API
+  /** Apply the state corresponding to the log entry with the given id */
+  timeTravelTo(id: string): Promise<void>;
 
-```ts
-// Available in browser DevTools console
-window.__VI_STATE_FP__ = {
-  // Inspect
-  getLog():       DebugEntry[]           // full event log
-  getAtoms():     Record<string, unknown> // current state of all atoms
-  getMetrics():   Metrics                 // dispatch counts, timings
+  /** Serialize the full log to a JSON string */
+  exportLog(): string;
 
-  // Snapshots
-  getSnapshots(): Snapshot[]
-  snapshot(label?: string): Snapshot     // take a manual snapshot
+  /** Restore the log from a previously exported JSON string */
+  importLog(json: string): void;
 
-  // Time-travel
-  timeTravelTo(eventId: string): void    // fire-and-forget for console use
-  stepForward():  void
-  stepBackward(): void
-  exitReplay():   void
-  replayMode():   boolean
-
-  // Import/Export for bug reproduction
-  exportLog():    string                 // JSON of full event log
-  importLog(json: string): void          // replay a previously exported log
-
-  // Debugging utilities
-  findAtom(key: string):                 // get current state of a single atom
-    Maybe<unknown>
-  traceCorrelation(cid: string):         // show all events in a causal chain
-    DebugEntry[]
-}
-```
-
-### Usage Examples
-
-```js
-// In browser DevTools console:
-
-// Q: What state is vi/counter in right now?
-window.__VI_STATE_FP__.findAtom('vi/counter')
-// → { _tag: 'Just', value: { count: 7 } }
-
-// Q: What did this user action affect?
-window.__VI_STATE_FP__.traceCorrelation('abc-123-def')
-// → [ DebugEntry('counter/increment'), DebugEntry('dashboard/refresh') ]
-
-// Q: What state was vi/cart in 30 events ago?
-const log = window.__VI_STATE_FP__.getLog()
-const target = log[log.length - 30]
-window.__VI_STATE_FP__.timeTravelTo(target.id)
-// → store replays; UI updates to that historical state
-
-// Q: Export for sharing with teammate
-copy(window.__VI_STATE_FP__.exportLog())
-// → JSON on clipboard; teammate can importLog() to reproduce bug exactly
-```
-
----
-
-## 7. Source Location Capture
-
-In development mode (`debug: true`), the store captures the call-site
-stack frame at the moment `dispatch()` is called.
-
-```ts
-// Simplified implementation
-function captureSourceLocation(): SourceLocation | null {
-  const stack = new Error().stack ?? '';
-  const frames = stack.split('\n');
-  // Skip frames from within @vi/state-fp itself
-  const appFrame = frames.find(line =>
-    !line.includes('@vi/state-fp') &&
-    !line.includes('node_modules')
-  );
-  return appFrame ? parseStackFrame(appFrame) : null;
-}
-```
-
-This means each `DebugEntry` carries a `sourceLocation` pointing to the
-exact file and line number in application code that triggered the state
-change. No external sourcemap tooling is required.
-
----
-
-## 8. Metrics
-
-```ts
-type Metrics = {
-  /** Total dispatches since store creation */
-  totalDispatches:    number;
-
-  /** Number of dispatches that returned Left (error) */
-  errorCount:         number;
-
-  /** Dispatches that resulted in a no-op (state unchanged) */
-  noOpCount:          number;
-
-  /** Average dispatch duration in milliseconds */
-  averageDurationMs:  number;
-
-  /** The slowest dispatch on record */
-  slowestDispatch:    DebugEntry | null;
-
-  /** Storage hit rate during hydration (0–1) */
-  storageHitRate:     number;
-
-  /** Per-atom dispatch counts */
-  byAtom:             Record<string, number>;
+  /** Bridge protocol version */
+  readonly version: string;  // '0.1.0'
 };
 ```
 
-Access via: `devtools.metrics`
+### Usage in Browser Console
 
----
+```js
+// Inspect current state
+window.__VI_STATE_FP__.getAtoms()
+// → { 'vi/counter': { count: 7 }, 'vi/cart': { items: [] } }
 
-## 9. Structured Log Export
+// View recent log entries
+window.__VI_STATE_FP__.getLog().slice(-5)
+// → [ DebugEntry, DebugEntry, ... ]
 
-The event log `export()` method produces a JSON array compatible with
-standard log aggregators:
+// Jump to a past state
+const log = window.__VI_STATE_FP__.getLog();
+const target = log[log.length - 10];
+window.__VI_STATE_FP__.timeTravelTo(target.id);
+// Atom states now reflect the point in time after that event
 
-```json
-[
-  {
-    "id": "a1b2-...",
-    "correlationId": "z9y8-...",
-    "atomKey": "vi/counter",
-    "eventType": "counter/increment",
-    "event": { "type": "counter/increment" },
-    "prevState": { "count": 3 },
-    "nextState": { "count": 4 },
-    "diff": [{ "op": "replace", "path": "/count", "value": 4 }],
-    "timestamp": 1741200000000,
-    "durationMs": 0.8,
-    "sourceLocation": {
-      "file": "/src/app/counter/counter.component.ts",
-      "line": 42,
-      "column": 14
-    }
-  }
-]
+// Export for sharing
+copy(window.__VI_STATE_FP__.exportLog());
+// JSON on clipboard — teammate can importLog() to reproduce
+
+// Import a colleague's log for replay
+window.__VI_STATE_FP__.importLog(pastedJson);
 ```
 
-This format can be piped to:
-- **Datadog Logs** via the browser SDK
-- **Loki** via HTTP push
-- **CloudWatch** via `console.log` (since CloudWatch ingests structured
-  JSON from browser applications via Kinesis)
+> **Important:** The bridge does NOT expose `traceCorrelation`, `findAtom`, `getMetrics`,
+> or `stepForward/stepBackward` directly. Use `devtools.eventLog.getByCorrelation()`,
+> `devtools.timeTravel.stepForward()` etc. from application code for those operations.
 
 ---
 
-## 10. Debug in Tests
+## 7. Computed Atoms in Debug Context (Phase 2.5)
 
-The debug layer is fully accessible in Vitest unit tests:
+Computed atoms (`defineComputedAtom`) do not accept commands and do not appear as the
+`atomKey` of any `DebugEntry`. Their state changes are derived from source atoms.
+
+When a source atom changes via `kernel.execute()`, the kernel calls `recomputeDependents(atomKey)`
+synchronously at step 4.5 of the write path — **before** any storage write and **before**
+any subscriber notifications. This means:
+
+- Computed atom state is always current when subscribers are notified of source atom changes
+- The devtools event log does not record computed atom recomputations separately
+- To inspect a computed atom's state in devtools: use `window.__VI_STATE_FP__.getAtoms()`;
+  the computed atom key will appear there with its current derived value
+
+### Debugging Computed State
+
+```ts
+// Manually check which atoms are computed vs source
+const atoms = window.__VI_STATE_FP__.getAtoms();
+// All atoms (source + computed) are listed here
+
+// To understand what changed a computed atom, trace the source atom:
+const entries = devtools.eventLog.getByAtom('vi/cart');
+// These are the source events that would drive a computed 'vi/cart/total'
+```
+
+---
+
+## 8. Optimistic Updates in Debug Context (Phase 2.6)
+
+`kernel.executeOptimistic()` applies an optimistic state immediately via `atom._setState()`,
+then calls `confirm()`, and on failure restores the pre-optimistic state via `atom._setState()`.
+
+**Important:** Optimistic state changes via `atom._setState()` do **not** produce `DebugEntry`
+records in the event log. The event log only records entries from the confirmed `confirm()`
+operation (which goes through the standard CQRS pipeline).
+
+This means:
+
+| Scenario | Event Log Entry? | State Change? |
+|---|---|---|
+| Optimistic apply (before confirm) | **No** | Yes |
+| Confirm succeeds → `execute()` runs | Yes (normal entry) | Yes |
+| Confirm fails → rollback `_setState` | **No** | Yes (reverted) |
+
+### Debugging Optimistic Updates
+
+When debugging unexpected state, check if an optimistic update has been applied but not yet
+confirmed — the event log will appear behind the actual atom state:
+
+```ts
+// The event log shows committed state only
+const log = devtools.eventLog.getByAtom('vi/order');
+const lastCommitted = log[log.length - 1]?.stateAfter;  // last known good state
+
+// The actual current state may reflect an un-confirmed optimistic write
+const current = window.__VI_STATE_FP__.getAtoms()['vi/order'];
+
+// If current !== lastCommitted, an optimistic update is pending
+```
+
+---
+
+## 9. Debug in Tests
+
+The debug layer is fully accessible in Vitest unit tests. Use `debug: true` so the kernel's
+internal `DebugInterface` records to the plugin, then attach `devtools.plugin` before registering atoms.
 
 ```ts
 import { createKernel, defineAtom, createCommandHandler, createEventApplier,
@@ -483,245 +451,142 @@ import { createKernel, defineAtom, createCommandHandler, createEventApplier,
 import { createDevTools } from '@vi/state-fp/devtools';
 import { right } from '@vi/state-fp/core';
 
-// Test atoms and handlers (defined once, reused across tests)
 const counterAtom = defineAtom({ key: 'vi/counter', initialState: { count: 0 } });
-const increment = () => command('counter/increment', {});
+const increment   = () => command('counter/increment', {});
 
-const incrementHandler = createCommandHandler({
+const handler = createCommandHandler({
   commandType: 'counter/increment',
-  handle: (state) => right([domainEvent('counter/incremented', { by: 1 })]),
+  handle: (_state) => right([domainEvent('counter/incremented', { by: 1 })]),
 });
-const counterApplier = createEventApplier<{ count: number }>({
+const applier = createEventApplier<{ count: number }>({
   'counter/incremented': (state, e) => ({ count: state.count + e.payload.by }),
 });
 
-describe('counter kernel', () => {
-  it('records events correctly', () => {
-    const devtools = createDevTools();
-    const kernel = createKernel({ devtools });
-    kernel.register(counterAtom, incrementHandler, counterApplier);
+describe('counter devtools', () => {
+  let kernel:   ReturnType<typeof createKernel>;
+  let devtools: ReturnType<typeof createDevTools>;
 
+  beforeEach(() => {
+    devtools = createDevTools({ installBridge: false });  // no window in Node
+    kernel   = createKernel({ debug: true });
+    kernel.use(devtools.plugin);
+    kernel.register(counterAtom, handler, applier);
+  });
+
+  it('records one entry per event', () => {
     kernel.execute(counterAtom, increment());
     kernel.execute(counterAtom, increment());
 
-    const log = devtools.getLog();
-    const byAtom = log.filter(e => e.atomKey === 'vi/counter');
-    expect(byAtom).toHaveLength(2);
-    expect(byAtom[1].nextState).toEqual({ count: 2 });
-    expect(byAtom[1].diff).toEqual([{ op: 'replace', path: '/count', value: 2 }]);
+    const log = devtools.eventLog.getByAtom('vi/counter');
+    expect(log).toHaveLength(2);
+    expect(log[0].stateBefore).toEqual({ count: 0 });
+    expect(log[0].stateAfter).toEqual({ count: 1 });
+    expect(log[1].stateAfter).toEqual({ count: 2 });
+    expect(log[0].commandType).toBe('counter/increment');
+  });
+
+  it('correlates events from one command', () => {
+    kernel.execute(counterAtom, increment());
+
+    const log = devtools.eventLog.getAll();
+    expect(log[0].correlationId).toBeDefined();
+    // causationId is undefined for root commands
+    expect(log[0].causationId).toBeUndefined();
   });
 
   it('time-travels to a previous state', async () => {
-    const devtools = createDevTools();
-    const kernel = createKernel({ devtools });
-    kernel.register(counterAtom, incrementHandler, counterApplier);
+    kernel.execute(counterAtom, increment()); // event 1 → count: 1
+    kernel.execute(counterAtom, increment()); // event 2 → count: 2
+    kernel.execute(counterAtom, increment()); // event 3 → count: 3
 
-    kernel.execute(counterAtom, increment()); // event 1
-    kernel.execute(counterAtom, increment()); // event 2
-    kernel.execute(counterAtom, increment()); // event 3
+    const log = devtools.eventLog.getByAtom('vi/counter');
+    const event1Id = log[0].id;
 
-    const log = devtools.getLog();
-    const event1Id = log.filter(e => e.atomKey === 'vi/counter')[0].id;
-    await devtools.timeTravel.to(event1Id);
-
-    // State reflects position after event 1
-    expect(kernel.query(counterAtom, { _kind: 'Query', type: 'counter/getCount' })).toEqual(1);
+    const result = await devtools.timeTravel.to(event1Id);
+    expect(result._tag).toBe('Right');
+    expect(counterAtom.get()).toEqual({ count: 1 });
 
     devtools.timeTravel.exit();
-    // Restored to live state
-    expect(kernel.query(counterAtom, { _kind: 'Query', type: 'counter/getCount' })).toEqual(3);
+    expect(counterAtom.get()).toEqual({ count: 3 });
+  });
+
+  it('takes a snapshot every 50 events by default', () => {
+    for (let i = 0; i < 50; i++) {
+      kernel.execute(counterAtom, increment());
+    }
+    expect(devtools.snapshots.list()).toHaveLength(1);
+    expect(devtools.snapshots.list()[0].eventCount).toBe(50);
   });
 });
 ```
 
 ---
 
-## 11. Performance Considerations
+## 10. Structured Log Export
 
-| Concern | Mitigation |
-|---|---|
-| `structuredClone` on every dispatch | Only in debug mode; no-op in production |
-| Stack trace capture | Lazy — only when `debug: true` AND `captureSourceLocation` option enabled |
-| Event log indices (3× Map overhead) | Bounded by `maxEventLogSize`; entries pruned as circle advances |
-| Snapshot deep-clone | Background microtask after dispatch settles; never on the synchronous hot path |
-| `window.__VI_STATE_FP__` global | Assigned once at `createKernel` + `attachBridge` time; `Object.freeze`-compatible |
+The event log `serialize()` / `exportLog()` method produces a JSON array. Each entry contains the full `DebugEntry`:
 
----
-
-## 12. DevExtension Protocol — Custom State Visualizers
-
-> **Motivation:** The built-in `window.__VI_STATE_FP__` bridge is useful for ad-hoc debugging
-> but is not extensible to third-party tools (Redux DevTools extension, custom dashboards,
-> team-specific log shippers, etc.). The `DevExtension` protocol provides a stable interface
-> for building exactly-once integration points.
-
-### DevExtension Interface
-
-Any object implementing `DevExtension` can be registered as a visualizer. The devtools
-module calls these hooks on every state transition, synchronously, in registration order.
-
-```ts
-/**
- * Implement this interface to build custom state visualizers, log shippers,
- * or integration bridges (e.g. Redux DevTools, DataDog, Sentry).
- *
- * Register via: devtools.addExtension(myExtension)
- *
- * IMPORTANT: Extensions are ONLY called when devtools are active (debug: true / createDevTools()).
- * In production (noopDevTools), hook calls are fully eliminated by dead-code removal.
- */
-interface DevExtension {
-  /** Human-readable name — shown in DevTools console and log exports */
-  readonly name: string;
-
-  /**
-   * Called synchronously after each successful command execution.
-   * Receives the full DebugEntry — command, events, state diff, timing.
-   * MUST NOT mutate the entry or dispatch any command inside this hook.
-   */
-  onEntry(entry: Readonly<DebugEntry>): void;
-
-  /**
-   * Called when a snapshot is taken (automatic or manual).
-   * Receives a deep-frozen copy of all atom states.
-   */
-  onSnapshot?(snapshot: Readonly<Snapshot>): void;
-
-  /**
-   * Called when time-travel is initiated. Receives the target eventId and
-   * the complete state produced by replaying to that point.
-   */
-  onTimeTravel?(targetEventId: string, state: Readonly<Record<string, unknown>>): void;
-
-  /**
-   * Called when time-travel is exited and live state is restored.
-   */
-  onTimeTravelExit?(): void;
-
-  /**
-   * Called when `kernel.destroy()` is invoked. Clean up extension resources.
-   */
-  onDestroy?(): void;
-}
+```json
+[
+  {
+    "id": "a1b2c3d4-...",
+    "atomKey": "vi/counter",
+    "correlationId": "z9y8x7w6-...",
+    "causationId": null,
+    "commandType": "counter/increment",
+    "event": {
+      "_kind": "Event",
+      "type": "counter/incremented",
+      "payload": { "by": 1 },
+      "meta": {
+        "correlationId": "z9y8x7w6-...",
+        "causationId": null,
+        "version": 1,
+        "timestamp": 1741200000000
+      }
+    },
+    "stateBefore": { "count": 0 },
+    "stateAfter":  { "count": 1 },
+    "timestamp":   1741200000000,
+    "version":     1
+  }
+]
 ```
 
-### Registering an Extension
+This can be imported via the browser bridge for bug reproduction:
 
-```ts
-import { createDevTools } from '@vi/state-fp/devtools';
-
-const devtools = createDevTools({ maxEventLogSize: 500 });
-
-devtools.addExtension({
-  name: 'my-audit-logger',
-  onEntry(entry) {
-    auditService.record({
-      action:   entry.commandType,
-      actor:    entry.atomKey,
-      before:   entry.prevState,
-      after:    entry.nextState,
-      ts:       entry.timestamp,
-    });
-  },
-});
-
-const kernel = createKernel({ devtools });
-```
-
-### Built-In Extensions
-
-#### Redux DevTools Bridge (`createReduxDevToolsBridge`)
-
-Connects `@vi/state-fp` to the Redux DevTools browser extension, making every
-`DebugEntry` visible in the familiar Redux DevTools timeline:
-
-```ts
-import { createDevTools, createReduxDevToolsBridge } from '@vi/state-fp/devtools';
-
-const devtools = createDevTools();
-
-if (typeof window !== 'undefined' && (window as any).__REDUX_DEVTOOLS_EXTENSION__) {
-  devtools.addExtension(createReduxDevToolsBridge({
-    name:          'vi/state-fp',
-    actionCreator: (entry) => ({ type: `[${entry.atomKey}] ${entry.commandType}` }),
-  }));
-}
-```
-
-The Redux DevTools bridge uses the `__REDUX_DEVTOOLS_EXTENSION__.connect()` API so it is
-fully compatible with the browser extension's time-travel UI, action log, and diff viewer.
-
-#### Performance Observer Extension
-
-Surfaces slow commands (> threshold ms) to the browser Performance Observer API:
-
-```ts
-import { createPerfExtension } from '@vi/state-fp/devtools';
-
-devtools.addExtension(createPerfExtension({
-  slowThresholdMs: 16,   // flag anything slower than one frame
-  onSlowCommand: (entry) => {
-    console.warn(`Slow command: ${entry.commandType} took ${entry.durationMs}ms`, entry);
-  },
-}));
-```
-
-#### Sentry / DataDog / OpenTelemetry Integration
-
-```ts
-// Any APM tool can be bridged via DevExtension
-devtools.addExtension({
-  name: 'sentry-state-bridge',
-  onEntry(entry) {
-    if (entry.error) {
-      Sentry.captureException(new Error(entry.error.message), {
-        extra: { commandType: entry.commandType, atomKey: entry.atomKey },
-      });
-    }
-  },
-});
+```js
+// In browser console
+window.__VI_STATE_FP__.importLog(pastedJson)
+// Log state is restored — time-travel then works against the imported history
 ```
 
 ---
 
-## 13. Production Safety Invariants
+## 11. Performance Characteristics
 
-The debug layer is built with the following production safety invariants that
-**must not be violated** during implementation:
+| Operation | Cost | Notes |
+|---|---|---|
+| `eventLog.append()` | O(1) amortized | Circular buffer pointer bump + 2 index updates |
+| `eventLog.getByAtom()` | O(k) | k = entries for that atom; Map lookup then array resolve |
+| `eventLog.getByCorrelation()` | O(k) | Same as getByAtom |
+| `eventLog.getAll()` | O(n) | n = buffer size; array slice + concat |
+| `deepClone` per entry | O(m) | m = state object size; called twice (stateBefore + stateAfter) |
+| `snapshots.capture()` | O(atoms × state) | Deep-clones all atom states; triggered every 50 events |
+| `timeTravel.to()` | O(delta) | delta = events since nearest snapshot; typically < 50 |
+| Bridge `getAtoms()` | O(atoms) | Iterates live atom map — real-time; not cached |
+
+All debug operations occur **outside** the synchronous command execution hot path. `deepClone` in the devtools plugin's `onExecute` hook runs after the state has already been applied — it does not add latency to the CQRS pipeline from the observable caller's perspective.
+
+---
+
+## 12. Production Safety Invariants
 
 | Invariant | Detail |
 |---|---|
-| **D1** | `window.__VI_STATE_FP__` is **never** attached unless `attachBridge()` is explicitly called |
-| **D2** | `attachBridge()` must only be called in non-production environments (developer or debug builds) |
-| **D3** | `noopDevTools` allocates no objects — all hooks are synchronous no-ops returning `void 0` |
-| **D4** | `DevExtension.onEntry` is never called when `noopDevTools` is active — dead-code eliminated |
-| **D5** | `structuredClone` and stack trace capture are never executed in production |
-| **D6** | Source location data (`SourceLocation`) is `null` in production builds |
-| **D7** | The `devtools` import itself is excluded from prod bundles when only `noopDevTools` is referenced |
-
-### Safe Setup Pattern
-
-```ts
-// app/kernel.ts — shared kernel setup
-import { createKernel }   from '@vi/state-fp/kernel';
-import { createDevTools, noopDevTools, attachBridge } from '@vi/state-fp/devtools';
-
-const isProduction = process.env['NODE_ENV'] === 'production';
-
-const devtools = isProduction
-  ? noopDevTools
-  : createDevTools({ maxEventLogSize: 500, snapshotInterval: 50 });
-
-export const kernel = createKernel({ devtools });
-
-// DevTools bridge — development only
-// In production this block is dead code and tree-shaken by bundlers
-if (!isProduction && typeof window !== 'undefined') {
-  attachBridge(devtools);
-  // Now accessible: window.__VI_STATE_FP__.getLog(), .timeTravelTo(), etc.
-}
-```
-
-> Never call `attachBridge()` in a code path that can execute in production.
-> The bridge exposes the full internal state of all atoms — in the wrong hands,
-> this could leak auth tokens or PII from memory-resident atoms.
+| **D1** | `window.__VI_STATE_FP__` is attached only when `installBridge: true` (default when `window` exists) and `createDevTools()` is called |
+| **D2** | Do not call `createDevTools()` or `kernel.use(devtools.plugin)` in production builds |
+| **D3** | Omitting `debug: true` in `KernelOptions` disables the kernel's internal recording — `kernel.debug.record()` becomes a no-op |
+| **D4** | `deepClone` of `stateBefore`/`stateAfter` is only performed inside the devtools `onExecute` plugin hook — never on the default code path |
+| **D5** | No global state leaks: `atoms` map and event log are held only by the `DevToolsInstance` closure — garbage-collected when it goes out of scope |
+| **D6** | `devtools.uninstall()` removes `window.__VI_STATE_FP__` and is idempotent |
