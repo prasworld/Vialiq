@@ -6,7 +6,7 @@
  */
 
 import type { Either, Maybe } from '../core/types.js';
-import type { StorageSecurityPolicy } from '../storage/types.js';
+import type { StorageSecurityPolicy, StorageResult } from '../storage/types.js';
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
 
@@ -125,12 +125,19 @@ export type AtomStorageConfig<S = unknown> = {
 };
 
 /**
- * A minimal duck-type for storage adapters.
- * Prevents a hard dependency on `@vi/state-fp/storage`.
+ * A minimal duck-type for storage adapters used by the kernel.
+ * Aligns with `StorageAdapter` (from `@vi/state-fp/storage`) so that
+ * `MemoryAdapter` can be passed directly without an intermediary wrapper.
+ *
+ * - `name` is required: the storage guard inspects it at runtime to enforce the
+ *   memory-only policy. Adapters without a name are rejected with a security error.
+ * - `get` / `set` return `StorageResult<T>` (`Promise<Either<StorageError, T>>`),
+ *   matching the full `StorageAdapter` interface so adapters are directly compatible.
  */
 export type StorageAdapterLike<S = unknown> = {
-  get(key: string): Promise<Maybe<S>>;
-  set(key: string, value: S, ttl?: number): Promise<void>;
+  readonly name: string;
+  get(key: string): StorageResult<Maybe<S>>;
+  set(key: string, value: S, ttl?: number): StorageResult<void>;
 };
 
 /** Configuration passed to `defineAtom`. */

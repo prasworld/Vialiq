@@ -153,8 +153,18 @@ export function createKernel(options: KernelOptions = {}): Kernel {
     const key = storageConfig.key ?? atom.definition.key;
     storageConfig.adapter
       .set(key, state, storageConfig.ttl)
+      .then((result) => {
+        // StorageResult<void> = Either<StorageError, void> — surface Left as error to plugins
+        if (result._tag === 'Left') {
+          plugins.forEach(p => p.onError?.({
+            command: { _kind: 'Command', type: '__storage_error__', meta: { correlationId: '', timestamp: now() } },
+            error:   { code: 'STORAGE_WRITE_ERROR', message: result.left.message },
+            atomKey: atom.definition.key,
+          }));
+        }
+      })
       .catch((err: unknown) => {
-        // Surface storage errors to plugins — never throw into the execute() call
+        // Unexpected Promise rejection — surface to plugins
         plugins.forEach(p => p.onError?.({
           command: { _kind: 'Command', type: '__storage_error__', meta: { correlationId: '', timestamp: now() } },
           error:   { code: 'STORAGE_WRITE_ERROR', message: String(err) },
@@ -712,12 +722,15 @@ export function createKernel(options: KernelOptions = {}): Kernel {
 
         const key = storageConfig.key ?? atom.definition.key;
         hydratePromises.push(
-          storageConfig.adapter.get(key).then((maybe) => {
+          storageConfig.adapter.get(key).then((result) => {
+            // StorageResult<Maybe<S>> = Either<StorageError, Maybe<S>> — unwrap Either first
+            if (result._tag === 'Left') return; // storage error — fall back to initialState
+            const maybe = result.right;
             if (maybe._tag === 'Just' && maybe.value !== undefined) {
               atom._setState(maybe.value as typeof atom extends Atom<infer S> ? S : unknown);
             }
           }).catch(() => {
-            // Storage read failure — silently fall back to initialState
+            // Unexpected rejection — silently fall back to initialState
           }),
         );
       }
