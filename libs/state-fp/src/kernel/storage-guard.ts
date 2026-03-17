@@ -82,9 +82,19 @@ export function assertApplicationStoragePolicy(
   storage?: GuardStorageConfig,
 ): void {
   if (!storage) return;
+  if (!storage.adapter) return;
 
   const adapterName = getStorageAdapterName(storage.adapter)?.toLowerCase();
-  if (!adapterName) return;
+  if (!adapterName) {
+    // An adapter is present but exposes no "name" — the policy cannot be enforced.
+    // Fail closed: treat this as a security violation rather than silently allowing it.
+    // Every StorageAdapter implementation must declare `readonly name: string`.
+    throw new Error(
+      `[@vi/state-fp/security] Storage adapter for atom "${atomKey}" exposes no "name" property — ` +
+      'the storage policy cannot be enforced. ' +
+      'All adapters must implement StorageAdapter with a readonly name string.',
+    );
+  }
   if (!FORBIDDEN_APPLICATION_STORAGE_ADAPTERS.has(adapterName)) return;
 
   throw new Error(

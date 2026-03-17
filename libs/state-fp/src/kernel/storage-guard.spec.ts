@@ -51,6 +51,14 @@ describe('application storage safety guard', () => {
     })).toThrow(/Forbidden storage adapter "indexeddb"/i);
   });
 
+  it('throws when adapter is present but has no name property', () => {
+    expect(() => defineAtom({
+      key: 'vi/unnamed-adapter',
+      initialState: 0,
+      storage: { adapter: { get: () => void 0 } }, // valid-looking adapter, no name
+    })).toThrow(/exposes no "name" property/i);
+  });
+
   it('defends at kernel.register for forged atoms', () => {
     const kernel = createKernel();
     const forgedAtom = {
