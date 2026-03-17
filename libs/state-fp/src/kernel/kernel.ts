@@ -643,11 +643,17 @@ export function createKernel(options: KernelOptions = {}): Kernel {
       queryBus.register(atom.definition.key, handler);
     },
 
-    /** Phase 2.5 — Register a computed atom and subscribe to its dependencies. */
+    /**
+     * Phase 2.5 — Register a computed atom.
+     *
+     * The kernel tracks dependency links so that when a source atom is updated via
+     * `kernel.execute()`, `recomputeDependents()` can re-evaluate and update the computed
+     * atom. This is not a “subscription” in the reactive sense (it does not call `dep.subscribe`).
+     */
     registerComputed<R>(computed: ComputedAtom<R>): void {
       computedAtoms.add(computed);
 
-      // Subscribe to all deps so we recompute when they change
+      // Track dependency relationships for recomputation.
       for (const dep of computed.definition.deps) {
         const depKey = dep.definition.key;
         let dependents = computedDependencies.get(depKey);
