@@ -405,11 +405,11 @@ use a **custom adapter** that wraps serialisation internally:
 
 ```ts
 import { defineAtom }   from '@vi/state-fp/kernel';
-import { LocalAdapter } from '@vi/state-fp/storage';
+import { MemoryAdapter } from '@vi/state-fp/storage';
 
 // Custom adapter that handles Map<string, boolean> serialisation
-class MapLocalAdapter implements StorageAdapterLike<Map<string, boolean>> {
-  private inner = new LocalAdapter<string>();
+class MapMemoryAdapter implements StorageAdapterLike<Map<string, boolean>> {
+  private inner = new MemoryAdapter();
 
   async get(key: string): Promise<Maybe<Map<string, boolean>>> {
     const raw = await this.inner.get(key);
