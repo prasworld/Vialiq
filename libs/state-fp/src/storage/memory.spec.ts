@@ -238,22 +238,26 @@ describe('MemoryAdapter', () => {
   });
 
   describe('disposal and cleanup', () => {
-    it('should stop the background sweep on disposal', async () => {
+    it('should stop the background sweep on disposal (but get() still evicts expired entries)', async () => {
       const value = { id: 1, name: 'Alice' };
       await adapter.set('user:1', value, 50);
 
+      // Stop the sweep timer; expired entries should no longer be removed automatically
       adapter.dispose();
 
-      // Manually check that the sweep timer is cleared
+      // Wait beyond the TTL + the sweep interval to prove sweep is stopped
       await new Promise(resolve => setTimeout(resolve, 200));
 
-      // In a real scenario, we'd verify that no automatic cleanup occurred
-      // For now, just verify that get() still returns the expired entry
-      // (without the active sweep, it wouldn't be cleaned)
+      // Since dispose() stopped the sweep, the entry is still present in the store
+      expect(adapter.size).toBe(1);
+
+      // However, get() still enforces TTL and should evict expired entries even without sweep
       const result = await adapter.get<TestPayload>('user:1');
-      // After dispose, expired entries won't be cleared on read either
-      // because the store is not active, so this is a verification of the design
       expect(result._tag).toBe('Right');
+      if (result._tag === 'Right') {
+        expect(result.right._tag).toBe('Nothing');
+      }
+      expect(adapter.size).toBe(0);
     });
 
     it('should handle multiple dispose calls gracefully', async () => {
