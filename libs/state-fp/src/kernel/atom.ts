@@ -86,8 +86,10 @@ export function statesAreEqual<S>(a: S, b: S): boolean {
 
 // ─── Phase 2.5: Computed Atoms ──────────────────────────────────────────────
 
+const UNINITIALIZED = Symbol('ComputedAtom uninitialized');
+
 type ComputedAtomRuntime<R> = ComputedAtom<R> & {
-  _computed:    R | undefined;
+  _computed:    R | typeof UNINITIALIZED;
   _subscribers: Set<(v: R) => void>;
 };
 
@@ -95,8 +97,8 @@ type ComputedAtomRuntime<R> = ComputedAtom<R> & {
  * Create a computed (derived) atom.
  * Dependencies are read-only; the computed value is memoised based on dep references.
  *
- * Initial value remains undefined until kernel.registerComputed() is called,
- * which performs the first compute.
+ * The computed value is uninitialised until `kernel.registerComputed()` is called.
+ * This allows the computed result to legitimately be `undefined`.
  *
  * @example
  * const cartTotalAtom = defineComputedAtom({
@@ -107,7 +109,7 @@ type ComputedAtomRuntime<R> = ComputedAtom<R> & {
  */
 export function defineComputedAtom<R>(definition: ComputedAtomDefinition<R>): ComputedAtom<R> {
   const subscribers = new Set<(v: R) => void>();
-  let computed: R | undefined = undefined;
+  let computed: R | typeof UNINITIALIZED = UNINITIALIZED;
 
   const atom: ComputedAtomRuntime<R> = {
     definition,
@@ -119,7 +121,7 @@ export function defineComputedAtom<R>(definition: ComputedAtomDefinition<R>): Co
     },
 
     get(): R {
-      if (computed === undefined) {
+      if (computed === UNINITIALIZED) {
         throw new Error(`Computed atom "${definition.key}" not initialized. Did you forget to call kernel.registerComputed()?`);
       }
       return computed;
