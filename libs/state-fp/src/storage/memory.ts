@@ -12,6 +12,25 @@ import { right } from '../core/either.js';
 import { just, nothing } from '../core/maybe.js';
 import { now } from '../core/utils.js';
 
+/**
+ * Clone values going in/out of the adapter so consumers cannot mutate internal state.
+ * Uses structuredClone when available; falls back to JSON serialization.
+ */
+function cloneValue<T>(value: T): T {
+  if (typeof structuredClone === 'function') {
+    return structuredClone(value);
+  }
+
+  // Fallback for environments without structuredClone.
+  // Works for JSON-serializable values (objects, arrays, primitives).
+  try {
+    return JSON.parse(JSON.stringify(value)) as T;
+  } catch {
+    // If cloning fails (e.g. functions, circular refs), just return the original.
+    return value;
+  }
+}
+
 
 type Entry = StorageEntry<unknown>;
 
@@ -37,14 +56,15 @@ export class MemoryAdapter implements StorageAdapter {
       this.#store.delete(key);
       return right(nothing<T>());
     }
-    // In-memory adapter: return value directly (no serialization needed)
-    return right(just<T>(entry.v as T));
+
+    // Return a clone so consumers cannot mutate adapter internals.
+    return right(just<T>(cloneValue(entry.v as T)));
   }
 
   async set<T>(key: string, value: T, ttl?: number): StorageResult<void> {
     const t: number = now();
     const entry: Entry = {
-      v:   value,
+      v:   cloneValue(value),
       t,
       ...(ttl !== undefined && { x: t + ttl }),
       tag: key,

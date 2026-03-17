@@ -38,6 +38,24 @@ describe('MemoryAdapter', () => {
       }
     });
 
+    it('should return a cloned value so mutations do not affect stored state', async () => {
+      const value: TestPayload = { id: 1, name: 'Alice' };
+      await adapter.set('user:1', value);
+
+      const firstRead = await adapter.get<TestPayload>('user:1');
+      if (firstRead._tag === 'Right' && firstRead.right._tag === 'Just') {
+        firstRead.right.value.name = 'Evil';
+      }
+
+      const secondRead = await adapter.get<TestPayload>('user:1');
+      if (secondRead._tag === 'Right') {
+        expect(secondRead.right._tag).toBe('Just');
+        if (secondRead.right._tag === 'Just') {
+          expect(secondRead.right.value.name).toBe('Alice');
+        }
+      }
+    });
+
     it('should return Nothing for missing keys', async () => {
       const result = await adapter.get<TestPayload>('nonexistent');
       expect(result._tag).toBe('Right');
