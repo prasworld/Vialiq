@@ -152,27 +152,27 @@ const authAtom = defineAtom({
 DevTools plugin is environment-gated:
 
 ```ts
-// app/kernel.ts
+// app/kernel.ts  (dev build)
 import { createKernel } from '@vi/state-fp/kernel';
-import { createDevTools, noopDevTools, attachBridge } from '@vi/state-fp/devtools';
+import { createDevTools } from '@vi/state-fp/devtools';
 
-const isProduction = process.env['NODE_ENV'] === 'production';
+export const kernel = createKernel({ debug: true });
 
-export const kernel = createKernel({
-  devtools: isProduction
-    ? noopDevTools      // ← Zero-overhead no-op (tree-shaken in build)
-    : createDevTools()  // ← Full debug stack (dev-only)
-});
+const devtools = createDevTools({ installBridge: true }); // ← window.__VI_STATE_FP__ created
+kernel.use(devtools.plugin);
+```
 
-// Bridge not attached in production
-if (!isProduction && typeof window !== 'undefined') {
-  attachBridge(kernel.devtools); // ← window.__VI_STATE_FP__ created
-}
+```ts
+// app/kernel.ts  (production build)
+import { createKernel } from '@vi/state-fp/kernel';
+
+// No devtools plugin — zero overhead, nothing ships to the browser
+export const kernel = createKernel({ debug: false });
 ```
 
 **Production build result:**
 - All `createDevTools()` code is dead-code eliminated (tree-shaken)
-- `attachBridge()` code never ships to production browser
+- `installBridge` is never called; no bridge code ships to production
 - `window.__VI_STATE_FP__` does not exist
 - **State is completely invisible to DevTools** in production
 
@@ -182,7 +182,7 @@ if (!isProduction && typeof window !== 'undefined') {
 |---------|------------|--------------|
 | Default storage | Memory only | Memory only |
 | Persistent adapters available | Explicit plugin required | Not available |
-| DevTools in production | No (disabled) | No (noopDevTools) |
+| DevTools in production | No (disabled) | No (plugin not registered) |
 | DevTools code shipping to prod | No (tree-shaken) | No (tree-shaken) |
 | Runtime guard on persistence | N/A (requires plugin) | assertApplicationStoragePolicy() |
 | Sensitive data accessible in DevTools (prod) | No | No |
