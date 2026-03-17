@@ -850,8 +850,11 @@ describe('branch coverage — computed atoms are read-only (line 156)', () => {
       handle: () => right([domainEvent('test/event', {})]),
     });
 
-    // Attempting to execute on computed atom should fail
-    const result = kernel.execute(computed, command('test/cmd'));
+    // Attempting to execute on computed atom should fail.
+    // In TypeScript this is not allowed without a cast, since ComputedAtom is not structurally
+    // compatible with Atom (it lacks `_setState` and `version`). The runtime guard still exists.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result = kernel.execute(computed as any, command('test/cmd'));
     expect(result._tag).toBe('Left');
     expect((result as { left: { code: string } }).left.code).toBe('COMPUTED_ATOM');
   });
