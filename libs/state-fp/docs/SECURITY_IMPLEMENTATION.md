@@ -110,20 +110,25 @@
 
 **Development (Dev Build):**
 ```ts
-const kernel = createKernel({
-  devtools: createDevTools({ maxLogSize: 500 })  // ← Full debug enabled
-});
-attachBridge(devtools);  // ← window.__VI_STATE_FP__ available in DevTools
+import { createKernel } from '@vi/state-fp/kernel';
+import { createDevTools } from '@vi/state-fp/devtools';
+
+const kernel = createKernel({ debug: true });
+const devtools = createDevTools({ maxLogSize: 500, installBridge: true });
+kernel.use(devtools.plugin);
+
+// `window.__VI_STATE_FP__` is now available in DevTools and can be used for
+// time-travel, event inspection, and snapshots.
 ```
 
 **Production (Prod Build):**
 ```ts
-const kernel = createKernel({
-  devtools: noopDevTools  // ← Zero-overhead no-ops
-});
-// attachBridge() code is dead-code eliminated
-// window.__VI_STATE_FP__ does NOT exist
-// All state is memory-only and invisible
+import { createKernel } from '@vi/state-fp/kernel';
+
+const kernel = createKernel({ debug: false });
+
+// No devtools plugin is registered, so no bridge is installed.
+// `window.__VI_STATE_FP__` does not exist in production.
 ```
 
 **Result:** State completely invisible to production users (matching Redux/NgRx).
