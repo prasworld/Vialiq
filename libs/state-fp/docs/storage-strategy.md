@@ -392,10 +392,10 @@ The `AtomStorageConfig` type (the `storage:` field in `defineAtom`) currently su
 
 ```ts
 type AtomStorageConfig<S> = {
-  adapter:   StorageAdapterLike<S>; // required — the storage backend
+  adapter:   StorageAdapterLike<S>; // required — the storage backend (typically MemoryAdapter; see security policy below)
   key?:      string;                // optional — overrides the atom key as the storage key
   ttl?:      number;                // optional — per-atom TTL in milliseconds
-  security?: StorageSecurityPolicy; // optional — 'visible' | 'obfuscated' | 'memory-only'
+  security?: StorageSecurityPolicy; // optional — currently only 'memory-only' is supported
 };
 ```
 
@@ -528,12 +528,8 @@ constitutes a data handling violation.
 | Adapter | Visible in DevTools? | Notes |
 |---|---|---|
 | `MemoryAdapter` | ❌ Never | JS heap only — no DevTools surface |
-| `SessionAdapter` | ✅ Always (plaintext) | Application → Session Storage |
-| `LocalAdapter` | ✅ Always (plaintext) | Application → Local Storage |
-| `IndexedDbAdapter` | ✅ Always (plaintext) | Application → IndexedDB |
-| `ObfuscatedAdapter(Local)` | ⚠️ Key hidden, value plain | Application → Local Storage |
-| Any adapter + `memory-only` policy | ❌ Never | Adapter ignored at runtime — JS heap only |
-| Any atom + `stateSanitizer` | ✅ DevTools shows sanitized value | Real in-memory state is always full |
+| Any atom + `security: 'memory-only'` | ❌ Never | Adapter ignored at runtime — JS heap only (only supported policy) |
+| Any atom + `stateSanitizer` | ✅ DevTools shows sanitized value | Redacts sensitive fields in debug log only; real in-memory state is always full |
 
 ### StorageSecurityPolicy Types
 
@@ -568,30 +564,7 @@ export type StorageSecurityPolicy =
   | 'memory-only'; // stays in JS heap only — invisible to DevTools, not persisted across reloads
 ```
 
-### ObfuscatedAdapter — Hiding the Key
 
-When your data is not sensitive but you don't want the storage key to reveal the application's
-internal structure, wrap any adapter with `ObfuscatedAdapter`:
-
-```ts
-import { ObfuscatedAdapter, LocalAdapter } from '@vi/state-fp/storage';
-
-const adapter = new ObfuscatedAdapter(new LocalAdapter(), {
-  // Salt prevents the obfuscated key from being predictable across deploy versions
-  salt: `${appName}@${appVersion}`,
-});
-
-const userPrefsAtom = defineAtom<UserPrefs>({
-  key: 'vi/user-prefs',
-  initialState: defaultPrefs,
-  storage: {
-    adapter,
-    key: 'vi:user-prefs',   // ← will be hashed to "3af29b1..." in storage
-  },
-});
-```
-
-**DevTools will show:** `3af29b1d...` → `{ "theme": "dark", "locale": "en" }` (value is still readable)
 
 ### stateSanitizer — Redacting Sensitive Fields from DevTools
 

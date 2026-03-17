@@ -93,18 +93,33 @@ export type AtomStorageConfig<S = unknown> = {
   /**
    * Security policy controlling browser storage visibility.
    *
-   * - `'visible'`     — plaintext in DevTools (default, suitable for non-sensitive state)
-   * - `'obfuscated'`  — wrap adapter with `ObfuscatedAdapter` to SHA-256 hash storage keys
-   * - `'memory-only'` — atom never written to browser storage; kernel ignores `adapter`
+   * ⚠️ **Only `'memory-only'` is supported in @vi/state-fp.**
    *
-   * When `'memory-only'`, the declared `adapter` is ignored entirely at runtime; the atom
-   * stays in the JavaScript heap and is completely invisible to browser DevTools.
+   * - `'memory-only'` — atom never written to browser storage; kernel ignores `adapter` at runtime
+   *   The atom stays in the JavaScript heap and is completely invisible to browser DevTools.
    *
-   * Note: There is no `'encrypted'` policy. Client-side encryption is not a real security
-   * control for DevTools visibility — the decryption key must arrive as plaintext JS, and
-   * post-decryption values live in the heap where the Memory profiler can capture them.
-   * Use `stateSanitizer` on `KernelOptions` to redact sensitive fields from the DevTools
-   * debug log, and `'memory-only'` for data that must never be persisted.
+   * ### Design & Storage Behavior
+   *
+   * When declared, `security: 'memory-only'` overrides the `adapter` field entirely:
+   *   - `set()` and `get()` are never called — state lives only in memory
+   *   - Atom state is lost on page reload (no persistence across sessions)
+   *   - DevTools and memory inspection tools cannot access the state
+   *
+   * Suitable for: authentication tokens, session data, PII, payment info, any sensitive state.
+   *
+   * Non-sensitive UI state (theme preference, feature flags, locale) can be stored
+   * in browser storage through an out-of-band mechanism (e.g., a separate `@vi/config` library),
+   * not through the kernel's storage layer.
+   *
+   * ### Why No Other Policies?
+   *
+   * Previous versions shipped `'visible'` and `'obfuscated'` policies with LocalAdapter,
+   * SessionAdapter, and ObfuscatedAdapter. Both were removed because:
+   *   - Plaintext is always readable in DevTools, even with hashed keys
+   *   - Client-side encryption provides zero security (key arrives as plaintext)
+   *   - Post-decryption values live in the JS heap (visible to Memory profiler)
+   *
+   * See `StorageSecurityPolicy` in `@vi/state-fp/storage/types` for the rationale.
    */
   security?: StorageSecurityPolicy;
 };
