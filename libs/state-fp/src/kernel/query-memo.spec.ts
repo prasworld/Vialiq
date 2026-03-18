@@ -6,7 +6,7 @@
  * Cache is invalidated by `kernel.hydrate()` and `kernel.destroy()`.
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { createKernel }                          from './kernel.js';
 import { defineAtom }                            from './atom.js';
 import { command, createCommandHandler }         from './command.js';
