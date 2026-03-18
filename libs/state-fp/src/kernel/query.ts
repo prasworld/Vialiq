@@ -69,6 +69,14 @@ export class QueryBus {
   }
 
   /**
+   * Resolve the handler for a given atom + query type, without executing.
+   * Used by the kernel to check memo flags before calling execute().
+   */
+  resolve(atomKey: string, q: Query): QueryHandler<unknown, Query, unknown> | undefined {
+    return this.#handlers.get(q.type)?.get(atomKey);
+  }
+
+  /**
    * Execute a query against the current atom state.
    * Throws if no handler is registered (queries MUST be registered — invariant I3).
    */

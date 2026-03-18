@@ -217,9 +217,21 @@ export type Atom<S> = {
  * It is a pure function — no I/O, no async.
  *
  * Invariant: handle() MUST NOT mutate state; returns Either<Error, Events>.
+ *
+ * ### Phase 3.5 — Payload Validation
+ * The optional `validate` hook runs before `handle`. Returning `Left` short-circuits
+ * the entire execute cycle — `handle` is never called and the error is surfaced
+ * to plugins and the debug layer exactly as returned by your validator
+ * (you may standardize on a code such as `'VALIDATION_ERROR'` by convention).
  */
 export type CommandHandler<S, C extends Command = Command> = {
   commandType: C['type'];
+  /**
+   * Phase 3.5 — Optional payload validator.
+   * Called before `handle`. Returning `Left` short-circuits execution.
+   * @param payload The raw command payload (undefined for void commands).
+   */
+  validate?: (payload: unknown) => Either<CommandError, void>;
   handle: (state: S, command: C) => Either<CommandError, DomainEvent[]>;
 };
 
@@ -275,9 +287,19 @@ export type EventApplier<S> = (state: S, event: DomainEvent) => S;
 /**
  * A QueryHandler computes a derived value from the current state.
  * It is a pure function — never mutates, never fails at protocol level.
+ *
+ * ### Phase 3.6 — Query Memoisation
+ * When `memo: true`, the kernel caches the last result and only calls `handle`
+ * again when either the atom state reference or the query payload changes.
  */
 export type QueryHandler<S, Q extends Query = Query, R = unknown> = {
   queryType: Q['type'];
+  /**
+   * Phase 3.6 — Enable memoisation for this handler.
+   * When `true`, `handle` is only re-run when atom state reference or query
+   * payload (compared via JSON.stringify) changes. Default: `false`.
+   */
+  memo?: boolean;
   handle: (state: S, query: Q) => R;
 };
 
@@ -330,12 +352,40 @@ export type KernelDebugEntry = {
 
 // ─── Kernel ───────────────────────────────────────────────────────────────────
 
+// ─── SSR Hydration ───────────────────────────────────────────────────────────
+
+/**
+ * Phase 3.7 — SSR Hydration configuration.
+ * Allows Angular Universal / Next.js server state to seed atoms before
+ * client-side storage adapters run.
+ */
+export type SsrHydrationOptions = {
+  /**
+   * Returns the server-rendered state payload (e.g. `window.__INITIAL_STATE__`).
+   * Errors thrown here do not block startup — the kernel falls back to storage
+   * / `initialState` gracefully.
+   */
+  source: () => Record<string, unknown> | null | undefined;
+  /**
+   * Hydration priority — determines which source wins when both SSR payload
+   * and a storage adapter provide a value for the same atom.
+   *
+   * - `'ssr-first'`     (default) — SSR applied first, then storage overlays.
+   *   Storage values take final precedence (client has fresher data).
+   * - `'storage-first'` — Storage applied first, then SSR overlays.
+   *   SSR values take final precedence (server is the authority).
+   */
+  priority?: 'ssr-first' | 'storage-first';
+};
+
 /** Options for `createKernel`. */
 export type KernelOptions = {
   /** Enable debug recording. Default: false. */
   debug?: boolean | DebugInterface;
   /** MFE identifier — stamped on command.meta.issuedBy. */
   instanceId?: string;
+  /** Phase 3.7 — SSR hydration configuration for Angular Universal / Next.js. */
+  ssr?: SsrHydrationOptions;
   /**
    * Redact sensitive atom state before it is sent to the DevTools debug layer.
    *
