@@ -86,7 +86,8 @@ export function createKernel(options: KernelOptions = {}): Kernel {
   const computedDepRefs = new Map<ComputedAtom<any>, readonly any[]>();
   /** Phase 2.5 — all registered computed atoms */
   const computedAtoms = new Set<ComputedAtom<any>>();
-
+      /** Phase 3.6 — query memo cache: (atomKey::queryType) → last { stateRef, payloadKey, result } */
+  const queryMemoCache = new Map<string, { stateRef: unknown; payloadKey: string; result: unknown }>();
   // ── Debug layer ─────────────────────────────────────────────────────────────
 
   let debugLayer: DebugInterface = noopDebug;
@@ -240,6 +241,31 @@ export function createKernel(options: KernelOptions = {}): Kernel {
           ...(cmd.meta?.issuedBy    !== undefined ? { issuedBy: cmd.meta.issuedBy } : options.instanceId !== undefined ? { issuedBy: options.instanceId } : {}),
         },
       };
+
+      // Phase 3.5 — payload validation (runs before handle; short-circuits on Left)
+      const resolvedHandler = commandBus.resolve(atomKey, fullCmd);
+      if (resolvedHandler?.validate) {
+        const payload = 'payload' in fullCmd ? (fullCmd as { payload: unknown }).payload : undefined;
+        const validResult = resolvedHandler.validate(payload);
+        if (validResult._tag === 'Left') {
+          const err = validResult.left;
+          plugins.forEach(p => p.onError?.({ command: fullCmd, error: err, atomKey }));
+          if (debugLayer.isEnabled) {
+            debugLayer.record({
+              commandType:   fullCmd.type,
+              correlationId: (fullCmd.meta as CommandMeta).correlationId,
+              atomKey,
+              events:        [],
+              prevState:     sanitize(atomKey, currentState),
+              nextState:     sanitize(atomKey, currentState),
+              durationMs:    now() - startTime,
+              error:         err,
+              timestamp:     startTime,
+            });
+          }
+          return { _tag: 'Left' as const, left: err };
+        }
+      }
 
       // 2. Execute via CommandBus → Either<CommandError, DomainEvent[]>
       const result = commandBus.execute(atomKey, currentState, fullCmd);
@@ -464,7 +490,22 @@ export function createKernel(options: KernelOptions = {}): Kernel {
     },
 
     query<R = unknown>(atom: Atom<unknown>, q: Query): R {
-      return queryBus.execute(atom.definition.key, atom.get(), q) as R;
+      const atomKey = atom.definition.key;
+      // Phase 3.6 — query memoisation
+      const handler = queryBus.resolve(atomKey, q);
+      if (handler?.memo) {
+        const cacheKey  = `${atomKey}::${q.type}`;
+        const stateRef  = atom.get();
+        const payloadKey = 'payload' in q ? JSON.stringify((q as { payload: unknown }).payload) : '';
+        const cached = queryMemoCache.get(cacheKey);
+        if (cached && Object.is(cached.stateRef, stateRef) && cached.payloadKey === payloadKey) {
+          return cached.result as R;
+        }
+        const result = queryBus.execute(atomKey, stateRef, q) as R;
+        queryMemoCache.set(cacheKey, { stateRef, payloadKey, result });
+        return result;
+      }
+      return queryBus.execute(atomKey, atom.get(), q) as R;
     },
 
     async executeOptimistic<S>(
@@ -719,32 +760,68 @@ export function createKernel(options: KernelOptions = {}): Kernel {
     },
 
     async hydrate(): Promise<void> {
-      const hydratePromises: Promise<void>[] = [];
-
-      for (const [, reg] of atoms) {
-        const { atom } = reg;
-        const storageConfig = atom.definition.storage;
-        if (!storageConfig) continue;
-        assertApplicationStoragePolicy(atom.definition.key, storageConfig);
-        // memory-only policy: never read from browser storage
-        if (storageConfig.security === 'memory-only') continue;
-
-        const key = storageConfig.key ?? atom.definition.key;
-        hydratePromises.push(
-          storageConfig.adapter.get(key).then((result) => {
-            // StorageResult<Maybe<S>> = Either<StorageError, Maybe<S>> — unwrap Either first
-            if (result._tag === 'Left') return; // storage error — fall back to initialState
-            const maybe = result.right;
-            if (maybe._tag === 'Just' && maybe.value !== undefined) {
-              atom._setState(maybe.value as typeof atom extends Atom<infer S> ? S : unknown);
-            }
-          }).catch(() => {
-            // Unexpected rejection — silently fall back to initialState
-          }),
-        );
+      // Phase 3.7 — collect SSR payload (errors do not block startup)
+      let ssrPayload: Record<string, unknown> | null = null;
+      if (options.ssr) {
+        try {
+          ssrPayload = options.ssr.source() ?? null;
+        } catch {
+          ssrPayload = null;
+        }
       }
 
-      await Promise.allSettled(hydratePromises);
+      // Helper: apply SSR payload — seeds atoms from server state
+      function applySSRPayload(): void {
+        if (!ssrPayload) return;
+        for (const [atomKey, reg] of atoms) {
+          if (Object.prototype.hasOwnProperty.call(ssrPayload, atomKey)) {
+            reg.atom._setState(ssrPayload[atomKey] as never);
+          }
+        }
+      }
+
+      // Helper: run storage adapter reads for all persisted atoms
+      async function applyStorageHydration(): Promise<void> {
+        const hydratePromises: Promise<void>[] = [];
+        for (const [, reg] of atoms) {
+          const { atom } = reg;
+          const storageConfig = atom.definition.storage;
+          if (!storageConfig) continue;
+          assertApplicationStoragePolicy(atom.definition.key, storageConfig);
+          if (storageConfig.security === 'memory-only') continue;
+          const key = storageConfig.key ?? atom.definition.key;
+          hydratePromises.push(
+            storageConfig.adapter.get(key).then((result) => {
+              if (result._tag === 'Left') return;
+              const maybe = result.right;
+              if (maybe._tag === 'Just' && maybe.value !== undefined) {
+                atom._setState(maybe.value as typeof atom extends Atom<infer S> ? S : never);
+              }
+            }).catch(() => {
+              // Unexpected rejection — silently fall back to initialState
+            }),
+          );
+        }
+        await Promise.allSettled(hydratePromises);
+      }
+
+      const priority = options.ssr?.priority ?? 'ssr-first';
+      if (ssrPayload !== null) {
+        if (priority === 'ssr-first') {
+          // SSR applied FIRST, then storage overlays — storage wins for conflicts
+          applySSRPayload();
+          await applyStorageHydration();
+        } else {
+          // 'storage-first': storage runs first, SSR overlays — SSR wins for conflicts
+          await applyStorageHydration();
+          applySSRPayload();
+        }
+      } else {
+        await applyStorageHydration();
+      }
+
+      // Phase 3.6 — invalidate query memo cache after hydration (stale refs)
+      queryMemoCache.clear();
     },
 
     async destroy(): Promise<void> {
@@ -756,6 +833,7 @@ export function createKernel(options: KernelOptions = {}): Kernel {
       asyncHandlerMap.clear();
       computedAtoms.clear();
       computedDependencies.clear();
+      queryMemoCache.clear(); // Phase 3.6 — purge memo cache on teardown
       plugins.forEach(p => p.onDestroy?.());
       plugins.length = 0;
       debugLayer = noopDebug;

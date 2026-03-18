@@ -41,6 +41,7 @@ export type {
   DebugInterface,
   KernelDebugEntry,
   KernelOptions,
+  SsrHydrationOptions,
   ExecuteOptimisticOptions,
   // Kernel
   Kernel,
