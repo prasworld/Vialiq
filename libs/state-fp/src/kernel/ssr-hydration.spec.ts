@@ -197,4 +197,45 @@ describe('Phase 3.7 — SSR Hydration Protocol', () => {
     // SSR applied first → { count: 42 }; storage returned nothing → SSR value preserved
     expect(counter.get().count).toBe(42);
   });
+
+  it('undefined SSR payload values are treated as no-op — existing state is preserved', async () => {
+    const counter = defineAtom<CounterState>({
+      key:          'vi/counter',
+      initialState: { count: 5 },
+    });
+
+    const kernel = createKernel({
+      ssr: {
+        // Key is present but value is explicitly undefined
+        source: () => ({ 'vi/counter': undefined }),
+      },
+    });
+    kernel.register(counter, incrementHandler, counterApplier);
+    await kernel.hydrate();
+
+    // undefined SSR value → treated as no-op; initialState preserved
+    expect(counter.get().count).toBe(5);
+  });
+
+  it('ssr-first with storage: atom.version is incremented exactly once (not twice)', async () => {
+    const counter = defineAtom<CounterState>({
+      key:          'vi/counter',
+      initialState: { count: 0 },
+      storage:      { adapter: makeStorageAdapter(99) },
+    });
+
+    const initialVersion = counter.version;
+
+    const kernel = createKernel({
+      ssr: {
+        source:   () => ({ 'vi/counter': { count: 7 } }),
+        priority: 'ssr-first',
+      },
+    });
+    kernel.register(counter, incrementHandler, counterApplier);
+    await kernel.hydrate();
+
+    // SSR seeding preserves version; storage hydration increments once → net +1
+    expect(counter.version).toBe(initialVersion + 1);
+  });
 });

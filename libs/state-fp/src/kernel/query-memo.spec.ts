@@ -175,4 +175,33 @@ describe('Phase 3.6 — Query Memoisation', () => {
 
     expect(handleSpy).toHaveBeenCalledTimes(2);
   });
+
+  it('memo: true — non-serializable payload (circular refs, BigInt, etc.) skips cache but executes query', () => {
+    const handleSpy = vi.fn((state: CounterState) => 'ok');
+
+    type CircularQuery = ReturnType<typeof query<'counter/circular', { obj: unknown }>>;
+    const handler = createQueryHandler<CounterState, CircularQuery, string>({
+      queryType: 'counter/circular',
+      memo:      true,
+      handle:    handleSpy,
+    });
+
+    const kernel  = createKernel();
+    const counter = makeCounter();
+    kernel.register(counter, incrementHandler, counterApplier);
+    kernel.registerQuery(counter as any, handler as any);
+
+    // Create a circular reference that will cause JSON.stringify to throw
+    const circular: any = { nested: {} };
+    circular.nested.self = circular; // circular reference
+
+    // Query with non-serializable payload — should not throw, just skip memoization
+    const result1 = kernel.query(counter, query('counter/circular', { obj: circular }) as any);
+    const result2 = kernel.query(counter, query('counter/circular', { obj: circular }) as any);
+
+    // Both calls execute (no memoization because payload wasn't serializable)
+    expect(handleSpy).toHaveBeenCalledTimes(2);
+    expect(result1).toBe('ok');
+    expect(result2).toBe('ok');
+  });
 });

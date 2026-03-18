@@ -496,7 +496,15 @@ export function createKernel(options: KernelOptions = {}): Kernel {
       if (handler?.memo) {
         const cacheKey  = `${atomKey}::${q.type}`;
         const stateRef  = atom.get();
-        const payloadKey = 'payload' in q ? JSON.stringify((q as { payload: unknown }).payload) : '';
+        // Try to serialize payload for cache key; skip memoization if serialization fails
+        // (circular refs, BigInt, symbols, custom toJSON can throw)
+        let payloadKey = '';
+        try {
+          payloadKey = 'payload' in q ? JSON.stringify((q as { payload: unknown }).payload) : '';
+        } catch {
+          // JSON.stringify failed — skip memoization for this call but continue executing query
+          return queryBus.execute(atomKey, stateRef, q) as R;
+        }
         const cached = queryMemoCache.get(cacheKey);
         if (cached && Object.is(cached.stateRef, stateRef) && cached.payloadKey === payloadKey) {
           return cached.result as R;
@@ -775,7 +783,12 @@ export function createKernel(options: KernelOptions = {}): Kernel {
         if (!ssrPayload) return;
         for (const [atomKey, reg] of atoms) {
           if (Object.prototype.hasOwnProperty.call(ssrPayload, atomKey)) {
-            reg.atom._setState(ssrPayload[atomKey] as never);
+            const value = ssrPayload[atomKey];
+            // Treat undefined SSR values as no-op (mirrors storage hydration behaviour)
+            if (value === undefined) continue;
+            // Preserve current version — SSR seeding is state restoration, not a mutation.
+            // Without this, ssr-first mode would inflate atom.version twice (once per source).
+            reg.atom._setState(value as never, reg.atom.version);
           }
         }
       }
