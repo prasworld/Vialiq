@@ -221,7 +221,8 @@ export type Atom<S> = {
  * ### Phase 3.5 — Payload Validation
  * The optional `validate` hook runs before `handle`. Returning `Left` short-circuits
  * the entire execute cycle — `handle` is never called and the error is surfaced
- * to plugins and the debug layer with `code: 'VALIDATION_ERROR'`.
+ * to plugins and the debug layer exactly as returned by your validator
+ * (you may standardize on a code such as `'VALIDATION_ERROR'` by convention).
  */
 export type CommandHandler<S, C extends Command = Command> = {
   commandType: C['type'];
