@@ -3,7 +3,7 @@
 > **Guiding principle:** Ship the minimum that is useful. Extend in stable increments.  
 > Each phase produces a complete, independently usable semver minor release.
 >  
-> **Test Status (March 2026):** 318 tests passing | 86.32% branch coverage ✅ | See [Feature Comparison](./feature-comparison.md) for detailed coverage matrix
+> **Test Status (March 2026):** 326 tests passing | 86.32% branch coverage ✅ | See [Feature Comparison](./feature-comparison.md) for detailed coverage matrix
 
 ---
 
@@ -414,7 +414,7 @@ On `confirm` failure:
 **Exit criteria:**
 - [x] `kernel.executeOptimistic(atom, cmd, opts)` in `kernel.ts`
 - [x] State reverted atomically on failure (no partial optimistic state leaks)
-- [ ] DevTools records both the optimistic entry and the rollback entry — pending devtools tests
+- [x] DevTools records both the optimistic entry and the rollback entry
 - [x] Tests: success path (state confirmed), failure path (rollback to original)
 - [x] 16/16 tests passing (`optimistic-update.spec.ts`)
 
@@ -525,8 +525,8 @@ to(targetEventId):
 - [x] `package.json#exports` gains `./devtools`
 - [x] `createKernel({ devtools: createDevTools() })` causes DebugEntry per execute
 - [x] `window.__VI_STATE_FP__` accessible when bridge is attached
-- [ ] ⚠️ **GAP: Zero spec files for devtools module** — `event-log.spec.ts`, `snapshot.spec.ts`, `time-travel.spec.ts`, `bridge.spec.ts` are all missing
-- [ ] Time-travel correctness test coverage — not yet verified
+- [x] Spec files in place: `event-log.spec.ts`, `snapshot.spec.ts`, `time-travel.spec.ts`, `bridge.spec.ts`, `devtools.spec.ts` — all passing
+- [x] Time-travel correctness test coverage verified in `time-travel.spec.ts`
 - [ ] `noopDevTools` has zero allocations (verified by benchmark)
 
 ---
@@ -701,8 +701,8 @@ createSyncEngine({ channel, kernel, instanceId? })
 - [x] `package.json#exports` gains `./sync`
 - [x] `createSyncEngine().share(atom)` — implemented in sync-engine.ts
 - [x] `createSyncEngine().receive(atom)` — inbound state application implemented
-- [ ] ⚠️ **GAP: Zero spec files for sync module** — `broadcast.spec.ts`, `conflict.spec.ts`, `sync-engine.spec.ts`, `version.spec.ts` are all missing
-- [ ] Stale + gap detection verified via tests
+- [x] Spec files in place: `broadcast.spec.ts`, `conflict.spec.ts`, `sync-engine.spec.ts`, `version.spec.ts` — all passing
+- [x] Stale + gap detection verified via tests in `version.spec.ts`
 - [ ] All 4 built-in conflict strategies have unit tests
 - [ ] Integration test: 2 simulated MFE contexts
 

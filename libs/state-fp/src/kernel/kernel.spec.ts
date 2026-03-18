@@ -299,8 +299,9 @@ describe('hydrate', () => {
     const savedState: CounterState = { count: 42 };
 
     const mockAdapter = {
-      get: vi.fn().mockResolvedValue(just(savedState)),
-      set: vi.fn().mockResolvedValue(undefined),
+      name: 'test' as const,
+      get: vi.fn().mockResolvedValue(right(just(savedState))),
+      set: vi.fn().mockResolvedValue(right(undefined)),
       delete: vi.fn().mockResolvedValue(undefined),
     };
 
@@ -320,8 +321,9 @@ describe('hydrate', () => {
 
   it('does not change state when the adapter returns Nothing', async () => {
     const mockAdapter = {
-      get: vi.fn().mockResolvedValue(nothing()),
-      set: vi.fn().mockResolvedValue(undefined),
+      name: 'test' as const,
+      get: vi.fn().mockResolvedValue(right(nothing())),
+      set: vi.fn().mockResolvedValue(right(undefined)),
       delete: vi.fn().mockResolvedValue(undefined),
     };
 
@@ -340,8 +342,9 @@ describe('hydrate', () => {
 
   it('silently handles storage read failures', async () => {
     const mockAdapter = {
+      name: 'test' as const,
       get: vi.fn().mockRejectedValue(new Error('storage offline')),
-      set: vi.fn().mockResolvedValue(undefined),
+      set: vi.fn().mockResolvedValue(right(undefined)),
       delete: vi.fn().mockResolvedValue(undefined),
     };
 
@@ -356,6 +359,72 @@ describe('hydrate', () => {
 
     await expect(kernel.hydrate()).resolves.toBeUndefined(); // should not throw
     expect(counter.get().count).toBe(0);
+  });
+
+  it('hydrates from a real MemoryAdapter — Phase 2 round-trip', async () => {
+    // Simulates: execute() writes to MemoryAdapter, then kernel.hydrate() restores it.
+    // Validates that MemoryAdapter is directly compatible with StorageAdapterLike.
+    const { MemoryAdapter } = await import('../storage/memory.js');
+    const adapter = new MemoryAdapter();
+
+    const counter = defineAtom<CounterState>({
+      key: 'vi/counter-hydrate-rt',
+      initialState: { count: 0 },
+      storage: { adapter },
+    });
+    const kernelA = createKernel();
+    kernelA.register(counter, incrementHandler, counterApplier);
+    kernelA.execute(counter, command('counter/increment', { by: 99 }));
+
+    // fire-and-forget write is a microtask — flush it
+    await new Promise(r => setTimeout(r, 10));
+
+    // Simulate "page reload": fresh atom + fresh kernel, same adapter
+    const counter2 = defineAtom<CounterState>({
+      key: 'vi/counter-hydrate-rt',
+      initialState: { count: 0 },
+      storage: { adapter },
+    });
+    const kernelB = createKernel();
+    kernelB.register(counter2, incrementHandler, counterApplier);
+    await kernelB.hydrate();
+
+    expect(counter2.get().count).toBe(99);
+    adapter.dispose();
+  });
+
+  it('surfaces storage write errors to plugins via onError', async () => {
+    const writeError = { left: { code: 'UNKNOWN' as const, message: 'disk full' }, _tag: 'Left' as const };
+    const failingAdapter = {
+      name: 'test' as const,
+      get: async () => ({ _tag: 'Right' as const, right: { _tag: 'Nothing' as const } }),
+      set: vi.fn().mockResolvedValue(writeError),
+    };
+
+    const counter = defineAtom<CounterState>({
+      key: 'vi/write-error',
+      initialState: { count: 0 },
+      storage: { adapter: failingAdapter as any },
+    });
+
+    const onErrorSpy = vi.fn();
+    const kernel = createKernel();
+    kernel.use({ name: 'spy', onError: onErrorSpy });
+    kernel.register(counter, incrementHandler, counterApplier);
+    kernel.execute(counter, command('counter/increment', { by: 1 }));
+
+    await new Promise(r => setTimeout(r, 10));
+    expect(onErrorSpy).toHaveBeenCalledWith(expect.objectContaining({
+      command: expect.objectContaining({
+        type: '__storage_write_error__',
+        meta: expect.objectContaining({ correlationId: expect.stringMatching(/^[0-9a-f-]{36}$/) }),
+      }),
+      error: expect.objectContaining({
+        code: 'STORAGE_WRITE_ERROR',
+        message: 'disk full',
+        details: expect.objectContaining({ adapterName: 'test', storageKey: 'vi/write-error' }),
+      }),
+    }));
   });
 });
 
@@ -869,7 +938,7 @@ describe('branch coverage — writeToStorage with memory adapter (line 195)', ()
       initialState: { count: 0 },
       storage: {
         key: 'counter-mem',
-        adapter: { get: async () => nothing(), set: setSpy, remove: () => Promise.resolve() },
+        adapter: { name: 'test' as const, get: async () => right(nothing()), set: setSpy, remove: () => Promise.resolve() },
         ttl: 3600000,
         security: 'memory-only',  // IMPORTANT: security policy
       },
@@ -897,7 +966,7 @@ describe('branch coverage — executeOptimistic with storage (line 355)', () => 
       initialState: { count: 0 },
       storage: {
         key: 'counter-opt',
-        adapter: { get: async () => nothing(), set: vi.fn(async () => undefined), remove: () => Promise.resolve() },
+        adapter: { name: 'test' as const, get: async () => right(nothing()), set: vi.fn(async () => right(undefined)), remove: () => Promise.resolve() },
         ttl: 3600000,
         security: 'memory-only',
       },
@@ -1022,5 +1091,89 @@ describe('branch coverage — debug layer noop behavior (line 46)', () => {
     expect(kernel.debug.isEnabled).toBe(false);
     // Calling record on disabled debug should be a no-op (safe to call)
     expect(() => kernel.debug.record({} as any)).not.toThrow();
+  });
+});
+
+// ─── Phase 2.6 — DevTools records optimistic entries and rollback entries ────
+
+describe('Phase 2.6 — DevTools records both the optimistic entry and the rollback entry', () => {
+  it('records the optimistic entry when executeOptimistic succeeds (confirm returns Right)', async () => {
+    const recordSpy = vi.fn();
+    const kernel = createKernel({ debug: { isEnabled: true, record: recordSpy } });
+    const counter = makeCounter();
+    kernel.register(counter, incrementHandler, counterApplier);
+
+    await kernel.executeOptimistic(counter, command('counter/increment', { by: 10 }), {
+      optimisticApplier: (s) => ({ count: s.count + 10 }),
+      confirm: async () => right(undefined as unknown),
+    });
+
+    // Exactly one debug entry — the optimistic apply
+    expect(recordSpy).toHaveBeenCalledTimes(1);
+    const entry = recordSpy.mock.calls[0][0] as {
+      commandType: string;
+      atomKey: string;
+      events: unknown[];
+      prevState: unknown;
+      nextState: unknown;
+      error?: unknown;
+    };
+    expect(entry.commandType).toBe('counter/increment');
+    expect(entry.atomKey).toBe('vi/counter');
+    expect(entry.events).toEqual([]);
+    expect(entry.prevState).toEqual({ count: 0 });
+    expect(entry.nextState).toEqual({ count: 10 });
+    expect(entry.error).toBeUndefined();
+  });
+
+  it('records both the optimistic entry AND the rollback entry when confirm fails (confirm returns Left)', async () => {
+    const recordSpy = vi.fn();
+    const kernel = createKernel({ debug: { isEnabled: true, record: recordSpy } });
+    const counter = makeCounter();
+    kernel.register(counter, incrementHandler, counterApplier);
+
+    await kernel.executeOptimistic(counter, command('counter/increment', { by: 20 }), {
+      optimisticApplier: (s) => ({ count: s.count + 20 }),
+      confirm: async () => left({ code: 'REMOTE_ERROR', message: 'Server rejected' }),
+    });
+
+    // Two debug entries: 1st = optimistic apply, 2nd = rollback
+    expect(recordSpy).toHaveBeenCalledTimes(2);
+    const [optimisticEntry, rollbackEntry] = recordSpy.mock.calls.map(c => c[0]) as Array<{
+      nextState: unknown;
+      prevState: unknown;
+      error?: { code: string; message: string };
+    }>;
+
+    // Optimistic entry: state advanced optimistically, no error
+    expect(optimisticEntry.prevState).toEqual({ count: 0 });
+    expect(optimisticEntry.nextState).toEqual({ count: 20 });
+    expect(optimisticEntry.error).toBeUndefined();
+
+    // Rollback entry: state reverted back to original, error captured
+    expect(rollbackEntry.prevState).toEqual({ count: 0 });
+    expect(rollbackEntry.nextState).toEqual({ count: 0 });
+    expect(rollbackEntry.error).toEqual({ code: 'REMOTE_ERROR', message: 'Server rejected' });
+  });
+
+  it('records the rollback entry when confirm() throws (unexpected error path)', async () => {
+    const recordSpy = vi.fn();
+    const kernel = createKernel({ debug: { isEnabled: true, record: recordSpy } });
+    const counter = makeCounter();
+    kernel.register(counter, incrementHandler, counterApplier);
+
+    await kernel.executeOptimistic(counter, command('counter/increment', { by: 15 }), {
+      optimisticApplier: (s) => ({ count: s.count + 15 }),
+      confirm: async () => { throw new Error('Network failure'); },
+    });
+
+    // Two entries: optimistic apply + rollback (catch path)
+    expect(recordSpy).toHaveBeenCalledTimes(2);
+    const rollbackEntry = recordSpy.mock.calls[1][0] as {
+      nextState: unknown;
+      error?: { code: string };
+    };
+    expect(rollbackEntry.nextState).toEqual({ count: 0 }); // Rolled back
+    expect(rollbackEntry.error?.code).toBe('HANDLER_ERROR');
   });
 });
