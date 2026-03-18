@@ -112,7 +112,8 @@ export function createSyncEngine({ kernel, transport: transportFactory = createA
     const syncState: SyncState<S> = {
       peerId,
       version:           createVersionVector(peerId, 0),
-      connected:         true,
+      // Reflect the actual transport connectivity — false for noop (SSR/Node.js)
+      connected:         bridge.isOpen,
       peers:             new Map(),
       conflictsResolved: 0,
       _pending:          undefined,

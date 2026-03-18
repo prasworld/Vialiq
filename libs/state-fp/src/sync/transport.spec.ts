@@ -84,24 +84,25 @@ describe('Phase 4.6 — Universal Transport Guard', () => {
 
   describe('createAutoTransport — no BroadcastChannel (SSR / Node.js)', () => {
     it('returns a noop transport when BroadcastChannel is unavailable', () => {
-      // In the node test environment BroadcastChannel is not defined by default.
-      const hadBC = typeof (globalThis as any).BroadcastChannel !== 'undefined';
-      if (hadBC) delete (globalThis as any).BroadcastChannel;
-
-      const t = createAutoTransport('test-channel');
-      expect(t.isOpen).toBe(false);
-
-      if (hadBC) (globalThis as any).BroadcastChannel = FakeBroadcastChannel;
+      const originalBC = (globalThis as any).BroadcastChannel;
+      delete (globalThis as any).BroadcastChannel;
+      try {
+        const t = createAutoTransport('test-channel');
+        expect(t.isOpen).toBe(false);
+      } finally {
+        if (originalBC !== undefined) (globalThis as any).BroadcastChannel = originalBC;
+      }
     });
 
     it('no-ops silently when send() is called without BroadcastChannel', () => {
-      const hadBC = typeof (globalThis as any).BroadcastChannel !== 'undefined';
-      if (hadBC) delete (globalThis as any).BroadcastChannel;
-
-      const t = createAutoTransport('test-channel');
-      expect(() => t.send(dummyMsg)).not.toThrow();
-
-      if (hadBC) (globalThis as any).BroadcastChannel = FakeBroadcastChannel;
+      const originalBC = (globalThis as any).BroadcastChannel;
+      delete (globalThis as any).BroadcastChannel;
+      try {
+        const t = createAutoTransport('test-channel');
+        expect(() => t.send(dummyMsg)).not.toThrow();
+      } finally {
+        if (originalBC !== undefined) (globalThis as any).BroadcastChannel = originalBC;
+      }
     });
   });
 
@@ -155,7 +156,7 @@ describe('Phase 4.6 — Universal Transport Guard', () => {
       const mockTargetWindow = {
         postMessage: (data: unknown, origin: string) => {
           postedMessages.push({ data, origin });
-          // Simulate the receiving end — fire the message back to the transport
+          // Simulate the receiving end — fire the message back to the transport.
           const ev = new MessageEvent('message', {
             data,
             origin: 'https://example.com',

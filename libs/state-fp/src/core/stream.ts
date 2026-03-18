@@ -78,15 +78,29 @@ export function createEphemeralStream<T>(): EphemeralStream<T> {
   const listeners = new Set<(value: T) => void>();
   let _last: T | undefined;
 
-  // ── subscribeAnimated internals ──────────────────────────────────────────
+  // ── subscribeAnimated internals (demand-driven — one shared RAF per stream) ─
+  //
+  // A single RAF is scheduled per stream only when a value is emitted AND there
+  // are animated subscribers. The frame is NOT rescheduled when idle, so streams
+  // that receive no new values cost zero CPU between emits.
 
-  // Maps each RAF-subscriber to the pending-frame bookkeeping for that listener
-  const rafEntries = new Map<
-    (value: T) => void,
-    { rafId: number; pending: T | undefined; hasPending: boolean }
-  >();
+  type AnimatedEntry = { pending: T | undefined; hasPending: boolean };
+  const animatedListeners = new Map<(value: T) => void, AnimatedEntry>();
+  let rafId      = 0;
+  let rafPending = false;
 
   const hasRAF = typeof requestAnimationFrame === 'function';
+
+  /** Deliver the buffered last-value to every animated subscriber. */
+  function flushAnimated(): void {
+    rafPending = false;
+    for (const [listener, entry] of animatedListeners) {
+      if (!entry.hasPending) continue;
+      entry.hasPending = false;
+      const value = entry.pending as T;
+      try { listener(value); } catch { /* isolate subscriber errors */ }
+    }
+  }
 
   // ── Public API ────────────────────────────────────────────────────────────
 
@@ -99,10 +113,18 @@ export function createEphemeralStream<T>(): EphemeralStream<T> {
         try { listener(value); } catch { /* isolate subscriber errors */ }
       }
 
-      // Update pending value for RAF subscribers
-      for (const entry of rafEntries.values()) {
-        entry.pending    = value;
-        entry.hasPending = true;
+      // Mark animated subscribers pending and schedule ONE RAF if not already
+      // scheduled. All subsequent emits before the frame fires just overwrite
+      // the pending value — only the last value is delivered per frame.
+      if (hasRAF && animatedListeners.size > 0) {
+        for (const entry of animatedListeners.values()) {
+          entry.pending    = value;
+          entry.hasPending = true;
+        }
+        if (!rafPending) {
+          rafPending = true;
+          rafId = requestAnimationFrame(flushAnimated);
+        }
       }
     },
 
@@ -113,28 +135,21 @@ export function createEphemeralStream<T>(): EphemeralStream<T> {
 
     subscribeAnimated(listener: (value: T) => void): Unsubscribe {
       if (!hasRAF) {
-        // SSR / Node.js fallback — behave like a plain synchronous subscriber
-        return this.subscribe(listener);
+        // SSR / Node.js fallback — close over `listeners` directly to avoid
+        // relying on `this` binding (safe even when the method is destructured).
+        listeners.add(listener);
+        return () => listeners.delete(listener);
       }
 
-      const entry = { rafId: 0, pending: undefined as T | undefined, hasPending: false };
-      rafEntries.set(listener, entry);
-
-      const tick = () => {
-        if (!rafEntries.has(listener)) return;  // already unsubscribed
-        if (entry.hasPending) {
-          entry.hasPending = false;
-          const value = entry.pending as T;
-          try { listener(value); } catch { /* isolate subscriber errors */ }
-        }
-        entry.rafId = requestAnimationFrame(tick);
-      };
-
-      entry.rafId = requestAnimationFrame(tick);
+      animatedListeners.set(listener, { pending: undefined, hasPending: false });
 
       return () => {
-        cancelAnimationFrame(entry.rafId);
-        rafEntries.delete(listener);
+        animatedListeners.delete(listener);
+        // Cancel the pending RAF if no animated subscribers remain.
+        if (animatedListeners.size === 0 && rafPending) {
+          cancelAnimationFrame(rafId);
+          rafPending = false;
+        }
       };
     },
 

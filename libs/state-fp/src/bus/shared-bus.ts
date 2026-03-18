@@ -72,7 +72,13 @@ export function createSharedBus({ channel }: SharedBusOptions): SharedEventBus {
       if (!_isOpen) return;
       // Dispatch locally to own subscribers (BroadcastChannel doesn't echo to self)
       dispatch(event);
-      bc.postMessage(JSON.stringify(event));
+      // Guard against non-serializable payloads (circular refs, BigInt, etc.) —
+      // remote delivery is skipped but local dispatch above already succeeded.
+      try {
+        bc.postMessage(JSON.stringify(event));
+      } catch {
+        // payload not serializable — local subscribers already notified above
+      }
     },
 
     subscribe(filter: EventFilter, cb: (e: CrossMFEEvent) => void) {

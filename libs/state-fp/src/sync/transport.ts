@@ -72,6 +72,16 @@ export function createPostMessageTransport<S = unknown>(
 
   const onMessage = (ev: MessageEvent<unknown>) => {
     if (!_isOpen) return;
+    // Validate the sender's origin. This prevents cross-origin frames from
+    // injecting messages. Same-origin senders are accepted by design because:
+    //  1. The `__vi_sync__` wrapper + `channel` field namespace all messages,
+    //     so accidental collisions with unrelated postMessage callers are
+    //     practically impossible.
+    //  2. `ev.source` is a WindowProxy and cannot be compared to a plain
+    //     object reference in library code without imposing a Window-shaped
+    //     API constraint on callers.
+    // Consumers requiring stronger isolation can wrap this transport and add
+    // their own `ev.source === expectedWindow` guard after construction.
     if (ev.origin !== targetOrigin) return;
 
     let wrapper: { __vi_sync__: true; channel: string; msg: SyncMessage<S> };
