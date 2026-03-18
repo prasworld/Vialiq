@@ -125,4 +125,68 @@ describe('createSyncEngine', () => {
     engine.destroy();
     expect(engine.getState(atom.key)).toBeUndefined();
   });
+
+  it('2-MFE integration: two sync engines share state across a channel', async () => {
+    // Simulates shell MFE (engine A) and remote1 MFE (engine B), each with their own
+    // kernel + atom instance, connected via the same FakeBroadcastChannel.
+    const atomA = createAtom('vi/counter', 0);
+    const atomB = createAtom('vi/counter', 0);
+
+    const kernelA = { subscribe: <S>(a: Atom<S>, l: (v: S) => void) => a.subscribe(l) };
+    const kernelB = { subscribe: <S>(a: Atom<S>, l: (v: S) => void) => a.subscribe(l) };
+
+    const engineA = createSyncEngine({ kernel: kernelA });
+    const engineB = createSyncEngine({ kernel: kernelB });
+
+    engineA.share(atomA, { channel: 'vi/counter', peerId: 'mfe-shell',   conflict: 'last-write-wins' });
+    engineB.share(atomB, { channel: 'vi/counter', peerId: 'mfe-remote1', conflict: 'last-write-wins' });
+
+    // Shell updates its atom — should propagate to remote1
+    atomA._setState(42);
+    await Promise.resolve();
+    expect(atomB.get()).toBe(42);
+
+    // Remote1 updates its atom — should propagate back to shell
+    atomB._setState(99);
+    await Promise.resolve();
+    expect(atomA.get()).toBe(99);
+
+    engineA.destroy();
+    engineB.destroy();
+  });
+
+  it('2-MFE integration: stale messages from an old peer are discarded', async () => {
+    const atom = createAtom('vi/data', 'initial');
+    const kernel = { subscribe: <S>(a: Atom<S>, l: (v: S) => void) => a.subscribe(l) };
+
+    const engine = createSyncEngine({ kernel });
+    engine.share(atom, { channel: 'vi/data', peerId: 'local' });
+
+    // First apply a fresh message so local version is { remote: 2 }
+    const bridge = createBroadcastBridge<string>('vi/data');
+    bridge.send({
+      type:    'vi/sync/state',
+      peerId:  'remote',
+      atomKey: 'vi/data',
+      state:   'v2',
+      version: { remote: 2 },
+      ts:      Date.now(),
+    });
+    await Promise.resolve();
+    expect(atom.get()).toBe('v2');
+
+    // Now send a stale message with older version — should be discarded
+    bridge.send({
+      type:    'vi/sync/state',
+      peerId:  'remote',
+      atomKey: 'vi/data',
+      state:   'old-stale-value',
+      version: { remote: 1 },
+      ts:      Date.now() - 5000,
+    });
+    await Promise.resolve();
+    expect(atom.get()).toBe('v2'); // unchanged
+
+    engine.destroy();
+  });
 });

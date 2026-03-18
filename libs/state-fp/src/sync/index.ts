@@ -32,6 +32,7 @@ export type {
   StateMessage,
   RequestMessage,
   EventMessage,
+  SyncTransport,
 } from './types.js';
 
 export type { Candidate }          from './conflict.js';
@@ -39,7 +40,8 @@ export type { MessageListener,
               BroadcastBridge }    from './broadcast.js';
 export type { KernelLike,
               SyncEngine,
-              SyncEngineOptions }  from './sync-engine.js';
+              SyncEngineOptions,
+              TransportFactory }  from './sync-engine.js';
 
 // ─── Version vector ───────────────────────────────────────────────────────────
 
@@ -69,6 +71,21 @@ export {
 // ─── BroadcastBridge ─────────────────────────────────────────────────────────
 
 export { createBroadcastBridge } from './broadcast.js';
+
+// ─── Transport (Phase 4.6) ────────────────────────────────────────────────────
+
+export type {
+  PostMessageTransportOptions,
+  PostMessageRelayOptions,
+  PostMessageRelay,
+} from './transport.js';
+
+export {
+  createNoopTransport,
+  createAutoTransport,
+  createPostMessageTransport,
+  createPostMessageRelay,
+} from './transport.js';
 
 // ─── SyncEngine ───────────────────────────────────────────────────────────────
 
