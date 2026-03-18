@@ -12,7 +12,7 @@
 import { describe, it, expect } from 'vitest';
 import { createKernel }         from './kernel.js';
 import { defineAtom }           from './atom.js';
-import { command, createCommandHandler } from './command.js';
+import { createCommandHandler } from './command.js';
 import { domainEvent, createEventApplier } from './event.js';
 import { right }                from '../core/either.js';
 import { just, nothing }        from '../core/maybe.js';
