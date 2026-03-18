@@ -415,7 +415,15 @@ describe('hydrate', () => {
 
     await new Promise(r => setTimeout(r, 10));
     expect(onErrorSpy).toHaveBeenCalledWith(expect.objectContaining({
-      error: expect.objectContaining({ code: 'STORAGE_WRITE_ERROR' }),
+      command: expect.objectContaining({
+        type: '__storage_write_error__',
+        meta: expect.objectContaining({ correlationId: expect.stringMatching(/^[0-9a-f-]{36}$/) }),
+      }),
+      error: expect.objectContaining({
+        code: 'STORAGE_WRITE_ERROR',
+        message: 'disk full',
+        details: expect.objectContaining({ adapterName: 'test', storageKey: 'vi/write-error' }),
+      }),
     }));
   });
 });

@@ -151,14 +151,19 @@ export function createKernel(options: KernelOptions = {}): Kernel {
     // memory-only policy: never write to browser storage
     if (storageConfig.security === 'memory-only') return;
     const key = storageConfig.key ?? atom.definition.key;
+    const ts = now();
     storageConfig.adapter
       .set(key, state, storageConfig.ttl)
       .then((result) => {
         // StorageResult<void> = Either<StorageError, void> — surface Left as error to plugins
         if (result._tag === 'Left') {
           plugins.forEach(p => p.onError?.({
-            command: { _kind: 'Command', type: '__storage_error__', meta: { correlationId: '', timestamp: now() } },
-            error:   { code: 'STORAGE_WRITE_ERROR', message: result.left.message },
+            command: { _kind: 'Command', type: '__storage_write_error__', meta: { correlationId: uuid(), timestamp: ts } },
+            error:   {
+              code:    'STORAGE_WRITE_ERROR',
+              message: result.left.message,
+              details: { adapterName: storageConfig.adapter.name, storageKey: key, cause: result.left },
+            },
             atomKey: atom.definition.key,
           }));
         }
@@ -166,8 +171,12 @@ export function createKernel(options: KernelOptions = {}): Kernel {
       .catch((err: unknown) => {
         // Unexpected Promise rejection — surface to plugins
         plugins.forEach(p => p.onError?.({
-          command: { _kind: 'Command', type: '__storage_error__', meta: { correlationId: '', timestamp: now() } },
-          error:   { code: 'STORAGE_WRITE_ERROR', message: String(err) },
+          command: { _kind: 'Command', type: '__storage_write_error__', meta: { correlationId: uuid(), timestamp: ts } },
+          error:   {
+            code:    'STORAGE_WRITE_ERROR',
+            message: err instanceof Error ? err.message : String(err),
+            details: { adapterName: storageConfig.adapter.name, storageKey: key, cause: err },
+          },
           atomKey: atom.definition.key,
         }));
       });
