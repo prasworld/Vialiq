@@ -86,7 +86,7 @@ export function createKernel(options: KernelOptions = {}): Kernel {
   const computedDepRefs = new Map<ComputedAtom<any>, readonly any[]>();
   /** Phase 2.5 — all registered computed atoms */
   const computedAtoms = new Set<ComputedAtom<any>>();
-      /** Phase 3.6 — query memo cache: (atomKey::queryType) → last { stateRef, payloadKey, result } */
+  /** Phase 3.6 — query memo cache: (atomKey::queryType) → last { stateRef, payloadKey, result } */
   const queryMemoCache = new Map<string, { stateRef: unknown; payloadKey: string; result: unknown }>();
   // ── Debug layer ─────────────────────────────────────────────────────────────
 
