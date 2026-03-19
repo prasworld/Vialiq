@@ -12,18 +12,18 @@ skinparam package {
 }
 
 package "API Exports" {
-  [./core] as api_core
-  [./kernel] as api_kernel
-  [./storage] as api_storage
-  [./sync] as api_sync
-  [./bus] as api_bus
-  [./adapter] as api_adapter
-  [./devtools] as api_devtools
+  [core] as api_core
+  [kernel] as api_kernel
+  [storage] as api_storage
+  [sync] as api_sync
+  [bus] as api_bus
+  [adapter] as api_adapter
+  [devtools] as api_devtools
 }
 
 package "@vi/state-fp/core" {
-  [createAtom<T>] as createAtom
-  [createEphemeralStream<T>] as createStream
+  [createAtom] as createAtom
+  [createEphemeralStream] as createStream
   [types] as core_types
   createAtom --> core_types
   createStream --> core_types
@@ -52,7 +52,7 @@ package "@vi/state-fp/storage" {
 
 package "@vi/state-fp/sync" {
   [SyncEngine] as SE
-  [SyncTransport<S>] as ST
+  [SyncTransport] as ST
   [VersionVector] as VV
   [ConflictResolver] as CR
   [BroadcastBridge] as BC
@@ -143,11 +143,11 @@ package "External (Browser APIs)" {
   [localStorage]
 }
 
-BC -.-> BroadcastChannel API
-PM -.-> postMessage API
-IDB -.-> IndexedDB
-createStream -.-> requestAnimationFrame
-LS -.-> localStorage
+BC -.-> [BroadcastChannel API]
+PM -.-> [postMessage API]
+IDB -.-> [IndexedDB]
+createStream -.-> [requestAnimationFrame]
+LS -.-> [localStorage]
 
 note right of SE
   **Dependency Graph:**

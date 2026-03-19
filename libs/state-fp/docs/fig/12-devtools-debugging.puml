@@ -38,46 +38,23 @@ package "Testing Infrastructure" {
   [QueryBuilder] as qb
 }
 
-== Runtime Instrumentation ==
 kernel --> dtm : emit instrumentation events
 atom --> dtm : on state mutation
 storage --> dtm : on persist
 dtm --> log : record {timestamp, mutation, state_before, state_after}
 
-== DevTools Features ==
 log --> rdt : timeline view
 log --> console : dumpEventLog()
 tt --> console : timeTravel(stepNum)
 si --> console : inspectAtom('counterAtom')
 perf --> perf_tab : measure command latency
 
-rdt --> rdt: show mutation history\n(with timeline slider)
-console --> console: log event log\nwith call stacks
-perf_tab --> perf_tab: visualize\ncommand duration
-
-== Testing Pattern ==
 vitest --> mock : createMockKernel()
 mock --> snap : take snapshot before\neach test
 snap --> qb : build query expectations
 qb --> vitest : assert state mutations
 
-== Example Debugging Session ==
-participant "Dev Console" as dev
-
-dev --> console: window.__VI_STATE_FP__.debug()
-dev --> console: dump application state
-dev --> console: {kernelState, atoms: {...}, syncState, storage}
-
-dev --> console: window.__VI_STATE_FP__.getEventLog()
-dev --> console: [{ts, cmd, before: {count:0}, after: {count:1}}, ...]
-
-dev --> rdt: open Redux DevTools
-rdt --> rdt: see mutations as dispatched\nactions with state diffs
-
-dev --> console: window.__VI_STATE_FP__.timeTravel(stepNum)
-dev --> console: application reverts to\nthat point in history
-
-note over kernel, vitest
+note bottom of vitest
   **Debug Capabilities:**
   ✓ Full event history with timestamps
   ✓ State before/after each mutation

@@ -5,70 +5,113 @@
 !define OUTPUT_COLOR #FFE8B6
 !define STORAGE_COLOR #F3E5F5
 
+title Data Flow Paths
+
 skinparam monochrome false
 skinparam backgroundColor #FEFEFE
 
-'== Write Path ==
-(User Event) as input1 --> [Normalize Event] as norm
-norm --> [Validate Against Schema] as val
-val --> [Execute Command Handler] as exec
-exec --> [Produce State Mutation] as mutate
-mutate --> [Update Atom._state] as update
-update --> {Version Incremented?}
-{Version Incremented?} --> [Persist to Storage] as persist1
-{Version Incremented?} --> [Broadcast via Sync] as sync_write
-persist1 --> [(IndexedDB / LocalStorage)] as storage1
+package "Write Path" {
+  [User Event] as input1
+  [Normalize Event] as norm
+  [Validate Schema] as val
+  [Execute Command] as exec
+  [Update Atom State] as update
+  [Persistent Storage] as storage1
+}
 
-'== Sync Reception Path ==
-(Remote Message) as input2 --> [Deserialize SyncMessage] as deser
-deser --> [Check Version Vector] as check_ver
-check_ver --> {Stale?}
-{Stale?} --> [Discard] as discard
-{Stale?} --> {Concurrent?}
-{Concurrent?} --> [Apply Conflict Strategy] as conflict
-{Concurrent?} --> [Merge Versions] as merge_ver
-conflict --> [Update Atom._state] as update2
-merge_ver --> update2
-update2 --> [Merge Version Vectors] as merge_vv
-merge_vv --> [Notify Local Subscribers] as notify2
-sync_write --> [Transport Selector] as selector
-selector --> {BroadcastChannel?}
-{BroadcastChannel?} --> [BroadcastChannel.postMessage] as bc_write
-{BroadcastChannel?} --> [PostMessage Relay] as pm_write
-pm_write --> (Other Tabs/Workers)
-bc_write --> (Other Tabs/Workers)
+package "Sync Reception" {
+  [Remote Message] as input2
+  [Deserialize Message] as deser
+  [Check Version Vector] as check_ver
+  [Resolve Conflict] as conflict
+  [Update Atom Synced] as update2
+  [Merge Version Vectors] as merge_vv
+  [Notify Subscribers] as notify2
+}
 
-'== Query Path ==
-(Read Atom State) as input3 --> [executeQuery] as query_exec
-query_exec --> [Check Memo Cache] as memo_check
-memo_check --> {Cache Hit?}
-{Cache Hit?} --> [Return Cached Result] as cached
-{Cache Hit?} --> [Run Query Function] as run_query
-run_query --> [Store in Cache with TTL] as cache_store
-cache_store --> [Return Result] as query_result
+package "Transport" {
+  [Broadcast via Sync] as sync_write
+  [Transport Selector] as selector
+  [BroadcastChannel Bridge] as bc_write
+  [PostMessage Relay] as pm_write
+  [Other Tabs and Workers] as other_tabs
+}
+
+package "Query Path" {
+  [Read Atom State] as input3
+  [Execute Query] as query_exec
+  [Memo Cache Check] as memo_check
+  [Cached Result] as cached
+  [Run Query Function] as run_query
+  [Query Result] as query_result
+}
+
+package "Subscription Path" {
+  [Subscribe Call] as input4
+  [Listener Set] as add_listen
+  [On Emit or RAF] as on_emit
+  [Animated Buffer] as ani_buffer
+  [RAF Scheduler] as raf_node
+  [Flushed Values] as flush
+  [Sync Notify] as sync_notify
+  [Listener Callback] as call_listen1
+}
+
+package "DevTools" {
+  [Mutation or Event] as input5
+  [DomainEvent Emitted] as evt
+  [Capture Timestamp] as ts
+  [EventLog] as eventlog
+  [State Map] as statemap
+  [DevTools Extension] as devtools_out
+  [Time Travel Index] as tt_index
+}
+
+input1 --> norm
+norm --> val
+val --> exec
+exec --> update
+update --> storage1 : version persisted
+update --> sync_write : broadcast on change
+sync_write --> selector
+selector --> bc_write : BroadcastChannel
+selector --> pm_write : PostMessage fallback
+bc_write --> other_tabs
+pm_write --> other_tabs
+
+input2 --> deser
+deser --> check_ver
+check_ver --> conflict : concurrent write
+check_ver --> update2 : non-conflicting
+conflict --> update2
+update2 --> merge_vv
+merge_vv --> notify2
+
+input3 --> query_exec
+query_exec --> memo_check
+memo_check --> cached : cache hit
+memo_check --> run_query : cache miss
+run_query --> query_result
 cached --> query_result
 
-'== Subscription Path ==
-(subscribe/subscribeAnimated) as input4 --> [Add Listener to Set] as add_listen
-add_listen --> [On each emit / RAF frame] as on_emit
-on_emit --> {Animated?}
-{Animated?} --> [Buffer in AnimatedEntry] as buffer
-{Animated?} --> [Synchronous Notify] as sync_notify
-buffer --> [requestAnimationFrame] as raf
-raf --> [Flush Buffered Values] as flush
-flush --> [Call Listener with last value] as call_listen1
+input4 --> add_listen
+add_listen --> on_emit
+on_emit --> ani_buffer : animated
+on_emit --> sync_notify : immediate
+ani_buffer --> raf_node
+raf_node --> flush
+flush --> call_listen1
 sync_notify --> call_listen1
 
-'== DevTools Instrumentation ==
-(Mutation / Event) as input5 --> [DomainEvent Emitted] as evt
-evt --> [Capture Timestamp] as ts
-ts --> [Record in EventLog] as eventlog
-eventlog --> [Update State Map] as statemap
-statemap --> [(Browser DevTools Ext)] as devtools_out
-statemap --> [(Time-Travel Index)] as tt_index
+input5 --> evt
+evt --> ts
+ts --> eventlog
+eventlog --> statemap
+statemap --> devtools_out
+statemap --> tt_index
 
-update --> notify2: sync side effect
-update --> evt
-notify2 --> call_listen1: downstream subscriber
+update --> notify2 : sync side effect
+update --> evt : instrumentation
+notify2 --> call_listen1 : downstream
 
 @enduml

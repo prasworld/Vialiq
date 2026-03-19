@@ -16,10 +16,10 @@ tabB -> tabB: atom = createAtom('balance', 100)
 tabA -> tabA: engine.share(atom, {peerId: 'A'})
 tabB -> tabB: engine.share(atom, {peerId: 'B'})
 
-note over tabA, tabB
+note right of tabA
   **Version Vector:**
-  A: { A: 1, B: 0 }  (A has made 1 change, B has made 0)
-  B: { A: 0, B: 1 }  (B has made 1 change, A has made 0)
+  A: { A: 1, B: 0 }
+  B: { A: 0, B: 1 }
 end note
 
 == Concurrent Write: Tab A updates balance ==
@@ -38,10 +38,9 @@ note right of tabB
 end note
 tabB -> tabB: broadcast SyncMessage\n{peerId: 'B', state: 130, version: {A:0, B:2}}
 
-note over tabA, tabB
+note right of resolver
   **CONCURRENT writes detected!**
   Both messages in flight simultaneously.
-  Neither version vector is a subset of the other.
 end note
 
 == Tab A Receives Message from B ==

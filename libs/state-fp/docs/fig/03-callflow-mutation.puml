@@ -53,7 +53,7 @@ deactivate sync
 
 deactivate comp
 
-note over kernel, atom
+note right of kernel
   **Subscriber Pattern**
   All subscribers to atom
   notified in order:
@@ -63,7 +63,7 @@ note over kernel, atom
   4. DevTools
 end note
 
-note over transport, remote
+note right of transport
   **Guaranteed Delivery**
   Transport abstraction ensures
   message delivery via best available

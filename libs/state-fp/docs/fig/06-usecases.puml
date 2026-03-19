@@ -13,45 +13,44 @@ skinparam usecase {
   BorderColor #1976D2
 }
 
-(Developer) as dev
-(End User) as user
-(Framework\n(React/Angular)) as fw
+actor Developer as dev
+actor "End User" as user
+actor Framework as fw
 
 package "State-FP Usage Scenarios" {
-  usecase "UC1: Create Atom with\nInitial State" as uc1
-  usecase "UC2: Subscribe to\nState Changes" as uc2
-  usecase "UC3: Execute Command\n(Mutation)" as uc3
-  usecase "UC4: Execute Query\n(Read with Memo)" as uc4
-  usecase "UC5: Persist Atom\nto IndexedDB" as uc5
-  usecase "UC6: Share Atom\n(Cross-Tab Sync)" as uc6
-  usecase "UC7: Resolve Conflicts\n(Concurrent Writes)" as uc7
-  usecase "UC8: Time Travel\nDebug" as uc8
-  usecase "UC9: High-Frequency\nStreaming" as uc9
-  usecase "UC10: Cross-MFE\nEvent Bus" as uc10
-  usecase "UC11: Framework Integration\n(useAtom Hook)" as uc11
-  usecase "UC12: SSR Hydration" as uc12
+  usecase "Create Atom" as uc1
+  usecase "Subscribe to Changes" as uc2
+  usecase "Execute Command" as uc3
+  usecase "Execute Query with Memo" as uc4
+  usecase "Persist Atom" as uc5
+  usecase "Share Atom Cross-Tab" as uc6
+  usecase "Resolve Conflicts" as uc7
+  usecase "Time Travel Debug" as uc8
+  usecase "High Frequency Streaming" as uc9
+  usecase "Cross-MFE Event Bus" as uc10
+  usecase "Framework Integration" as uc11
+  usecase "SSR Hydration" as uc12
 }
 
-'== Developer Scenarios ==
-dev --> uc1 : initialize app state
-dev --> uc2 : wire up subscriptions
-dev --> uc3 : define command handlers
-dev --> uc4 : implement queries
-dev --> uc5 : enable persistence
-dev --> uc6 : share cross-tab
-dev --> uc8 : debug \& inspect state
+' Developer Scenarios
+dev --> uc1 : initialize
+dev --> uc2 : subscribe
+dev --> uc3 : commands
+dev --> uc4 : queries
+dev --> uc5 : persist
+dev --> uc6 : share
+dev --> uc8 : debug
 
-'== End User Scenarios ==
-user --> uc2 : sees live updates
-user --> uc3 : triggers mutations
-user --> uc9 : immediate feedback\n(mouse, scroll)
-user --> uc7 : conflict resolution\ntransparent
+' End User Scenarios
+user --> uc2 : see updates
+user --> uc3 : trigger mutations
+user --> uc9 : immediate feedback
+user --> uc7 : resolution
 
-'== Framework Integration ==
-fw --> uc11 : React/Angular\nto state-fp
-fw --> uc12 : hydrate on\ngclient-side
+' Framework Integration
+fw --> uc11 : React or Angular integration
+fw --> uc12 : hydrate on client-side
 
-'== Advanced ==
 uc3 ..> uc6 : if shared
 uc6 --> uc7 : when concurrent
 uc3 --> uc8 : via devtools

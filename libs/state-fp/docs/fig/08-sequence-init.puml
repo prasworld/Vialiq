@@ -79,7 +79,7 @@ render -> render: return <div>{count} clicks</div>
 render -> render: commit changes to DOM
 deactivate render
 
-note over app, render
+note right of render
   **Total Latency:**
   Command → Storage: ~2-5ms (sync)
   Command → Render: ~0.1ms (sync listener)

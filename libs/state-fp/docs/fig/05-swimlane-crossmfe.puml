@@ -7,27 +7,25 @@
 skinparam monochrome false
 skinparam backgroundColor #FEFEFE
 
-rectangle "Browser Context" {
-  swimlane "Tab A (Order MFE)" as tabA {
-    participant "React Component" as compA
-    participant "Kernel" as kernelA
-    participant "orderAtom" as atomA
-    participant "SyncEngine" as syncA
-    participant "Transport" as transportA
-  }
-  
-  swimlane "Shared Infrastructure" as shared {
-    participant "BroadcastChannel" as bc
-  }
-  
-  swimlane "Tab B (Notification MFE)" as tabB {
-    participant "React Component" as compB
-    participant "Kernel" as kernelB
-    participant "notificationAtom" as atomB
-    participant "SharedEventBus" as bus
-    participant "Transport" as transportB
-  }
-}
+box "Tab A (Order MFE)"
+  participant "React Component" as compA
+  participant "Kernel" as kernelA
+  participant "orderAtom" as atomA
+  participant "SyncEngine" as syncA
+  participant "Transport" as transportA
+end box
+
+box "Shared Infrastructure"
+  participant "BroadcastChannel" as bc
+end box
+
+box "Tab B (Notification MFE)"
+  participant "React Component" as compB
+  participant "Kernel" as kernelB
+  participant "notificationAtom" as atomB
+  participant "SharedEventBus" as bus
+  participant "Transport" as transportB
+end box
 
 autonumber
 compA -> kernelA: executeCommand(updateOrder)
@@ -56,7 +54,7 @@ compB -> compB: re-render with notification
 
 compB -> kernelB: notificationAtom.set(notification)
 
-note over tabA, tabB
+note over compA, transportB
   **Cross-MFE Sync Protocol:**
   1. Tab A writes to orderAtom via Kernel
   2. Mutation triggers SyncEngine broadcast
@@ -68,7 +66,7 @@ note over tabA, tabB
   8. SharedEventBus notifies cross-MFE listeners
 end note
 
-note over bc
+note right of bc
   **Channel Abstraction:**
   Transport auto-selects:
   • BroadcastChannel (preferred, same-origin)

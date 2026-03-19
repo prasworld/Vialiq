@@ -81,8 +81,12 @@ export function createSharedBus({ channel }: SharedBusOptions): SharedEventBus {
       }
     },
 
-    subscribe(filter: EventFilter, cb: (e: CrossMFEEvent) => void) {
-      const entry = { filter, cb };
+    subscribe(filter: EventFilter = {}, cb?: (e: CrossMFEEvent) => void) {
+      // Support both overloads: subscribe(cb) and subscribe(filter, cb)
+      const actualCb = cb ?? (filter as any);
+      const actualFilter = typeof (filter as any) === 'function' ? {} : filter;
+      
+      const entry = { filter: actualFilter, cb: actualCb };
       subscribers.add(entry);
       return () => subscribers.delete(entry);
     },

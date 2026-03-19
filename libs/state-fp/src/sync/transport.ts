@@ -8,8 +8,10 @@
  *  3. `createPostMessageRelay`    — shell-side relay that forwards cross-origin messages
  *  4. `createAutoTransport`       — selects the right transport at runtime:
  *       - BroadcastChannel available → `createBroadcastBridge`
- *       - window === undefined       → `createNoopTransport`
- *       - Otherwise                  → `createPostMessageTransport`
+ *       - BroadcastChannel unavailable (SSR, Node.js, etc.) → `createNoopTransport`
+ *
+ * Note: `PostMessage` transport is NOT automatically selected. For cross-origin
+ * deployments, supply a custom `transport` factory to `createSyncEngine`.
  *
  * ## Security
  * `createPostMessageRelay` validates `event.origin` against a provided allow-list
