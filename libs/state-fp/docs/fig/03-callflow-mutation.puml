@@ -1,0 +1,73 @@
+@startuml state-fp-callflow
+!define ACCENT_COLOR #4A90E2
+!define USER_COLOR #FFE8B6
+!define KERNEL_COLOR #E3F2FD
+!define STORAGE_COLOR #FFE8D0
+!define SYNC_COLOR #E8F5E9
+
+actor User
+participant "React Component" as comp <<Component>>
+participant "Kernel" as kernel <<Component>>
+participant "Atom" as atom <<Component>>
+participant "Storage" as storage <<Component>>
+participant "SyncEngine" as sync <<Component>>
+participant "Transport" as transport <<Component>>
+participant "Other Tabs/workers" as remote <<External>>
+
+User -> comp: setValue(newValue)
+activate comp
+
+comp -> kernel: executeCommand({ type: 'SET_VALUE', payload: newValue })
+activate kernel
+
+kernel -> kernel: find matching handler
+kernel -> atom: reducer(command, state)
+activate atom
+
+atom -> atom: newState = reducer result
+atom -> atom: version++
+atom -> atom: emit DomainEvent
+atom -> comp: notify subscriber (sync)
+deactivate atom
+deactivate kernel
+
+comp -> comp: re-render with new value
+
+kernel -> storage: persist(atomKey, newState)
+activate storage
+storage --> storage: IndexedDB write
+deactivate storage
+
+kernel -> sync: broadcast state change
+activate sync
+sync -> sync: increment version vector
+sync -> transport: send(SyncMessage)
+activate transport
+transport -> remote: postMessage / BroadcastChannel
+deactivate transport
+
+remote -> remote: receive message\non other tab/worker
+remote -> remote: conflict resolution\n(version vectors)
+remote -> remote: apply state\nif winning
+deactivate sync
+
+deactivate comp
+
+note right of kernel
+  **Subscriber Pattern**
+  All subscribers to atom
+  notified in order:
+  1. React component
+  2. Storage adapter
+  3. SyncEngine
+  4. DevTools
+end note
+
+note right of transport
+  **Guaranteed Delivery**
+  Transport abstraction ensures
+  message delivery via best available
+  mechanism (BC > PostMsg > noop)
+end note
+
+@enduml

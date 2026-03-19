@@ -1,0 +1,117 @@
+@startuml state-fp-dataflow
+!define ACCENT_COLOR #4A90E2
+!define INPUT_COLOR #E8F5E9
+!define PROCESS_COLOR #E3F2FD
+!define OUTPUT_COLOR #FFE8B6
+!define STORAGE_COLOR #F3E5F5
+
+title Data Flow Paths
+
+skinparam monochrome false
+skinparam backgroundColor #FEFEFE
+
+package "Write Path" {
+  [User Event] as input1
+  [Normalize Event] as norm
+  [Validate Schema] as val
+  [Execute Command] as exec
+  [Update Atom State] as update
+  [Persistent Storage] as storage1
+}
+
+package "Sync Reception" {
+  [Remote Message] as input2
+  [Deserialize Message] as deser
+  [Check Version Vector] as check_ver
+  [Resolve Conflict] as conflict
+  [Update Atom Synced] as update2
+  [Merge Version Vectors] as merge_vv
+  [Notify Subscribers] as notify2
+}
+
+package "Transport" {
+  [Broadcast via Sync] as sync_write
+  [Transport Selector] as selector
+  [BroadcastChannel Bridge] as bc_write
+  [PostMessage Relay] as pm_write
+  [Other Tabs and Workers] as other_tabs
+}
+
+package "Query Path" {
+  [Read Atom State] as input3
+  [Execute Query] as query_exec
+  [Memo Cache Check] as memo_check
+  [Cached Result] as cached
+  [Run Query Function] as run_query
+  [Query Result] as query_result
+}
+
+package "Subscription Path" {
+  [Subscribe Call] as input4
+  [Listener Set] as add_listen
+  [On Emit or RAF] as on_emit
+  [Animated Buffer] as ani_buffer
+  [RAF Scheduler] as raf_node
+  [Flushed Values] as flush
+  [Sync Notify] as sync_notify
+  [Listener Callback] as call_listen1
+}
+
+package "DevTools" {
+  [Mutation or Event] as input5
+  [DomainEvent Emitted] as evt
+  [Capture Timestamp] as ts
+  [EventLog] as eventlog
+  [State Map] as statemap
+  [DevTools Extension] as devtools_out
+  [Time Travel Index] as tt_index
+}
+
+input1 --> norm
+norm --> val
+val --> exec
+exec --> update
+update --> storage1 : version persisted
+update --> sync_write : broadcast on change
+sync_write --> selector
+selector --> bc_write : BroadcastChannel
+selector --> pm_write : PostMessage fallback
+bc_write --> other_tabs
+pm_write --> other_tabs
+
+input2 --> deser
+deser --> check_ver
+check_ver --> conflict : concurrent write
+check_ver --> update2 : non-conflicting
+conflict --> update2
+update2 --> merge_vv
+merge_vv --> notify2
+
+input3 --> query_exec
+query_exec --> memo_check
+memo_check --> cached : cache hit
+memo_check --> run_query : cache miss
+run_query --> query_result
+cached --> query_result
+
+input4 --> add_listen
+add_listen --> on_emit
+on_emit --> ani_buffer : animated
+on_emit --> sync_notify : immediate
+ani_buffer --> raf_node
+raf_node --> flush
+flush --> call_listen1
+sync_notify --> call_listen1
+
+input5 --> evt
+evt --> ts
+ts --> eventlog
+eventlog --> statemap
+statemap --> devtools_out
+statemap --> tt_index
+
+update --> notify2 : sync side effect
+update --> evt : instrumentation
+notify2 --> call_listen1 : downstream
+
+@enduml

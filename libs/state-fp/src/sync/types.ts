@@ -111,3 +111,24 @@ export type SyncState<S> = {
   /** Pending state awaiting conflict resolution (internal). */
   _pending:          S | undefined;
 };
+
+// ─── SyncTransport ────────────────────────────────────────────────────────────
+
+/**
+ * Pluggable transport interface for the sync engine.
+ *
+ * Implementations:
+ *  - `BroadcastBridge`  — BroadcastChannel (same-origin, multi-tab, phase 4.1)
+ *  - `NoopTransport`    — SSR / Node.js (silently discards, phase 4.6)
+ *  - `PostMessageTransport` — cross-origin relay (phase 4.6)
+ */
+export type SyncTransport<S = unknown> = {
+  /** Send a message to all other peers via this transport. */
+  send(msg: SyncMessage<S>): void;
+  /** Register a listener. Returns an unsubscribe function. */
+  subscribe(listener: (msg: SyncMessage<S>) => void): () => void;
+  /** Tear down the transport and release resources. */
+  close(): void;
+  /** Whether the transport is operational and able to send/receive. */
+  readonly isOpen: boolean;
+};

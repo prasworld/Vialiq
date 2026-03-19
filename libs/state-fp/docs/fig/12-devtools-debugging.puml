@@ -1,0 +1,91 @@
+@startuml state-fp-devtools
+!define DEVTOOLS_COLOR #F3E5F5
+!define DEBUG_COLOR #FFE8D0
+!define MONITOR_COLOR #E8F5E9
+
+title DevTools & Debugging Architecture
+
+package "Application" {
+  [React Component] as comp
+  [Kernel] as kernel
+  [Atom] as atom
+  [Storage] as storage
+}
+
+package "DevTools Integration" {
+  [DevToolsManager] as dtm
+  [EventLog] as log
+  [TimeTravel] as tt
+  [StateInspector] as si
+  [PerformanceMonitor] as perf
+  
+  dtm --> log : record mutations
+  dtm --> tt : capture snapshots
+  dtm --> si : track state
+  dtm --> perf : measure latency
+}
+
+package "Browser Integration" {
+  [Redux DevTools\n(Browser Extension)] as rdt
+  [Browser Console API] as console
+  [Performance Tab] as perf_tab
+}
+
+package "Testing Infrastructure" {
+  [Vitest] as vitest
+  [MockKernel] as mock
+  [StateSnapshot] as snap
+  [QueryBuilder] as qb
+}
+
+kernel --> dtm : emit instrumentation events
+atom --> dtm : on state mutation
+storage --> dtm : on persist
+dtm --> log : record {timestamp, mutation, state_before, state_after}
+
+log --> rdt : timeline view
+log --> console : dumpEventLog()
+tt --> console : timeTravel(stepNum)
+si --> console : inspectAtom('counterAtom')
+perf --> perf_tab : measure command latency
+
+vitest --> mock : createMockKernel()
+mock --> snap : take snapshot before\neach test
+snap --> qb : build query expectations
+qb --> vitest : assert state mutations
+
+note bottom of vitest
+  **Debug Capabilities:**
+  ✓ Full event history with timestamps
+  ✓ State before/after each mutation
+  ✓ Time-travel debugging to any state
+  ✓ Call stack capture on mutation
+  ✓ Performance metrics per command
+  ✓ Storage persistence tracking
+  ✓ Cross-tab sync event logging
+  ✓ Conflict resolution visibility
+end note
+
+package "Metrics & Analytics" {
+  [Command Latency] as lat
+  [Query Cache Hit Rate] as hit
+  [Storage Write Time] as wtime
+  [Sync Conflict Count] as conflict
+  
+  dtm --> lat
+  dtm --> hit
+  dtm --> wtime
+  dtm --> conflict
+}
+
+perf --> lat : measure
+perf --> hit : track
+perf --> wtime : measure
+perf --> conflict : count
+
+lat --> rdt : export metrics
+hit --> rdt : export memo stats
+wtime --> rdt : export storage perf
+conflict --> rdt : export sync health
+
+@enduml

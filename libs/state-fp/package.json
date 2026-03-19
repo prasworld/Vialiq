@@ -48,6 +48,10 @@
     "./adapter": {
       "import": "./adapter/index.js",
       "types":  "./adapter/index.d.ts"
+    },
+    "./bus": {
+      "import": "./bus/index.js",
+      "types":  "./bus/index.d.ts"
     }
   },
   "sideEffects": false

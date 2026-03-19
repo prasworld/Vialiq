@@ -1,0 +1,103 @@
+@startuml state-fp-hld
+!define ACCENT_COLOR #4A90E2
+!define LAYER_COLOR #E8F4F8
+!define STORAGE_COLOR #FFE8B6
+!define SYNC_COLOR #E8F5E9
+!define DEVTOOLS_COLOR #F3E5F5
+
+skinparam monochrome false
+skinparam componentStyle uml2
+skinparam backgroundColor #FEFEFE
+skinparam package {
+  BackgroundColor LAYER_COLOR
+  BorderColor ACCENT_COLOR
+  FontColor #333333
+}
+
+package "Application Layer" {
+  [Framework Adapters] as adapters <<Component>>
+  note right of adapters
+    React · Angular · Vanilla · Lit
+    useAtom · useCommand · useQuery
+  end note
+}
+
+package "State Management Core" {
+  [CQRS Kernel] as kernel <<Component>>
+  [Atoms (State Containers)] as atoms <<Component>>
+  [Commands] as commands <<Component>>
+  [Queries] as queries <<Component>>
+  [Domain Events] as events <<Component>>
+  
+  note bottom of kernel
+    Command execution · Query memoization
+    Event sourcing · Time travel
+    SSR hydration support
+  end note
+}
+
+package "Reactive Primitives" {
+  [EphemeralStream] as ephemeral <<Component>>
+  [Subscribers] as subscribers <<Component>>
+  
+  note bottom of ephemeral
+    Zero-kernel high-frequency state (60–120fps)
+    RAF batching · Last-value semantics
+  end note
+}
+
+package "Persistence Layer" {
+  [Storage Adapters] as storage <<Component>>
+  [IndexedDB Adapter] as idb <<Component>>
+  [LocalStorage Adapter] as ls <<Component>>
+  [Custom Adapters] as custom <<Component>>
+  
+  note bottom of storage
+    Persist atoms • Restore on startup
+    Encryption/obfuscation support (Phase 5.6)
+  end note
+}
+
+package "Cross-MFE Sync & Messaging" {
+  [SyncEngine] as sync <<Component>>
+  [Transport Abstraction] as transport <<Component>>
+  [BroadcastChannel] as bc <<Component>>
+  [PostMessage Relay] as pm <<Component>>
+  [Noop (SSR/Node)] as noop <<Component>>
+  [SharedEventBus] as bus <<Component>>
+  
+  note bottom of sync
+    Version vectors · Conflict resolution
+    Cross-tab/worker sync
+  end note
+}
+
+package "Developer Experience" {
+  [DevTools] as devtools <<Component>>
+  [Time Travel Inspector] as tt <<Component>>
+  [Event Log] as eventlog <<Component>>
+  [State Inspector] as inspector <<Component>>
+  
+  note bottom of devtools
+    State mutations · Event sourcing
+    Performance profiling
+  end note
+}
+
+adapters --> kernel : subscribe/command/query
+adapters --> ephemeral : subscribeAnimated
+ephemeral --> subscribers : emit → RAF batch
+kernel --> atoms : setState
+atoms --> storage : persist
+atoms --> sync : share (broadcast)
+atoms --> events : domainEvent
+sync --> transport : send (message)
+transport --> bc : BroadcastChannel API
+transport --> pm : postMessage API
+transport --> noop : SSR fallback
+bus --> adapters : cross-MFE events
+kernel --> devtools : instrumentation
+atoms --> devtools : mutation tracking
+sync --> eventlog : sync events
+
+@enduml

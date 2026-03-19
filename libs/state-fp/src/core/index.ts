@@ -118,3 +118,8 @@ export {
   defaultDeserialize,
   shallowDiff,
 } from './utils.js';
+
+// ─── EphemeralStream (Phase 4.7) ──────────────────────────────────────────────
+
+export type { EphemeralStream } from './stream.js';
+export { createEphemeralStream } from './stream.js';

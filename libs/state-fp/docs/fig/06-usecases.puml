@@ -1,0 +1,59 @@
+@startuml state-fp-usecases
+!define ACTOR_COLOR #FFE8B6
+!define UC_COLOR #E3F2FD
+
+skinparam monochrome false
+skinparam backgroundColor #FEFEFE
+skinparam actor {
+  BackgroundColor ACTOR_COLOR
+  BorderColor #FF9800
+}
+skinparam usecase {
+  BackgroundColor UC_COLOR
+  BorderColor #1976D2
+}
+
+actor Developer as dev
+actor "End User" as user
+actor Framework as fw
+
+package "State-FP Usage Scenarios" {
+  usecase "Create Atom" as uc1
+  usecase "Subscribe to Changes" as uc2
+  usecase "Execute Command" as uc3
+  usecase "Execute Query with Memo" as uc4
+  usecase "Persist Atom" as uc5
+  usecase "Share Atom Cross-Tab" as uc6
+  usecase "Resolve Conflicts" as uc7
+  usecase "Time Travel Debug" as uc8
+  usecase "High Frequency Streaming" as uc9
+  usecase "Cross-MFE Event Bus" as uc10
+  usecase "Framework Integration" as uc11
+  usecase "SSR Hydration" as uc12
+}
+
+' Developer Scenarios
+dev --> uc1 : initialize
+dev --> uc2 : subscribe
+dev --> uc3 : commands
+dev --> uc4 : queries
+dev --> uc5 : persist
+dev --> uc6 : share
+dev --> uc8 : debug
+
+' End User Scenarios
+user --> uc2 : see updates
+user --> uc3 : trigger mutations
+user --> uc9 : immediate feedback
+user --> uc7 : resolution
+
+' Framework Integration
+fw --> uc11 : React or Angular integration
+fw --> uc12 : hydrate on client-side
+
+uc3 ..> uc6 : if shared
+uc6 --> uc7 : when concurrent
+uc3 --> uc8 : via devtools
+uc5 --> uc12 : restore on reload
+
+@enduml

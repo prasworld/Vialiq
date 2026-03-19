@@ -85,5 +85,6 @@ export function resolveConflict<S>(
     case 'first-write-wins': return firstWriteWins(local, remote);
     case 'owner-wins':       return ownerWins(local, remote);
     case 'version-wins':     return versionWins(local, remote);
+    default: throw new Error(`[@vi/state-fp/sync] Unknown conflict strategy: "${String(strategy)}"`);
   }
 }

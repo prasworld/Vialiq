@@ -20,7 +20,8 @@
           "libs/state-fp/src/storage/index.ts",
           "libs/state-fp/src/sync/index.ts",
           "libs/state-fp/src/devtools/index.ts",
-          "libs/state-fp/src/adapter/index.ts"
+          "libs/state-fp/src/adapter/index.ts",
+          "libs/state-fp/src/bus/index.ts"
         ]
       }
     },

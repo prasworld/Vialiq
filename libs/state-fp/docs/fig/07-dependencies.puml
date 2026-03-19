@@ -1,0 +1,159 @@
+@startuml state-fp-dependencies
+!define CORE_COLOR #E3F2FD
+!define FEATURE_COLOR #E8F5E9
+!define UTIL_COLOR #FFF3E0
+!define ADAPTER_COLOR #F3E5F5
+
+skinparam monochrome false
+skinparam backgroundColor #FEFEFE
+skinparam package {
+  BackgroundColor CORE_COLOR
+  BorderColor #1976D2
+}
+
+package "API Exports" {
+  [core] as api_core
+  [kernel] as api_kernel
+  [storage] as api_storage
+  [sync] as api_sync
+  [bus] as api_bus
+  [adapter] as api_adapter
+  [devtools] as api_devtools
+}
+
+package "@vi/state-fp/core" {
+  [createAtom] as createAtom
+  [createEphemeralStream] as createStream
+  [types] as core_types
+  createAtom --> core_types
+  createStream --> core_types
+}
+
+package "@vi/state-fp/kernel" {
+  [Kernel] as Kernel
+  [CommandHandler] as CmdHandler
+  [QueryMemoCache] as MemoCache
+  [DomainEvent] as EvtType
+  Kernel --> MemoCache
+  Kernel --> CmdHandler
+  Kernel --> EvtType
+  Kernel --> createAtom
+}
+
+package "@vi/state-fp/storage" {
+  [StorageAdapter interface] as SA
+  [IndexedDBAdapter] as IDB
+  [LocalStorageAdapter] as LS
+  SA <|-- IDB
+  SA <|-- LS
+  IDB --> core_types
+  LS --> core_types
+}
+
+package "@vi/state-fp/sync" {
+  [SyncEngine] as SE
+  [SyncTransport] as ST
+  [VersionVector] as VV
+  [ConflictResolver] as CR
+  [BroadcastBridge] as BC
+  [PostMessageTransport] as PM
+  [NoopTransport] as NO
+  
+  SE --> ST
+  SE --> VV
+  SE --> CR
+  ST <|-- BC
+  ST <|-- PM
+  ST <|-- NO
+  
+  SE --> Kernel
+  SE --> createAtom
+  SE --> core_types
+}
+
+package "@vi/state-fp/bus" {
+  [SharedEventBus] as EB
+  [CrossMFEEvent] as CEv
+  EB --> CEv
+  EB --> BC
+}
+
+package "@vi/state-fp/devtools" {
+  [DevTools] as DT
+  [TimeTravel] as TT
+  [EventLog] as EL
+  [Inspector] as INS
+  DT --> TT
+  DT --> EL
+  DT --> INS
+  
+  DT --> Kernel
+  DT --> SE
+  DT --> EvtType
+}
+
+package "@vi/state-fp/adapter" {
+  [ReactAdapter] as RA
+  [AngularAdapter] as AA
+  [VanillaAdapter] as VA
+  [LitAdapter] as LA
+  
+  RA --> Kernel
+  AA --> Kernel
+  VA --> Kernel
+  LA --> Kernel
+}
+
+'== Public Exports ==
+api_core --> createAtom
+api_core --> createStream
+api_core --> core_types
+
+api_kernel --> Kernel
+api_kernel --> CmdHandler
+api_kernel --> EvtType
+
+api_storage --> SA
+api_storage --> IDB
+api_storage --> LS
+
+api_sync --> SE
+api_sync --> ST
+api_sync --> BC
+api_sync --> PM
+api_sync --> NO
+
+api_bus --> EB
+api_bus --> CEv
+
+api_adapter --> RA
+api_adapter --> AA
+api_adapter --> VA
+api_adapter --> LA
+
+api_devtools --> DT
+api_devtools --> TT
+
+'== External Dependencies ==
+package "External (Browser APIs)" {
+  [BroadcastChannel API]
+  [postMessage API]
+  [IndexedDB]
+  [requestAnimationFrame]
+  [localStorage]
+}
+
+BC -.-> [BroadcastChannel API]
+PM -.-> [postMessage API]
+IDB -.-> [IndexedDB]
+createStream -.-> [requestAnimationFrame]
+LS -.-> [localStorage]
+
+note right of SE
+  **Dependency Graph:**
+  Kernel is the core
+  all other modules
+  integrate with it
+end note
+
+@enduml

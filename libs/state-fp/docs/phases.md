@@ -557,10 +557,10 @@ const incrementHandler = createCommandHandler<CounterState, IncrementBy>({
 `validate` is optional — existing handlers without it are unaffected.
 
 **Exit criteria:**
-- [ ] `CommandHandler` type gains optional `validate` field in `kernel/types.ts`
-- [ ] `kernel.execute()` calls `validate` before `handle` when present
-- [ ] DevTools records validation errors as `DebugEntry.error` with `code: 'VALIDATION_ERROR'`
-- [ ] Tests: valid payload → handle called, invalid payload → Left returned, handle not called
+- [x] `CommandHandler` type gains optional `validate` field in `kernel/types.ts`
+- [x] `kernel.execute()` calls `validate` before `handle` when present
+- [x] DevTools records validation errors as `DebugEntry.error` with `code: 'VALIDATION_ERROR'`
+- [x] Tests: valid payload → handle called, invalid payload → Left returned, handle not called
 
 ---
 
@@ -581,10 +581,10 @@ Memoisation is per-handler, using the atom's current state reference as cache ke
 Query payload equality is shallow-compared as a secondary cache dimension.
 
 **Exit criteria:**
-- [ ] `createQueryHandler` accepts optional `memo: boolean`
-- [ ] Memoised handlers only re-run `handle` when atom state changes
-- [ ] Cache is invalidated correctly on `kernel.hydrate()` and atom reset
-- [ ] Tests confirm `handle` call count with and without `memo: true`
+- [x] `createQueryHandler` accepts optional `memo: boolean`
+- [x] Memoised handlers only re-run `handle` when atom state changes
+- [x] Cache is invalidated correctly on `kernel.hydrate()` and atom reset
+- [x] Tests confirm `handle` call count with and without `memo: true`
 
 ---
 
@@ -631,13 +631,13 @@ the SSR guard makes the error branch silent (returns `nothing`) for non-browser 
 instead of throwing `ReferenceError: window is not defined`.
 
 **Exit criteria:**
-- [ ] `KernelOptions.ssr` config accepted in `createKernel`
-- [ ] `kernel.hydrate()` reads SSR source before storage adapters when `priority: 'ssr-first'`
-- [ ] SSR payload errors do not block startup (falls back to storage / initialState)
-- [ ] `LocalAdapter`, `SessionAdapter`, `IndexedDbAdapter` each guard `typeof window` before any DOM access
-- [ ] `MemoryAdapter` is the default in SSR mode (zero browser API calls)
-- [ ] Tests with mocked `window.__INITIAL_STATE__` confirm correct hydration order
-- [ ] Tests in a simulated Node.js context (`window = undefined`) confirm adapters return `nothing` gracefully
+- [x] `KernelOptions.ssr` config accepted in `createKernel`
+- [x] `kernel.hydrate()` reads SSR source before storage adapters when `priority: 'ssr-first'`
+- [x] SSR payload errors do not block startup (falls back to storage / initialState)
+- [x] `LocalAdapter`, `SessionAdapter`, `IndexedDbAdapter` each guard `typeof window` before any DOM access
+- [x] `MemoryAdapter` is the default in SSR mode (zero browser API calls)
+- [x] Tests with mocked `window.__INITIAL_STATE__` confirm correct hydration order
+- [x] Tests in a simulated Node.js context (`window = undefined`) confirm adapters return `nothing` gracefully
 
 ---
 
@@ -703,8 +703,8 @@ createSyncEngine({ channel, kernel, instanceId? })
 - [x] `createSyncEngine().receive(atom)` — inbound state application implemented
 - [x] Spec files in place: `broadcast.spec.ts`, `conflict.spec.ts`, `sync-engine.spec.ts`, `version.spec.ts` — all passing
 - [x] Stale + gap detection verified via tests in `version.spec.ts`
-- [ ] All 4 built-in conflict strategies have unit tests
-- [ ] Integration test: 2 simulated MFE contexts
+- [x] All 4 built-in conflict strategies have unit tests
+- [x] Integration test: 2 simulated MFE contexts
 
 ---
 
@@ -746,11 +746,11 @@ The bus is a thin BroadcastChannel wrapper — it does NOT apply state. It only 
 events cross-frame. No kernel coupling in the bus module.
 
 **Exit criteria:**
-- [ ] `src/bus/` module created with `createSharedBus`, `SharedEventBus` type
-- [ ] `package.json#exports` gains `./bus`
-- [ ] Publish and subscribe work across simulated BroadcastChannel contexts in tests
-- [ ] Filter by `type` and `source` tested independently
-- [ ] `unsubscribe` removes listener; no memory leaks
+- [x] `src/bus/` module created with `createSharedBus`, `SharedEventBus` type
+- [x] `package.json#exports` gains `./bus`
+- [x] Publish and subscribe work across simulated BroadcastChannel contexts in tests
+- [x] Filter by `type` and `source` tested independently
+- [x] `unsubscribe` removes listener; no memory leaks
 
 ---
 
@@ -837,14 +837,14 @@ Security: the relay checks `event.origin` against `trustedOrigins` before forwar
 arriving messages from untrusted origins are silently dropped.
 
 **Exit criteria:**
-- [ ] `SyncTransport<S>` type extracted as the core sync interface in `sync/types.ts`
-- [ ] `createBroadcastBridge` implements `SyncTransport`
-- [ ] `createNoopTransport` exported from `@vi/state-fp/sync`
-- [ ] `createSyncEngine` accepts optional `transport` factory; defaults to `createAutoTransport`
-- [ ] `createAutoTransport` detects Node.js environment and returns no-op
-- [ ] `createPostMessageTransport` + `createPostMessageRelay` exported
-- [ ] PostMessage relay validates `event.origin` against allow-list (security)
-- [ ] Tests: BroadcastChannel context works; Node.js context returns no-op silently; cross-origin relay forwards and drops untrusted
+- [x] `SyncTransport<S>` type extracted as the core sync interface in `sync/types.ts`
+- [x] `createBroadcastBridge` implements `SyncTransport`
+- [x] `createNoopTransport` exported from `@vi/state-fp/sync`
+- [x] `createSyncEngine` accepts optional `transport` factory; defaults to `createAutoTransport`
+- [x] `createAutoTransport` returns no-op when `BroadcastChannel` is unavailable (SSR/Node.js-safe fallback)
+- [x] `createPostMessageTransport` + `createPostMessageRelay` exported
+- [x] PostMessage relay validates `event.origin` against allow-list (security)
+- [x] Tests: BroadcastChannel context works; Node.js context returns no-op silently; cross-origin relay forwards and drops untrusted
 
 ---
 
@@ -949,14 +949,14 @@ hostDisconnected() { this._off?.(); }
 | **Use case** | Drag, scroll, resize, canvas params | Cart, auth, settings, form data |
 
 **Exit criteria:**
-- [ ] `createEphemeralStream<T>()` factory in `src/core/stream.ts`
-- [ ] `subscribe(listener)` — synchronous fan-out
-- [ ] `subscribeAnimated(listener)` — RAF-batched, fires with last value each frame
-- [ ] `last` accessor returns last emitted value or `undefined`
-- [ ] `package.json#exports` — `EphemeralStream` exported from `@vi/state-fp/core`
+- [x] `createEphemeralStream<T>()` factory in `src/core/stream.ts`
+- [x] `subscribe(listener)` — synchronous fan-out
+- [x] `subscribeAnimated(listener)` — RAF-batched, fires with last value each frame
+- [x] `last` accessor returns last emitted value or `undefined`
+- [x] `package.json#exports` — `EphemeralStream` exported from `@vi/state-fp/core`
 - [ ] `reactAdapter.useEphemeral(stream)` hook added to React adapter (Phase 5 co-deliverable)
-- [ ] Angular integration documented
-- [ ] Tests: subscriber count, RAF batching confirmed (last-value semantics), unsubscribe cleanup
+- [x] Angular integration documented
+- [x] Tests: subscriber count, RAF batching confirmed (last-value semantics), unsubscribe cleanup
 
 ---
 
@@ -1193,7 +1193,7 @@ interface VanillaAdapter {
 - [x] `package.json#exports` gains `./adapter`
 - [ ] ⚠️ **GAP: React adapter is NOT_IMPLEMENTED stubs** — `StateFpProvider`, `useAtom`, `useCommand`, `useQuery` all throw `NOT_IMPLEMENTED` at runtime
 - [ ] ⚠️ **GAP: Lit adapter (`lit.ts`) does not exist**
-- [ ] ⚠️ **GAP: Zero spec files for adapter module** — angular.spec.ts, react.spec.ts, vanilla.spec.ts all missing
+- [x] Adapter spec files exist for Angular/React/Vanilla (`angular.spec.ts`, `react.spec.ts`, `vanilla.spec.ts`)
 - [ ] Angular adapter tested with mock `AngularAPIs` (no `TestBed` required)
 - [ ] Lit controller tested with mock `ReactiveHost` (no `LitElement` required)
 
@@ -1538,8 +1538,8 @@ docs/modules/
 | 0 | 0.0.1 | scaffold | Build + test pipeline | Done ✅ |
 | 1 | 0.1.0 | core + kernel | CQRS, FP monads, co-located handlers, executeAsync + AbortSignal | Done ✅ |
 | 2 | 0.2.0 | storage | MemoryAdapter (only), TTL, hydration, optimistic updates, computed atoms, security guard | Done ✅ (scope revised — see security note) |
-| 3 | 0.3.0 | devtools | EventLog, time-travel, browser bridge, DevExtension protocol | Code shipped ⚠️ (tests missing) |
-| 4 | 0.4.0 | sync | MFE broadcast, conflict resolution, version vectors | Code shipped ⚠️ (tests missing) |
+| 3 | 0.3.0 | devtools | EventLog, time-travel, browser bridge, DevExtension protocol | Done ✅ |
+| 4 | 0.4.0 | sync | MFE broadcast, conflict resolution, version vectors + bus + transport guard + EphemeralStream | Done ✅ |
 | 5 | 0.5.0 | adapter | Angular ✅, Vanilla ✅, React ❌ (stubs), Lit ❌ (not started) | Partial 🔄 |
 | 6 | 1.0.0 | (all) | DX hardening, docs, bundle audit, release pipeline | Not started |
 | 7 | 1.1.0 | kernel+ | Saga / process manager, compensation | Not started |

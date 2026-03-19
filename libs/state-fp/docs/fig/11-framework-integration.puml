@@ -1,0 +1,84 @@
+@startuml state-fp-framework-integration
+!define REACT_COLOR #4A90E2
+!define ANGULAR_COLOR #E8F5E9
+!define VUE_COLOR #E3F2FD
+!define FRAMEWORK_COLOR #E3F2FD
+!define STATE_COLOR #E8F5E9
+
+title Framework Integration Patterns
+
+package "Developer Code" {
+  [App] as app
+  [types] as types
+  [state] as state
+}
+
+package "React Integration" {
+  [useAtom] as useAtom
+  [useCommand] as useCommand
+  [useQuery] as useQuery
+  [StateFpProvider] as provider
+  
+  note right of useAtom
+    Hook returns:
+    - state: T (current value)
+    - setState: (newVal: T) => void
+    Re-render on change
+  end note
+  
+  note right of useCommand
+    Hook returns:
+    - execute: cmd => void
+    - loading: boolean
+    - error: Error or null
+  end note
+}
+
+package "Angular Integration" {
+  [StateFpService] as ngService
+  [state$ (Observable)] as ngObs
+  
+  note right of ngService
+    Service provides:
+    - state$: Observable
+    - command$ cmd: Observable
+    - getState: T sync
+  end note
+}
+
+package "State-FP Core" {
+  [Kernel] as kernel
+  [Atom] as atom
+  [StorageAdapter] as storage
+  [SyncEngine] as sync
+}
+
+app --> types : import types
+app --> state : import state
+app --> useAtom : import hook
+app --> useCommand
+
+state --> kernel : createKernel()
+state --> atom : createAtom counter
+state --> storage : createIndexedDBAdapter()
+kernel --> storage : enable persistence
+kernel --> atom : register atom
+
+sync --> kernel : engine.share(atom)
+
+useAtom --> atom : subscribe(listener)
+useAtom --> atom : setState via kernel
+useAtom --> atom : get current value
+
+useCommand --> kernel : executeCommand
+
+ngService --> kernel
+ngObs --> atom
+
+note right of kernel
+  Framework-Agnostic Core
+  State-FP works with any framework.
+  Adapters: React, Angular, Vanilla JS, Lit
+end note
+
+@enduml

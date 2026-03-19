@@ -1,0 +1,90 @@
+@startuml state-fp-sequence-init
+!define USER_COLOR #FFE8B6
+!define APP_COLOR #E8F5E9
+!define STATE_COLOR #E3F2FD
+!define RENDER_COLOR #F3E5F5
+
+title Initialization & Command Execution Sequence
+
+participant "React App" as app
+participant "Kernel" as kernel
+participant "Atom<Counter>" as atom
+participant "Storage" as storage
+participant "React Component\n(Subscriber)" as render
+
+== Phase 1: Initialization ==
+app -> kernel: new Kernel()
+activate kernel
+kernel -> kernel: init command handlers
+kernel -> kernel: init query memoizer
+deactivate kernel
+
+app -> atom: createAtom('counter', { count: 0 })
+activate atom
+atom -> kernel: subscribe atom.mutations
+deactivate atom
+
+app -> app: kernel.registerHandler(INCREMENT_HANDLER)
+
+== Phase 2: Setup Subscribers ==
+app -> render: useAtom(counterAtom)
+activate render
+render -> atom: subscribe(listener)
+render -> render: store unsubscribe
+note right of render
+  Re-render triggered on every
+  atom state change
+end note
+deactivate render
+
+== Phase 3: Execute Command ==
+app -> app: onClick → increment()
+app -> kernel: executeCommand({ type: 'INCREMENT' })
+activate kernel
+
+kernel -> kernel: find matching handler
+kernel -> kernel: handlers.forEach(h => if (h.matches) h.execute())
+note right of kernel
+  Predicate matches INCREMENT_HANDLER
+end note
+
+kernel -> atom: dispatch via reducer
+activate atom
+atom -> atom: count = count + 1
+atom -> atom: version++
+atom -> atom: emit DomainEvent('INCREMENT')
+
+kernel <- atom: done
+deactivate atom
+
+deactivate kernel
+
+== Phase 4: Side Effects ==
+kernel -> storage: persist(atomKey, { count: 1 })
+activate storage
+storage -> storage: IndexedDB transaction
+storage --> kernel: ✓ persisted
+deactivate storage
+
+== Phase 5: Notify Subscribers ==
+kernel -> atom: notify listeners
+activate atom
+atom -> render: listener({ count: 1 })
+deactivate atom
+
+== Phase 6: React Re-render ==
+activate render
+render -> render: setState({ count: 1 })
+render -> render: return <div>{count} clicks</div>
+render -> render: commit changes to DOM
+deactivate render
+
+note right of render
+  **Total Latency:**
+  Command → Storage: ~2-5ms (sync)
+  Command → Render: ~0.1ms (sync listener)
+  UI re-render: ~16ms (next frame)
+  **Total: ~20ms end-to-end**
+end note
+
+@enduml

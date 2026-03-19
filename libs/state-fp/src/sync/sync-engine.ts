@@ -28,12 +28,12 @@ import type {
   ShareOptions,
   SyncState,
   SyncMessage,
+  SyncTransport,
   StateMessage,
   HelloMessage,
 } from './types.js';
 import { uuid, now } from '../core/utils.js';
-import { createBroadcastBridge } from './broadcast.js';
-import type { BroadcastBridge }  from './broadcast.js';
+import { createAutoTransport } from './transport.js';
 import {
   createVersionVector,
   increment,
@@ -69,19 +69,27 @@ export type SyncEngine = {
 
 // ─── Factory ──────────────────────────────────────────────────────────────────
 
+export type TransportFactory<S = unknown> = (channelName: string) => SyncTransport<S>;
+
 export type SyncEngineOptions = {
   kernel: KernelLike;
+  /**
+   * Transport factory used to create the channel for each shared atom.
+   * Defaults to `createAutoTransport` which selects the best available transport
+   * at runtime (BroadcastChannel → no-op for SSR/Node.js).
+   */
+  transport?: TransportFactory;
 };
 
-export function createSyncEngine({ kernel }: SyncEngineOptions): SyncEngine {
-  // atomKey → { bridge, syncState, unsub (kernel sub), unsubBridge }
+export function createSyncEngine({ kernel, transport: transportFactory = createAutoTransport }: SyncEngineOptions): SyncEngine {
+  // atomKey → { transport, syncState, unsub (kernel sub), unsubTransport }
   const shared = new Map<string, {
-    bridge:      BroadcastBridge<unknown>;
-    syncState:   SyncState<unknown>;
-    atom:        Atom<unknown>;
-    options:     Required<ShareOptions<unknown>>;
-    unsubKernel: Unsubscribe;
-    unsubBridge: Unsubscribe;
+    transport:      SyncTransport<unknown>;
+    syncState:      SyncState<unknown>;
+    atom:           Atom<unknown>;
+    options:        Required<ShareOptions<unknown>>;
+    unsubKernel:    Unsubscribe;
+    unsubTransport: Unsubscribe;
   }>();
 
   function share<S>(
@@ -99,19 +107,20 @@ export function createSyncEngine({ kernel }: SyncEngineOptions): SyncEngine {
       return shared.get(atomKey)!.unsubKernel;
     }
 
-    const bridge = createBroadcastBridge<S>(channel);
+    const transport: SyncTransport<S> = transportFactory(channel) as SyncTransport<S>;
 
     const syncState: SyncState<S> = {
       peerId,
       version:           createVersionVector(peerId, 0),
-      connected:         true,
+      // Reflect the actual transport connectivity — false for noop (SSR/Node.js)
+      connected:         transport.isOpen,
       peers:             new Map(),
       conflictsResolved: 0,
       _pending:          undefined,
     };
 
     // ── Handle incoming messages ──────────────────────────────────────────────
-    const unsubBridge = bridge.subscribe((msg: SyncMessage<S>) => {
+    const unsubTransport = transport.subscribe((msg: SyncMessage<S>) => {
       if (msg.peerId === peerId) return; // ignore own messages
 
       switch (msg.type) {
@@ -130,7 +139,7 @@ export function createSyncEngine({ kernel }: SyncEngineOptions): SyncEngine {
               version: syncState.version,
               ts:      now(),
             };
-            bridge.send(reply);
+            transport.send(reply);
           }
           break;
         }
@@ -178,7 +187,7 @@ export function createSyncEngine({ kernel }: SyncEngineOptions): SyncEngine {
             version: syncState.version,
             ts:      now(),
           };
-          bridge.send(reply);
+          transport.send(reply);
           break;
         }
 
@@ -205,7 +214,7 @@ export function createSyncEngine({ kernel }: SyncEngineOptions): SyncEngine {
         version: syncState.version,
         ts:      now(),
       };
-      bridge.send(msg);
+      transport.send(msg);
     });
 
     // ── Announce presence ─────────────────────────────────────────────────────
@@ -216,23 +225,23 @@ export function createSyncEngine({ kernel }: SyncEngineOptions): SyncEngine {
       version: syncState.version,
       ts:      now(),
     };
-    bridge.send(hello);
+    transport.send(hello);
 
     shared.set(atomKey, {
-      bridge:      bridge  as BroadcastBridge<unknown>,
-      syncState:   syncState as SyncState<unknown>,
-      atom:        atom    as Atom<unknown>,
-      options:     { channel, conflict, peerId, propagate } as Required<ShareOptions<unknown>>,
+      transport:      transport as SyncTransport<unknown>,
+      syncState:      syncState as SyncState<unknown>,
+      atom:           atom    as Atom<unknown>,
+      options:        { channel, conflict, peerId, propagate } as Required<ShareOptions<unknown>>,
       unsubKernel,
-      unsubBridge,
+      unsubTransport,
     });
 
     return function unsync(): void {
       const entry = shared.get(atomKey);
       if (!entry) return;
       entry.unsubKernel();
-      entry.unsubBridge();
-      entry.bridge.close();
+      entry.unsubTransport();
+      entry.transport.close();
       entry.syncState.connected = false;
       shared.delete(atomKey);
     };
@@ -246,8 +255,8 @@ export function createSyncEngine({ kernel }: SyncEngineOptions): SyncEngine {
   function destroy(): void {
     for (const entry of shared.values()) {
       entry.unsubKernel();
-      entry.unsubBridge();
-      entry.bridge.close();
+      entry.unsubTransport();
+      entry.transport.close();
       entry.syncState.connected = false;
     }
     shared.clear();
