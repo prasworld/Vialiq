@@ -107,20 +107,20 @@ export function createSyncEngine({ kernel, transport: transportFactory = createA
       return shared.get(atomKey)!.unsubKernel;
     }
 
-    const bridge = transportFactory(channel) as SyncTransport<S>;
+    const transport: SyncTransport<S> = transportFactory(channel) as SyncTransport<S>;
 
     const syncState: SyncState<S> = {
       peerId,
       version:           createVersionVector(peerId, 0),
       // Reflect the actual transport connectivity — false for noop (SSR/Node.js)
-      connected:         bridge.isOpen,
+      connected:         transport.isOpen,
       peers:             new Map(),
       conflictsResolved: 0,
       _pending:          undefined,
     };
 
     // ── Handle incoming messages ──────────────────────────────────────────────
-    const unsubTransport = bridge.subscribe((msg: SyncMessage<S>) => {
+    const unsubTransport = transport.subscribe((msg: SyncMessage<S>) => {
       if (msg.peerId === peerId) return; // ignore own messages
 
       switch (msg.type) {
@@ -139,7 +139,7 @@ export function createSyncEngine({ kernel, transport: transportFactory = createA
               version: syncState.version,
               ts:      now(),
             };
-            bridge.send(reply);
+            transport.send(reply);
           }
           break;
         }
@@ -187,7 +187,7 @@ export function createSyncEngine({ kernel, transport: transportFactory = createA
             version: syncState.version,
             ts:      now(),
           };
-          bridge.send(reply);
+          transport.send(reply);
           break;
         }
 
@@ -214,7 +214,7 @@ export function createSyncEngine({ kernel, transport: transportFactory = createA
         version: syncState.version,
         ts:      now(),
       };
-      bridge.send(msg);
+      transport.send(msg);
     });
 
     // ── Announce presence ─────────────────────────────────────────────────────
@@ -225,10 +225,10 @@ export function createSyncEngine({ kernel, transport: transportFactory = createA
       version: syncState.version,
       ts:      now(),
     };
-    bridge.send(hello);
+    transport.send(hello);
 
     shared.set(atomKey, {
-      transport:      bridge  as SyncTransport<unknown>,
+      transport:      transport as SyncTransport<unknown>,
       syncState:      syncState as SyncState<unknown>,
       atom:           atom    as Atom<unknown>,
       options:        { channel, conflict, peerId, propagate } as Required<ShareOptions<unknown>>,

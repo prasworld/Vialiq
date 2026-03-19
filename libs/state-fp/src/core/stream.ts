@@ -89,8 +89,6 @@ export function createEphemeralStream<T>(): EphemeralStream<T> {
   let rafId      = 0;
   let rafPending = false;
 
-  const hasRAF = typeof requestAnimationFrame === 'function';
-
   /** Deliver the buffered last-value to every animated subscriber. */
   function flushAnimated(): void {
     rafPending = false;
@@ -116,7 +114,7 @@ export function createEphemeralStream<T>(): EphemeralStream<T> {
       // Mark animated subscribers pending and schedule ONE RAF if not already
       // scheduled. All subsequent emits before the frame fires just overwrite
       // the pending value — only the last value is delivered per frame.
-      if (hasRAF && animatedListeners.size > 0) {
+      if (typeof requestAnimationFrame === 'function' && animatedListeners.size > 0) {
         for (const entry of animatedListeners.values()) {
           entry.pending    = value;
           entry.hasPending = true;
@@ -134,7 +132,7 @@ export function createEphemeralStream<T>(): EphemeralStream<T> {
     },
 
     subscribeAnimated(listener: (value: T) => void): Unsubscribe {
-      if (!hasRAF) {
+      if (typeof requestAnimationFrame !== 'function') {
         // SSR / Node.js fallback — close over `listeners` directly to avoid
         // relying on `this` binding (safe even when the method is destructured).
         listeners.add(listener);

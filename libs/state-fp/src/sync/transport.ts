@@ -200,12 +200,11 @@ export function createPostMessageRelay(
 /**
  * Selects the best available transport for the current runtime environment:
  *
- * 1. Node.js / SSR (`window === undefined`) → no-op transport
- * 2. Browser with `BroadcastChannel`        → `BroadcastBridge`
- * 3. Browser without `BroadcastChannel`     → no-op (no PostMessage relay set up)
+ * 1. Browser with `BroadcastChannel`        → `BroadcastBridge`
+ * 2. Node.js / SSR (no `BroadcastChannel`) → no-op transport
  *
- * To use a PostMessage relay for cross-origin deployments, supply a custom
- * `transport` factory to `createSyncEngine` instead of relying on auto-selection.
+ * Note: `PostMessage` transport is NOT automatically selected. To use a PostMessage relay
+ * for cross-origin deployments, supply a custom `transport` factory to `createSyncEngine`.
  */
 export function createAutoTransport<S = unknown>(channelName: string): SyncTransport<S> {
   // BroadcastChannel is the canonical cross-context messaging API.
