@@ -1,0 +1,79 @@
+@startuml state-fp-swimlane
+!define TAB_COLOR #E3F2FD
+!define KERNEL_COLOR #FFF3E0
+!define SYNC_COLOR #E8F5E9
+!define BROWSER_COLOR #F3E5F5
+
+skinparam monochrome false
+skinparam backgroundColor #FEFEFE
+
+rectangle "Browser Context" {
+  swimlane "Tab A (Order MFE)" as tabA {
+    participant "React Component" as compA
+    participant "Kernel" as kernelA
+    participant "orderAtom" as atomA
+    participant "SyncEngine" as syncA
+    participant "Transport" as transportA
+  }
+  
+  swimlane "Shared Infrastructure" as shared {
+    participant "BroadcastChannel" as bc
+  }
+  
+  swimlane "Tab B (Notification MFE)" as tabB {
+    participant "React Component" as compB
+    participant "Kernel" as kernelB
+    participant "notificationAtom" as atomB
+    participant "SharedEventBus" as bus
+    participant "Transport" as transportB
+  }
+}
+
+autonumber
+compA -> kernelA: executeCommand(updateOrder)
+kernelA -> atomA: setState(newOrder)
+atomA -> syncA: broadcast state
+
+syncA -> transportA: send(SyncMessage)
+transportA -> bc: postMessage(SyncMessage)
+
+bc -> transportB: postMessage(SyncMessage)
+transportB -> syncA: receive & deserialize
+note right of syncA
+  Version vector check:
+  - Stale? → Discard
+  - Concurrent? → Conflict resolution
+  - Causally ahead? → Apply
+end note
+
+transportB -> atomA: _setState(resolved)
+atomA -> compA: notify subscribers
+
+atomA -> syncA: send to other peers
+syncA -> atomB: DomainEvent("order-updated")
+atomB -> compB: notify subscribers
+compB -> compB: re-render with notification
+
+compB -> kernelB: notificationAtom.set(notification)
+
+note over tabA, tabB
+  **Cross-MFE Sync Protocol:**
+  1. Tab A writes to orderAtom via Kernel
+  2. Mutation triggers SyncEngine broadcast
+  3. Transport sends via BroadcastChannel
+  4. Tab B receives message
+  5. SyncEngine resolves conflicts via version vectors
+  6. State applied to atom
+  7. Subscribers notified (React re-renders)
+  8. SharedEventBus notifies cross-MFE listeners
+end note
+
+note over bc
+  **Channel Abstraction:**
+  Transport auto-selects:
+  • BroadcastChannel (preferred, same-origin)
+  • PostMessage (cross-origin relay)
+  • Noop (SSR/Node.js)
+end note
+
+@enduml

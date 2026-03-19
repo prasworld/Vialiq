@@ -1,0 +1,203 @@
+@startuml state-fp-lld
+!define ACCENT_COLOR #4A90E2
+!define KERNEL_COLOR #E3F2FD
+!define SYNC_COLOR #E8F5E9
+!define UTILITY_COLOR #FFF3E0
+
+skinparam monochrome false
+skinparam backgroundColor #FEFEFE
+skinparam class {
+  BackgroundColor KERNEL_COLOR
+  BorderColor ACCENT_COLOR
+  FontColor #333333
+}
+
+package "Kernel (CQRS Core)" {
+  class Kernel {
+    - atoms: Map<string, Atom>
+    - handlers: CommandHandler[]
+    - subscribers: Set<Listener>
+    --
+    + executeCommand(cmd): Either<Error, void>
+    + executeQuery(query): Either<Error, Result>
+    + subscribe(atom, listener): Unsubscribe
+    + hydrate(state): void
+  }
+  
+  class Atom<T> {
+    - key: string
+    - state: T
+    - version: number
+    --
+    + get(): T
+    + _setState(newState): void
+    + subscribe(listener): Unsubscribe
+    + toJSON(): object
+  }
+  
+  class CommandHandler {
+    - predicate: (cmd) => boolean
+    - reducer: (cmd, state) => T
+    --
+    + matches(cmd): boolean
+    + execute(cmd, atom): void
+  }
+  
+  class QueryMemoCache {
+    - cache: Map<key, result>
+    - ttl: number
+    --
+    + memoize(query, fn): Result
+    + invalidate(atom): void
+  }
+  
+  class DomainEvent {
+    - type: string
+    - atomKey: string
+    - timestamp: number
+    - payload: unknown
+  }
+  
+  Kernel "1" *-- "*" Atom : manages
+  Kernel "1" *-- "*" CommandHandler : registers
+  Kernel "1" *-- "1" QueryMemoCache : uses
+  Atom "1" -- "*" DomainEvent : emits
+}
+
+package "EphemeralStream (High-Frequency)" {
+  class EphemeralStream<T> {
+    - listeners: Set<Listener>
+    - animatedListeners: Map<Listener, Entry>
+    - _last: T | undefined
+    - rafId: number
+    - rafPending: boolean
+    --
+    + emit(value): void
+    + subscribe(listener): Unsubscribe
+    + subscribeAnimated(listener): Unsubscribe
+    + get last(): T | undefined
+  }
+  
+  class AnimatedEntry {
+    pending: T
+    hasPending: boolean
+  }
+  
+  EphemeralStream "1" *-- "*" AnimatedEntry : batches
+}
+
+package "Storage Layer" {
+  interface StorageAdapter {
+    + save(key, value): Promise<void>
+    + load(key): Promise<value>
+    + clear(key): Promise<void>
+  }
+  
+  class IndexedDBAdapter {
+    - db: IDBDatabase
+    - storeName: string
+    --
+    + save(key, value)
+    + load(key)
+  }
+  
+  StorageAdapter <|-- IndexedDBAdapter
+}
+
+package "Sync Engine (Cross-Tab Orchestration)" {
+  class SyncEngine {
+    - kernel: KernelLike
+    - shared: Map<atomKey, SyncEntry>
+    --
+    + share(atom, options): Unsubscribe
+    + getState(atomKey): SyncState
+    + destroy(): void
+  }
+  
+  class SyncState<S> {
+    - peerId: string
+    - version: VersionVector
+    - connected: boolean
+    - peers: Map<peerId, VersionVector>
+    - conflictsResolved: number
+  }
+  
+  interface SyncTransport<S> {
+    + isOpen: boolean
+    + send(msg): void
+    + subscribe(listener): Unsubscribe
+    + close(): void
+  }
+  
+  class VersionVector {
+    - clocks: Map<peerId, number>
+    --
+    + increment(peerId): VersionVector
+    + merge(other): VersionVector
+    + isStale(other): boolean
+  }
+  
+  class ConflictResolver {
+    - strategy: 'last-write-wins' | 'first-write-wins' | ...
+    --
+    + resolve(local, remote): T
+  }
+  
+  SyncEngine "1" *-- "*" SyncState : tracks
+  SyncEngine "1" -- "1" SyncTransport : uses
+  SyncState "1" *-- "1" VersionVector : maintains
+  SyncEngine "1" -- "1" ConflictResolver : uses
+}
+
+package "Transport Implementations" {
+  class BroadcastBridge {
+    - bc: BroadcastChannel
+    - listeners: Set
+    --
+    + send(msg): void
+    + subscribe(listener): Unsubscribe
+  }
+  
+  class PostMessageTransport {
+    - targetWindow: Window
+    - targetOrigin: string
+    --
+    + send(msg): void
+    + subscribe(listener): Unsubscribe
+  }
+  
+  class NoopTransport {
+    - isOpen: false
+    --
+    + send(msg): void
+    + subscribe(): Unsubscribe
+  }
+  
+  SyncTransport <|-- BroadcastBridge
+  SyncTransport <|-- PostMessageTransport
+  SyncTransport <|-- NoopTransport
+}
+
+package "SharedEventBus (Cross-MFE Events)" {
+  class SharedEventBus {
+    - channel: BroadcastChannel
+    - localSubscribers: Map<filter, listeners>
+    --
+    + publish(event): void
+    + subscribe(filter, cb): Unsubscribe
+  }
+  
+  class CrossMFEEvent {
+    - type: string
+    - payload: unknown
+    - source: string
+  }
+  
+  SharedEventBus "1" *-- "1" BroadcastChannel : communicates via
+}
+
+Kernel --> StorageAdapter : persist atoms
+SyncEngine --> Kernel : subscribe to writes
+EphemeralStream --|> StorageAdapter : independent of storage
+
+@enduml

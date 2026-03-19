@@ -1,0 +1,128 @@
+@startuml state-fp-sync-conflict
+!define PEER_COLOR #E3F2FD
+!define VERSION_COLOR #E8F5E9
+!define CONFLICT_COLOR #FFE8D0
+
+title Conflict Resolution: Version Vectors & Strategies
+
+participant "Tab A\n(Peer A)" as tabA
+participant "Version Vector\nLibrary" as vv
+participant "Conflict Resolver" as resolver
+participant "Tab B\n(Peer B)" as tabB
+
+== Setup ==
+tabA -> tabA: atom = createAtom('balance', 100)
+tabB -> tabB: atom = createAtom('balance', 100)
+tabA -> tabA: engine.share(atom, {peerId: 'A'})
+tabB -> tabB: engine.share(atom, {peerId: 'B'})
+
+note over tabA, tabB
+  **Version Vector:**
+  A: { A: 1, B: 0 }  (A has made 1 change, B has made 0)
+  B: { A: 0, B: 1 }  (B has made 1 change, A has made 0)
+end note
+
+== Concurrent Write: Tab A updates balance ==
+tabA -> tabA: executeCommand(WITHDRAW, 50)
+note right of tabA
+  New state: { balance: 50 }
+  Increment A's clock: { A: 2, B: 0 }
+end note
+tabA -> tabA: broadcast SyncMessage\n{peerId: 'A', state: 50, version: {A:2, B:0}}
+
+== Concurrent Write: Tab B updates balance ==
+tabB -> tabB: executeCommand(DEPOSIT, 30)
+note right of tabB
+  New state: { balance: 130 }
+  Increment B's clock: { A: 0, B: 2 }
+end note
+tabB -> tabB: broadcast SyncMessage\n{peerId: 'B', state: 130, version: {A:0, B:2}}
+
+note over tabA, tabB
+  **CONCURRENT writes detected!**
+  Both messages in flight simultaneously.
+  Neither version vector is a subset of the other.
+end note
+
+== Tab A Receives Message from B ==
+tabA <- tabB: SyncMessage{peerId: 'B', state: 130, version: {A:0, B:2}}
+activate tabA
+tabA -> vv: isConcurrent(local: {A:2,B:0}, remote: {A:0,B:2})
+activate vv
+vv -> vv: check if either is subset of other
+note right of vv
+  {A:2,B:0} NOT subset of {A:0,B:2}
+  {A:0,B:2} NOT subset of {A:2,B:0}
+  → CONCURRENT (both made independent changes)
+end note
+vv --> tabA: true
+deactivate vv
+
+tabA -> resolver: resolve({state: 50, version: {A:2,B:0}, peerId: 'A', ts: t1}\n, {state: 130, version: {A:0,B:2}, peerId: 'B', ts: t2}\n, strategy: 'last-write-wins')
+activate resolver
+resolver -> resolver: compare timestamps
+note right of resolver
+  Timestamp A (older) vs Timestamp B (newer)
+  Strategy: last-write-wins
+  → B's write wins (newer timestamp)
+end note
+resolver --> tabA: winning = 130
+deactivate resolver
+
+tabA -> vv: merge(local, remote)
+activate vv
+vv -> vv: {A:2, B:0} ∪ {A:0, B:2} = {A:2, B:2}
+vv --> tabA: {A:2, B:2}
+deactivate vv
+
+note right of tabA
+  Update to state = 130
+  Update version = {A:2, B:2}
+  Notify subscribers
+end note
+tabA -> tabA: atom._setState(130)
+tabA -> tabA: version = {A:2, B:2}
+
+deactivate tabA
+
+== Tab B Receives Message from A ==
+tabB <- tabA: SyncMessage{peerId: 'A', state: 50, version: {A:2, B:0}}
+activate tabB
+tabB -> vv: isConcurrent(local: {A:0,B:2}, remote: {A:2,B:0})
+activate vv
+vv -> vv: same check → CONCURRENT
+vv --> tabB: true
+deactivate vv
+
+tabB -> resolver: resolve({state: 130, version: {A:0,B:2}, peerId: 'B', ts: t2}\n, {state: 50, version: {A:2,B:0}, peerId: 'A', ts: t1}\n, strategy: 'last-write-wins')
+activate resolver
+note right of resolver
+  Timestamp B (newer) vs Timestamp A (older)
+  Strategy: last-write-wins
+  → B's write wins (newer timestamp)
+end note
+resolver --> tabB: winning = 130
+deactivate resolver
+
+tabB -> tabB: atom._setState(130)
+tabB -> tabB: version = {A:2, B:2}
+
+deactivate tabB
+
+== Final State ==
+tabA -> tabA: balance = 130, version = {A:2, B:2}
+tabB -> tabB: balance = 130, version = {A:2, B:2}
+
+note over tabA, tabB
+  **Convergence Achieved:**
+  Both peers now have identical state & version
+  Causality preserved via version vectors
+  
+  **Available Strategies:**
+  • last-write-wins (timestamp-based)
+  • first-write-wins
+  • owner-wins (by peerId)
+  • version-wins (custom predicate)
+end note
+
+@enduml

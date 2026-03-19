@@ -1,0 +1,60 @@
+@startuml state-fp-usecases
+!define ACTOR_COLOR #FFE8B6
+!define UC_COLOR #E3F2FD
+
+skinparam monochrome false
+skinparam backgroundColor #FEFEFE
+skinparam actor {
+  BackgroundColor ACTOR_COLOR
+  BorderColor #FF9800
+}
+skinparam usecase {
+  BackgroundColor UC_COLOR
+  BorderColor #1976D2
+}
+
+(Developer) as dev
+(End User) as user
+(Framework\n(React/Angular)) as fw
+
+package "State-FP Usage Scenarios" {
+  usecase "UC1: Create Atom with\nInitial State" as uc1
+  usecase "UC2: Subscribe to\nState Changes" as uc2
+  usecase "UC3: Execute Command\n(Mutation)" as uc3
+  usecase "UC4: Execute Query\n(Read with Memo)" as uc4
+  usecase "UC5: Persist Atom\nto IndexedDB" as uc5
+  usecase "UC6: Share Atom\n(Cross-Tab Sync)" as uc6
+  usecase "UC7: Resolve Conflicts\n(Concurrent Writes)" as uc7
+  usecase "UC8: Time Travel\nDebug" as uc8
+  usecase "UC9: High-Frequency\nStreaming" as uc9
+  usecase "UC10: Cross-MFE\nEvent Bus" as uc10
+  usecase "UC11: Framework Integration\n(useAtom Hook)" as uc11
+  usecase "UC12: SSR Hydration" as uc12
+}
+
+'== Developer Scenarios ==
+dev --> uc1 : initialize app state
+dev --> uc2 : wire up subscriptions
+dev --> uc3 : define command handlers
+dev --> uc4 : implement queries
+dev --> uc5 : enable persistence
+dev --> uc6 : share cross-tab
+dev --> uc8 : debug \& inspect state
+
+'== End User Scenarios ==
+user --> uc2 : sees live updates
+user --> uc3 : triggers mutations
+user --> uc9 : immediate feedback\n(mouse, scroll)
+user --> uc7 : conflict resolution\ntransparent
+
+'== Framework Integration ==
+fw --> uc11 : React/Angular\nto state-fp
+fw --> uc12 : hydrate on\ngclient-side
+
+'== Advanced ==
+uc3 ..> uc6 : if shared
+uc6 --> uc7 : when concurrent
+uc3 --> uc8 : via devtools
+uc5 --> uc12 : restore on reload
+
+@enduml

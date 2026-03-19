@@ -1,0 +1,106 @@
+@startuml state-fp-ephemeralstream
+!define STREAM_COLOR #E8F5E9
+!define RAF_COLOR #FFF3E0
+!define LISTENER_COLOR #E3F2FD
+
+title EphemeralStream: Demand-Driven RAF Batching
+
+participant "mousemove Event\nHandler" as events
+participant "EphemeralStream" as stream
+participant "RAF Scheduler" as raf
+participant "React Signal\n(Subscriber A)" as subA
+participant "Canvas Render\n(Subscriber B)" as subB
+
+note over events, subB
+  **Scenario:** User moves mouse rapidly (60+ events/second)
+  Expected: Highest frequency without jank
+end note
+
+== Fast Event Burst (10ms) ==
+events -> stream: emit({x: 100, y: 50})
+activate stream
+note right of stream
+  **emit() logic:**
+  1. Update _last value
+  2. Mark AnimatedEntry.pending
+  3. Schedule ONE RAF (if not already pending)
+  4. DON'T call listeners yet
+end note
+
+stream -> stream: _last = {x: 100, y: 50}
+stream -> stream: AnimatedEntry.pending = _last
+stream -> stream: if (!rafPending) requestAnimationFrame(flush)
+stream -> raf: requestAnimationFrame(flushAnimated)
+note right of raf
+  RAF scheduled once
+  Not per #emit() call
+end note
+deactivate stream
+
+events -> stream: emit({x: 105, y: 48})
+activate stream
+stream -> stream: _last = {x: 105, y: 48}
+stream -> stream: AnimatedEntry.pending = _last
+note right of stream
+  rafPending = true (already scheduled)
+  DON'T call requestAnimationFrame again
+  Just update the pending value
+end note
+deactivate stream
+
+events -> stream: emit({x: 110, y: 45})
+activate stream
+stream -> stream: _last = {x: 110, y: 45}
+stream -> stream: AnimatedEntry.pending = _last
+deactivate stream
+
+... (dozens more events) ...
+
+== Browser Frame Callback (16ms) ==
+raf -> stream: flushAnimated callback fires
+activate stream
+note right of stream
+  **flushAnimated() logic:**
+  For each AnimatedEntry where hasPending:
+    1. get last buffered value
+    2. call listener with THAT value
+  Then reset hasPending flags
+end note
+
+stream -> subA: subA_listener({x: 110, y: 45})
+note right of subA
+  React signal updated
+  Once per frame maximum
+  No jank, smooth 60fps
+end note
+
+stream -> subB: subB_listener({x: 110, y: 45})
+note right of subB
+  Canvas draw call
+  No redundant redraws
+  Efficient batching
+end note
+
+deactivate stream
+
+== Unsubscribe & Cleanup ==
+subA -> stream: unsubscribe()
+activate stream
+stream -> stream: animatedListeners.delete(subA)
+note right of stream
+  If no more animated listeners:
+    cancelAnimationFrame(rafId)
+  Stream now idle = 0 CPU cost
+end note
+deactivate stream
+
+note over events, subB
+  **Benefits:**
+  ✓ Single RAF per stream (not per-subscriber)
+  ✓ Latest value delivered (last-value semantics)
+  ✓ Zero CPU when stream idle (no coalescing overhead)
+  ✓ Safe for high-frequency (mouse, scroll, drag, canvas)
+  ✓ Synchronous subscribe() for instant access to last value
+end note
+
+@enduml

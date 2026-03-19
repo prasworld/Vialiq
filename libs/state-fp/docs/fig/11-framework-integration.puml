@@ -1,0 +1,117 @@
+@startuml state-fp-framework-integration
+!define REACT_COLOR #61DAFB
+!define ANGULAR_COLOR #DD0031
+!define VUE_COLOR #42B581
+!define FRAMEWORK_COLOR #E3F2FD
+!define STATE_COLOR #E8F5E9
+
+title Framework Integration Patterns
+
+package "Developer Code" {
+  [App.tsx] as app
+  [types.ts] as types
+  [state.ts] as state
+}
+
+package "React Integration (@vi/state-fp/adapter)" {
+  [useAtom<T>] as useAtom
+  [useCommand] as useCommand
+  [useQuery<R>] as useQuery
+  [StateFpProvider] as provider
+  
+  note right of useAtom
+    Hook returns:
+    • state: T (current value)
+    • setState: (newVal: T) => void
+    Re-render on change
+  end note
+  
+  note right of useCommand
+    Hook returns:
+    • execute: (cmd) => Promise<void>
+    • loading: boolean
+    • error: Error | null
+  end note
+}
+
+package "Angular Integration" {
+  [StateFpService] as ngService
+  [state$ (Observable)] as ngObs
+  
+  note right of ngService
+    Service provides:
+    • state$: Observable<T>
+    • command$(cmd): Observable
+    • getState(): T (sync)
+  end note
+}
+
+package "State-FP Core" {
+  [Kernel] as kernel
+  [Atom<T>] as atom
+  [StorageAdapter] as storage
+  [SyncEngine] as sync
+}
+
+app --> types : import types
+app --> state : import state
+app --> useAtom : import hook
+app --> useCommand
+
+state --> kernel : createKernel()
+state --> atom : createAtom('counter', 0)
+state --> storage : createIndexedDBAdapter()
+kernel --> storage : enable persistence
+kernel --> atom : register atom
+
+sync --> kernel : engine.share(atom)
+
+useAtom --> atom : subscribe(listener)
+useAtom --> atom : setState via kernel
+useAtom --> atom : get current value
+
+useCommand --> kernel : executeCommand
+
+ngService --> kernel
+ngObs --> atom
+
+== Example React Usage ==
+app -> app: const {state, setState} = useAtom(counterAtom)
+app -> app: const increment = () => \n  executeCommand({ type: 'INCREMENT' })
+app -> app: return <div>\n  <p>Count: {state.count}</p>\n  <button onClick={increment}>+</button>\n</div>
+
+== Example Data Flow ==
+participant "Browser Storage" as storage1
+participant "Other Tabs" as peers
+
+app --|> storage1 : persist on mutation
+app --|> peers : broadcast via SyncEngine
+
+note over app, kernel
+  **Framework-Agnostic Core**
+  State-FP works with any framework
+  Adapters provide idiomatic integration
+  
+  **Available Adapters:**
+  • React (useAtom, useCommand, useQuery, components)
+  • Angular (services, observables)
+  • Vanilla JS (direct API)
+  • Lit (custom element decorators)
+end note
+
+package "Result: Decoupled Architecture" {
+  [Business Logic] <<(C,#FFE8B6)>> : Kernel, Commands, Queries
+  [State Container] <<(C,#E8F5E9)>> : Atoms, Storage
+  [Sync Layer] <<(C,#E3F2FD)>> : SyncEngine, Transport
+  [UI Bindings] <<(C,#F3E5F5)>> : React/Angular/Vanilla adapters
+}
+
+note over Result
+  **Benefits:**
+  ✓ Swap frameworks without touching state logic
+  ✓ Business logic testable without UI framework
+  ✓ State shared across browser context (tabs, workers)
+  ✓ DevTools work identically in all frameworks
+end note
+
+@enduml
