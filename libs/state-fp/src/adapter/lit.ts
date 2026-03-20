@@ -139,9 +139,8 @@ export function createLitController<S>(
       return kernel.execute(atom, cmd);
     },
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     query<R>(q: Query): R {
-      return kernel.query<R>(atom as Atom<any>, q);
+      return kernel.query<R>(atom as Atom<unknown>, q);
     },
 
     hostConnected() {

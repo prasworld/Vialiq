@@ -115,7 +115,7 @@ export type ReactKernelAdapter = {
    * Root context provider — wraps your React tree and injects the kernel.
    * Must be rendered above any component that calls `useAtom` / `useCommand`.
    */
-  Provider(props: StateFpProviderProps): any;
+  Provider(props: StateFpProviderProps): unknown;
 
   /**
    * Subscribe to an atom's state. The component re-renders on every
@@ -192,7 +192,7 @@ export function createReactAdapter(apis: ReactAPIs): ReactKernelAdapter {
     return kernel;
   }
 
-  function Provider(props: StateFpProviderProps): any {
+  function Provider(props: StateFpProviderProps): unknown {
     // Use the injected createElement so Provider returns a proper React element
     // (not a raw function call), which is required for context to work correctly.
     // KernelContext.Provider is an exotic React component; it must be rendered
@@ -252,8 +252,8 @@ export function createReactAdapter(apis: ReactAPIs): ReactKernelAdapter {
     const [state] = useAtom(atom);
 
     return apis.useMemo<R>(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      () => kernel.query<R>(atom as Atom<any>, q),
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      () => kernel.query<R>(atom as Atom<unknown>, q),
       // `state` invalidates the memo on atom state change.
       // `q` and `kernel` are also closed over — including them ensures the
       // memo recomputes if the query object or kernel instance changes.
