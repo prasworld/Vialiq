@@ -39,6 +39,21 @@
       "options": {
         "lintFilePatterns": ["libs/state-fp/**/*.ts"]
       }
+    },
+    "size": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["build"],
+      "options": {
+        "command": "node -e \"const fs=require('fs');const zlib=require('zlib');const path=require('path');const dir='dist/libs/state-fp';const files=fs.readdirSync(dir).filter(f=>f.endsWith('.js'));let total=0;files.forEach(f=>{const buf=fs.readFileSync(path.join(dir,f));const gz=zlib.gzipSync(buf).length;total+=gz;console.log(gz+' bytes gzipped\\t'+f)});console.log('---');console.log(Math.round(total/1024*10)/10+' KB total gzipped');\"",
+        "cwd": "."
+      }
+    },
+    "version": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "nx release version --projects=state-fp",
+        "cwd": "."
+      }
     }
   }
 }

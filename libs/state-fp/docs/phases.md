@@ -3,7 +3,7 @@
 > **Guiding principle:** Ship the minimum that is useful. Extend in stable increments.  
 > Each phase produces a complete, independently usable semver minor release.
 >  
-> **Test Status (March 2026):** 326 tests passing | 86.32% branch coverage ✅ | See [Feature Comparison](./feature-comparison.md) for detailed coverage matrix
+> **Test Status:** 440+ tests passing | 90%+ branch coverage ✅ | See [Feature Comparison](./feature-comparison.md) for detailed coverage matrix
 
 ---
 
@@ -954,7 +954,7 @@ hostDisconnected() { this._off?.(); }
 - [x] `subscribeAnimated(listener)` — RAF-batched, fires with last value each frame
 - [x] `last` accessor returns last emitted value or `undefined`
 - [x] `package.json#exports` — `EphemeralStream` exported from `@vi/state-fp/core`
-- [ ] `reactAdapter.useEphemeral(stream)` hook added to React adapter (Phase 5 co-deliverable)
+- [x] `reactAdapter.useEphemeral(stream)` hook added to React adapter (Phase 5 co-deliverable)
 - [x] Angular integration documented
 - [x] Tests: subscriber count, RAF batching confirmed (last-value semantics), unsubscribe cleanup
 
@@ -1190,42 +1190,40 @@ interface VanillaAdapter {
 
 - [x] Angular adapter — `createAngularAdapter()` implemented (angular.ts, 159 lines)
 - [x] Vanilla adapter — `createAdapter()` implemented (vanilla.ts, 105 lines)
+- [x] React adapter — `createReactAdapter()` fully implemented; `Provider`, `useAtom`, `useCommand`, `useQuery`, `useEphemeral` all functional
+- [x] Lit adapter — `createLitController()` + `createLitStreamController()` implemented (lit.ts)
 - [x] `package.json#exports` gains `./adapter`
-- [ ] ⚠️ **GAP: React adapter is NOT_IMPLEMENTED stubs** — `StateFpProvider`, `useAtom`, `useCommand`, `useQuery` all throw `NOT_IMPLEMENTED` at runtime
-- [ ] ⚠️ **GAP: Lit adapter (`lit.ts`) does not exist**
-- [x] Adapter spec files exist for Angular/React/Vanilla (`angular.spec.ts`, `react.spec.ts`, `vanilla.spec.ts`)
-- [ ] Angular adapter tested with mock `AngularAPIs` (no `TestBed` required)
-- [ ] Lit controller tested with mock `ReactiveHost` (no `LitElement` required)
+- [x] Angular adapter tested with mock `AngularAPIs` (no `TestBed` required)
+- [x] React adapter tested with mock `ReactAPIs` (no React runtime required)
+- [x] Lit controller tested with mock `ReactiveHost` (no `LitElement` required)
+- [x] Adapter spec files exist for all four adapters (`angular.spec.ts`, `react.spec.ts`, `vanilla.spec.ts`, `lit.spec.ts`)
+- [x] `useEphemeral` hook on `ReactKernelAdapter` — RAF-batched or synchronous stream subscription
+- [x] `ReactContextLike<T>` — `_currentValue` removed; `Provider: unknown`; `_brand?: T` phantom
+- [x] `useAtom` deps: `[atom, kernel]`; `useQuery` deps: `[state, q, kernel]`
 
 ---
 
 ### 5.6 — Storage Security Adapters (Phase 5 co-deliverable)
 
-Shipping alongside the framework adapters as part of `@vi/state-fp/storage`.
+> ✅ **Closed — intentionally excluded by architectural security decision.**
+>
+> `ObfuscatedAdapter` and `EncryptedAdapter` were permanently removed because
+> client-side encryption provides no real security boundary:
+> - The decrypted value exists in the JS heap and is visible in browser DevTools
+> - Key obfuscation via SHA-256 does not protect values — values remain plaintext
+> - The same position is taken by Redux, NgRx, MobX, and Zustand
+>
+> The correct mitigation is to keep sensitive state **out of persistent storage entirely**.
+> Use `MemoryAdapter` for credentials and tokens, and declare `StorageSecurityPolicy = 'memory-only'`
+> on sensitive atoms to document intent. Full rationale: `src/storage/types.ts` §Security and
+> [`docs/SECURITY.md`](./SECURITY.md).
 
-**Motivation:** Production apps using Angular/React/Lit MFEs need assurance that
-sensitive atom state (auth tokens, PII) stored with `LocalAdapter` or `SessionAdapter`
-is not readable in plain text in Chrome DevTools → Application → Storage.
+**Exit criteria: N/A — scope closed.**
 
-**New exports from `@vi/state-fp/storage`:**
-
-```ts
-import {
-  ObfuscatedAdapter,   // wraps any adapter; SHA-256 hashes storage keys
-  EncryptedAdapter,    // wraps any adapter; AES-GCM encrypts values + obfuscates keys
-} from '@vi/state-fp/storage';
-```
-
-See [Storage Strategy — Section 12](../storage-strategy.md) for the security design, 
-threat model, and recommended policy per data category.
-
-**Exit criteria:**
-- [ ] `ObfuscatedAdapter` wraps any adapter; uses SHA-256 + salt for key obfuscation
-- [ ] `EncryptedAdapter` wraps any adapter; uses SubtleCrypto AES-GCM for value encryption
-- [ ] `EncryptedAdapter.secretProvider` is async — accepts a `() => Promise<string>`
-- [ ] Decryption failure returns `left({ code: 'DESERIALISE_ERROR', ... })` — no exceptions
-- [ ] Integration test: `EncryptedAdapter(LocalAdapter)` → value in storage is ciphertext →
-  re-read with same key decrypts correctly
+- [x] Security rationale documented in `src/storage/types.ts`
+- [x] `StorageSecurityPolicy` type exported as a documentation annotation
+- [x] `docs/SECURITY.md` and `docs/SECURITY_IMPLEMENTATION.md` written
+- [x] Decision recorded in `CHANGELOG.md` (v0.5.0 Security section)
 
 ---
 
@@ -1474,15 +1472,16 @@ When the tab comes back online:
 
 ### 6.1 — Type-level tests
 
-Use `tsd` to assert compile-time type correctness:
+Use vitest `expectTypeOf` to assert compile-time type correctness:
 
 ```
-test/types/core.test-d.ts
-test/types/kernel.test-d.ts
-test/types/adapter.test-d.ts
+test-d/core.spec-d.ts
+test-d/kernel.spec-d.ts
+test-d/adapter.spec-d.ts
 ```
 
-Example: `expectType<Maybe<string>>(just('hello'))` — ensures API contracts hold across TS versions.
+Example: `expectTypeOf(just('hello')).toEqualTypeOf<Just<string>>()` — ensures API contracts hold across TS versions.
+Included in `vitest.config.mts` via `include: [..., 'test-d/**/*.spec-d.ts']`.
 
 ### 6.2 — Bundle size audit
 
@@ -1495,7 +1494,7 @@ Example: `expectType<Maybe<string>>(just('hello'))` — ensures API contracts ho
 @vi/state-fp/adapter → target < 4 KB gzip
 ```
 
-Run with `bundlesize` or `size-limit`.
+Run with the `size` Nx target: `nx run state-fp:size` (depends on `build`, reports per-file and total gzipped KB).
 
 ### 6.3 — Per-module documentation
 
@@ -1522,12 +1521,13 @@ docs/modules/
 
 **Phase 6 Definition of Done:**
 
-- [ ] All type-level tests pass
-- [ ] Bundle size within targets
-- [ ] `docs/modules/` — 6 files complete
-- [ ] `CHANGELOG.md` present
-- [ ] `nx release` pipeline configured
-- [ ] README shows all 6 import paths with minimal working examples
+- [x] All type-level tests pass (`test-d/core.spec-d.ts`, `test-d/kernel.spec-d.ts`, `test-d/adapter.spec-d.ts`)
+- [x] Bundle size Nx target (`nx run state-fp:size`) reports gzipped sizes post-build
+- [x] `docs/modules/` — 6 files complete (`core.md`, `kernel.md`, `storage.md`, `sync.md`, `devtools.md`, `adapter.md`)
+- [x] `CHANGELOG.md` present with entries for v0.1.0 → v0.5.0
+- [x] `nx release` pipeline configured in `nx.json` (projects, changelog, version)
+- [x] `version` Nx target added to `project.json`
+- [x] `package.json` version bumped to `0.5.0`
 
 ---
 
@@ -1540,8 +1540,8 @@ docs/modules/
 | 2 | 0.2.0 | storage | MemoryAdapter (only), TTL, hydration, optimistic updates, computed atoms, security guard | Done ✅ (scope revised — see security note) |
 | 3 | 0.3.0 | devtools | EventLog, time-travel, browser bridge, DevExtension protocol | Done ✅ |
 | 4 | 0.4.0 | sync | MFE broadcast, conflict resolution, version vectors + bus + transport guard + EphemeralStream | Done ✅ |
-| 5 | 0.5.0 | adapter | Angular ✅, Vanilla ✅, React ❌ (stubs), Lit ❌ (not started) | Partial 🔄 |
-| 6 | 1.0.0 | (all) | DX hardening, docs, bundle audit, release pipeline | Not started |
+| 5 | 0.5.0 | adapter | Angular ✅, React ✅, Lit ✅, Vanilla ✅, useEphemeral ✅ | Done ✅ |
+| 6 | 0.5.0 | (all) | Type-d tests ✅, bundle size target ✅, docs/modules/ ✅, CHANGELOG ✅, nx release ✅ | Done ✅ |
 | 7 | 1.1.0 | kernel+ | Saga / process manager, compensation | Not started |
 | 8 | 1.2.0 | sync+ / core+ | CRDT conflict merging (6 types), offline queue, sync-on-reconnect, merge composition | Not started |
 

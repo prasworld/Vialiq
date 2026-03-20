@@ -103,8 +103,22 @@
     }
   },
   "release": {
+    "projects": ["state-fp"],
     "version": {
-      "preVersionCommand": "npx nx run-many -t build"
+      "preVersionCommand": "npx nx run-many -t build",
+      "generatorOptions": {
+        "packageRoot": "libs/state-fp",
+        "currentVersionResolver": "registry"
+      }
+    },
+    "changelog": {
+      "projectChangelogs": {
+        "file": "libs/state-fp/CHANGELOG.md",
+        "renderOptions": {
+          "authors": false
+        }
+      },
+      "workspaceChangelog": false
     }
   }
 }
