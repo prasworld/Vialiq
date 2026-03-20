@@ -170,9 +170,9 @@ export type ComputedAtomDefinition<R> = {
   /** Globally unique key (namespaced, e.g. `vi/cart-total`). */
   readonly key: string;
   /** Source atoms this computed value depends on. */
-  readonly deps: ReadonlyArray<Atom<any>>;
+  readonly deps: ReadonlyArray<Atom<unknown>>;
   /** Pure compute function. Called only when any dep state reference changes. */
-  readonly compute: (depStates: readonly any[]) => R;
+  readonly compute: (depStates: readonly unknown[]) => R;
   /** Optional debug label for DevTools display. */
   readonly debugLabel?: string;
 };

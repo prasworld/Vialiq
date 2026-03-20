@@ -252,8 +252,8 @@ export function createReactAdapter(apis: ReactAPIs): ReactKernelAdapter {
     const [state] = useAtom(atom);
 
     return apis.useMemo<R>(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      () => kernel.query<R>(atom as Atom<any>, q),
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      () => kernel.query<R>(atom as Atom<unknown>, q),
       // `state` invalidates the memo on atom state change.
       // `q` and `kernel` are also closed over — including them ensures the
       // memo recomputes if the query object or kernel instance changes.
@@ -291,7 +291,7 @@ export function createReactAdapter(apis: ReactAPIs): ReactKernelAdapter {
 export const StateFpProvider: unknown = () => {
   throw new Error(
     '[@vi/state-fp/adapter] StateFpProvider is a legacy stub. ' +
-    'Use createReactAdapter({ useState, useEffect, useRef, useMemo, useContext, createContext }).Provider instead.',
+    'Use createReactAdapter({ useState, useEffect, useRef, useMemo, useContext, createContext, createElement }).Provider instead.',
   );
 };
 

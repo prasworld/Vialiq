@@ -6,7 +6,7 @@ export default defineConfig({
     name: 'state-fp',
     globals: true,
     environment: 'node',
-    include: ['src/**/*.{spec,test}.ts', 'src/**/__tests__/**/*.ts'],
+    include: ['src/**/*.{spec,test}.ts', 'src/**/__tests__/**/*.ts', 'test-d/**/*.spec-d.ts'],
     coverage: {
       provider: 'v8',
       reportsDirectory: '../../coverage/state-fp',

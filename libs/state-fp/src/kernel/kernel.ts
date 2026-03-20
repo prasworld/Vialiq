@@ -81,11 +81,11 @@ export function createKernel(options: KernelOptions = {}): Kernel {
   /** Phase 1.4 — maps `"atomKey::commandType"` → AsyncCommandHandler */
   const asyncHandlerMap = new Map<string, AsyncCommandHandler<unknown>>();
   /** Phase 2.5 — maps atomKey → set of computed atoms that depend on it */
-  const computedDependencies = new Map<string, Set<ComputedAtom<any>>>();
+  const computedDependencies = new Map<string, Set<ComputedAtom<unknown>>>();
   /** Phase 2.5 — cache last dependency references for each computed atom */
-  const computedDepRefs = new Map<ComputedAtom<any>, readonly any[]>();
+  const computedDepRefs = new Map<ComputedAtom<unknown>, readonly unknown[]>();
   /** Phase 2.5 — all registered computed atoms */
-  const computedAtoms = new Set<ComputedAtom<any>>();
+  const computedAtoms = new Set<ComputedAtom<unknown>>();
   /** Phase 3.6 — query memo cache: (atomKey::queryType) → last { stateRef, payloadKey, result } */
   const queryMemoCache = new Map<string, { stateRef: unknown; payloadKey: string; result: unknown }>();
   // ── Debug layer ─────────────────────────────────────────────────────────────
@@ -206,7 +206,7 @@ export function createKernel(options: KernelOptions = {}): Kernel {
 
       // Get current computed value to check for changes
       const prevValue = computed.get();
-      const nextValue = computed.definition.compute(depStates as readonly any[]);
+      const nextValue = computed.definition.compute(depStates as readonly unknown[]);
 
       // Notify subscribers if compute function returned a different value
       if (!Object.is(prevValue, nextValue)) {
@@ -397,7 +397,7 @@ export function createKernel(options: KernelOptions = {}): Kernel {
         correlationId: (fullCmd.meta as CommandMeta).correlationId,
       };
 
-      return asyncHandler.handleAsync(currentState, fullCmd as any, ctx).then(
+      return asyncHandler.handleAsync(currentState, fullCmd, ctx).then(
         (result) => {
           if (signal.aborted) {
             return {
@@ -749,7 +749,7 @@ export function createKernel(options: KernelOptions = {}): Kernel {
       const depStates = computed.definition.deps.map(dep => dep.get());
       computedDepRefs.set(computed, depStates);
 
-      const initialValue = computed.definition.compute(depStates as readonly any[]);
+      const initialValue = computed.definition.compute(depStates as readonly unknown[]);
       computed._setComputed(initialValue);
     },
 
