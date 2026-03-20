@@ -9,11 +9,11 @@
  * ## Setup (call once at app bootstrap)
  *
  * ```tsx
- * import { useState, useEffect, useRef, useMemo, useContext, createContext } from 'react';
+ * import { useState, useEffect, useRef, useMemo, useContext, createContext, createElement } from 'react';
  * import { createReactAdapter } from '@vi/state-fp/adapter';
  *
  * export const reactAdapter = createReactAdapter({
- *   useState, useEffect, useRef, useMemo, useContext, createContext,
+ *   useState, useEffect, useRef, useMemo, useContext, createContext, createElement,
  * });
  * ```
  *
@@ -56,12 +56,29 @@ export type ReactAPIs = {
   useMemo:       <T>(factory: () => T, deps: readonly unknown[]) => T;
   useContext:    <T>(ctx: ReactContextLike<T>) => T;
   createContext: <T>(defaultValue: T) => ReactContextLike<T>;
+  /**
+   * `React.createElement` — used by `Provider` to produce a real React element
+   * wrapping `KernelContext.Provider`. Pass the real `createElement` from `react`.
+   */
+  createElement: (type: unknown, props: Record<string, unknown> | null, ...children: unknown[]) => unknown;
 };
 
-/** Minimal React context shape (no react import needed). */
+/**
+ * Minimal React context shape (no react import needed).
+ *
+ * Deliberately omits React-internal fields like `_currentValue`.
+ * `Provider` is typed as `unknown` because in real React it is an exotic
+ * component — it must be passed to `createElement`, not invoked as a plain
+ * function.  Both the real `React.Context<T>` and a plain test mock satisfy
+ * this structural type without any casting.
+ */
 export type ReactContextLike<T> = {
-  readonly _currentValue: T;
-  Provider: (props: { value: T; children: unknown }) => unknown;
+  /** Exotic component passed to `createElement` — do not call directly. */
+  readonly Provider: unknown;
+  readonly displayName?: string;
+  // The generic T is the sole source of truth for the context value type;
+  // it flows through useContext<T>(ctx: ReactContextLike<T>): T.
+  readonly _brand?: T; // phantom field — keeps T in the type without _currentValue
 };
 
 // ─── Public types ─────────────────────────────────────────────────────────────
@@ -80,11 +97,13 @@ export type UseAtomResult<S> = readonly [
   atom:  Atom<S>,
 ];
 
-/** Return value of `useCommand`. */
-export type UseCommandResult<S> = {
-  /** Stable dispatch function. Does not change between renders. */
-  execute(cmd: Command): Either<ReturnType<Kernel['execute']> extends Either<infer E, infer A> ? E : never, S>;
-};
+/**
+ * Return value of `useCommand`.
+ *
+ * A stable function reference — the identity never changes between re-renders,
+ * making it safe to pass to memoised child components.
+ */
+export type UseCommandResult = (cmd: Command) => ReturnType<Kernel['execute']>;
 
 /** Return value of `useQuery`. */
 export type UseQueryResult<R> = R;
@@ -149,11 +168,11 @@ export type ReactKernelAdapter = {
  *
  * @example
  * ```ts
- * import { useState, useEffect, useRef, useMemo, useContext, createContext } from 'react';
+ * import { useState, useEffect, useRef, useMemo, useContext, createContext, createElement } from 'react';
  * import { createReactAdapter } from '@vi/state-fp/adapter';
  *
  * export const reactAdapter = createReactAdapter({
- *   useState, useEffect, useRef, useMemo, useContext, createContext,
+ *   useState, useEffect, useRef, useMemo, useContext, createContext, createElement,
  * });
  * ```
  */
@@ -174,10 +193,15 @@ export function createReactAdapter(apis: ReactAPIs): ReactKernelAdapter {
   }
 
   function Provider(props: StateFpProviderProps): unknown {
-    return (KernelContext.Provider as (p: { value: Kernel | null; children: unknown }) => unknown)({
-      value:    props.kernel,
-      children: props.children,
-    });
+    // Use the injected createElement so Provider returns a proper React element
+    // (not a raw function call), which is required for context to work correctly.
+    // KernelContext.Provider is an exotic React component; it must be rendered
+    // via createElement rather than called as a plain function.
+    return apis.createElement(
+      KernelContext.Provider,
+      { value: props.kernel },
+      props.children,
+    );
   }
 
   function useAtom<S>(atom: Atom<S>): UseAtomResult<S> {
@@ -192,8 +216,11 @@ export function createReactAdapter(apis: ReactAPIs): ReactKernelAdapter {
       setState(atom.get());
       const off: Unsubscribe = kernel.subscribe(atom, (s: S) => setState(s));
       return off;
+    // `atom` and `kernel` are the values actually closed over — include both
+    // so the effect re-subscribes when either the atom instance or the kernel
+    // instance changes (not just when atom.key changes).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [atom.key]);
+    }, [atom, kernel]);
 
     return [state, atom] as const;
   }
@@ -227,8 +254,11 @@ export function createReactAdapter(apis: ReactAPIs): ReactKernelAdapter {
     return apis.useMemo<R>(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       () => kernel.query<R>(atom as Atom<any>, q),
+      // `state` invalidates the memo on atom state change.
+      // `q` and `kernel` are also closed over — including them ensures the
+      // memo recomputes if the query object or kernel instance changes.
       // eslint-disable-next-line react-hooks/exhaustive-deps
-      [state],
+      [state, q, kernel],
     );
   }
 

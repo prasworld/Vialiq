@@ -78,7 +78,7 @@ export type ReactiveControllerLike = {
  * Returned by `createLitController`.
  *
  * Implements Lit's `ReactiveController` interface structurally:
- * - `hostConnected`    — subscribes to atom; triggers initial `requestUpdate()`
+ * - `hostConnected`    — re-syncs state, subscribes to atom, calls `host.requestUpdate()`
  * - `hostDisconnected` — unsubscribes; no memory leaks
  *
  * State updates call `host.requestUpdate()` to schedule a Lit re-render.
@@ -86,8 +86,11 @@ export type ReactiveControllerLike = {
 export type AtomController<S> = ReactiveControllerLike & {
   /** Current atom state — updated reactively on every state change. */
   readonly state: S;
-  /** Dispatch a command against the atom via the kernel. */
-  dispatch(cmd: Command): Either<ReturnType<Kernel['execute']> extends Either<infer E, infer A> ? E : never, S>;
+  /**
+   * Dispatch a command against the atom via the kernel.
+   * Returns whatever `kernel.execute` returns — typically `Either<CommandError, DomainEvent[]>`.
+   */
+  dispatch(cmd: Command): ReturnType<Kernel['execute']>;
   /** Run a query against the atom's current state. */
   query<R>(q: Query): R;
 };
@@ -132,8 +135,8 @@ export function createLitController<S>(
   const controller: AtomController<S> = {
     get state(): S { return _state; },
 
-    dispatch(cmd: Command) {
-      return kernel.execute(atom, cmd) as ReturnType<typeof controller['dispatch']>;
+    dispatch(cmd: Command): ReturnType<Kernel['execute']> {
+      return kernel.execute(atom, cmd);
     },
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -148,6 +151,9 @@ export function createLitController<S>(
         _state = s;
         host.requestUpdate();
       });
+      // Trigger an initial render so the component reflects the current atom
+      // state immediately on connection, even if the atom doesn't emit.
+      host.requestUpdate();
     },
 
     hostDisconnected() {

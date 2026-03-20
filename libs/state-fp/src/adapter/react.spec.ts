@@ -58,7 +58,6 @@ function makeReactAPIs(): ReactAPIs & {
   let _contextValue: unknown = null;
 
   const ctx: ReactContextLike<unknown> = {
-    _currentValue: null,
     Provider: ({ value }: { value: unknown; children: unknown }) => {
       _contextValue = value;
     },
@@ -79,6 +78,12 @@ function makeReactAPIs(): ReactAPIs & {
     useMemo: <T>(factory: () => T, _deps: readonly unknown[]) => factory(),
     useContext: <T>(_ctx: ReactContextLike<T>) => _contextValue as T,
     createContext: <T>(_default: T) => ctx as unknown as ReactContextLike<T>,
+    createElement: (_type: unknown, props: Record<string, unknown> | null, ...children: unknown[]) => {
+      // Simulate createElement: if the type is a context Provider function, invoke it
+      // with value/children so tests can inspect the context value.
+      if (props && 'value' in props) { _contextValue = props['value']; }
+      return children[0] ?? null;
+    },
   };
 
   return Object.assign(apis, {
@@ -181,6 +186,14 @@ describe('createReactAdapter', () => {
       listener!({ count: 99 });
       expect(apis._getState<{ count: number }>()).toEqual({ count: 99 });
     });
+
+    it('throws when called outside Provider', () => {
+      const apis    = makeReactAPIs();
+      // Leave context at null (default)
+      const adapter = createReactAdapter(apis);
+
+      expect(() => adapter.useAtom(atom)).toThrow(/outside of.*Provider/i);
+    });
   });
 
   describe('useCommand', () => {
@@ -280,14 +293,6 @@ describe('createReactAdapter', () => {
 
       expect(stream.subscribe).toHaveBeenCalled();
       expect(stream.subscribeAnimated).not.toHaveBeenCalled();
-    });
-
-    it('throws when called outside Provider', () => {
-      const apis    = makeReactAPIs();
-      // Leave context at null (default)
-      const adapter = createReactAdapter(apis);
-
-      expect(() => adapter.useAtom(atom)).toThrow(/outside of.*Provider/i);
     });
   });
 });

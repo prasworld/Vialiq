@@ -31,6 +31,10 @@ If you are an experienced FP developer you may prefer to start with
    - [5.4 devtools module](#54-devtools-module)
    - [5.5 sync module](#55-sync-module)
    - [5.6 adapter module](#56-adapter-module)
+     - [5.6a React](#56a-react)
+     - [5.6b Angular](#56b-angular-17-signals)
+     - [5.6c Lit](#56c-lit-reactive-controllers)
+     - [5.6d Vanilla JS](#56d-vanilla-js--typescript)
 6. [How to Add a Feature: Step-by-Step](#6-how-to-add-a-feature-step-by-step)
 7. [Write Path Walkthrough](#7-write-path-walkthrough)
 8. [Read Path Walkthrough](#8-read-path-walkthrough)
@@ -1710,109 +1714,721 @@ knowledge required. The receiving MFE accesses auth state without knowing the au
 **Import path:** `@vi/state-fp/adapter`  
 **Purpose:** Framework-specific wrappers around the kernel CQRS API.
 
-#### `angular.ts`
+All adapters use a **factory pattern** — you pass the framework's primitives in at setup time. The library has zero compile-time dependency on React, Angular, or Lit. The same principle makes every adapter fully testable with plain mock objects — no real framework runtime required.
 
-`createAngularAdapter(apis)` — factory pattern. You pass Angular's APIs as plain objects.
-The adapter is fully testable without `@angular/core`:
+| File | Adapter factory | Status |
+|---|---|---|
+| `react.ts` | `createReactAdapter(ReactAPIs)` | Available |
+| `angular.ts` | `createAngularAdapter(AngularAPIs)` | Available |
+| `lit.ts` | `createLitController / createLitStreamController` | Available |
+| `vanilla.ts` | `createAdapter(kernel)` | Available |
+
+---
+
+#### 5.6a React
+
+**Sequence diagram:** `docs/fig/13-sequence-react-adapter.puml`
+
+`createReactAdapter(apis)` accepts React's hook functions and returns a `ReactKernelAdapter` object with a `Provider` component and four hooks. Call it once per app and reuse the adapter object.
 
 ```ts
-import { createAngularAdapter } from '@vi/state-fp/adapter';
-import { signal, DestroyRef, inject } from '@angular/core';
+// src/app/adapter.ts
+import { useState, useEffect, useRef, useMemo, useContext, createContext, createElement } from 'react';
+import { createReactAdapter } from '@vi/state-fp/adapter';
 
-const adapter = createAngularAdapter({ signal, inject, DestroyRef });
+export const reactAdapter = createReactAdapter({
+  useState, useEffect, useRef, useMemo, useContext, createContext, createElement,
+});
 ```
 
-Methods on the returned adapter:
+**Wrap your app in `<Provider>`** to inject the kernel into all descendant hooks:
 
-| Method | Description |
-|---|---|
-| `adapter.toSignal(atom, kernel)` | Returns an Angular `Signal<S>` that auto-unsubscribes via `DestroyRef` |
-| `adapter.toQuerySignal(atom, kernel, queryFn)` | Returns a derived `Signal<R>` — re-evaluates `queryFn(state)` on every state change |
-| `adapter.commandDispatcher(atom, kernel)` | Returns a typed `(cmd: Command) => ReturnType<Kernel['execute']>` function |
+```tsx
+// App.tsx
+function App() {
+  return (
+    <reactAdapter.Provider kernel={kernel}>
+      <Routes />
+    </reactAdapter.Provider>
+  );
+}
+```
 
-**How to use in a component:**
+**`useAtom(atom)`** — subscribe to state, re-render on change:
+
+```tsx
+function CounterDisplay() {
+  const [state, atom] = reactAdapter.useAtom(counterAtom);
+  //     ^S            ^Atom<S> — stable reference
+  return <p>Count: {state.count}</p>;
+}
+```
+
+- Seeds `useState` from `atom.get()` before the first effect fires — no `undefined` flicker.
+- `useEffect` sets up `kernel.subscribe()` and returns the unsubscribe function for automatic cleanup on unmount.
+
+**`useCommand(atom)`** — get a stable dispatch function:
+
+```tsx
+function IncrementButton() {
+  const dispatch = reactAdapter.useCommand(counterAtom);
+  //     stable — does not change between renders
+
+  const handleClick = () => {
+    const result = dispatch(IncrementBy(1));
+    if (isLeft(result)) console.error(result.left.message);
+  };
+
+  return <button onClick={handleClick}>+</button>;
+}
+```
+
+- The returned function reference is stable across renders (backed by `useRef`) so it is safe to pass to `React.memo` children without causing unnecessary re-renders.
+
+**`useQuery(atom, query)`** — memoised derived value:
+
+```tsx
+function CartTotal() {
+  const total = reactAdapter.useQuery(cartAtom, BuildTotal());
+  //     ^R — re-computed only when atom state reference changes
+  return <span>Total: {total}</span>;
+}
+```
+
+- Internally calls `useAtom` for the subscription, then wraps `kernel.query()` in `useMemo` keyed on the state reference. The query handler is only re-invoked when state changes.
+
+**`useEphemeral(stream, animated?)`** — subscribe to an `EphemeralStream`:
+
+```tsx
+function MouseTracker() {
+  // animated=true (default): RAF-batched, max 60 fps
+  const pos = reactAdapter.useEphemeral(mousePosStream);
+  //     ^{ x: number; y: number } | undefined
+
+  // animated=false: synchronous, every emit
+  const rawFps = reactAdapter.useEphemeral(fpsStream, false);
+
+  return <div>Mouse: {pos?.x},{pos?.y} | FPS: {rawFps}</div>;
+}
+```
+
+- Seeds from `stream.last` so there is no flash of `undefined` if the stream has already emitted.
+- Cleans up the RAF subscription on unmount automatically.
+
+**Testing without a real React runtime:**
 
 ```ts
-@Component({ ... })
-class CartComponent {
-  private adapter = createAngularAdapter({ signal, inject, DestroyRef });
+// Unit test — no React, no jsdom required
+const mockAPIs = {
+  useState:      vi.fn().mockImplementation(<S>(v: S) => [v, vi.fn()]),
+  useEffect:     vi.fn(),
+  useRef:        vi.fn().mockImplementation((v) => ({ current: v })),
+  useMemo:       vi.fn().mockImplementation((fn) => fn()),
+  useContext:    vi.fn().mockReturnValue(kernel),
+  createContext: vi.fn().mockReturnValue({ _currentValue: null, Provider: vi.fn() }),
+};
+const adapter = createReactAdapter(mockAPIs);
+// test adapter.useAtom, adapter.useCommand etc. directly
+```
 
-  readonly cartState = this.adapter.toSignal(cartAtom, this.kernel);
-  readonly total     = this.adapter.toQuerySignal(cartAtom, this.kernel, getCartTotal);
-  readonly addItem   = this.adapter.commandDispatcher(cartAtom, this.kernel);
+---
 
-  onAddClick(sku: string) {
-    const result = this.addItem(AddItem(sku, 1));
-    if (isLeft(result)) {
-      this.toastService.error(result.left.message);
-    }
+#### 5.6b Angular (17+ Signals)
+
+**Sequence diagram:** `docs/fig/15-sequence-angular-adapter.puml`
+
+##### Architectural note — adapter vs store layer
+
+`createAngularAdapter` provides low-level primitives (`toSignal`, `commandDispatcher`, …).
+In a production app you never call these directly in a component.
+Instead you call them once inside an **Angular injectable store service** — the same
+pattern you would use with NgRx facades. Components inject the store and consume
+signals; they have **zero knowledge of atoms, kernels, or the adapter API**.
+
+```
+adapter API (primitives)
+      ↓  called once per store
+  *.store.ts  (injectable service)
+      ↓  inject()
+  *.component.ts  (reads signals, calls store methods)
+```
+
+This keeps components clean and keeps all state-management wiring in one testable place.
+
+---
+
+##### Full production example — Cart feature
+
+Below is a realistic production structure. Each file is a separate module.
+
+**File tree:**
+```
+src/
+  app/
+    app.config.ts             ← kernel setup, DI token
+  core/
+    state/
+      ng-adapter.ts           ← adapter instance (created once)
+  features/
+    cart/
+      cart.domain.ts          ← atom, commands, events, handlers, appliers
+      cart.store.ts           ← injectable store (kernel wiring lives here)
+      cart-summary.component.ts
+      cart-item-list.component.ts
+      cart.routes.ts
+```
+
+---
+
+**`src/app/app.config.ts`** — kernel setup, DI token, provider
+
+```ts
+import { ApplicationConfig, InjectionToken } from '@angular/core';
+import { createKernel }                       from '@vi/state-fp/kernel';
+import type { Kernel }                        from '@vi/state-fp/kernel';
+import { cartDomain }                         from '../features/cart/cart.domain';
+
+// Single kernel instance for the whole app.
+// Exported so other features can register their own atoms against the same kernel.
+export const kernel = createKernel();
+
+// Register the cart feature
+kernel.register(cartDomain.atom, cartDomain.handler, cartDomain.applier);
+kernel.registerQuery(cartDomain.atom, cartDomain.queryHandler);
+
+// DI token — keeps the kernel out of the global scope while making it injectable
+export const KERNEL = new InjectionToken<Kernel>('vi/kernel', {
+  providedIn: 'root',
+  factory:    () => kernel,
+});
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    // nothing extra needed — KERNEL is providedIn root
+  ],
+};
+```
+
+---
+
+**`src/core/state/ng-adapter.ts`** — adapter instance (created once, imported everywhere)
+
+```ts
+import { signal, inject, DestroyRef } from '@angular/core';
+import { createAngularAdapter }       from '@vi/state-fp/adapter';
+
+// Created once. Import `ngAdapter` in every store that needs it.
+// No Angular runtime is imported by @vi/state-fp itself — this file
+// is the only place where the framework meets the library.
+export const ngAdapter = createAngularAdapter({ signal, inject, DestroyRef });
+```
+
+---
+
+**`src/features/cart/cart.domain.ts`** — pure domain model, zero Angular dependency
+
+```ts
+import {
+  defineAtom,
+  command, domainEvent,
+  createCommandHandler, createEventApplier,
+  query, createQueryHandler,
+} from '@vi/state-fp/kernel';
+
+// ── State shape ───────────────────────────────────────────────────────────────
+export interface CartItem  { sku: string; name: string; qty: number; price: number }
+export interface CartState { items: CartItem[]; coupon: string | null; isCheckingOut: boolean }
+
+const initial: CartState = { items: [], coupon: null, isCheckingOut: false };
+
+// ── Atom ──────────────────────────────────────────────────────────────────────
+export const cartAtom = defineAtom<CartState>({ key: 'cart', initialState: initial });
+
+// ── Command factories ─────────────────────────────────────────────────────────
+export const AddItem      = (item: CartItem)   => command('cart/addItem',      { item });
+export const RemoveItem   = (sku: string)      => command('cart/removeItem',   { sku });
+export const ApplyCoupon  = (code: string)     => command('cart/applyCoupon',  { code });
+export const StartCheckout = ()                => command('cart/startCheckout', {});
+export const CancelCheckout = ()               => command('cart/cancelCheckout', {});
+
+// ── Domain events ─────────────────────────────────────────────────────────────
+const itemAdded      = (item: CartItem)  => domainEvent('cart/itemAdded',      { item });
+const itemRemoved    = (sku: string)     => domainEvent('cart/itemRemoved',    { sku });
+const couponApplied  = (code: string)   => domainEvent('cart/couponApplied',  { code });
+const checkoutStarted  = ()             => domainEvent('cart/checkoutStarted',  {});
+const checkoutCancelled = ()            => domainEvent('cart/checkoutCancelled', {});
+
+// ── Command handlers ──────────────────────────────────────────────────────────
+const addItemHandler = createCommandHandler<CartState, ReturnType<typeof AddItem>>({
+  commandType: 'cart/addItem',
+  validate: (state, cmd) => {
+    if (state.isCheckingOut) return { code: 'CHECKOUT_ACTIVE', message: 'Cannot add items during checkout' };
+    if (cmd.payload.item.qty <= 0) return { code: 'INVALID_QTY', message: 'Quantity must be > 0' };
+    return undefined;
+  },
+  handle: (_state, cmd) => [itemAdded(cmd.payload.item)],
+});
+
+const removeItemHandler = createCommandHandler<CartState, ReturnType<typeof RemoveItem>>({
+  commandType: 'cart/removeItem',
+  handle: (_state, cmd) => [itemRemoved(cmd.payload.sku)],
+});
+
+const applyCouponHandler = createCommandHandler<CartState, ReturnType<typeof ApplyCoupon>>({
+  commandType: 'cart/applyCoupon',
+  validate: (state, cmd) => {
+    if (state.coupon) return { code: 'COUPON_ALREADY_APPLIED', message: 'A coupon is already applied' };
+    if (!cmd.payload.code.trim()) return { code: 'INVALID_CODE', message: 'Coupon code cannot be empty' };
+    return undefined;
+  },
+  handle: (_state, cmd) => [couponApplied(cmd.payload.code)],
+});
+
+const startCheckoutHandler = createCommandHandler<CartState, ReturnType<typeof StartCheckout>>({
+  commandType: 'cart/startCheckout',
+  validate: (state) => state.items.length === 0
+    ? { code: 'EMPTY_CART', message: 'Cannot check out an empty cart' }
+    : undefined,
+  handle: () => [checkoutStarted()],
+});
+
+const cancelCheckoutHandler = createCommandHandler<CartState, ReturnType<typeof CancelCheckout>>({
+  commandType: 'cart/cancelCheckout',
+  handle: () => [checkoutCancelled()],
+});
+
+// ── Event applier (single applier handles all events for this atom) ────────────
+const cartApplier = createEventApplier<CartState>({
+  'cart/itemAdded': (s, e) => ({
+    ...s,
+    items: [...s.items, e.payload.item],
+  }),
+  'cart/itemRemoved': (s, e) => ({
+    ...s,
+    items: s.items.filter(i => i.sku !== e.payload.sku),
+  }),
+  'cart/couponApplied': (s, e) => ({ ...s, coupon: e.payload.code }),
+  'cart/checkoutStarted':   (s) => ({ ...s, isCheckingOut: true }),
+  'cart/checkoutCancelled': (s) => ({ ...s, isCheckingOut: false }),
+});
+
+// ── Query handler ─────────────────────────────────────────────────────────────
+export const CartTotal    = () => query('cart/total');
+export const CartItemCount = () => query('cart/itemCount');
+
+const cartQueryHandler = createQueryHandler<CartState>({
+  'cart/total':     (s) => s.items.reduce((sum, i) => sum + i.price * i.qty, 0),
+  'cart/itemCount': (s) => s.items.reduce((sum, i) => sum + i.qty, 0),
+});
+
+// ── Exported domain bundle (consumed only by app.config.ts) ───────────────────
+export const cartDomain = {
+  atom:         cartAtom,
+  handler:      [addItemHandler, removeItemHandler, applyCouponHandler, startCheckoutHandler, cancelCheckoutHandler],
+  applier:      cartApplier,
+  queryHandler: cartQueryHandler,
+} as const;
+```
+
+---
+
+**`src/features/cart/cart.store.ts`** — injectable store, the only file that touches the adapter API
+
+```ts
+import { Injectable, inject }         from '@angular/core';
+import { isLeft }                      from '@vi/state-fp/core';
+import { KERNEL }                      from '../../app/app.config';
+import { ngAdapter }                   from '../../core/state/ng-adapter';
+import {
+  cartAtom, CartTotal, CartItemCount,
+  AddItem, RemoveItem, ApplyCoupon, StartCheckout, CancelCheckout,
+} from './cart.domain';
+import type { CartItem }               from './cart.domain';
+
+/**
+ * CartStore — single point of truth for cart state in the UI layer.
+ *
+ * Components inject this service and consume its signals.
+ * Nothing else in the UI layer knows about atoms, kernels, or the adapter.
+ */
+@Injectable({ providedIn: 'root' })
+export class CartStore {
+  private readonly kernel = inject(KERNEL);
+
+  // ── Public signals (read-only to consumers) ─────────────────────────────────
+
+  /** Full cart state — items, coupon, isCheckingOut */
+  readonly cart       = ngAdapter.toSignal(cartAtom, this.kernel);
+
+  /** Total price, re-derived on every cart change */
+  readonly total      = ngAdapter.toQuerySignal(cartAtom, this.kernel,
+    (s) => s.items.reduce((sum, i) => sum + i.price * i.qty, 0),
+  );
+
+  /** Total item count, re-derived on every cart change */
+  readonly itemCount  = ngAdapter.toQuerySignal(cartAtom, this.kernel,
+    (s) => s.items.reduce((sum, i) => sum + i.qty, 0),
+  );
+
+  /** True when checkout is in progress — drives UI disabled states */
+  readonly isCheckingOut = ngAdapter.toQuerySignal(cartAtom, this.kernel,
+    (s) => s.isCheckingOut,
+  );
+
+  // ── Private dispatch (stable, no injection context needed) ──────────────────
+  private readonly dispatch = ngAdapter.commandDispatcher(cartAtom, this.kernel);
+
+  // ── Public command methods ───────────────────────────────────────────────────
+
+  addItem(item: CartItem): string | null {
+    const result = this.dispatch(AddItem(item));
+    return isLeft(result) ? result.left.message : null;
+  }
+
+  removeItem(sku: string): void {
+    this.dispatch(RemoveItem(sku));  // remove never fails
+  }
+
+  applyCoupon(code: string): string | null {
+    const result = this.dispatch(ApplyCoupon(code));
+    return isLeft(result) ? result.left.message : null;
+  }
+
+  startCheckout(): string | null {
+    const result = this.dispatch(StartCheckout());
+    return isLeft(result) ? result.left.message : null;
+  }
+
+  cancelCheckout(): void {
+    this.dispatch(CancelCheckout());
   }
 }
 ```
 
-**Decision:** Why factory pattern instead of `inject()` inside the adapter?
+> **Key point:** after this file, neither Angular, the kernel, nor the adapter is
+> mentioned anywhere in the UI layer. Components speak only `CartStore`.
 
-`inject()` is only callable in an injection context (component/service constructor or
-`runInInjectionContext`). Calling it in library code makes the library hard to test — you
-need an actual Angular `TestBed` or `InjectionContext`. The factory pattern accepts
-Angular APIs as parameters, allowing test code to pass mock objects:
+---
+
+**`src/features/cart/cart-summary.component.ts`** — component is just signals + store methods
 
 ```ts
-// In a unit test
-const mockSignal = <T>(v: T) => ({ value: v, set(x: T) { this.value = x; } });
-const mockDestroyRef = { onDestroy: (fn: () => void) => fn };
-const mockInject = (_token: unknown) => mockDestroyRef;
-const adapter = createAngularAdapter({ signal: mockSignal, inject: mockInject, DestroyRef: {} });
-// No TestBed needed
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
+import { CurrencyPipe }                                from '@angular/common';
+import { CartStore }                                   from './cart.store';
+
+@Component({
+  selector: 'app-cart-summary',
+  standalone: true,
+  imports: [CurrencyPipe],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <section class="cart-summary">
+      <h2>Cart ({{ store.itemCount() }} items)</h2>
+
+      <p class="total">Total: {{ store.total() | currency }}</p>
+
+      @if (store.cart().coupon) {
+        <p class="coupon">Coupon applied: {{ store.cart().coupon }}</p>
+      }
+
+      <button
+        (click)="onCheckout()"
+        [disabled]="store.isCheckingOut() || store.itemCount() === 0">
+        {{ store.isCheckingOut() ? 'Processing…' : 'Checkout' }}
+      </button>
+
+      @if (errorMsg) {
+        <p class="error" role="alert">{{ errorMsg }}</p>
+      }
+    </section>
+  `,
+})
+export class CartSummaryComponent {
+  readonly store = inject(CartStore);
+  errorMsg: string | null = null;
+
+  onCheckout(): void {
+    this.errorMsg = this.store.startCheckout();
+  }
+}
 ```
 
-#### `vanilla.ts`
+---
 
-`createAdapter(kernel)` — returns a `VanillaAdapter` with `watch`, `run`, `read`, `query`, `destroy`.
+**`src/features/cart/cart-item-list.component.ts`** — list component, zero state logic
 
 ```ts
-const adapter = createAdapter(kernel);
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
+import { CurrencyPipe }                                from '@angular/common';
+import { CartStore }                                   from './cart.store';
+import type { CartItem }                               from './cart.domain';
+
+@Component({
+  selector: 'app-cart-item-list',
+  standalone: true,
+  imports: [CurrencyPipe],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <ul class="cart-items">
+      @for (item of store.cart().items; track item.sku) {
+        <li>
+          <span>{{ item.name }} × {{ item.qty }}</span>
+          <span>{{ item.price * item.qty | currency }}</span>
+          <button
+            (click)="onRemove(item)"
+            [disabled]="store.isCheckingOut()">
+            Remove
+          </button>
+        </li>
+      } @empty {
+        <li class="empty">Your cart is empty.</li>
+      }
+    </ul>
+  `,
+})
+export class CartItemListComponent {
+  readonly store = inject(CartStore);
+
+  onRemove(item: CartItem): void {
+    this.store.removeItem(item.sku);
+  }
+}
+```
+
+---
+
+**`src/features/cart/cart.routes.ts`** — lazy route
+
+```ts
+import { Routes } from '@angular/router';
+
+export const CART_ROUTES: Routes = [
+  {
+    path: 'cart',
+    loadComponent: () =>
+      import('./cart-summary.component').then(m => m.CartSummaryComponent),
+  },
+];
+```
+
+---
+
+##### What component files never contain
+
+| Concern | Lives in | Not in component |
+|---|---|---|
+| Atom definition | `cart.domain.ts` | ✅ |
+| Command factories | `cart.domain.ts` | ✅ |
+| Kernel reference | `cart.store.ts` | ✅ |
+| Adapter API calls | `cart.store.ts` | ✅ |
+| Error classification (`isLeft`) | `cart.store.ts` | ✅ |
+| Signal creation | `cart.store.ts` | ✅ |
+| Lifecycle / unsubscribe | handled by `DestroyRef` inside adapter | ✅ |
+
+Components only ever call `inject(SomeStore)` and read `.someSignal()` or call `.someMethod()`.
+That is **identical** to how you would structure an NgRx facade — the adapter does not add a new mental model.
+
+---
+
+##### Why no `ngOnDestroy`?
+
+`toSignal` and `toQuerySignal` call `inject(DestroyRef)` internally and register
+the unsubscribe callback via `destroyRef.onDestroy()`. Angular fires these
+when the service or component leaves the DI tree. If the store is
+`providedIn: 'root'`, it lives for the app lifetime — cleanup runs on app
+teardown. If scoped to a component or route, cleanup runs when that scope is destroyed.
+
+---
+
+##### Testing without `@angular/core`
+
+The store is a plain class with injected dependencies — you can test it without TestBed:
+
+```ts
+// cart.store.spec.ts — no TestBed, no Angular module
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { CartStore }                             from './cart.store';
+import { cartAtom, AddItem, CartTotal }          from './cart.domain';
+import { createKernel }                          from '@vi/state-fp/kernel';
+import { cartDomain }                            from './cart.domain';
+
+// Minimal signal mock — same shape as Angular's WritableSignal
+function mockSignal<T>(v: T) {
+  let _val = v;
+  const s = () => _val;
+  s.set = (x: T) => { _val = x; };
+  return s;
+}
+
+const mockDestroyRef = { onDestroy: vi.fn() };
+
+describe('CartStore', () => {
+  let store: CartStore;
+
+  beforeEach(() => {
+    // Real kernel, real domain — only Angular is mocked
+    const kernel = createKernel();
+    kernel.register(cartDomain.atom, cartDomain.handler, cartDomain.applier);
+    kernel.registerQuery(cartDomain.atom, cartDomain.queryHandler);
+
+    const { createAngularAdapter } = await import('@vi/state-fp/adapter');
+    const adapter = createAngularAdapter({
+      signal:     mockSignal,
+      inject:     (_token: unknown) => mockDestroyRef,
+      DestroyRef: {},
+    });
+
+    // Manually construct the store (bypass Angular DI)
+    store = Object.create(CartStore.prototype);
+    Object.defineProperty(store, 'kernel', { value: kernel });
+    // Re-run field initialisers against the real adapter
+    store['cart']          = adapter.toSignal(cartAtom, kernel);
+    store['total']         = adapter.toQuerySignal(cartAtom, kernel, s => s.items.reduce((sum, i) => sum + i.price * i.qty, 0));
+    store['itemCount']     = adapter.toQuerySignal(cartAtom, kernel, s => s.items.reduce((sum, i) => sum + i.qty, 0));
+    store['isCheckingOut'] = adapter.toQuerySignal(cartAtom, kernel, s => s.isCheckingOut);
+    store['dispatch']      = adapter.commandDispatcher(cartAtom, kernel);
+  });
+
+  it('starts with an empty cart', () => {
+    expect(store.itemCount()).toBe(0);
+    expect(store.total()).toBe(0);
+  });
+
+  it('addItem updates signals', () => {
+    store.addItem({ sku: 'A1', name: 'Widget', qty: 2, price: 9.99 });
+    expect(store.itemCount()).toBe(2);
+    expect(store.total()).toBeCloseTo(19.98);
+  });
+
+  it('addItem returns error message on validation failure', () => {
+    const err = store.addItem({ sku: 'A1', name: 'Widget', qty: -1, price: 9.99 });
+    expect(err).toMatch(/quantity/i);
+    expect(store.itemCount()).toBe(0);
+  });
+
+  it('startCheckout fails on empty cart', () => {
+    const err = store.startCheckout();
+    expect(err).toMatch(/empty cart/i);
+  });
+
+  it('startCheckout succeeds and sets isCheckingOut', () => {
+    store.addItem({ sku: 'A1', name: 'Widget', qty: 1, price: 5 });
+    const err = store.startCheckout();
+    expect(err).toBeNull();
+    expect(store.isCheckingOut()).toBe(true);
+  });
+});
+```
+
+---
+
+#### 5.6c Lit (Reactive Controllers)
+
+**Sequence diagram:** `docs/fig/14-sequence-lit-adapter.puml`
+
+Lit controllers implement the `ReactiveController` interface structurally — no compile-time `lit` import in the library. Place them in field initialisers; Lit calls `hostConnected` and `hostDisconnected` automatically.
+
+**`createLitController(host, kernel, atom)`** — tracks atom state:
+
+```ts
+import { LitElement, html }    from 'lit';
+import { customElement }        from 'lit/decorators.js';
+import { createLitController } from '@vi/state-fp/adapter';
+
+@customElement('counter-button')
+class CounterButton extends LitElement {
+  // Registered via host.addController() in the factory.
+  // Lit calls hostConnected() on DOM attach and hostDisconnected() on removal.
+  private counter = createLitController(this, kernel, counterAtom);
+
+  render() {
+    const { count } = this.counter.state;  // current atom state
+    return html`
+      <button @click=${() => this.counter.dispatch(IncrementBy(1))}>
+        Count: ${count}
+      </button>
+    `;
+  }
+
+  // Synchronous derived value — no subscription needed
+  get total() {
+    return this.counter.query(BuildTotal());
+  }
+}
+```
+
+**`createLitStreamController(host, stream, animated?)`** — tracks an `EphemeralStream`:
+
+```ts
+import { createLitStreamController } from '@vi/state-fp/adapter';
+
+@customElement('mouse-tracker')
+class MouseTracker extends LitElement {
+  // animated=true (default): subscribeAnimated — RAF-batched 60 fps
+  // animated=false           : subscribe        — synchronous every emit
+  private mouse = createLitStreamController(this, mousePosStream);
+
+  render() {
+    const pos = this.mouse.value;  // undefined before first emit
+    return html`<div>Mouse: ${pos?.x ?? '-'},${pos?.y ?? '-'}</div>`;
+  }
+}
+```
+
+**Controller API:**
+
+| Property / Method | Type | Description |
+|---|---|---|
+| `controller.state` | `S` | Current atom state; updated by `kernel.subscribe` |
+| `controller.dispatch(cmd)` | `Either<CommandError, S>` | Executes command via kernel |
+| `controller.query(q)` | `R` | Synchronous derived value |
+| `streamCtrl.value` | `T \| undefined` | Last emitted stream value |
+
+**Testing without a real LitElement:**
+
+```ts
+// Unit test — plain mock object, no custom element registration
+const mockHost = {
+  addController:  vi.fn(),
+  requestUpdate:  vi.fn(),
+};
+const ctrl = createLitController(mockHost, kernel, counterAtom);
+ctrl.hostConnected();
+// atom state changes → expect(mockHost.requestUpdate).toHaveBeenCalled()
+```
+
+---
+
+#### 5.6d Vanilla JS / TypeScript
+
+`createAdapter(kernel)` — returns a `VanillaAdapter`. No framework required.
+
+```ts
+import { createAdapter } from '@vi/state-fp/adapter';
+
+const app = createAdapter(kernel);
 
 // Watch: subscribe to state changes
-const off = adapter.watch(counterAtom, (state) => {
+const off = app.watch(counterAtom, (state) => {
   document.getElementById('count')!.textContent = String(state.count);
 });
 
 // Run: execute a command
-adapter.run(counterAtom, IncrementBy(3));
+app.run(counterAtom, IncrementBy(3));
 
-// Read: query state
-const total = adapter.read(cartAtom, GetTotal());
+// Read: query state synchronously
+const total = app.read(cartAtom, GetTotal());
 
-// Snapshot: synchronous current state
-const currentState = adapter.snapshot(cartAtom);
+// Snapshot: raw current state without a query
+const raw = app.snapshot(counterAtom);
 
-// Cleanup
+// Unsubscribe individual listener
 off();
+
+// Destroy all listeners
+app.destroy();
 ```
-
-#### `react.ts` (Phase 5 stub — not yet implemented)
-
-> **Status: Type stubs only.** `src/adapter/react.ts` exports typed declarations but
-> NO implementation is shipped yet. React hooks will be added in Phase 5.4.
-> Do NOT use `@vi/state-fp/adapter/react` in production — the functions will throw
-> at runtime.
-
-Planned API for Phase 5.4 (factory pattern, same as Angular adapter):
-
-```ts
-// Planned — Phase 5.4
-export declare function useAtom<S>(atom: Atom<S>): [S, (cmd: Command) => void];
-export declare function useQuery<S, R>(atom: Atom<S>, q: Query): R;
-export declare function useCommandDispatcher<S>(
-  atom: Atom<S>,
-  kernel: Kernel,
-): (cmd: Command) => Either<CommandError, S>;
-```
-
-> **No Lit adapter:** There is no `lit.ts` in `src/adapter/`. A Lit
-> `ReactiveController` adapter is planned for Phase 5.5. Until then, use the
-> `VanillaAdapter` for web-component integration in Lit elements.
 
 ---
 

@@ -120,6 +120,12 @@ describe('createLitController', () => {
     expect(subscribeSpy).toHaveBeenCalledWith(atom, expect.any(Function));
   });
 
+  it('calls host.requestUpdate() immediately on hostConnected (initial render)', () => {
+    const ctrl = createLitController(host, kernel, atom);
+    ctrl.hostConnected!();
+    expect(host.requestUpdate).toHaveBeenCalledOnce();
+  });
+
   it('calls host.requestUpdate() when atom emits after connection', () => {
     const ctrl = createLitController(host, kernel, atom);
     ctrl.hostConnected!();

@@ -1,0 +1,152 @@
+@startuml state-fp-sequence-angular-adapter
+!define FACTORY_COLOR #E8F5E9
+!define COMP_COLOR    #E3F2FD
+!define KERNEL_COLOR  #FFF9C4
+!define ATOM_COLOR    #FCE4EC
+!define SIGNAL_COLOR  #F3E5F5
+
+title Angular Adapter — Signal-Based Component Lifecycle Sequence\n(createAngularAdapter with Angular 17+ Signals)
+
+participant "App Bootstrap" as boot
+participant "createAngularAdapter()" as factory
+participant "AngularKernelAdapter" as adapter
+participant "KERNEL_TOKEN\n(DI)" as di
+participant "CounterComponent\n(constructor)" as ctor
+participant "toSignal()" as toSig
+participant "toQuerySignal()" as toQSig
+participant "commandDispatcher()" as cmdDisp
+participant "WritableSignal<S>" as sig
+participant "WritableSignal<R>" as qsig
+participant "DestroyRef" as destroy
+participant "Kernel" as kernel
+participant "Atom<S>" as atom
+
+== Bootstrap: create adapter once ==
+boot -> factory : createAngularAdapter(\n  { signal, inject, DestroyRef })
+activate factory
+note right of factory
+  No @angular/core import in state-fp.
+  Real Angular primitives are injected here.
+end note
+factory --> boot : AngularKernelAdapter\n{ toSignal, toQuerySignal,\n  commandDispatcher }
+deactivate factory
+
+boot -> di : provide(KERNEL_TOKEN, { useValue: kernel })
+note right of di
+  Kernel is provided once at root
+  and resolved via DI in any component
+end note
+
+== Component construction: injection context ==
+note over ctor, atom
+  Angular calls the constructor inside an injection context,
+  so inject() is valid in field initialisers.
+end note
+
+ctor -> di      : inject(KERNEL_TOKEN)
+di  --> ctor    : kernel
+
+== toSignal: create a reactive signal bound to atom ==
+ctor -> toSig   : ngAdapter.toSignal(counterAtom, kernel)
+activate toSig
+toSig -> atom   : atom.get()     // seed signal — no undefined flicker
+atom  --> toSig : { count: 0 }
+toSig -> toSig  : signal({ count: 0 })    // create WritableSignal
+toSig -> di     : inject(DestroyRef)      // request cleanup token
+di    --> toSig : destroyRef
+toSig -> kernel : kernel.subscribe(atom, s => sig.set(s))
+activate kernel
+kernel -> atom  : register listener
+kernel --> toSig : unsubscribeFn
+deactivate kernel
+toSig -> destroy : destroyRef.onDestroy(unsubscribeFn)
+note right of destroy
+  Angular calls onDestroy callbacks
+  automatically when the component
+  or service is destroyed. No manual
+  ngOnDestroy() required.
+end note
+toSig --> ctor  : count (WritableSignal<Counter>)
+deactivate toSig
+
+== toQuerySignal: derived signal via query function ==
+ctor -> toQSig  : ngAdapter.toQuerySignal(\n  cartAtom, kernel,\n  state => state.items.length)
+activate toQSig
+toQSig -> atom  : atom.get()
+atom  --> toQSig : { items: [] }
+toQSig -> toQSig : queryFn({ items: [] }) => 0
+toQSig -> toQSig : signal(0)          // seed with derived value
+toQSig -> di    : inject(DestroyRef)
+di     --> toQSig : destroyRef
+toQSig -> kernel : kernel.subscribe(atom, s => qsig.set(queryFn(s)))
+activate kernel
+kernel --> toQSig : unsubscribeFn
+deactivate kernel
+toQSig -> destroy : destroyRef.onDestroy(unsubscribeFn)
+toQSig --> ctor  : itemCount (WritableSignal<number>)
+deactivate toQSig
+
+== commandDispatcher: stable dispatch function ==
+ctor -> cmdDisp : ngAdapter.commandDispatcher(\n  counterAtom, kernel)
+activate cmdDisp
+note right of cmdDisp
+  commandDispatcher does NOT require
+  an injection context — safe to call
+  anywhere, including ngOnInit or
+  service methods.
+end note
+cmdDisp --> ctor : dispatch (stable fn reference)
+deactivate cmdDisp
+
+== Template rendering (Signal reads) ==
+ctor -> sig   : count()           // signal read in template
+sig  --> ctor : { count: 0 }
+ctor -> qsig  : itemCount()       // signal read in template
+qsig --> ctor : 0
+
+note right of ctor
+  Angular's change detection tracks
+  signal reads in templates automatically.
+  No Zone.js subscription overhead.
+end note
+
+== Runtime: dispatch a command ==
+ctor -> kernel  : dispatch({ type: 'INCREMENT' })
+activate kernel
+kernel -> atom  : apply command handler
+atom -> atom   : _state = { count: 1 }; version++
+atom -> kernel  : emit new state
+kernel -> sig   : sig.set({ count: 1 })
+deactivate kernel
+
+sig -> ctor    : Angular schedules view update\n(signal was written)
+ctor -> sig    : count()  => { count: 1 }
+note right of ctor
+  Only the template expressions that
+  depend on the changed signal re-run.
+  No full component tree re-render.
+end note
+
+== Runtime: atom change triggers query re-evaluation ==
+kernel -> toQSig : subscribe listener fires
+note right of toQSig
+  Same subscription registered during
+  toQuerySignal() — re-runs queryFn
+  on every state change.
+end note
+toQSig -> toQSig : queryFn({ count: 1, items: [x] }) => 1
+toQSig -> qsig  : qsig.set(1)
+qsig -> ctor   : Angular schedules view update
+ctor -> qsig   : itemCount()  => 1
+
+== Destroy: component removed from DI tree ==
+destroy -> kernel : unsubscribeFn()   // toSignal subscription removed
+destroy -> kernel : unsubscribeFn()   // toQuerySignal subscription removed
+
+note over ctor, atom
+  DestroyRef.onDestroy callbacks fire automatically.
+  commandDispatcher does not hold a subscription — nothing to clean up.
+  Zero memory leaks; no ngOnDestroy boilerplate required.
+end note
+
+@enduml

@@ -13,7 +13,7 @@
 | **storage**     | `@vi/state-fp/storage`       | Pluggable adapters: memory, localStorage, IDB |
 | **sync**        | `@vi/state-fp/sync`          | Cross-tab sync via BroadcastChannel           |
 | **devtools**    | `@vi/state-fp/devtools`      | Event log, snapshots, time-travel, bridge     |
-| **adapter**     | `@vi/state-fp/adapter`       | Angular signals, vanilla JS, React (Phase 5)  |
+| **adapter**     | `@vi/state-fp/adapter`       | React hooks, Angular signals, Lit controllers, vanilla JS |
 
 Import only what you need — all modules are individually tree-shakeable.
 
@@ -211,7 +211,235 @@ window.__VI_STATE_FP__.exportLog();
 
 ### `@vi/state-fp/adapter`
 
-Framework integration helpers.
+Framework integration helpers — all adapters use a **factory pattern** so the library has zero compile-time dependency on any UI framework.
+
+#### Defining Commands and Queries
+
+Commands and queries are **plain functions you define** using helpers from `@vi/state-fp/kernel`. The adapter examples below all reference `IncrementBy` and `BuildTotal` — here is how to define them:
+
+```ts
+import {
+  command, domainEvent,
+  createCommandHandler, createEventApplier,
+  query, createQueryHandler,
+} from '@vi/state-fp/kernel';
+
+// --- State shape ---
+interface Counter { count: number; total: number }
+
+// --- Command factories ---
+// These are just functions that return a command object.
+// Name them however suits your domain.
+const IncrementBy = (by: number) => command('counter/increment', { by });
+const DecrementBy = (by: number) => command('counter/decrement', { by });
+const ResetCounter = ()          => command('counter/reset', {});
+
+// --- Domain events (produced by handlers) ---
+const incremented = (by: number) => domainEvent('counter/incremented', { by });
+
+// --- Command handler: (state, cmd) → Either<Error, DomainEvent[]> ---
+const incrementHandler = createCommandHandler<Counter, ReturnType<typeof IncrementBy>>({
+  commandType: 'counter/increment',
+  validate: (_s, cmd) => cmd.payload.by > 0
+    ? undefined
+    : { code: 'VALIDATION_ERROR' as const, message: 'by must be > 0' },
+  handle: (_state, cmd) => [incremented(cmd.payload.by)],
+});
+
+// --- Event applier: (state, event) → state (pure, no side-effects) ---
+const counterApplier = createEventApplier<Counter>({
+  'counter/incremented': (s, e) => ({ ...s, count: s.count + e.payload.by, total: s.total + e.payload.by }),
+});
+
+// --- Query factory: synchronous, pure, never fails ---
+const BuildTotal = () => query('counter/total');
+
+const totalHandler = createQueryHandler<Counter>({
+  'counter/total': (state) => state.total,
+});
+
+// --- Wire up ---
+const counterAtom = defineAtom<Counter>({ key: 'counter', initialState: { count: 0, total: 0 } });
+const kernel      = createKernel();
+kernel.register(counterAtom, incrementHandler, counterApplier);
+kernel.registerQuery(counterAtom, totalHandler);
+```
+
+> **Rule of thumb:** one command factory per user intent, one handler per command type, one applier per atom. Handlers and appliers are pure functions — no network calls, no side-effects.
+
+#### React
+
+Call `createReactAdapter` once at app bootstrap, passing in the real React hooks.  
+See sequence diagram: `docs/fig/13-sequence-react-adapter.puml`
+
+```tsx
+// src/app/adapter.ts — create once, import everywhere
+import { useState, useEffect, useRef, useMemo, useContext, createContext, createElement } from 'react';
+import { createReactAdapter } from '@vi/state-fp/adapter';
+
+export const reactAdapter = createReactAdapter({
+  useState, useEffect, useRef, useMemo, useContext, createContext, createElement,
+});
+
+// src/app/App.tsx — wrap your tree with Provider
+function App() {
+  return (
+    <reactAdapter.Provider kernel={kernel}>
+      <Routes />
+    </reactAdapter.Provider>
+  );
+}
+
+// src/features/counter/CounterButton.tsx
+// IncrementBy, BuildTotal, counterAtom — defined in your domain model (see above)
+import { IncrementBy, BuildTotal, counterAtom } from './counter.commands';
+
+function CounterButton() {
+  const [state]    = reactAdapter.useAtom(counterAtom);
+  const dispatch   = reactAdapter.useCommand(counterAtom);
+  const total      = reactAdapter.useQuery(counterAtom, BuildTotal());
+
+  // Optional: high-frequency EphemeralStream (RAF-batched by default)
+  const mousePos   = reactAdapter.useEphemeral(mousePosStream);
+
+  return (
+    <button onClick={() => dispatch(IncrementBy(1))}>
+      Count: {state.count} | Total: {total} | Mouse: {mousePos?.x},{mousePos?.y}
+    </button>
+  );
+}
+```
+
+| Hook | Returns | Notes |
+|---|---|---|
+| `useAtom(atom)` | `[state, atom]` | Re-renders on every state change; no undefined flicker |
+| `useCommand(atom)` | `dispatch` fn | Stable reference — safe for memoised children |
+| `useQuery(atom, query)` | derived value | `useMemo` keyed on state ref — only re-runs on change |
+| `useEphemeral(stream, animated?)` | `T \| undefined` | RAF-batched (`animated=true`) or synchronous |
+
+#### Angular (17+, Signals)
+
+Call `createAngularAdapter` once at bootstrap, passing Angular primitives.  
+See sequence diagram: `docs/fig/15-sequence-angular-adapter.puml`  
+See full production example: `docs/developer-guide.md` → §5.6b
+
+The adapter provides low-level primitives. In production you wrap them in an
+**injectable store service** — components inject the store, not the kernel directly.
+
+```ts
+// ─── src/core/state/ng-adapter.ts — created once, imported by stores ─────────
+import { signal, inject, DestroyRef } from '@angular/core';
+import { createAngularAdapter }       from '@vi/state-fp/adapter';
+
+export const ngAdapter = createAngularAdapter({ signal, inject, DestroyRef });
+```
+
+```ts
+// ─── src/features/counter/counter.store.ts — all wiring lives here ────────────
+import { Injectable, inject }  from '@angular/core';
+import { isLeft }               from '@vi/state-fp/core';
+import { KERNEL }               from '../../app/app.config';  // InjectionToken<Kernel>
+import { ngAdapter }            from '../../core/state/ng-adapter';
+import { counterAtom, IncrementBy, DecrementBy } from './counter.domain';
+
+@Injectable({ providedIn: 'root' })
+export class CounterStore {
+  private readonly kernel = inject(KERNEL);
+
+  // Signals — auto-unsubscribe via DestroyRef, no ngOnDestroy needed
+  readonly counter   = ngAdapter.toSignal(counterAtom, this.kernel);
+  readonly total     = ngAdapter.toQuerySignal(
+    counterAtom, this.kernel,
+    state => state.count * state.unitPrice,  // re-derived on every change
+  );
+
+  private readonly dispatch = ngAdapter.commandDispatcher(counterAtom, this.kernel);
+
+  increment(by = 1): string | null {
+    const result = this.dispatch(IncrementBy(by));
+    return isLeft(result) ? result.left.message : null;
+  }
+
+  decrement(by = 1): void { this.dispatch(DecrementBy(by)); }
+}
+```
+
+```ts
+// ─── src/features/counter/counter.component.ts — zero state-mgmt knowledge ───
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
+import { CounterStore }                                from './counter.store';
+
+@Component({
+  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <p>Count: {{ store.counter().count }}</p>
+    <p>Total: {{ store.total() }}</p>
+    <button (click)="store.increment()">+</button>
+    <button (click)="store.decrement()">-</button>
+    @if (errorMsg) { <p class="error">{{ errorMsg }}</p> }
+  `,
+})
+export class CounterComponent {
+  readonly store   = inject(CounterStore);
+  errorMsg: string | null = null;
+
+  onIncrement(): void { this.errorMsg = this.store.increment(); }
+}
+```
+
+| Method | Returns | Notes |
+|---|---|---|
+| `toSignal(atom, kernel)` | `WritableSignal<S>` | Seeds from `atom.get()`; cleanup via `DestroyRef` |
+| `toQuerySignal(atom, kernel, fn)` | `WritableSignal<R>` | Derived; re-runs `fn(state)` on every change |
+| `commandDispatcher(atom, kernel)` | `dispatch` fn | No injection context needed; stable reference |
+
+#### Lit (Reactive Controllers)
+
+Place controllers in element field initialisers — Lit auto-manages lifecycle.  
+See sequence diagram: `docs/fig/14-sequence-lit-adapter.puml`
+
+```ts
+import { LitElement, html }      from 'lit';
+import { customElement }          from 'lit/decorators.js';
+import {
+  createLitController,
+  createLitStreamController,
+} from '@vi/state-fp/adapter';
+
+// IncrementBy, BuildTotal, counterAtom, kernel — defined in your domain model (see above)
+import { IncrementBy, BuildTotal, counterAtom } from './counter.commands';
+
+@customElement('counter-button')
+class CounterButton extends LitElement {
+  // AtomController — subscribes on connect, unsubscribes on disconnect
+  private counter = createLitController(this, kernel, counterAtom);
+
+  // StreamController — RAF-batched by default (pass false for sync)
+  private mouse   = createLitStreamController(this, mousePosStream);
+
+  render() {
+    const { count } = this.counter.state;
+    const pos        = this.mouse.value;       // undefined before first emit
+    return html`
+      <button @click=${() => this.counter.dispatch(IncrementBy(1))}>
+        Count: ${count}
+      </button>
+      <span>Mouse: ${pos?.x},${pos?.y}</span>
+    `;
+  }
+
+  // Access a derived value synchronously
+  get total() {
+    return this.counter.query(BuildTotal());
+  }
+}
+```
+
+| Factory | Returns | Notes |
+|---|---|---|
+| `createLitController(host, kernel, atom)` | `AtomController<S>` | `state`, `dispatch()`, `query()` |
+| `createLitStreamController(host, stream, animated?)` | `StreamController<T>` | `.value` updated each frame/emit |
 
 #### Vanilla JS / TypeScript
 
@@ -224,32 +452,6 @@ const off = app.watch(counterAtom, state => render(state));
 await app.run(counterAtom, increment(1));
 const current = app.read(counterAtom);
 app.destroy();
-```
-
-#### Angular (17+, Signals)
-
-```ts
-// app.config.ts
-import { provideStateFp } from '@vi/state-fp/adapter';
-export const appConfig: ApplicationConfig = {
-  providers: [provideStateFp(kernel)],
-};
-
-// counter.component.ts
-import { injectAtom, injectCommand } from '@vi/state-fp/adapter';
-
-@Component({ template: `Count: {{ count() }}` })
-export class CounterComponent {
-  readonly count    = injectAtom(counterAtom);        // Signal<number>
-  readonly dispatch = injectCommand(counterAtom);
-}
-```
-
-#### React (Phase 5 — stub)
-
-```ts
-import { useAtom, useCommand } from '@vi/state-fp/adapter';
-// Full implementation planned for Phase 5
 ```
 
 ---
@@ -289,7 +491,7 @@ import { useAtom, useCommand } from '@vi/state-fp/adapter';
 | 2     | storage module               | ✅ Complete   | 0.2.0   |
 | 3     | devtools module              | ✅ Complete   | 0.3.0   |
 | 4     | sync module                  | ✅ Complete   | 0.4.0   |
-| 5     | adapter module               | ✅ Phase 1    | 0.5.0   |
+| 5     | adapter module               | ✅ Complete   | 0.5.0   |
 | 6     | DX hardening, full test suite | 🚧 Planned   | 1.0.0   |
 
 See [docs/phases.md](docs/phases.md) for the full phase breakdown and
