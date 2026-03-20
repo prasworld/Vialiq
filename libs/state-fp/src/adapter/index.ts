@@ -5,9 +5,10 @@
  *
  * | Adapter   | Status       | Import                              |
  * |-----------|--------------|-------------------------------------|
- * | Vanilla   | ✅ Available | `from '@vi/state-fp/adapter'`       |
- * | Angular   | ✅ Available | `from '@vi/state-fp/adapter'`       |
- * | React     | 🚧 Phase 5   | `from '@vi/state-fp/adapter'`       |
+ * | Vanilla   | Available    | `from '@vi/state-fp/adapter'`       |
+ * | Angular   | Available    | `from '@vi/state-fp/adapter'`       |
+ * | React     | Available    | `from '@vi/state-fp/adapter'`       |
+ * | Lit       | Available    | `from '@vi/state-fp/adapter'`       |
  *
  * @module
  */
@@ -28,9 +29,12 @@ export type {
 
 export { createAngularAdapter } from './angular.js';
 
-// ─── React (stubs — Phase 5) ──────────────────────────────────────────────────
+// ─── React ────────────────────────────────────────────────────────────────────
 
 export type {
+  ReactAPIs,
+  ReactContextLike,
+  ReactKernelAdapter,
   StateFpProviderProps,
   UseAtomResult,
   UseCommandResult,
@@ -38,8 +42,21 @@ export type {
 } from './react.js';
 
 export {
+  createReactAdapter,
+  // Legacy stubs — kept for backward compat
   StateFpProvider,
   useAtom,
   useCommand,
   useQuery,
 } from './react.js';
+
+// ─── Lit ──────────────────────────────────────────────────────────────────────
+
+export type {
+  ReactiveHost,
+  ReactiveControllerLike,
+  AtomController,
+  StreamController,
+} from './lit.js';
+
+export { createLitController, createLitStreamController } from './lit.js';
