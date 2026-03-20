@@ -36,6 +36,7 @@ import { defineAtom }          from '@vi/state-fp/kernel';
 import { createKernel }        from '@vi/state-fp/kernel';
 import { command, createCommandHandler, createEventApplier, domainEvent }
                                 from '@vi/state-fp/kernel';
+import { right, left }          from '@vi/state-fp/core';
 
 // 1. Define the atom (state container)
 const counterAtom = defineAtom({
@@ -54,10 +55,11 @@ const decremented = (by: number) => domainEvent('counter/decremented', { by });
 // 4. Command handler — pure function: (state, cmd) → Either<Error, Event[]>
 const counterHandler = createCommandHandler<number, ReturnType<typeof increment>>({
   commandType: 'counter/increment',
-  validate:    (state, cmd) => cmd.payload.by > 0
-    ? undefined
-    : { code: 'VALIDATION_ERROR' as const, message: 'by must be > 0' },
-  handle: (_state, cmd) => [incremented(cmd.payload.by)],
+  validate:    (payload) => {
+    const p = payload as { by: number };
+    return p.by > 0 ? right(undefined) : left({ code: 'VALIDATION_ERROR' as const, message: 'by must be > 0' });
+  },
+  handle: (_state, cmd) => right([incremented(cmd.payload.by)]),
 });
 
 // 5. Event applier — pure function: (state, event) → state
@@ -140,19 +142,16 @@ Pluggable persistence backends.
 
 ```ts
 import {
-  MemoryAdapter,      // in-process Map, TTL, no persistence
-  LocalAdapter,       // localStorage — survives page reload
-  SessionAdapter,     // sessionStorage — tab-scoped
-  IndexedDbAdapter,   // IndexedDB — async, large capacity
+  MemoryAdapter,      // in-process Map, TTL, cleared on page reload
 } from '@vi/state-fp/storage';
-
-const kernel = createKernel({
-  storage: new LocalAdapter(),
-});
 ```
 
-All adapters return `StorageResult<T>` = `Promise<Either<StorageError, T>>` so
+All adapter methods return `StorageResult<T>` = `Promise<Either<StorageError, T>>` so
 failures are explicit and type-safe.
+
+> **Note:** `LocalAdapter`, `SessionAdapter`, and `IndexedDbAdapter` are not available
+> in `@vi/state-fp/storage`. Only `MemoryAdapter` is exported — all application state
+> is kept in process memory. See `src/storage/index.ts` for the rationale.
 
 ### `@vi/state-fp/sync`
 
@@ -223,6 +222,7 @@ import {
   createCommandHandler, createEventApplier,
   query, createQueryHandler,
 } from '@vi/state-fp/kernel';
+import { right, left } from '@vi/state-fp/core';
 
 // --- State shape ---
 interface Counter { count: number; total: number }
@@ -240,10 +240,11 @@ const incremented = (by: number) => domainEvent('counter/incremented', { by });
 // --- Command handler: (state, cmd) → Either<Error, DomainEvent[]> ---
 const incrementHandler = createCommandHandler<Counter, ReturnType<typeof IncrementBy>>({
   commandType: 'counter/increment',
-  validate: (_s, cmd) => cmd.payload.by > 0
-    ? undefined
-    : { code: 'VALIDATION_ERROR' as const, message: 'by must be > 0' },
-  handle: (_state, cmd) => [incremented(cmd.payload.by)],
+  validate: (payload) => {
+    const p = payload as { by: number };
+    return p.by > 0 ? right(undefined) : left({ code: 'VALIDATION_ERROR' as const, message: 'by must be > 0' });
+  },
+  handle: (_state, cmd) => right([incremented(cmd.payload.by)]),
 });
 
 // --- Event applier: (state, event) → state (pure, no side-effects) ---
@@ -254,8 +255,9 @@ const counterApplier = createEventApplier<Counter>({
 // --- Query factory: synchronous, pure, never fails ---
 const BuildTotal = () => query('counter/total');
 
-const totalHandler = createQueryHandler<Counter>({
-  'counter/total': (state) => state.total,
+const totalHandler = createQueryHandler<Counter, Query, number>({
+  queryType: 'counter/total',
+  handle: (state) => state.total,
 });
 
 // --- Wire up ---

@@ -115,7 +115,7 @@ export type ReactKernelAdapter = {
    * Root context provider — wraps your React tree and injects the kernel.
    * Must be rendered above any component that calls `useAtom` / `useCommand`.
    */
-  Provider(props: StateFpProviderProps): unknown;
+  Provider(props: StateFpProviderProps): any;
 
   /**
    * Subscribe to an atom's state. The component re-renders on every
@@ -192,7 +192,7 @@ export function createReactAdapter(apis: ReactAPIs): ReactKernelAdapter {
     return kernel;
   }
 
-  function Provider(props: StateFpProviderProps): unknown {
+  function Provider(props: StateFpProviderProps): any {
     // Use the injected createElement so Provider returns a proper React element
     // (not a raw function call), which is required for context to work correctly.
     // KernelContext.Provider is an exotic React component; it must be rendered
@@ -291,7 +291,7 @@ export function createReactAdapter(apis: ReactAPIs): ReactKernelAdapter {
 export const StateFpProvider: unknown = () => {
   throw new Error(
     '[@vi/state-fp/adapter] StateFpProvider is a legacy stub. ' +
-    'Use createReactAdapter({ useState, useEffect, useRef, useMemo, useContext, createContext }).Provider instead.',
+    'Use createReactAdapter({ useState, useEffect, useRef, useMemo, useContext, createContext, createElement }).Provider instead.',
   );
 };
 

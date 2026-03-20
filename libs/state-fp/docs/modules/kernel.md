@@ -37,10 +37,10 @@ const counterAtom = defineAtom({
   key:          'counter',
   initialState: { count: 0 },
 
-  // Optional: handlers, appliers, queries registered inline
-  handlers:  [incrementHandler],
-  appliers:  [countApplier],
-  queries:   [totalQuery],
+  // Optional: co-located handlers — kernel.register(counterAtom) reads these automatically
+  commands: [incrementHandler],
+  applier:  counterApplier,
+  queries:  [totalQuery],
 
   // Optional: persistence
   storage: {
@@ -58,7 +58,7 @@ Derives its state from one or more source atoms. Recomputes whenever any depende
 ```ts
 const totalAtom = defineComputedAtom({
   key:     'cart/total',
-  sources: [cartAtom, taxAtom] as const,
+  deps:    [cartAtom, taxAtom],
   compute: ([cart, tax]) => cart.subtotal * (1 + tax.rate),
 });
 ```
@@ -69,26 +69,23 @@ const totalAtom = defineComputedAtom({
 
 These builder functions stamp boilerplate metadata (type, `_kind`, `meta`) so domain code stays readable.
 
-### `command<P>(type)(payload): Command`
+### `command(type, payload?): Command`
 
 ```ts
-const Increment = command<{ amount: number }>('counter/Increment');
-const cmd = Increment({ amount: 5 });
+const cmd = command('counter/Increment', { amount: 5 });
 // { _kind: 'Command', type: 'counter/Increment', payload: { amount: 5 }, meta: { ... } }
 ```
 
-### `domainEvent<P>(type)(payload): DomainEvent`
+### `domainEvent(type, payload?): DomainEvent`
 
 ```ts
-const Incremented = domainEvent<{ amount: number }>('counter/Incremented');
-const event = Incremented({ amount: 5 });
+const event = domainEvent('counter/Incremented', { amount: 5 });
 ```
 
-### `query<P>(type)(payload): Query`
+### `query(type, payload?): Query`
 
 ```ts
-const GetTotal = query<void>('counter/GetTotal');
-const q = GetTotal();
+const q = query('counter/GetTotal');
 ```
 
 ---
@@ -100,13 +97,20 @@ Validates a command and emits domain events. Returns `Either<CommandError, Domai
 ### `createCommandHandler<S, C extends Command>(options)`
 
 ```ts
-const incrementHandler = createCommandHandler({
-  type: 'counter/Increment',
-  validate: (state: CounterState, cmd) => {
-    if (cmd.payload.amount <= 0) return left({ code: 'INVALID_CMD', message: 'amount must be > 0' });
-    return right([Incremented({ amount: cmd.payload.amount })]);
-  },
-});
+const incrementHandler = createCommandHandler<CounterState, Command<'counter/Increment', { amount: number }>>(
+  {
+    commandType: 'counter/Increment',
+    // validate runs before handle; returning Left short-circuits execution
+    validate: (payload) => {
+      const p = payload as { amount: number };
+      return p.amount > 0
+        ? right(undefined)
+        : left({ code: 'INVALID_CMD', message: 'amount must be > 0' });
+    },
+    handle: (_state, cmd) =>
+      right([domainEvent('counter/Incremented', { amount: cmd.payload.amount })]),
+  }
+);
 ```
 
 ---
@@ -118,11 +122,10 @@ Pure state reducer — applies a single domain event to produce the next state.
 ### `createEventApplier<S, E extends DomainEvent>(options)`
 
 ```ts
-const countApplier = createEventApplier({
-  type: 'counter/Incremented',
-  apply: (state: CounterState, event) => ({
+const countApplier = createEventApplier<CounterState>({
+  'counter/Incremented': (state, event) => ({
     ...state,
-    count: state.count + event.payload.amount,
+    count: state.count + (event as DomainEvent<string, { amount: number }>).payload.amount,
   }),
 });
 ```
@@ -137,8 +140,8 @@ Derives a value from current atom state without mutation.
 
 ```ts
 const totalQuery = createQueryHandler<CounterState, Query, number>({
-  type: 'counter/GetTotal',
-  execute: (state, _q) => state.count,
+  queryType: 'counter/GetTotal',
+  handle: (state) => state.count,
 });
 ```
 
@@ -172,9 +175,9 @@ const kernel = createKernel({
 ## Types quick reference
 
 ```ts
-type Command      = { _kind: 'Command'; type: string; payload: unknown; meta: CommandMeta };
-type DomainEvent  = { _kind: 'Event';   type: string; payload: unknown; meta: EventMeta   };
-type Query        = { _kind: 'Query';   type: string; meta:   QueryMeta                   };
-type CommandError = { code: string; message: string; cause?: unknown };
+type Command      = { _kind: 'Command';     type: string; payload?: unknown; meta: CommandMeta     };
+type DomainEvent  = { _kind: 'DomainEvent'; type: string; payload?: unknown; meta: DomainEventMeta };
+type Query        = { _kind: 'Query';       type: string; payload?: unknown };
+type CommandError = { code: string; message: string; details?: unknown };
 type Unsubscribe  = () => void;
 ```
