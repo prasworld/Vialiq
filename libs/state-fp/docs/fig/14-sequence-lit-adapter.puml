@@ -1,0 +1,144 @@
+@startuml state-fp-sequence-lit-adapter
+!define HOST_COLOR   #E8F5E9
+!define CTRL_COLOR   #E3F2FD
+!define KERNEL_COLOR #FFF9C4
+!define ATOM_COLOR   #FCE4EC
+!define STREAM_COLOR #F3E5F5
+
+title Lit Adapter — Reactive Controller Lifecycle Sequence\n(createLitController / createLitStreamController)
+
+participant "LitElement\nconstructor" as ctor
+participant "createLitController()" as factory
+participant "AtomController<S>" as ctrl
+participant "createLitStreamController()" as sfactory
+participant "StreamController<T>" as sctrl
+participant "Kernel" as kernel
+participant "Atom<S>" as atom
+participant "EphemeralStream<T>" as stream
+participant "LitElement\nrender()" as render
+
+== Construction: create controllers in field initializers ==
+ctor -> factory : createLitController(\n  this, kernel, counterAtom)
+activate factory
+factory -> atom  : atom.get()    // seed _state — no undefined
+atom --> factory : { count: 0 }
+factory -> ctrl  : build AtomController\n  state = { count: 0 }\n  dispatch(cmd), query(q)\n  hostConnected, hostDisconnected
+factory -> ctor  : host.addController(ctrl)\n// Lit will call hostConnected automatically
+factory --> ctor : ctrl
+deactivate factory
+
+ctor -> sfactory : createLitStreamController(\n  this, mouseStream, animated=true)
+activate sfactory
+sfactory -> stream  : stream.last  // seed _value
+stream  --> sfactory : undefined
+sfactory -> sctrl   : build StreamController\n  value = undefined\n  hostConnected, hostDisconnected
+sfactory -> ctor    : host.addController(sctrl)
+sfactory --> ctor   : sctrl
+deactivate sfactory
+
+== hostConnected: element added to DOM ==
+note over ctor, render
+  Lit calls hostConnected() on all registered controllers
+  when the element connects to the DOM
+end note
+
+ctor -> ctrl : hostConnected()
+activate ctrl
+ctrl -> atom   : atom.get()    // re-sync in case state changed
+atom --> ctrl  : { count: 0 }
+ctrl -> kernel : kernel.subscribe(atom, listener)
+activate kernel
+kernel -> atom  : register listener
+kernel --> ctrl : unsubscribeFn
+deactivate kernel
+deactivate ctrl
+
+ctor -> sctrl : hostConnected()
+activate sctrl
+sctrl -> stream : stream.last   // re-sync
+sctrl -> stream : stream.subscribeAnimated(listener)
+note right of sctrl
+  animated=true (default): RAF-batched delivery.
+  Pass animated=false for synchronous delivery.
+end note
+stream --> sctrl : unsubscribeFn
+deactivate sctrl
+
+== First render: reading controller properties ==
+ctor -> render : render()
+activate render
+render -> ctrl  : this.counter.state
+ctrl  --> render : { count: 0 }
+render -> sctrl : this.mouse.value
+sctrl --> render : undefined
+render -> render : return html template
+deactivate render
+
+== Runtime: dispatch a command ==
+render -> ctrl  : this.counter.dispatch(\n  IncrementBy(1))
+activate ctrl
+ctrl -> kernel  : kernel.execute(atom, cmd)
+activate kernel
+kernel -> atom  : apply handler: state.count + 1
+atom -> atom   : _state = { count: 1 }; version++
+atom -> kernel  : emit new state to listeners
+kernel -> ctrl  : listener({ count: 1 })
+deactivate kernel
+ctrl -> ctrl   : _state = { count: 1 }
+ctrl -> ctor   : host.requestUpdate()
+deactivate ctrl
+
+ctor -> render : Lit schedules async re-render
+activate render
+render -> ctrl  : this.counter.state
+ctrl  --> render : { count: 1 }
+render -> render : update DOM
+deactivate render
+
+== Runtime: run a query ==
+render -> ctrl  : this.counter.query(BuildTotal())
+activate ctrl
+ctrl -> kernel  : kernel.query(atom, BuildTotal())
+kernel --> ctrl : 43
+ctrl --> render : 43
+deactivate ctrl
+
+== Runtime: EphemeralStream emit ==
+stream -> sctrl  : RAF flush -> listener({ x: 120, y: 80 })
+activate sctrl
+sctrl -> sctrl  : _value = { x: 120, y: 80 }
+sctrl -> ctor   : host.requestUpdate()
+deactivate sctrl
+
+ctor -> render : Lit schedules async re-render
+activate render
+render -> sctrl : this.mouse.value
+sctrl --> render : { x: 120, y: 80 }
+render -> render : update DOM
+deactivate render
+
+== hostDisconnected: element removed from DOM ==
+note over ctor, render
+  Lit calls hostDisconnected() on all registered controllers
+  when the element disconnects from the DOM
+end note
+
+ctor -> ctrl  : hostDisconnected()
+activate ctrl
+ctrl -> kernel : unsubscribeFn()   // atom subscription removed
+ctrl -> ctrl  : _off = undefined
+deactivate ctrl
+
+ctor -> sctrl : hostDisconnected()
+activate sctrl
+sctrl -> stream : unsubscribeFn()  // RAF listener removed
+sctrl -> sctrl  : _off = undefined
+deactivate sctrl
+
+note over ctor, stream
+  All subscriptions cleaned up automatically.
+  Reconnecting the element calls hostConnected() again
+  and re-subscribes — no manual lifecycle management needed.
+end note
+
+@enduml

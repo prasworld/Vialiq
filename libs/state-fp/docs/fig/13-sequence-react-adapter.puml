@@ -1,0 +1,133 @@
+@startuml state-fp-sequence-react-adapter
+!define FACTORY_COLOR #FFF9C4
+!define REACT_COLOR  #E3F2FD
+!define KERNEL_COLOR #E8F5E9
+!define ATOM_COLOR   #FCE4EC
+!define STREAM_COLOR #F3E5F5
+
+title React Adapter — Component Lifecycle Sequence\n(createReactAdapter hooks)
+
+participant "App Bootstrap" as boot
+participant "createReactAdapter()" as factory
+participant "KernelContext" as ctx
+participant "<Provider kernel={k}>" as provider
+participant "React Component" as comp
+participant "useAtom()" as hookAtom
+participant "useCommand()" as hookCmd
+participant "useQuery()" as hookQuery
+participant "useEphemeral()" as hookEph
+participant "Kernel" as kernel
+participant "Atom<S>" as atom
+participant "EphemeralStream<T>" as stream
+
+== Bootstrap: create adapter once ==
+boot -> factory : createReactAdapter(\n  { useState, useEffect,\n    useRef, useMemo,\n    useContext, createContext })
+activate factory
+factory -> ctx : createContext(null)\n// KernelContext — null sentinel
+factory --> boot : ReactKernelAdapter\n{ Provider, useAtom,\n  useCommand, useQuery,\n  useEphemeral }
+deactivate factory
+
+== Mount: Provider injects kernel ==
+boot -> provider : <Provider kernel={kernel}>\n  <App />
+activate provider
+provider -> ctx : KernelContext.Provider\n  value = kernel
+note right of provider
+  All descendant hooks
+  resolve kernel via context
+end note
+
+== Render Phase: useAtom ==
+comp -> hookAtom : useAtom(counterAtom)
+activate hookAtom
+hookAtom -> ctx   : useContext(KernelContext)
+ctx --> hookAtom  : kernel (or throws Outside-Provider error)
+hookAtom -> atom  : atom.get()   // seed useState — no flicker
+atom --> hookAtom : { count: 0 }
+hookAtom -> comp  : [{ count: 0 }, counterAtom]\n// useState initialised
+
+== Effect Phase: subscribe ==
+hookAtom -> atom  : useEffect fires\natom.get() sync
+hookAtom -> kernel : kernel.subscribe(atom, listener)
+activate kernel
+kernel -> atom    : register listener
+kernel --> hookAtom : unsubscribeFn
+deactivate kernel
+note right of hookAtom
+  useEffect returns unsubscribeFn
+  for automatic cleanup on unmount
+end note
+deactivate hookAtom
+
+== Render Phase: useCommand ==
+comp -> hookCmd : useCommand(counterAtom)
+activate hookCmd
+hookCmd -> ctx   : useContext(KernelContext) -> kernel
+hookCmd -> hookCmd : useRef(kernel)  // kernelRef\nuseRef(atom)    // atomRef\nuseRef(dispatch) // stable fn
+hookCmd --> comp  : dispatch (stable function ref —\nnever changes across re-renders)
+deactivate hookCmd
+
+== Render Phase: useQuery ==
+comp -> hookQuery : useQuery(counterAtom, BuildTotal())
+activate hookQuery
+hookQuery -> ctx    : useContext(KernelContext) -> kernel
+hookQuery -> hookAtom : useAtom(counterAtom)  // reuses subscription
+hookQuery -> kernel  : useMemo(() => kernel.query(atom, q), [state])
+kernel --> hookQuery : 42  // derived value, cached by state ref
+hookQuery --> comp   : 42
+deactivate hookQuery
+
+== Render Phase: useEphemeral ==
+comp -> hookEph : useEphemeral(mouseStream)
+activate hookEph
+hookEph -> stream  : stream.last  // seed useState — avoids undefined flicker
+stream --> hookEph : undefined
+hookEph -> hookEph : useEffect deferred initially
+
+hookEph --> comp   : undefined  // initial render
+
+hookEph -> stream  : useEffect fires\nstream.subscribeAnimated(listener)
+note right of hookEph
+  subscribeAnimated = RAF-batched 60 fps delivery
+  Pass animated=false for synchronous delivery
+end note
+stream --> hookEph : unsubscribeFn
+deactivate hookEph
+
+== Runtime: state mutation causes re-render ==
+comp -> hookCmd  : dispatch({ type: 'INCREMENT' })
+hookCmd -> kernel : kernel.execute(atom, cmd)
+activate kernel
+kernel -> atom    : apply command handler
+atom -> atom     : state = { count: 1 }; version++
+atom -> kernel    : emit new state to listeners
+kernel -> hookAtom : listener({ count: 1 })
+deactivate kernel
+
+activate hookAtom
+hookAtom -> hookAtom : setState({ count: 1 })
+hookAtom -> comp    : re-render triggered\nnew state = { count: 1 }
+deactivate hookAtom
+
+comp -> hookQuery : re-renders, useMemo re-runs\nbecause state reference changed
+hookQuery -> kernel : kernel.query(atom, BuildTotal())
+kernel --> hookQuery : 43
+hookQuery --> comp  : 43
+
+== Runtime: EphemeralStream emit ==
+stream -> hookEph  : RAF flush → listener({ x: 120, y: 80 })
+activate hookEph
+hookEph -> hookEph  : setState({ x: 120, y: 80 })
+hookEph -> comp    : re-render triggered\n{ x: 120, y: 80 }
+deactivate hookEph
+
+== Unmount: cleanup ==
+provider -> hookAtom  : component unmounts
+hookAtom -> kernel    : unsubscribeFn()  // useEffect cleanup
+hookEph  -> stream    : unsubscribeFn()  // RAF listener removed
+note right of provider
+  All subscriptions cleaned up automatically.
+  No memory leaks on unmount.
+end note
+deactivate provider
+
+@enduml

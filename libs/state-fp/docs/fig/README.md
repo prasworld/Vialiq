@@ -136,6 +136,46 @@ Highlights the framework-agnostic design of the core.
 
 ---
 
+### 13. **Sequence: React Adapter Hooks** — `13-sequence-react-adapter.puml`
+End-to-end lifecycle sequence for a React component using `createReactAdapter()`:
+- **Bootstrap**: `createReactAdapter({ useState, useEffect, ... })` factory call
+- **Mount**: `<Provider kernel={k}>` injects kernel via `KernelContext`
+- **useAtom**: `useState` seeded from `atom.get()` (no flicker) + `useEffect` subscription
+- **useCommand**: stable dispatch via `useRef` — never recreated between re-renders
+- **useQuery**: `useMemo` keyed on atom state reference — query only reruns when state changes
+- **useEphemeral**: `subscribeAnimated` (RAF-batched) or sync `subscribe`
+- **Unmount**: all subscriptions cleaned up automatically via `useEffect` cleanup
+
+**Use case**: Implementing React components with the Phase 5 adapter factory hooks.
+
+---
+
+### 14. **Sequence: Lit Adapter Controllers** — `14-sequence-lit-adapter.puml`
+End-to-end lifecycle sequence for a LitElement using `createLitController()` and `createLitStreamController()`:
+- **Constructor**: controllers created in field initialisers, registered via `host.addController()`
+- **hostConnected**: atom subscription created; `stream.subscribeAnimated()` registered
+- **render()**: controller properties read (`this.counter.state`, `this.mouse.value`)
+- **dispatch()**: command executed via `kernel.execute()`; `host.requestUpdate()` called on change
+- **EphemeralStream**: RAF-batched listener calls `host.requestUpdate()` on each frame
+- **hostDisconnected**: all subscriptions cleanly removed
+
+**Use case**: Implementing LitElements with Reactive Controllers for atom and stream state.
+
+---
+
+### 15. **Sequence: Angular Adapter Signals** — `15-sequence-angular-adapter.puml`
+End-to-end lifecycle sequence for an Angular 17+ component using `createAngularAdapter()`:
+- **Bootstrap**: `createAngularAdapter({ signal, inject, DestroyRef })` factory call
+- **toSignal**: creates `WritableSignal<S>` seeded from `atom.get()`, subscribes via kernel, registers `destroyRef.onDestroy(unsubscribeFn)` — zero boilerplate
+- **toQuerySignal**: creates a derived signal; query function re-runs on every state change
+- **commandDispatcher**: returns stable dispatch function — no injection context required
+- **Template**: Angular tracks signal reads automatically; no Zone.js overhead
+- **Destroy**: `DestroyRef` cleanup fires automatically; no `ngOnDestroy` needed
+
+**Use case**: Implementing Angular components with Signal-based state using the Phase 5 adapter factory.
+
+---
+
 ### 12. **DevTools & Debugging** — `12-devtools-debugging.puml`
 Complete debugging and instrumentation architecture:
 - **EventLog**: Record all mutations with before/after state
