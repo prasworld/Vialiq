@@ -83,8 +83,16 @@ export class DefaultStrategy implements MappingStrategy {
         delete (dest as Partial<Record<string, unknown>>)[r.destKey];
         continue;
       }
+
+      // Condition guard — skip this rule entirely when predicate fails
+      if (r.condition && !r.condition(src)) {
+        continue;
+      }
+
       let value: unknown;
-      if (r.mapFrom) {
+      if ((r as any).fromValue !== undefined) {
+        value = (r as any).fromValue.__v;
+      } else if (r.mapFrom) {
         value = r.mapFrom(src, ctx);
       } else if ((r as any).mapWith) {
         // mapWith converters receive the whole source object
@@ -92,6 +100,14 @@ export class DefaultStrategy implements MappingStrategy {
       } else {
         value = undefined;
       }
+
+      // Apply null/undefined substitutions
+      if ((value === null || value === undefined) && (r as any).nullSubstitution !== undefined) {
+        value = (r as any).nullSubstitution;
+      } else if (value === undefined && (r as any).defaultValue !== undefined) {
+        value = (r as any).defaultValue;
+      }
+
       if (value === undefined) continue;
       if (r.destKey.includes('.')) {
         // nested path — fall back to dynamic setPath

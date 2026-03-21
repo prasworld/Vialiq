@@ -64,13 +64,27 @@ export class AsyncStrategy extends DefaultStrategy {
         continue;
       }
 
+      // Condition guard — skip this rule entirely when predicate fails
+      if (r.condition && !r.condition(src)) {
+        continue;
+      }
+
       let value: unknown;
-      if (r.mapFromAsync) {
+      if ((r as any).fromValue !== undefined) {
+        value = (r as any).fromValue.__v;
+      } else if (r.mapFromAsync) {
         value = await r.mapFromAsync(src, ctx);
       } else if ((r as any).mapWith) {
         value = (r as any).mapWith(src);
       } else if (r.mapFrom) {
         value = r.mapFrom(src, ctx);
+      }
+
+      // Apply null/undefined substitutions
+      if ((value === null || value === undefined) && (r as any).nullSubstitution !== undefined) {
+        value = (r as any).nullSubstitution;
+      } else if (value === undefined && (r as any).defaultValue !== undefined) {
+        value = (r as any).defaultValue;
       }
 
       if (value === undefined) continue;

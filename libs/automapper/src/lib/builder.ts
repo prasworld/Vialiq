@@ -10,6 +10,14 @@ export interface MemberRule<S, D, K extends string = string> {
   mapFromAsync?: (src: S, ctx?: import('./context').MappingContext) => Promise<K extends keyof D ? D[K & keyof D] : unknown>;
   ignore?: boolean;
   mapWith?: TypeConverter<S, K extends keyof D ? D[K & keyof D] : unknown>;
+  /** Only apply this rule when `condition(src)` returns true. */
+  condition?: (src: S) => boolean;
+  /** Replace the resolved value when it is null or undefined. */
+  nullSubstitution?: K extends keyof D ? D[K & keyof D] : unknown;
+  /** Use this value when the resolved value is undefined. */
+  defaultValue?: K extends keyof D ? D[K & keyof D] : unknown;
+  /** Emit a constant value — boxed to correctly handle fromValue(undefined). */
+  fromValue?: { readonly __v: K extends keyof D ? D[K & keyof D] : unknown };
 }
 
 // configuration object collected by profile
@@ -34,6 +42,14 @@ export interface TypedMemberOpts<S, TDest> {
   mapFromAsync(fn: (s: S, ctx?: import('./context').MappingContext) => Promise<TDest>): void;
   ignore(): void;
   mapWith<U extends TDest>(converter: TypeConverter<S, U>): void;
+  /** Map a constant value — useful for flags, defaults, and version stamps. */
+  fromValue(val: TDest): void;
+  /** Only run this mapping rule when the predicate returns true. */
+  condition(fn: (s: S) => boolean): void;
+  /** Use `val` when the resolved value is null or undefined. */
+  nullSubstitution(val: TDest): void;
+  /** Use `val` when the resolved value is undefined. */
+  defaultValue(val: TDest): void;
 }
 
 export interface MemberOpts<S> {
@@ -41,6 +57,10 @@ export interface MemberOpts<S> {
   mapFromAsync(fn: (s: S, ctx?: import('./context').MappingContext) => Promise<unknown>): void;
   ignore(): void;
   mapWith<U>(converter: TypeConverter<S, U>): void;
+  fromValue(val: unknown): void;
+  condition(fn: (s: S) => boolean): void;
+  nullSubstitution(val: unknown): void;
+  defaultValue(val: unknown): void;
 }
 
 // builder passed to profile callbacks
@@ -80,6 +100,18 @@ export class MappingBuilder<S, D> {
       },
       mapWith<U>(converter: TypeConverter<S, U>) {
         rule.mapWith = converter as unknown as MemberRule<S, D>['mapWith'];
+      },
+      fromValue(val: unknown) {
+        (rule as MemberRule<S, D>).fromValue = { __v: val } as MemberRule<S, D>['fromValue'];
+      },
+      condition(fn: (s: S) => boolean) {
+        rule.condition = fn;
+      },
+      nullSubstitution(val: unknown) {
+        (rule as MemberRule<S, D>).nullSubstitution = val as MemberRule<S, D>['nullSubstitution'];
+      },
+      defaultValue(val: unknown) {
+        (rule as MemberRule<S, D>).defaultValue = val as MemberRule<S, D>['defaultValue'];
       },
     });
 
