@@ -41,6 +41,19 @@ export class DefaultStrategy implements MappingStrategy {
    * mode validation, and recursion.  It returns either a value or a
    * promise (the latter when used via `AsyncStrategy`).
    */
+  protected isPreConditionFailed<S>(config: MappingConfig<S, unknown>, src: S): boolean {
+    return !!config.preCondition && !config.preCondition(src);
+  }
+
+  protected getEffectiveOptions<S, D>(
+    config: MappingConfig<S, D>,
+    options: MapperOptions
+  ): MapperOptions {
+    return config.namingConvention
+      ? { ...options, namingConvention: config.namingConvention }
+      : options;
+  }
+
   map<S, D>(
     registry: MapperRegistry,
     src: S,
@@ -51,16 +64,14 @@ export class DefaultStrategy implements MappingStrategy {
     ctx?: import('./context').MappingContext
   ): D | Promise<D> {
     // preCondition — skip entire mapping if predicate fails
-    if (config.preCondition && !config.preCondition(src)) {
+    if (this.isPreConditionFailed(config, src)) {
       return null as unknown as D;
     }
 
     const dest: Partial<D> = {} as Partial<D>;
 
     // Per-profile naming convention takes precedence over global option
-    const effectiveOptions: MapperOptions = config.namingConvention
-      ? { ...options, namingConvention: config.namingConvention }
-      : options;
+    const effectiveOptions = this.getEffectiveOptions(config, options);
 
     config.beforeMap?.(src, ctx);
 

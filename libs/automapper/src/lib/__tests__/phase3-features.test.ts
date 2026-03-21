@@ -120,6 +120,24 @@ describe('setNamingConvention()', () => {
   });
 });
 
+describe('reverseMap() profile metadata', () => {
+  it('inherits namingConvention from forward profile in reversed profile', () => {
+    const m = createMapper({ namingConvention: NamingConvention.CamelCase });
+    class Src { firstName = 'Alice'; lastName = 'Smith' }
+
+    m.addProfile(Src, 'Dest', (b: any) => {
+      b.setNamingConvention(NamingConvention.SnakeCase);
+      b.forMember('first_name', (o: any) => o.mapFrom((s: any) => s.firstName));
+    });
+
+    m.reverseMap(Src, 'Dest');
+
+    const result = m.map({ first_name: 'Alice', last_name: 'Smith' }, Src) as any;
+    expect(result.firstName).toBe('Alice');
+    expect(result.lastName).toBe('Smith');
+  });
+});
+
 // ── ITypeConverter class support (3-7) ────────────────────────────────────────
 
 describe('ITypeConverter class (3-7)', () => {
@@ -243,6 +261,20 @@ describe('addValueTransformer()', () => {
     const res = m.map(new Src(), 'Dest') as any;
     expect(res.age).toBe(30);
     expect(res.label).toBe('hi');
+  });
+
+  it('does not infinite-loop when mapped result has a self-cycle', () => {
+    const m = createMapper();
+    m.addValueTransformer(v => typeof v === 'string' ? (v as string).toUpperCase() : v);
+    class Src { value = 'alice' }
+    m.addProfile(Src, 'Dest', (b: any) => {
+      b.forMember('value', (o: any) => o.mapFrom((s: any) => s.value));
+      b.afterMap((d: any) => { d.self = d; });
+    });
+
+    const res = m.map(new Src(), 'Dest') as any;
+    expect(res.value).toBe('ALICE');
+    expect(res.self).toBe(res);
   });
 
   it('works with async mapping', async () => {

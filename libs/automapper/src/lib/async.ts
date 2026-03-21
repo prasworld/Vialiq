@@ -32,26 +32,24 @@ export class AsyncStrategy extends DefaultStrategy {
     ctx?: import('./context').MappingContext
   ): Promise<D> {
     // preCondition — skip entire mapping if predicate fails
-    if (config.preCondition && !config.preCondition(src)) {
+    if (this.isPreConditionFailed(config, src)) {
       return null as unknown as D;
     }
 
     const dest: Partial<D> = {} as Partial<D>;
 
     // Per-profile naming convention takes precedence over global option
-    const effectiveOptions: MapperOptions = config.namingConvention
-      ? { ...options, namingConvention: config.namingConvention }
-      : options;
+    const effectiveOptions = this.getEffectiveOptions(config, options);
 
     config.beforeMap?.(src, ctx);
 
     // Optimization: Identify keys handled by member rules to skip in autoMap
     const explicitKeys = new Set(config.memberRules.map((r) => r.destKey));
 
-    if (options.autoMap !== false) {
+    if (effectiveOptions.autoMap !== false) {
       const keys = Object.keys(src as Record<string, unknown>);
       for (const k of keys) {
-        const transformed = applyNamingConvention(k, options.namingConvention);
+        const transformed = applyNamingConvention(k, effectiveOptions.namingConvention);
         if (explicitKeys.has(transformed)) {
           continue;
         }
@@ -60,7 +58,7 @@ export class AsyncStrategy extends DefaultStrategy {
           (src as Record<string, unknown>)[k],
           0,
           visited,
-          options
+          effectiveOptions
         );
         if (mappedValue !== CIRCULAR_IGNORE) {
           (dest as unknown as Record<string, unknown>)[transformed] = mappedValue;

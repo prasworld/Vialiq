@@ -266,20 +266,49 @@ class MapperRegistryImpl implements MapperRegistry, PluginAwareRegistry {
     this.valueTransformers.push(transformer);
   }
 
+  private isPlainObject(value: unknown): value is Record<string, unknown> {
+    if (value === null || typeof value !== 'object') return false;
+    if (Array.isArray(value)) return false;
+    const proto = Object.getPrototypeOf(value);
+    return proto === Object.prototype || proto === null;
+  }
+
   /**
    * Recursively apply all registered value transformers to scalar values
    * in the mapped output object.
    */
-  private applyValueTransformers(value: unknown): unknown {
+  private applyValueTransformers(value: unknown, visited = new WeakMap<object, unknown>()): unknown {
     if (value === null || value === undefined) return value;
-    if (Array.isArray(value)) return value.map(v => this.applyValueTransformers(v));
+
     if (typeof value === 'object') {
-      const obj = value as Record<string, unknown>;
-      for (const key of Object.keys(obj)) {
-        obj[key] = this.applyValueTransformers(obj[key]);
+      const obj = value as object;
+      if (visited.has(obj)) {
+        return visited.get(obj);
       }
+
+      if (Array.isArray(obj)) {
+        const arr: unknown[] = [];
+        visited.set(obj, arr);
+        for (const item of obj) {
+          arr.push(this.applyValueTransformers(item, visited));
+        }
+        return arr;
+      }
+
+      if (this.isPlainObject(obj)) {
+        const transformedObj: Record<string, unknown> = {};
+        visited.set(obj, transformedObj);
+        for (const key of Object.keys(obj as Record<string, unknown>)) {
+          transformedObj[key] = this.applyValueTransformers((obj as Record<string, unknown>)[key], visited);
+        }
+        return transformedObj;
+      }
+
+      // Receive non-plain objects (Date/Map/Set/class instances) as-is.
+      visited.set(obj, obj);
       return obj;
     }
+
     // Scalar value — run through registered transformers in registration order
     let result = value;
     for (const t of this.valueTransformers) {
@@ -324,7 +353,19 @@ class MapperRegistryImpl implements MapperRegistry, PluginAwareRegistry {
     }
 
     const reverseKey = this.getProfileKey(dest, source);
-    this.profiles.set(reverseKey, { memberRules: reverseRules } as MappingConfig<unknown, unknown>);
+
+    // Preserve reversible profile settings; hooks and preCondition cannot be
+    // safely inverted because the source/destination semantics are swapped.
+    const reverseConfig: MappingConfig<unknown, unknown> = {
+      memberRules: reverseRules,
+      autoMap: config.autoMap,
+      strict: config.strict,
+      namingConvention: config.namingConvention,
+      // preCondition/beforeMap/afterMap are intentionally omitted in reverse
+      // because they are tied to the original source/destination direction.
+    };
+
+    this.profiles.set(reverseKey, reverseConfig);
   }
 
   assertConfigurationIsValid(): void {
