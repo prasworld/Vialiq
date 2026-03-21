@@ -6,17 +6,6 @@ import { describe, it, expect } from 'vitest';
 import { createMapper } from '../core';
 import { AsyncStrategy } from '../async';
 
-// ── helpers ──────────────────────────────────────────────────────────────────
-
-type Src = { id: number; role: string; badge: string | null; extra?: string };
-type Dest = {
-  id: number;
-  role: string;
-  badge: string;
-  extra: string;
-  version: number;
-};
-
 // ── fromValue ────────────────────────────────────────────────────────────────
 
 describe('fromValue()', () => {

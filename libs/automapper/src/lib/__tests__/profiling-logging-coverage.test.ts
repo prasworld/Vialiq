@@ -1,12 +1,11 @@
 /**
  * Coverage tests for ProfilingStrategy (async path) and LoggingPlugin.
  */
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { ProfilingStrategy } from '../profiling';
 import { LoggingStrategy, LoggingPlugin } from '../plugins/logging';
 import { createMapper } from '../core';
 import { AsyncStrategy } from '../async';
-import { DefaultStrategy } from '../strategy';
 import { PLUGIN_API_VERSION } from '../plugin';
 
 // ── ProfilingStrategy ─────────────────────────────────────────────────────────

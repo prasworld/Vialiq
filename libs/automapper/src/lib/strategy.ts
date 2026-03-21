@@ -79,19 +79,25 @@ export class DefaultStrategy implements MappingStrategy {
     // Handle typed member rules where possible so assignments are type-checked
     const typedRules = config.memberRules as MemberRule<S, D, keyof D & string>[];
     for (const r of typedRules) {
-      // Condition guard — check FIRST so condition() cannot bypass ignore()
-      if (r.condition && !r.condition(src)) {
-        continue;
-      }
-
       if (r.ignore) {
         // remove property if present
         delete (dest as Partial<Record<string, unknown>>)[r.destKey];
         continue;
       }
 
+      // Condition guard — skip this rule if condition fails
+      if (r.condition && !r.condition(src)) {
+        continue;
+      }
+
       // Use shared resolver selection
       const value = selectResolver(r, src, ctx);
+      if (value instanceof Promise) {
+        throw new Error(
+          `Member rule for '${r.destKey}' uses mapFromAsync but was applied with DefaultStrategy. ` +
+          `Add AsyncStrategy to the mapper to handle async resolvers: mapper.addStrategy(new AsyncStrategy())`
+        );
+      }
       const substituted = applySubstitution(value, r);
 
       if (substituted === undefined) continue;

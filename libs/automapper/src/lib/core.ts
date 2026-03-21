@@ -1,4 +1,4 @@
-import { MappingBuilder, MappingConfig } from './builder';
+import { MappingBuilder, MappingConfig, MemberRule } from './builder';
 import { MapperOptions } from './options';
 import {
   ConverterRegistry,

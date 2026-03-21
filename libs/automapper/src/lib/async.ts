@@ -60,13 +60,13 @@ export class AsyncStrategy extends DefaultStrategy {
 
     const typedRules = config.memberRules as MemberRule<S, D, keyof D & string>[];
     for (const r of typedRules) {
-      // Condition guard — check FIRST so condition() cannot bypass ignore()
-      if (r.condition && !r.condition(src)) {
+      if (r.ignore) {
+        delete (dest as Partial<Record<string, unknown>>)[r.destKey];
         continue;
       }
 
-      if (r.ignore) {
-        delete (dest as Partial<Record<string, unknown>>)[r.destKey];
+      // Condition guard — skip this rule if condition fails
+      if (r.condition && !r.condition(src)) {
         continue;
       }
 
