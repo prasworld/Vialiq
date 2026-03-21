@@ -30,18 +30,26 @@ export class AsyncStrategy extends DefaultStrategy {
     options: MapperOptions = {},
     visited: WeakSet<Record<string, unknown>>,
     ctx?: import('./context').MappingContext
-  ): Promise<D> {
+  ): Promise<D | null> {
+    // preCondition — skip entire mapping if predicate fails
+    if (this.isPreConditionFailed(config, src)) {
+      return null;
+    }
+
     const dest: Partial<D> = {} as Partial<D>;
+
+    // Per-profile naming convention takes precedence over global option
+    const effectiveOptions = this.getEffectiveOptions(config, options);
 
     config.beforeMap?.(src, ctx);
 
     // Optimization: Identify keys handled by member rules to skip in autoMap
     const explicitKeys = new Set(config.memberRules.map((r) => r.destKey));
 
-    if (options.autoMap !== false) {
+    if (effectiveOptions.autoMap !== false) {
       const keys = Object.keys(src as Record<string, unknown>);
       for (const k of keys) {
-        const transformed = applyNamingConvention(k, options.namingConvention);
+        const transformed = applyNamingConvention(k, effectiveOptions.namingConvention);
         if (explicitKeys.has(transformed)) {
           continue;
         }
@@ -50,7 +58,7 @@ export class AsyncStrategy extends DefaultStrategy {
           (src as Record<string, unknown>)[k],
           0,
           visited,
-          options
+          effectiveOptions
         );
         if (mappedValue !== CIRCULAR_IGNORE) {
           (dest as unknown as Record<string, unknown>)[transformed] = mappedValue;
@@ -73,7 +81,7 @@ export class AsyncStrategy extends DefaultStrategy {
       // Use shared resolver selection, which may return a Promise
       const resolverResult = selectResolver(r, src, ctx);
       const value = resolverResult instanceof Promise ? await resolverResult : resolverResult;
-      const substituted = applySubstitution(value, r);
+      const substituted = applySubstitution(value, r as unknown as MemberRule<unknown, unknown>);
 
       if (substituted === undefined) continue;
       if (r.destKey.includes('.')) {
@@ -83,7 +91,7 @@ export class AsyncStrategy extends DefaultStrategy {
       }
     }
 
-      if (options.strict) {
+      if (effectiveOptions.strict) {
       let allowedKeys: string[] | undefined;
       if (typeof destType === 'function') {
         try {
@@ -99,7 +107,7 @@ export class AsyncStrategy extends DefaultStrategy {
           ? destType
           : (destType as { name?: string }).name || 'Unknown';
       Object.getOwnPropertyNames(src as Record<string, unknown>).forEach((k) => {
-        const transformed = applyNamingConvention(k, options.namingConvention);
+        const transformed = applyNamingConvention(k, effectiveOptions.namingConvention);
         if (allowedKeys) {
           if (!allowedKeys.includes(transformed)) {
             throw new Error(

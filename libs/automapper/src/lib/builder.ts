@@ -1,4 +1,5 @@
-import { TypeConverter } from './converters';
+import { TypeConverter, ITypeConverter, normalizeConverter } from './converters';
+import { NamingConvention, NamingConventionFn } from './options';
 
 // rule builder for a single member
 /**
@@ -32,6 +33,10 @@ export interface MappingConfig<S, D> {
   beforeMap?: (src: S, ctx?: import('./context').MappingContext) => void;
   afterMap?: (dst: D, ctx?: import('./context').MappingContext) => void;
   extensions?: Record<string, unknown>;
+  /** Skip entire mapping (return null) when predicate returns false. */
+  preCondition?: (src: S) => boolean;
+  /** Override the global naming convention for this profile. */
+  namingConvention?: NamingConvention | NamingConventionFn;
 }
 
 // helper type used by forMember callback
@@ -43,7 +48,7 @@ export interface TypedMemberOpts<S, TDest> {
   mapFrom(fn: (s: S, ctx?: import('./context').MappingContext) => TDest): void;
   mapFromAsync(fn: (s: S, ctx?: import('./context').MappingContext) => Promise<TDest>): void;
   ignore(): void;
-  mapWith<U extends TDest>(converter: TypeConverter<S, U>): void;
+  mapWith<U extends TDest>(converter: TypeConverter<S, U> | ITypeConverter<S, U>): void;
   /** Map a constant value — useful for flags, defaults, and version stamps. */
   fromValue(val: TDest): void;
   /** Only run this mapping rule when the predicate returns true. */
@@ -58,7 +63,7 @@ export interface MemberOpts<S> {
   mapFrom(fn: (s: S, ctx?: import('./context').MappingContext) => unknown): void;
   mapFromAsync(fn: (s: S, ctx?: import('./context').MappingContext) => Promise<unknown>): void;
   ignore(): void;
-  mapWith<U>(converter: TypeConverter<S, U>): void;
+  mapWith<U>(converter: TypeConverter<S, U> | ITypeConverter<S, U>): void;
   fromValue(val: unknown): void;
   condition(fn: (s: S) => boolean): void;
   nullSubstitution(val: unknown): void;
@@ -100,8 +105,8 @@ export class MappingBuilder<S, D> {
       ignore() {
         rule.ignore = true;
       },
-      mapWith<U>(converter: TypeConverter<S, U>) {
-        rule.mapWith = converter as unknown as MemberRule<S, D>['mapWith'];
+      mapWith<U>(converter: TypeConverter<S, U> | ITypeConverter<S, U>) {
+        rule.mapWith = normalizeConverter(converter) as unknown as MemberRule<S, D>['mapWith'];
       },
       fromValue(val: unknown) {
         rule.fromValue = val as unknown as MemberRule<S, D>['fromValue'];
@@ -139,6 +144,25 @@ export class MappingBuilder<S, D> {
    */
   afterMap(fn: (dst: D, ctx?: import('./context').MappingContext) => void): this {
     this.config.afterMap = fn;
+    return this;
+  }
+  /**
+   * Skip the entire mapping and return `null` when the predicate returns false.
+   * Evaluated once per `map()` call before any member rules are applied.
+   *
+   * @example
+   * builder.preCondition(src => src.active === true);
+   */
+  preCondition(fn: (src: S) => boolean): this {
+    this.config.preCondition = fn;
+    return this;
+  }
+  /**
+   * Override the global naming convention for this profile only.
+   * Accepts a built-in `NamingConvention` or a custom `NamingConventionFn`.
+   */
+  setNamingConvention(convention: NamingConvention | NamingConventionFn): this {
+    this.config.namingConvention = convention;
     return this;
   }
   /**
