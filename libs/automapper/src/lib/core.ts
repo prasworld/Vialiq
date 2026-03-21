@@ -236,10 +236,7 @@ class MapperRegistryImpl implements MapperRegistry, PluginAwareRegistry {
       return result
         .then(r => this.applyValueTransformers(r as unknown) as D)
         .then(reportEnd)
-        .catch((e) => {
-          reportError(e);
-          throw e;
-        }) as Promise<D>;
+        .catch((e) => reportError(e as Error) as never) as Promise<D>;
     }
 
     try {
