@@ -4,6 +4,7 @@ import { applyNamingConvention } from './naming';
 import type { MapperRegistry } from './core';
 import { Constructor } from './types';
 import { setPath, checkCircular, NOT_CIRCULAR, CIRCULAR_IGNORE } from './utils';
+import { selectResolver, applySubstitution } from './resolver-helpers';
 
 /**
  * A pluggable strategy is responsible for mapping a source object to a
@@ -89,31 +90,16 @@ export class DefaultStrategy implements MappingStrategy {
         continue;
       }
 
-      let value: unknown;
-      if ((r as any).fromValue !== undefined) {
-        value = (r as any).fromValue.__v;
-      } else if (r.mapFrom) {
-        value = r.mapFrom(src, ctx);
-      } else if ((r as any).mapWith) {
-        // mapWith converters receive the whole source object
-        value = (r as any).mapWith(src);
-      } else {
-        value = undefined;
-      }
+      // Use shared resolver selection
+      const value = selectResolver(r, src, ctx);
+      const substituted = applySubstitution(value, r);
 
-      // Apply null/undefined substitutions
-      if ((value === null || value === undefined) && (r as any).nullSubstitution !== undefined) {
-        value = (r as any).nullSubstitution;
-      } else if (value === undefined && (r as any).defaultValue !== undefined) {
-        value = (r as any).defaultValue;
-      }
-
-      if (value === undefined) continue;
+      if (substituted === undefined) continue;
       if (r.destKey.includes('.')) {
         // nested path — fall back to dynamic setPath
-        setPath(dest as unknown as Record<string, unknown>, r.destKey, value as unknown);
+        setPath(dest as unknown as Record<string, unknown>, r.destKey, substituted as unknown);
       } else {
-        (dest as Partial<D>)[r.destKey as keyof D] = value as unknown as D[keyof D];
+        (dest as Partial<D>)[r.destKey as keyof D] = substituted as unknown as D[keyof D];
       }
     }
 

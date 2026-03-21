@@ -10,6 +10,7 @@ export * from './core';
 export * from './async';
 export * from './profiling';
 export * from './plugins/logging';
+export * from './resolver-helpers';
 export { DefaultStrategy } from './strategy';
 export { MappingStrategy } from './strategy';
 export * from './plugin';

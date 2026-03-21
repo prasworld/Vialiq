@@ -51,6 +51,7 @@ describe('fromValue()', () => {
     const res = m.map(new S(), 'D') as any;
     // fromValue(undefined) → value is undefined → rule is skipped → property absent
     expect(res.optional).toBeUndefined();
+    expect('optional' in res).toBe(false);
   });
 
   it('fromValue works in async strategy', async () => {
@@ -241,7 +242,82 @@ describe('defaultValue()', () => {
   });
 });
 
-// ── assertConfigurationIsValid ────────────────────────────────────────────────
+// ── nullSubstitution + defaultValue interaction ───────────────────────────────
+
+describe('nullSubstitution + defaultValue interaction', () => {
+  it('nullSubstitution takes precedence when both are set and value is null', () => {
+    const m = createMapper();
+    class S { val: string | null = null }
+    m.addProfile(S, 'D', (b: any) => {
+      b.forMember('result', (o: any) => {
+        o.mapFrom((s: any) => s.val);
+        o.nullSubstitution('null-fallback');
+        o.defaultValue('default-fallback');
+      });
+    });
+    const res = m.map(new S(), 'D') as any;
+    expect(res.result).toBe('null-fallback');
+  });
+
+  it('nullSubstitution takes precedence when both are set and value is undefined', () => {
+    const m = createMapper();
+    class S { val?: string }
+    m.addProfile(S, 'D', (b: any) => {
+      b.forMember('result', (o: any) => {
+        o.mapFrom((s: any) => s.val);
+        o.nullSubstitution('null-fallback');
+        o.defaultValue('default-fallback');
+      });
+    });
+    const res = m.map(new S(), 'D') as any;
+    expect(res.result).toBe('null-fallback');
+  });
+
+  it('interaction works in async strategy with null', async () => {
+    const m = createMapper();
+    m.addStrategy(new AsyncStrategy());
+    class S { val: string | null = null }
+    m.addProfile(S, 'D', (b: any) => {
+      b.forMember('result', (o: any) => {
+        o.mapFromAsync(async (s: any) => s.val);
+        o.nullSubstitution('async-null-fallback');
+        o.defaultValue('async-default-fallback');
+      });
+    });
+    const res = await m.map(new S(), 'D') as any;
+    expect(res.result).toBe('async-null-fallback');
+  });
+
+  it('interaction works in async strategy with undefined', async () => {
+    const m = createMapper();
+    m.addStrategy(new AsyncStrategy());
+    class S { val?: string }
+    m.addProfile(S, 'D', (b: any) => {
+      b.forMember('result', (o: any) => {
+        o.mapFromAsync(async (s: any) => s.val);
+        o.nullSubstitution('async-null-fallback');
+        o.defaultValue('async-default-fallback');
+      });
+    });
+    const res = await m.map(new S(), 'D') as any;
+    expect(res.result).toBe('async-null-fallback');
+  });
+});
+
+// ── assertConfigurationIsValid (continued) ────────────────────────────────────
+
+describe('assertConfigurationIsValid() — resolver coverage', () => {
+  it('passes when rule uses mapFromAsync', () => {
+    const m = createMapper();
+    class S { id = 1 }
+    m.addProfile(S, 'D', (b: any) => {
+      b.forMember('id', (o: any) => o.mapFromAsync(async (s: any) => s.id));
+    });
+    expect(() => m.assertConfigurationIsValid()).not.toThrow();
+  });
+});
+
+// ── end of Phase 2 feature tests ──────────────────────────────────
 
 describe('assertConfigurationIsValid()', () => {
   it('passes when all rules have resolvers', () => {
