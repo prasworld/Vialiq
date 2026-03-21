@@ -1,4 +1,4 @@
-import { MappingBuilder, MappingConfig } from './builder';
+import { MappingBuilder, MappingConfig, MemberRule } from './builder';
 import { MapperOptions } from './options';
 import {
   ConverterRegistry,
@@ -52,6 +52,12 @@ export interface MapperRegistry {
   ): void;
   /** Expose current strategy pipeline (read-only) for plugins/tools. */
   getStrategies(): MappingStrategy[];
+  /**
+   * Validate that every registered member rule has at least one resolver
+   * (`mapFrom`, `mapWith`, `fromValue`, `mapFromAsync`, or `ignore`).
+   * Throws an `Error` listing all offending rules when any are found.
+   */
+  assertConfigurationIsValid(): void;
 }
 
 function getTypeKey(type: Constructor<unknown> | string): string {
@@ -202,6 +208,29 @@ class MapperRegistryImpl implements MapperRegistry, PluginAwareRegistry {
 
   getStrategies(): MappingStrategy[] {
     return [...this.strategies];
+  }
+
+  assertConfigurationIsValid(): void {
+    const errors: string[] = [];
+    for (const [profileKey, config] of this.profiles.entries()) {
+      for (const rule of config.memberRules) {
+        const typedRule = rule as MemberRule<unknown, unknown>;
+        const hasResolver =
+          rule.ignore ||
+          rule.mapFrom ||
+          rule.mapFromAsync ||
+          typedRule.mapWith !== undefined ||
+          typedRule.fromValue !== undefined;
+        if (!hasResolver) {
+          errors.push(
+            `Profile '${profileKey}': member '${rule.destKey}' has no resolver (mapFrom, mapWith, fromValue, mapFromAsync, or ignore)`
+          );
+        }
+      }
+    }
+    if (errors.length) {
+      throw new Error(`Mapping configuration is invalid:\n${errors.join('\n')}`);
+    }
   }
 
   use(plugin: MapperPlugin): void {

@@ -5,6 +5,7 @@ import { Constructor } from './types';
 import { MapperOptions } from './options';
 import { applyNamingConvention } from './naming';
 import { setPath, checkCircular, NOT_CIRCULAR, CIRCULAR_IGNORE } from './utils';
+import { selectResolver, applySubstitution } from './resolver-helpers';
 
 /**
  * Strategy that extends the default synchronous behaviour to support
@@ -64,20 +65,21 @@ export class AsyncStrategy extends DefaultStrategy {
         continue;
       }
 
-      let value: unknown;
-      if (r.mapFromAsync) {
-        value = await r.mapFromAsync(src, ctx);
-      } else if ((r as any).mapWith) {
-        value = (r as any).mapWith(src);
-      } else if (r.mapFrom) {
-        value = r.mapFrom(src, ctx);
+      // Condition guard — skip this rule if condition fails
+      if (r.condition && !r.condition(src)) {
+        continue;
       }
 
-      if (value === undefined) continue;
+      // Use shared resolver selection, which may return a Promise
+      const resolverResult = selectResolver(r, src, ctx);
+      const value = resolverResult instanceof Promise ? await resolverResult : resolverResult;
+      const substituted = applySubstitution(value, r);
+
+      if (substituted === undefined) continue;
       if (r.destKey.includes('.')) {
-        setPath(dest as unknown as Record<string, unknown>, r.destKey, value as unknown);
+        setPath(dest as unknown as Record<string, unknown>, r.destKey, substituted as unknown);
       } else {
-        (dest as Partial<D>)[r.destKey as keyof D] = value as unknown as D[keyof D];
+        (dest as Partial<D>)[r.destKey as keyof D] = substituted as unknown as D[keyof D];
       }
     }
 

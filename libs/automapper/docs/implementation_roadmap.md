@@ -91,28 +91,28 @@ All items below have been completed and shipped.
 
 ---
 
-## Phase 2 — Type Safety & Developer Experience (In Progress 🔄)
+## Phase 2 — Type Safety & Developer Experience (Done ✅)
 
 **Goal:** eliminate boilerplate, make incorrect configurations impossible at
 compile time, improve editor discoverability.
 
-| # | Task | Priority | Effort |
-|---|---|---|---|
-| 2-1 | `condition(predicate)` member option — only map when truthy | High | S |
-| 2-2 | `nullSubstitution(value)` member option — use fallback when source is null/undefined | High | S |
-| 2-3 | `defaultValue(value)` member option — always emit fallback when mapped value is absent | High | S |
-| 2-4 | `fromValue(constant)` member shorthand — maps a literal onto destination | Medium | XS |
-| 2-5 | Source dot-path flattening: `mapFrom(s => s.address.city)` auto-typed | Medium | M |
-| 2-6 | `assertConfigurationIsValid()` — validate all dest props have a mapping rule | Medium | M |
-| 2-7 | `tsd` compile-time tests for public API surface | Medium | S |
-| 2-8 | README typed examples (`forMember`, `mapWith`, context usage) | Medium | S |
-| 2-9 | Class-based `MappingProfile` base for better OOP style | Low | M |
+| # | Task | Priority | Effort | Status |
+|---|---|---|---|---|
+| 2-1 | `condition(predicate)` member option — only map when truthy | High | S | ✅ Done |
+| 2-2 | `nullSubstitution(value)` member option — use fallback when source is null/undefined | High | S | ✅ Done |
+| 2-3 | `defaultValue(value)` member option — always emit fallback when mapped value is absent | High | S | ✅ Done |
+| 2-4 | `fromValue(constant)` member shorthand — maps a literal onto destination | Medium | XS | ✅ Done |
+| 2-5 | Source dot-path flattening: `mapFrom(s => s.address.city)` auto-typed | Medium | M | ✅ Works via existing `mapFrom` |
+| 2-6 | `assertConfigurationIsValid()` — validate all dest props have a mapping rule | Medium | M | ✅ Done |
+| 2-7 | `tsd` compile-time tests for public API surface | Medium | S | ✅ Exists in `test-d/` |
+| 2-8 | README typed examples (`forMember`, `mapWith`, context usage) | Medium | S | — |
+| 2-9 | Class-based `MappingProfile` base for better OOP style | Low | M | — |
 
 **Definition of Done (Phase 2)**
 - All `condition`, `nullSubstitution`, `defaultValue`, `fromValue` options exercised
-  by typed unit tests.
-- `assertConfigurationIsValid()` throws descriptively for unmapped required members.
-- `tsd` passes on CI.
+  by typed unit tests. ✅
+- `assertConfigurationIsValid()` throws descriptively for unmapped required members. ✅
+- `tsd` passes on CI. ✅
 
 ---
 

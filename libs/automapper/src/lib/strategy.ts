@@ -4,6 +4,7 @@ import { applyNamingConvention } from './naming';
 import type { MapperRegistry } from './core';
 import { Constructor } from './types';
 import { setPath, checkCircular, NOT_CIRCULAR, CIRCULAR_IGNORE } from './utils';
+import { selectResolver, applySubstitution } from './resolver-helpers';
 
 /**
  * A pluggable strategy is responsible for mapping a source object to a
@@ -83,21 +84,28 @@ export class DefaultStrategy implements MappingStrategy {
         delete (dest as Partial<Record<string, unknown>>)[r.destKey];
         continue;
       }
-      let value: unknown;
-      if (r.mapFrom) {
-        value = r.mapFrom(src, ctx);
-      } else if ((r as any).mapWith) {
-        // mapWith converters receive the whole source object
-        value = (r as any).mapWith(src);
-      } else {
-        value = undefined;
+
+      // Condition guard — skip this rule if condition fails
+      if (r.condition && !r.condition(src)) {
+        continue;
       }
-      if (value === undefined) continue;
+
+      // Use shared resolver selection
+      const value = selectResolver(r, src, ctx);
+      if (value instanceof Promise) {
+        throw new Error(
+          `Member rule for '${r.destKey}' uses mapFromAsync but was applied with DefaultStrategy. ` +
+          `Add AsyncStrategy to the mapper to handle async resolvers: mapper.addStrategy(new AsyncStrategy())`
+        );
+      }
+      const substituted = applySubstitution(value, r);
+
+      if (substituted === undefined) continue;
       if (r.destKey.includes('.')) {
         // nested path — fall back to dynamic setPath
-        setPath(dest as unknown as Record<string, unknown>, r.destKey, value as unknown);
+        setPath(dest as unknown as Record<string, unknown>, r.destKey, substituted as unknown);
       } else {
-        (dest as Partial<D>)[r.destKey as keyof D] = value as unknown as D[keyof D];
+        (dest as Partial<D>)[r.destKey as keyof D] = substituted as unknown as D[keyof D];
       }
     }
 

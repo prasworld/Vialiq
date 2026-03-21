@@ -59,4 +59,20 @@ describe('DefaultStrategy (sync) behaviours', () => {
       expect(res.next.name).toBe('b');
     }
   });
+
+  it('throws when mapFromAsync is used without AsyncStrategy', () => {
+    const m = createMapper();
+    class Src { value = 'test' }
+    m.addProfile(Src, 'Dest', (b: any) => {
+      b.forMember('async_result', (o: any) => {
+        o.mapFromAsync(async (s: any) => s.value);
+      });
+    });
+
+    expect(() => {
+      m.map(new Src(), 'Dest');
+    }).toThrow(
+      /mapFromAsync.*DefaultStrategy.*AsyncStrategy/
+    );
+  });
 });
