@@ -8,9 +8,19 @@ import {
 } from './converters';
 import { Constructor } from './types';
 import { DefaultStrategy, MappingStrategy } from './strategy';
+import { AsyncStrategy } from './async';
 import { MapperPlugin, PluginAwareRegistry, PLUGIN_API_VERSION, PluginMetadata } from './plugin';
 import { checkCircular, CIRCULAR_IGNORE, NOT_CIRCULAR } from './utils';
 import { createContext } from './context';
+
+/**
+ * A function applied to every scalar value in the mapped output.
+ * Use `addValueTransformer` to register global post-processors.
+ *
+ * @example
+ * mapper.addValueTransformer(v => typeof v === 'string' ? v.trim() : v);
+ */
+export type ValueTransformer = (value: unknown) => unknown;
 
 /**
  * A function used to configure mappings between a source and destination
@@ -43,7 +53,25 @@ export interface MapperRegistry {
     dest: Constructor<D> | string
   ): Mapper<S, D>;
   map<S, D>(src: S, destType: Constructor<D> | string, visited?: WeakSet<Record<string, unknown>>): D | Promise<D>;
+  /**
+   * Async-first shorthand for `map`. Always returns a `Promise`, and
+   * automatically activates `AsyncStrategy` if not already present.
+   * Use when profiles contain `mapFromAsync` rules.
+   */
+  mapAsync<S, D>(src: S, destType: Constructor<D> | string): Promise<D>;
   mapArray<S, D>(src: S[], destType: Constructor<D> | string): D[] | Promise<D[]>;
+  /**
+   * Auto-create the inverse profile from an existing source→destination
+   * profile.  Simple `mapFrom(s => s.prop)` rules are reversed; rules
+   * that cannot be auto-reversed (mapWith, fromValue, ignore, mapFromAsync,
+   * complex expressions) are silently skipped.
+   *
+   * @throws if no forward profile is registered for the given pair.
+   */
+  reverseMap<S, D>(
+    source: Constructor<S> | string,
+    dest: Constructor<D> | string
+  ): void;
   addStrategy(strategy: MappingStrategy): void;
   registerConverter<TS, TD>(
     srcType: ConverterToken<TS>,
@@ -52,6 +80,11 @@ export interface MapperRegistry {
   ): void;
   /** Expose current strategy pipeline (read-only) for plugins/tools. */
   getStrategies(): MappingStrategy[];
+  /**
+   * Register a global value transformer applied to every scalar value
+   * in the mapped output after mapping completes.
+   */
+  addValueTransformer(transformer: ValueTransformer): void;
   /**
    * Validate that every registered member rule has at least one resolver
    * (`mapFrom`, `mapWith`, `fromValue`, `mapFromAsync`, or `ignore`).
@@ -64,11 +97,30 @@ function getTypeKey(type: Constructor<unknown> | string): string {
   return typeof type === 'string' ? type : type.name;
 }
 
+/**
+ * Attempt to extract the single property key accessed by a simple
+ * `mapFrom(s => s.prop)` function using a Proxy.
+ * Returns `null` when the function accesses multiple or zero properties
+ * (i.e. complex expressions that cannot be auto-reversed).
+ */
+function extractPropertyKey(fn: (src: unknown) => unknown): string | null {
+  const accessed: string[] = [];
+  const proxy = new Proxy({} as Record<string, unknown>, {
+    get(_, key) {
+      if (typeof key === 'string') accessed.push(key);
+      return undefined;
+    },
+  });
+  try { fn(proxy); } catch { /* noop — undefined property access may throw */ }
+  return accessed.length === 1 ? accessed[0] : null;
+}
+
 class MapperRegistryImpl implements MapperRegistry, PluginAwareRegistry {
   private profiles = new Map<string, MappingConfig<unknown, unknown>>();
   private strategies: MappingStrategy[] = [new DefaultStrategy()];
   private converters = new ConverterRegistry();
   private pluginRegistry = new Map<string, MapperPlugin>();
+  private valueTransformers: ValueTransformer[] = [];
 
   constructor(private options: MapperOptions = {}) {
     // copy defaults
@@ -128,7 +180,7 @@ class MapperRegistryImpl implements MapperRegistry, PluginAwareRegistry {
     }
 
     // Ensure a MappingContext exists so hooks and resolvers can use it.
-    ctx = ctx ?? createContext({});
+    ctx = ctx ?? createContext({}, (s, dest) => this.map(s as S, dest as Constructor<D> | string));
 
     // Notify plugins about map start and report end/error. Keep mapping
     // result semantics (sync vs async) intact by wrapping promises.
@@ -178,14 +230,14 @@ class MapperRegistryImpl implements MapperRegistry, PluginAwareRegistry {
     };
 
     if (result instanceof Promise) {
-      return result.then(reportEnd).catch((e) => {
+      return result.then(reportEnd).then(r => this.applyValueTransformers(r as unknown) as D).catch((e) => {
         reportError(e);
         throw e;
       }) as Promise<D>;
     }
 
     try {
-      return reportEnd(result as unknown) as D;
+      return this.applyValueTransformers(reportEnd(result as unknown) as unknown) as D;
     } catch (e) {
       return reportError(e as Error) as never;
     }
@@ -210,6 +262,71 @@ class MapperRegistryImpl implements MapperRegistry, PluginAwareRegistry {
     return [...this.strategies];
   }
 
+  addValueTransformer(transformer: ValueTransformer): void {
+    this.valueTransformers.push(transformer);
+  }
+
+  /**
+   * Recursively apply all registered value transformers to scalar values
+   * in the mapped output object.
+   */
+  private applyValueTransformers(value: unknown): unknown {
+    if (value === null || value === undefined) return value;
+    if (Array.isArray(value)) return value.map(v => this.applyValueTransformers(v));
+    if (typeof value === 'object') {
+      const obj = value as Record<string, unknown>;
+      for (const key of Object.keys(obj)) {
+        obj[key] = this.applyValueTransformers(obj[key]);
+      }
+      return obj;
+    }
+    // Scalar value — run through registered transformers in registration order
+    let result = value;
+    for (const t of this.valueTransformers) {
+      result = t(result);
+    }
+    return result;
+  }
+
+  mapAsync<S, D>(src: S, destType: Constructor<D> | string): Promise<D> {
+    // Auto-activate AsyncStrategy on first mapAsync call
+    if (!this.strategies.some(s => s instanceof AsyncStrategy)) {
+      this.strategies.unshift(new AsyncStrategy());
+    }
+    const result = this.map(src, destType);
+    return result instanceof Promise ? result : Promise.resolve(result);
+  }
+
+  reverseMap<S, D>(
+    source: Constructor<S> | string,
+    dest: Constructor<D> | string
+  ): void {
+    const forwardKey = this.getProfileKey(source, dest);
+    const config = this.profiles.get(forwardKey);
+    if (!config) {
+      throw new Error(
+        `reverseMap: no profile found for '${getTypeKey(source)} → ${getTypeKey(dest)}'. ` +
+        `Call addProfile() first.`
+      );
+    }
+
+    const reverseRules: MemberRule<unknown, unknown>[] = [];
+    for (const rule of config.memberRules) {
+      if (!rule.mapFrom) continue; // only simple mapFrom rules can be auto-reversed
+      const srcKey = extractPropertyKey(rule.mapFrom as (src: unknown) => unknown);
+      if (!srcKey) continue; // skip complex expressions
+      reverseRules.push({
+        destKey: srcKey,
+        mapFrom: ((d: unknown) =>
+          (d as Record<string, unknown>)[rule.destKey]
+        ) as MemberRule<unknown, unknown>['mapFrom'],
+      });
+    }
+
+    const reverseKey = this.getProfileKey(dest, source);
+    this.profiles.set(reverseKey, { memberRules: reverseRules } as MappingConfig<unknown, unknown>);
+  }
+
   assertConfigurationIsValid(): void {
     const errors: string[] = [];
     for (const [profileKey, config] of this.profiles.entries()) {
@@ -220,6 +337,7 @@ class MapperRegistryImpl implements MapperRegistry, PluginAwareRegistry {
           rule.mapFrom ||
           rule.mapFromAsync ||
           typedRule.mapWith !== undefined ||
+          typedRule.__configured?.fromValue ||
           typedRule.fromValue !== undefined;
         if (!hasResolver) {
           errors.push(

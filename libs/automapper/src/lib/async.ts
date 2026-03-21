@@ -31,7 +31,17 @@ export class AsyncStrategy extends DefaultStrategy {
     visited: WeakSet<Record<string, unknown>>,
     ctx?: import('./context').MappingContext
   ): Promise<D> {
+    // preCondition — skip entire mapping if predicate fails
+    if (config.preCondition && !config.preCondition(src)) {
+      return null as unknown as D;
+    }
+
     const dest: Partial<D> = {} as Partial<D>;
+
+    // Per-profile naming convention takes precedence over global option
+    const effectiveOptions: MapperOptions = config.namingConvention
+      ? { ...options, namingConvention: config.namingConvention }
+      : options;
 
     config.beforeMap?.(src, ctx);
 
@@ -83,7 +93,7 @@ export class AsyncStrategy extends DefaultStrategy {
       }
     }
 
-      if (options.strict) {
+      if (effectiveOptions.strict) {
       let allowedKeys: string[] | undefined;
       if (typeof destType === 'function') {
         try {
@@ -99,7 +109,7 @@ export class AsyncStrategy extends DefaultStrategy {
           ? destType
           : (destType as { name?: string }).name || 'Unknown';
       Object.getOwnPropertyNames(src as Record<string, unknown>).forEach((k) => {
-        const transformed = applyNamingConvention(k, options.namingConvention);
+        const transformed = applyNamingConvention(k, effectiveOptions.namingConvention);
         if (allowedKeys) {
           if (!allowedKeys.includes(transformed)) {
             throw new Error(

@@ -2,9 +2,20 @@ export interface MappingContext<T extends Record<string, unknown> = Record<strin
   readonly items: T;
   readonly operationId: string;
   readonly startedAt: number;
+  /**
+   * Map a nested source object using a registered profile.
+   * Enables nested profile resolution inside `mapFrom` callbacks:
+   *
+   * @example
+   * b.forMember('address', o => o.mapFrom((s, ctx) => ctx.map(s.address, AddressDto)));
+   */
+  map<S, D>(src: S, destType: unknown): D | Promise<D>;
 }
 
-export function createContext<T extends Record<string, unknown>>(items: T): MappingContext<T> {
+export function createContext<T extends Record<string, unknown>>(
+  items: T,
+  mapFn?: <S, D>(src: S, destType: unknown) => D | Promise<D>
+): MappingContext<T> {
   const hasRandom = typeof crypto !== 'undefined' && typeof (crypto as { randomUUID?: unknown }).randomUUID === 'function';
   const operationId = hasRandom
     ? (crypto as { randomUUID: () => string }).randomUUID()
@@ -13,5 +24,6 @@ export function createContext<T extends Record<string, unknown>>(items: T): Mapp
     items,
     operationId,
     startedAt: Date.now(),
+    map: mapFn ?? (() => { throw new Error('No mapper available in this context. Ensure the context was created by a mapper.'); }),
   };
 }

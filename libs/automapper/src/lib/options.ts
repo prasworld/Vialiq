@@ -18,6 +18,12 @@ export enum NamingConvention {
 }
 
 /**
+ * A custom naming convention function that transforms a property key string.
+ * Use `createNamingConvention()` in naming.ts to create a validated instance.
+ */
+export type NamingConventionFn = (key: string) => string;
+
+/**
  * Configuration options that modify how the mapper behaves.
  */
 export interface MapperOptions {
@@ -33,8 +39,10 @@ export interface MapperOptions {
   autoMap?: boolean;            // copy same-named props automatically
   /**
    * Apply a naming convention transformation to all property keys.
+   * Accepts a built-in `NamingConvention` enum value or a custom
+   * `NamingConventionFn` created with `createNamingConvention()`.
    */
-  namingConvention?: NamingConvention;
+  namingConvention?: NamingConvention | NamingConventionFn;
   /**
    * Maximum depth to recurse when mapping nested objects/arrays.
    */

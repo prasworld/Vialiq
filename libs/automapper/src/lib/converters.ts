@@ -8,6 +8,31 @@ import { Constructor } from './types';
 export type TypeConverter<S, D> = (src: S) => D;
 
 /**
+ * Class-based alternative to the function form of `TypeConverter`.
+ * Implement this interface to create reusable, injectable converter classes.
+ *
+ * @example
+ * class StringToNumber implements ITypeConverter<string, number> {
+ *   convert(src: string) { return Number(src); }
+ * }
+ */
+export interface ITypeConverter<S, D> {
+  convert(src: S): D;
+}
+
+/**
+ * Normalise a function-or-class converter into a plain function.
+ * Used internally by the builder so member rules always store
+ * a plain `TypeConverter<S, D>` function.
+ */
+export function normalizeConverter<S, D>(
+  converter: TypeConverter<S, D> | ITypeConverter<S, D>
+): TypeConverter<S, D> {
+  if (typeof converter === 'function') return converter;
+  return (src: S) => converter.convert(src);
+}
+
+/**
  * Token used to identify a type in the registry.  Can be a constructor,
  * a string name, or any object with a `name` property (useful for unions).
  */
