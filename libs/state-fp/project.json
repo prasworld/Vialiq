@@ -26,11 +26,11 @@
       }
     },
     "test": {
-      "executor": "@nx/vitest:test",
-      "outputs": ["{options.reportsDirectory}"],
+      "executor": "nx:run-commands",
+      "outputs": ["{workspaceRoot}/coverage/state-fp"],
       "options": {
-        "reportsDirectory": "coverage/state-fp",
-        "configFile": "libs/state-fp/vitest.config.mts"
+        "command": "vitest run --config vitest.config.mts",
+        "cwd": "libs/state-fp"
       }
     },
     "lint": {

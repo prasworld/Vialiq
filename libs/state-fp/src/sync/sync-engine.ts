@@ -90,6 +90,7 @@ export function createSyncEngine({ kernel, transport: transportFactory = createA
     options:        Required<ShareOptions<unknown>>;
     unsubKernel:    Unsubscribe;
     unsubTransport: Unsubscribe;
+    unsync:         Unsubscribe;
   }>();
 
   function share<S>(
@@ -104,7 +105,7 @@ export function createSyncEngine({ kernel, transport: transportFactory = createA
 
     if (shared.has(atomKey)) {
       console.warn(`[@vi/state-fp/sync] Atom "${atomKey}" is already shared. Call unsync before re-sharing.`);
-      return shared.get(atomKey)!.unsubKernel;
+      return shared.get(atomKey)!.unsync;
     }
 
     const transport: SyncTransport<S> = transportFactory(channel) as SyncTransport<S>;
@@ -227,16 +228,7 @@ export function createSyncEngine({ kernel, transport: transportFactory = createA
     };
     transport.send(hello);
 
-    shared.set(atomKey, {
-      transport:      transport as SyncTransport<unknown>,
-      syncState:      syncState as SyncState<unknown>,
-      atom:           atom    as Atom<unknown>,
-      options:        { channel, conflict, peerId, propagate } as Required<ShareOptions<unknown>>,
-      unsubKernel,
-      unsubTransport,
-    });
-
-    return function unsync(): void {
+    const unsync = (): void => {
       const entry = shared.get(atomKey);
       if (!entry) return;
       entry.unsubKernel();
@@ -245,6 +237,18 @@ export function createSyncEngine({ kernel, transport: transportFactory = createA
       entry.syncState.connected = false;
       shared.delete(atomKey);
     };
+
+    shared.set(atomKey, {
+      transport:      transport as SyncTransport<unknown>,
+      syncState:      syncState as SyncState<unknown>,
+      atom:           atom    as Atom<unknown>,
+      options:        { channel, conflict, peerId, propagate } as Required<ShareOptions<unknown>>,
+      unsubKernel,
+      unsubTransport,
+      unsync,
+    });
+
+    return unsync;
   }
 
   function getState<S>(atomKey: string): SyncState<S> | undefined {
