@@ -101,10 +101,14 @@ describe('Phase 4.7 — EphemeralStream', () => {
   describe('subscribeAnimated — RAF-batched delivery', () => {
     let rafCallbacks: FrameRequestCallback[] = [];
     let rafIdCounter = 0;
+    let origRAF: typeof requestAnimationFrame | undefined;
+    let origCancelRAF: typeof cancelAnimationFrame | undefined;
 
     beforeEach(() => {
       rafCallbacks = [];
       rafIdCounter = 0;
+      origRAF = globalThis.requestAnimationFrame;
+      origCancelRAF = globalThis.cancelAnimationFrame;
 
       vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
         const id = ++rafIdCounter;
@@ -119,6 +123,12 @@ describe('Phase 4.7 — EphemeralStream', () => {
     });
 
     afterEach(() => {
+      if (origRAF) {
+        globalThis.requestAnimationFrame = origRAF;
+      }
+      if (origCancelRAF) {
+        globalThis.cancelAnimationFrame = origCancelRAF;
+      }
       vi.unstubAllGlobals();
       rafCallbacks = [];
     });

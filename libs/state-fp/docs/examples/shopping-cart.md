@@ -62,7 +62,9 @@ export const cartAtom = defineAtom<CartState>({
   key: 'vi/cart',
   initialState: { items: [], coupon: null, checkoutError: null },
 
-  // Persists the cart to an in-memory store (swap for IndexedDB in production)
+  // Persists the cart to in-memory Storage (MemoryAdapter).
+  // In environments that permit persistent storage, you can replace with
+  // a secure adapter implementation subject to policy review.
   storage: { adapter: createMemoryAdapter({ ttl: 60 * 60 * 1000 }) },
 });
 ```

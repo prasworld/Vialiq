@@ -1533,10 +1533,7 @@ docs/modules/
 - [x] Fallback branch tests added: `uuid()` Math.random path, `deepClone()` JSON path
 - [x] Kernel uncovered paths covered: storage `.catch()` rejection, `executeAsync` Left+debug
 - [x] Complete end-to-end example created: `docs/examples/shopping-cart.md`
-- [x] 526 tests passing, all thresholds met (lines ≥ 90, functions ≥ 90, branches ≥ 85)
-
----
-
+- [x] 527 tests passing, all thresholds met (lines ≥ 90, functions ≥ 90, branches ≥ 85)
 ## Milestone Summary Table
 
 | Phase | Semver | Modules | Key Capabilities | Status |
