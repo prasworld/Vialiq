@@ -174,15 +174,19 @@ describe('Phase 4.7 — EphemeralStream', () => {
     });
 
     it('unsubscribe cancels RAF delivery', () => {
+      const cancelSpy = vi.fn();
+      vi.stubGlobal('cancelAnimationFrame', cancelSpy);
+
       const s   = createEphemeralStream<number>();
       const spy = vi.fn();
       const off = s.subscribeAnimated(spy);
 
       s.emit(5);
-      off();          // unsubscribe before frame fires
+      off();          // unsubscribe before frame fires — should cancel the pending RAF
       runOneFrame();
 
       expect(spy).not.toHaveBeenCalled();
+      expect(cancelSpy).toHaveBeenCalledTimes(1); // RAF was cancelled (line 147 branch taken)
     });
 
     it('multiple animated subscribers are independent', () => {
@@ -197,6 +201,23 @@ describe('Phase 4.7 — EphemeralStream', () => {
 
       expect(a).toEqual([7]);
       expect(b).toEqual([7]);
+    });
+
+    it('subscriber added after emit receives nothing until next emit (hasPending guard)', () => {
+      // This specifically exercises line 96: `if (!entry.hasPending) continue;`
+      // Subscriber B is added AFTER the emit so hasPending stays false when the frame fires
+      const s = createEphemeralStream<number>();
+      const aValues: number[] = [];
+      const bValues: number[] = [];
+
+      s.subscribeAnimated(v => aValues.push(v));   // A: added before emit
+      s.emit(5);                                    // A.hasPending = true, RAF queued
+
+      s.subscribeAnimated(v => bValues.push(v));   // B: added after emit, hasPending = false
+      runOneFrame();                                // flushAnimated: A delivers 5; B skipped (continue)
+
+      expect(aValues).toEqual([5]);
+      expect(bValues).toEqual([]);                 // B was not pending, safely skipped
     });
   });
 

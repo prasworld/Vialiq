@@ -1177,3 +1177,63 @@ describe('Phase 2.6 — DevTools records both the optimistic entry and the rollb
     expect(rollbackEntry.error?.code).toBe('HANDLER_ERROR');
   });
 });
+
+// ─── Branch coverage — storage write Promise rejection (.catch path) ──────────
+
+describe('branch coverage — storage write Promise rejection (catch path)', () => {
+  it('surfaces unexpected Promise rejection from adapter.set to plugins via onError', async () => {
+    const rejectingAdapter = {
+      name: 'test' as const,
+      get: async () => ({ _tag: 'Right' as const, right: { _tag: 'Nothing' as const } }),
+      set: vi.fn().mockRejectedValue(new Error('unexpected crash')),
+    };
+
+    const counter = defineAtom<CounterState>({
+      key: 'vi/catch-error',
+      initialState: { count: 0 },
+      storage: { adapter: rejectingAdapter as any },
+    });
+
+    const onErrorSpy = vi.fn();
+    const kernel = createKernel();
+    kernel.use({ name: 'spy', onError: onErrorSpy });
+    kernel.register(counter, incrementHandler, counterApplier);
+    kernel.execute(counter, command('counter/increment', { by: 1 }));
+
+    await new Promise(r => setTimeout(r, 20));
+    expect(onErrorSpy).toHaveBeenCalledWith(expect.objectContaining({
+      error: expect.objectContaining({
+        code: 'STORAGE_WRITE_ERROR',
+        message: 'unexpected crash',
+      }),
+    }));
+  });
+});
+
+// ─── Branch coverage — executeAsync Left path with debug enabled ──────────────
+
+describe('branch coverage — executeAsync Left + debug layer', () => {
+  it('records Left result to debug layer when debug is enabled', async () => {
+    type LoadCmd = Command<'counter/load'>;
+
+    const recordSpy = vi.fn();
+    const kernel = createKernel({ debug: { isEnabled: true, record: recordSpy } });
+    const counter = makeCounter();
+
+    const failHandler: AsyncCommandHandler<CounterState, LoadCmd> = {
+      commandType: 'counter/load',
+      handleAsync: async () => left({ code: 'API_ERROR', message: 'server down' }),
+    };
+    const loadApplier = createEventApplier<CounterState>({});
+
+    kernel.registerAsync(counter, failHandler, loadApplier);
+    const result = await kernel.executeAsync(counter, command('counter/load'));
+
+    expect(result._tag).toBe('Left');
+    expect(recordSpy).toHaveBeenCalledTimes(1);
+    const entry = recordSpy.mock.calls[0][0];
+    expect(entry.commandType).toBe('counter/load');
+    expect(entry.error).toEqual({ code: 'API_ERROR', message: 'server down' });
+    expect(entry.events).toEqual([]);
+  });
+});

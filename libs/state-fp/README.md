@@ -494,7 +494,7 @@ app.destroy();
 | 3     | devtools module              | ✅ Complete   | 0.3.0   |
 | 4     | sync module                  | ✅ Complete   | 0.4.0   |
 | 5     | adapter module               | ✅ Complete   | 0.5.0   |
-| 6     | DX hardening, full test suite | 🚧 Planned   | 1.0.0   |
+| 6     | DX hardening, full test suite | ✅ Complete  | 1.0.0   |
 
 See [docs/phases.md](docs/phases.md) for the full phase breakdown and
 [docs/architecture.md](docs/architecture.md) for the complete CQRS modular

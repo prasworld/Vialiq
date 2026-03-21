@@ -93,15 +93,25 @@ package "Storage Layer" {
     + clear(key): Promise<void>
   }
   
-  class IndexedDBAdapter {
-    - db: IDBDatabase
-    - storeName: string
+  class MemoryAdapter {
+    - store: Map<string, StorageEntry>
+    - sweepInterval: number
     --
-    + save(key, value)
-    + load(key)
+    + get(key): Promise<T | undefined>
+    + set(key, value, ttl?): Promise<void>
+    + delete(key): Promise<void>
+    + clear(prefix?): Promise<void>
+    + keys(prefix?): Promise<string[]>
+    + dispose(): void
   }
   
-  StorageAdapter <|-- IndexedDBAdapter
+  note bottom of MemoryAdapter
+    Only permitted adapter.
+    Browser-persistent adapters (IndexedDB, LocalStorage)
+    are blocked by StorageGuard at runtime + compile time.
+  end note
+  
+  StorageAdapter <|-- MemoryAdapter
 }
 
 package "Sync Engine (Cross-Tab Orchestration)" {

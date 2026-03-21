@@ -19,7 +19,7 @@ Detailed class diagrams showing internal structure:
 - **Kernel internals**: CommandHandler, QueryMemoCache, DomainEvent system
 - **Atom structure**: State container, version tracking, subscriber management
 - **SyncEngine**: Version vectors, conflict resolution, transport abstraction
-- **Storage adapters**: IndexedDB, LocalStorage implementations
+- **Storage adapters**: MemoryAdapter (only — browser-persistent adapters removed by security policy)
 - **EphemeralStream**: High-frequency RAF batching with AnimatedEntry tracking
 
 **Use case**: Understanding internal implementation details and class hierarchies.
@@ -77,7 +77,7 @@ UML use case diagram showing:
 Complete dependency graph showing:
 - **Public API exports**: `./core`, `./kernel`, `./storage`, `./sync`, `./bus`, `./adapter`, `./devtools`
 - **Import relationships**: Which modules depend on which
-- **External APIs**: Browser APIs used (BroadcastChannel, IndexedDB, postMessage, RAF)
+- **External APIs**: Browser APIs used (BroadcastChannel, postMessage, RAF) — IndexedDB/LocalStorage are not used
 
 **Use case**: Understanding module organization and dependency management.
 

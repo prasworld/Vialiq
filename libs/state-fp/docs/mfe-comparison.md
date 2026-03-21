@@ -262,9 +262,9 @@ The scope-based model means each MFE can run in its own scope without global pol
 | Framework-agnostic core | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ |
 | Angular signals integration | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ✅ |
 | FP primitives (Maybe/Either) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
-| Computed / derived atoms | ❌ | ⚠️ | ✅ | ✅ | ✅ (selectors) | ✅ | ✅ | ❌ (gap) |
-| Async command pipeline | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ⚠️ (stub) |
-| Optimistic updates + rollback | ✅ (RTK Q) | ❌ | ❌ | ✅ (actor) | ✅ (effects) | ✅ | ❌ | ❌ (gap) |
+| Computed / derived atoms | ❌ | ⚠️ | ✅ | ✅ | ✅ (selectors) | ✅ | ✅ | ✅ |
+| Async command pipeline | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Optimistic updates + rollback | ✅ (RTK Q) | ❌ | ❌ | ✅ (actor) | ✅ (effects) | ✅ | ❌ | ✅ |
 | Command payload validation | ❌ | ❌ | ❌ | ✅ (guards) | ❌ | ✅ (schema) | ❌ | ❌ (gap) |
 | Query memoisation | ✅ (RTK Q) | ❌ | ✅ | ❌ | ✅ (selectors) | ✅ | ✅ | ❌ (gap) |
 | SSR hydration protocol | ⚠️ | ⚠️ | ✅ | ✅ (fork) | ⚠️ | ✅ | ✅ (fork) | ❌ (gap) |
@@ -331,192 +331,95 @@ call-site. None of the libraries surveyed make this guarantee.
 
 ---
 
-## 6. Gaps Identified
+## 6. Gaps Identified — Status Update
 
-These gaps were identified by comparing the capability table against community best
-practices. Each has been added to the development roadmap in `phases.md`.
+These gaps were identified during the initial comparison. Items marked **✅ Resolved** have been implemented since.
 
-### Gap 1 — Computed / Derived Atoms
+### Gap 1 — Computed / Derived Atoms ✅ RESOLVED (Phase 2.5)
 
-**Problem:** Jotai, XState, NgRx, Effector, and TanStack Query all have first-class derived
-state — values computed from one or more atoms without a command/event cycle.
+**Implemented:** `defineComputedAtom({ key, deps, compute })` auto-derives state from source atoms.
 
-**Current workaround:** Create a separate projection atom updated by subscribing to the
-`DomainEventBus`. Works but requires boilerplate.
-
-**Proposed solution:**
 ```ts
 const cartTotalAtom = defineComputedAtom({
   key: 'vi/cart-total',
   deps: [cartAtom],
   compute: ([cart]) => cart.items.reduce((sum, i) => sum + i.price * i.qty, 0),
 });
-// Read-only — no command handlers registered
 kernel.query(cartTotalAtom, {});
 ```
 
-### Gap 2 — Async Command Pipeline
+### Gap 2 — Async Command Pipeline ✅ RESOLVED (Phase 1.4)
 
-**Problem:** All surveyed libraries support async commands (thunks, effects, actors, async effects).
-`executeAsync()` in Phase 1 simply wraps synchronous `execute()` in `Promise.resolve()`.
+**Implemented:** `kernel.registerAsync()` / `kernel.executeAsync()` with `AbortSignal` support:
 
-**Problem sub-cases:** Commands that require:
-- Fetching before deciding what events to emit
-- Async validation (e.g., uniqueness check via API)
-- Fire-and-forget side effects after state update
-
-**Proposed solution:**
 ```ts
-type AsyncCommandHandler<S, C extends Command> = {
-  commandType: C['type'];
-  handleAsync: (state: S, command: C, ctx: AsyncContext) => Promise<Either<CommandError, DomainEvent[]>>;
-};
-// ctx.signal — AbortSignal for cancellation
-// ctx.dispatch — for side-effect-only sub-commands
-```
-
-### Gap 3 — Optimistic Updates + Rollback
-
-**Problem:** TanStack Query and RTK Query both have built-in optimistic update with
-automatic rollback on error. For UI responsiveness in MFEs (e.g., adding an item to cart
-before server confirmation), optimistic state is critical.
-
-**Proposed solution:**
-```ts
-kernel.executeOptimistic(atom, command, {
-  optimisticState: (state) => applyOptimistic(state, command),
-  onSuccess: (finalState) => { /* side effects after confirmation */ },
-  onError: () => { /* state already rolled back */ },
-});
-```
-
-### Gap 4 — Cross-MFE Event Bus
-
-**Problem:** The sync module broadcasts full atom state on each change. This is correct
-for owned atoms but there is no general-purpose event bus for broadcasting domain
-events across MFE boundaries without tying receivers to specific atoms.
-
-Use case: A payment MFE wants to know when any atom in the cart domain emits
-`CheckoutCompleted` — regardless of which specific atom owns cart state.
-
-**Proposed solution:** `@vi/state-fp/bus`
-```ts
-export interface SharedEventBus {
-  publish(event: CrossMFEEvent): void;
-  subscribe(filter: EventFilter, cb: (e: CrossMFEEvent) => void): Unsubscribe;
-}
-export const createSharedBus = (channel: string): SharedEventBus
-```
-
-### Gap 5 — Command Payload Validation
-
-**Problem:** XState uses guards. TanStack Form + Zod has schema validation. Currently
-`@vi/state-fp` CommandHandlers receive unvalidated payloads — validation is done manually
-inside each handler.
-
-**Proposed solution:** Optional `validate` fn on `CommandHandler`:
-```ts
-type CommandHandler<S, C extends Command> = {
-  commandType: C['type'];
-  validate?: (payload: C['payload']) => Either<CommandError, C['payload']>;
-  handle: (state: S, command: C) => Either<CommandError, DomainEvent[]>;
-};
-```
-
-If `validate` returns `Left`, `kernel.execute()` returns that error before calling `handle`.
-Compatible with Zod: `validate: (p) => zodSchema.safeParse(p).success ? right(p) : left(...)`.
-
-### Gap 6 — Query Memoisation
-
-**Problem:** Jotai derived atoms, NgRx selectors, and Effector stores all cache computed
-values and only recompute when upstream state changes. `@vi/state-fp` queries run the
-`QueryHandler.handle` function on every call.
-
-**Proposed solution:**
-```ts
-const kernel = createKernel({ queryCache: 'memo' }); // enables memoisation globally
-// Or per handler:
-const getTotalHandler = createQueryHandler({
-  queryType: 'cart/total',
-  memo: true,
-  handle: (state, q) => state.items.reduce((sum, i) => sum + i.price, 0),
-});
-```
-
-### Gap 7 — SSR Hydration Protocol
-
-**Problem:** Effector's `fork()`, Jotai's `hydrateAtoms`, and TanStack Query's
-`dehydrate/hydrate` all have server-to-client state transfer protocols. `@vi/state-fp`
-has `kernel.hydrate()` which reads from storage adapters — but no protocol for
-receiving server-rendered state as a bootstrap payload.
-
-**Proposed solution:**
-```ts
-const kernel = createKernel({
-  hydration: {
-    source: 'window.__INITIAL_STATE__',   // or: an explicit object
-    validate: true,                         // type-check before applying
+const asyncHandler = {
+  commandType: 'load',
+  handleAsync: async (state, cmd, ctx) => {
+    const data = await fetch('/api/data', { signal: ctx.signal });
+    return right([domainEvent('loaded', { data: await data.json() })]);
   },
-});
-await kernel.hydrate();
-// State initialised from server payload, then confirmed/updated from storage
-```
-
-### Gap 8 — React Adapter
-
-**Problem:** The React stub in Phase 5 declares types only. For MFE shells using Next.js
-or React micro-frontends, there is no usable React integration.
-
-**Proposed solution:** Factory pattern (mirroring Angular adapter):
-```ts
-export type ReactAPIs = {
-  useState: <T>(init: T | (() => T)) => [T, (v: T | ((prev: T) => T)) => void];
-  useEffect: (fn: () => (() => void) | void, deps: unknown[]) => void;
-  useRef: <T>(init: T) => { current: T };
-  useMemo: <T>(fn: () => T, deps: unknown[]) => T;
 };
-export function createReactAdapter(apis: ReactAPIs): ReactKernelAdapter;
+kernel.registerAsync(atom, asyncHandler, applier);
+await kernel.executeAsync(atom, command('load'), { signal: abortController.signal });
 ```
 
-### Gap 9 — Co-located Command Handler Registration
+### Gap 3 — Optimistic Updates + Rollback ✅ RESOLVED (Phase 2.6)
 
-**Problem:** Currently, command handlers and event appliers must be registered with
-`kernel.register(atom, handler, applier)` separately from `defineAtom`. In large
-applications this creates a "registration ceremony" that spreads logic across files.
+**Implemented:** `kernel.executeOptimistic()` with automatic rollback:
 
-**Proposed solution:** Allow `defineAtom` to optionally declare its handlers:
+```ts
+const result = await kernel.executeOptimistic(atom, cmd, {
+  optimisticApplier: (s) => ({ ...s, loading: true }),
+  confirm: async (state) => api.save(state),
+  onRollback: (err) => showError(err),
+});
+```
+
+### Gap 4 — Cross-MFE Event Bus ❌ PENDING (Phase 4.5)
+
+**Status:** Not yet implemented. `@vi/state-fp/bus` planned.
+
+**Proposed solution:**
+```ts
+const bus = createSharedBus('vi/events');
+bus.publish({ type: 'cart/CheckoutCompleted', payload: { orderId } });
+bus.subscribe({ type: 'cart/CheckoutCompleted' }, (e) => updateHeader(e.payload));
+```
+
+### Gap 5 — Command Payload Validation ❌ PENDING (Phase 3.5)
+
+**Status:** Not yet implemented. Optional `validate` fn on `CommandHandler` planned.
+
+### Gap 6 — Query Memoisation ❌ PENDING (Phase 3.6)
+
+**Status:** Not yet implemented. Per-handler `memo: true` planned.
+
+### Gap 7 — SSR Hydration Protocol ❌ PENDING (Phase 3.7)
+
+**Status:** Not yet implemented. `window.__INITIAL_STATE__` bootstrap planned.
+
+### Gap 8 — React Adapter ⚠️ PARTIAL (Phase 5.4)
+
+**Status:** Types and type-level tests complete. Runtime hooks throw `NOT_IMPLEMENTED`.
+Factory wiring needed to connect React APIs to the kernel adapter.
+
+### Gap 9 — Co-located Command Handler Registration ✅ RESOLVED (Phase 1.3)
+
+**Implemented:** `defineAtom` accepts `commands`, `applier`, and `queries` inline:
 ```ts
 const counterAtom = defineAtom({
   key: 'vi/counter',
   initialState: { count: 0 },
-  commands: [incrementByHandler],    // pure — unit-testable independently
-  applier: counterApplier,           // pure — unit-testable independently
-  queries: [getCurrentCountHandler],
+  commands: [incrementByHandler],
+  applier: counterApplier,
 });
-kernel.register(counterAtom); // reads handlers from definition
+kernel.register(counterAtom);
 ```
-This mirrors how Effector declares stores with their connected events at creation time.
 
-### Gap 10 — Saga / Process Manager
+### Gap 10 — Saga / Process Manager ❌ PENDING (Phase 7)
 
-**Problem:** XState actors, Redux-Saga, and NgRx Effects all handle long-running
-multi-step business processes (e.g. checkout flow: validate cart → reserve inventory →
-charge payment → emit receipt). These span multiple commands, atoms, and async steps.
-`@vi/state-fp` has no saga or process manager primitive.
-
-**Proposed solution:** `createSaga`
-```ts
-const checkoutSaga = createSaga({
-  trigger: 'order/checkoutStarted',
-  steps: [
-    { atom: inventoryAtom, command: (ctx) => ReserveItems(ctx.event.payload.items) },
-    { atom: paymentAtom,   command: (ctx) => Charge(ctx.event.payload.total) },
-    { atom: orderAtom,     command: (ctx) => ConfirmOrder(ctx.correlationId) },
-  ],
-  onError: (step, err, ctx) => ctx.compensate(step),
-});
-kernel.useSaga(checkoutSaga);
-```
+**Status:** Not yet implemented. `createSaga()` planned for Phase 7.
 
 ---
 

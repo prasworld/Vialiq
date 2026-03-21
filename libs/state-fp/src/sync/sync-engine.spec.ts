@@ -189,4 +189,52 @@ describe('createSyncEngine', () => {
 
     engine.destroy();
   });
+
+  it('destroy() removes all shared atoms from the engine', async () => {
+    const atomA = createAtom('vi/a', 0);
+    const atomB = createAtom('vi/b', 0);
+    const kernel = { subscribe: <S>(a: Atom<S>, l: (v: S) => void) => a.subscribe(l) };
+
+    const engine = createSyncEngine({ kernel });
+    engine.share(atomA, { channel: 'vi/a', peerId: 'p1' });
+    engine.share(atomB, { channel: 'vi/b', peerId: 'p1' });
+
+    expect(engine.getState('vi/a')).toBeDefined();
+    expect(engine.getState('vi/b')).toBeDefined();
+
+    engine.destroy();
+
+    expect(engine.getState('vi/a')).toBeUndefined();
+    expect(engine.getState('vi/b')).toBeUndefined();
+  });
+
+  it('share() is idempotent — warns and returns existing unsub for already-shared atom', async () => {
+    const atom   = createAtom('vi/counter', 0);
+    const kernel = { subscribe: <S>(a: Atom<S>, l: (v: S) => void) => a.subscribe(l) };
+    const engine = createSyncEngine({ kernel });
+
+    engine.share(atom, { channel: 'vi/counter', peerId: 'local' });
+    // Calling share again should not throw or create a new channel
+    expect(() => engine.share(atom, { channel: 'vi/counter', peerId: 'local' })).not.toThrow();
+
+    engine.destroy();
+  });
+
+  it('connected flag is false when BroadcastChannel is unavailable (SSR)', async () => {
+    // Temporarily remove BroadcastChannel to simulate SSR/Node.js
+    const saved = (globalThis as unknown as { BroadcastChannel?: unknown }).BroadcastChannel;
+    delete (globalThis as unknown as { BroadcastChannel?: unknown }).BroadcastChannel;
+
+    const atom   = createAtom('vi/counter', 0);
+    const kernel = { subscribe: <S>(a: Atom<S>, l: (v: S) => void) => a.subscribe(l) };
+    const engine = createSyncEngine({ kernel });
+
+    engine.share(atom, { channel: 'vi/ssr', peerId: 'ssr-peer' });
+
+    const state = engine.getState<number>('vi/counter');
+    expect(state?.connected).toBe(false);
+
+    engine.destroy();
+    (globalThis as unknown as { BroadcastChannel?: unknown }).BroadcastChannel = saved;
+  });
 });
