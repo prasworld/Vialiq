@@ -28,7 +28,7 @@ export class ProfilingStrategy implements MappingStrategy {
     config: MappingConfig<S, D> | undefined,
     options: MapperOptions,
     visited: WeakSet<Record<string, unknown>>
-  ): D | Promise<D> {
+  ): D | null | Promise<D | null> {
     const start = Date.now();
     const result = this.strategy.map(
       registry,

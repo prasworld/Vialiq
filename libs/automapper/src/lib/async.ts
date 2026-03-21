@@ -30,12 +30,10 @@ export class AsyncStrategy extends DefaultStrategy {
     options: MapperOptions = {},
     visited: WeakSet<Record<string, unknown>>,
     ctx?: import('./context').MappingContext
-  ): Promise<D> {
+  ): Promise<D | null> {
     // preCondition — skip entire mapping if predicate fails
     if (this.isPreConditionFailed(config, src)) {
-      // Explicitly return a resolved Promise so the return type matches the
-      // declared async signature (Promise<D>) rather than casting null as D.
-      return Promise.resolve(null) as unknown as Promise<D>;
+      return null;
     }
 
     const dest: Partial<D> = {} as Partial<D>;
@@ -83,7 +81,7 @@ export class AsyncStrategy extends DefaultStrategy {
       // Use shared resolver selection, which may return a Promise
       const resolverResult = selectResolver(r, src, ctx);
       const value = resolverResult instanceof Promise ? await resolverResult : resolverResult;
-      const substituted = applySubstitution(value, r);
+      const substituted = applySubstitution(value, r as unknown as MemberRule<unknown, unknown>);
 
       if (substituted === undefined) continue;
       if (r.destKey.includes('.')) {

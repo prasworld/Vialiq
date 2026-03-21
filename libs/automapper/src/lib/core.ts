@@ -33,8 +33,9 @@ export interface Mapper<S, D> {
   /**
    * Execute the mapping on a single source object.  Returns either a
    * direct value or a `Promise` when asynchronous strategies are involved.
+   * Returns `null` when a `preCondition` predicate fails for the mapping.
    */
-  (source: S): D | Promise<D>;
+  (source: S): D | null | Promise<D | null>;
 }
 
 /**
@@ -52,14 +53,15 @@ export interface MapperRegistry {
     source: Constructor<S> | string,
     dest: Constructor<D> | string
   ): Mapper<S, D>;
-  map<S, D>(src: S, destType: Constructor<D> | string, visited?: WeakSet<Record<string, unknown>>): D | Promise<D>;
+  map<S, D>(src: S, destType: Constructor<D> | string, visited?: WeakSet<Record<string, unknown>>): D | null | Promise<D | null>;
   /**
    * Async-first shorthand for `map`. Always returns a `Promise`, and
    * automatically activates `AsyncStrategy` if not already present.
    * Use when profiles contain `mapFromAsync` rules.
+   * Returns `Promise<D | null>` when a `preCondition` predicate fails.
    */
-  mapAsync<S, D>(src: S, destType: Constructor<D> | string): Promise<D>;
-  mapArray<S, D>(src: S[], destType: Constructor<D> | string): D[] | Promise<D[]>;
+  mapAsync<S, D>(src: S, destType: Constructor<D> | string): Promise<D | null>;
+  mapArray<S, D>(src: S[], destType: Constructor<D> | string): Array<D | null> | Promise<Array<D | null>>;
   /**
    * Auto-create the inverse profile from an existing source→destination
    * profile.  Simple `mapFrom(s => s.prop)` rules are reversed; rules
@@ -162,7 +164,7 @@ class MapperRegistryImpl implements MapperRegistry, PluginAwareRegistry {
     destType: Constructor<D> | string,
     visited: WeakSet<Record<string, unknown>> = new WeakSet(),
     ctx?: import('./context').MappingContext
-  ): D | Promise<D> {
+  ): D | null | Promise<D | null> {
     if (src === null || src === undefined) {
       return src as unknown as D;
     }
@@ -182,7 +184,7 @@ class MapperRegistryImpl implements MapperRegistry, PluginAwareRegistry {
     // Ensure a MappingContext exists so hooks and resolvers can use it.
     // Pass `visited` and the resolved `ctx` so nested ctx.map() calls share
     // circular-reference tracking and the same operation context.
-    ctx = ctx ?? createContext({}, (s, dest) => this.map(s as S, dest as Constructor<D> | string, visited, ctx));
+    ctx = ctx ?? createContext({}, (s, dest) => this.map(s as unknown as S, dest as Constructor<D> | string, visited, ctx));
 
     // Notify plugins about map start and report end/error. Keep mapping
     // result semantics (sync vs async) intact by wrapping promises.
@@ -195,7 +197,7 @@ class MapperRegistryImpl implements MapperRegistry, PluginAwareRegistry {
       }
     }
 
-    let result: D | Promise<D>;
+    let result: D | null | Promise<D | null>;
     try {
       result = strat.map(this, src, destType, config, this.options, visited, ctx);
     } catch (err) {
@@ -234,28 +236,28 @@ class MapperRegistryImpl implements MapperRegistry, PluginAwareRegistry {
     if (result instanceof Promise) {
       // Apply transformers before reportEnd so plugins observe the final output.
       return result
-        .then(r => this.applyValueTransformers(r as unknown) as D)
+        .then(r => this.applyValueTransformers(r as unknown) as D | null)
         .then(reportEnd)
-        .catch((e) => reportError(e as Error) as never) as Promise<D>;
+        .catch((e) => reportError(e as Error) as never) as Promise<D | null>;
     }
 
     try {
       // Apply transformers before reportEnd so plugins observe the final output.
-      return reportEnd(this.applyValueTransformers(result as unknown)) as D;
+      return reportEnd(this.applyValueTransformers(result as unknown)) as D | null;
     } catch (e) {
       return reportError(e as Error) as never;
     }
   }
 
-  mapArray<S, D>(src: S[], destType: Constructor<D> | string): D[] | Promise<D[]> {
+  mapArray<S, D>(src: S[], destType: Constructor<D> | string): Array<D | null> | Promise<Array<D | null>> {
     const visited = new WeakSet<Record<string, unknown>>();
     const results = src.map(s => this.map(s, destType, visited));
     if (results.some(r => r instanceof Promise)) {
       return Promise.all(results).then((res) =>
         res.filter((r) => r !== CIRCULAR_IGNORE)
-      ) as Promise<D[]>;
+      ) as Promise<Array<D | null>>;
     }
-    return results.filter((r) => r !== CIRCULAR_IGNORE) as D[];
+    return results.filter((r) => r !== CIRCULAR_IGNORE) as Array<D | null>;
   }
 
   addStrategy(s: MappingStrategy) {
@@ -318,14 +320,14 @@ class MapperRegistryImpl implements MapperRegistry, PluginAwareRegistry {
     }
 
     // Scalar value — run through registered transformers in registration order
-    let result = value;
+    let result: unknown = value;
     for (const t of this.valueTransformers) {
       result = t(result);
     }
     return result;
   }
 
-  mapAsync<S, D>(src: S, destType: Constructor<D> | string): Promise<D> {
+  mapAsync<S, D>(src: S, destType: Constructor<D> | string): Promise<D | null> {
     // Auto-activate AsyncStrategy on first mapAsync call.
     // Insert just before DefaultStrategy so plugin strategies (which are unshifted
     // ahead of DefaultStrategy) remain able to wrap or override async mappings.

@@ -21,7 +21,7 @@ export interface MappingStrategy {
     options: MapperOptions,
     visited: WeakSet<Record<string, unknown>>,
     ctx?: import('./context').MappingContext
-  ): D | Promise<D>;
+  ): D | null | Promise<D | null>;
 }
 
 /**
@@ -41,7 +41,7 @@ export class DefaultStrategy implements MappingStrategy {
    * mode validation, and recursion.  It returns either a value or a
    * promise (the latter when used via `AsyncStrategy`).
    */
-  protected isPreConditionFailed<S>(config: MappingConfig<S, unknown>, src: S): boolean {
+  protected isPreConditionFailed<S, D>(config: MappingConfig<S, D>, src: S): boolean {
     return !!config.preCondition && !config.preCondition(src);
   }
 
@@ -62,7 +62,7 @@ export class DefaultStrategy implements MappingStrategy {
     options: MapperOptions = {},
     visited: WeakSet<Record<string, unknown>>,
     ctx?: import('./context').MappingContext
-  ): D | Promise<D> {
+  ): D | null | Promise<D | null> {
     // preCondition — skip entire mapping if predicate fails
     if (this.isPreConditionFailed(config, src)) {
       return null as unknown as D;
@@ -119,7 +119,7 @@ export class DefaultStrategy implements MappingStrategy {
           `Add AsyncStrategy to the mapper to handle async resolvers: mapper.addStrategy(new AsyncStrategy())`
         );
       }
-      const substituted = applySubstitution(value, r);
+      const substituted = applySubstitution(value, r as unknown as MemberRule<unknown, unknown>);
 
       if (substituted === undefined) continue;
       if (r.destKey.includes('.')) {

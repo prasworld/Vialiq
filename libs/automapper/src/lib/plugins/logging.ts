@@ -32,7 +32,7 @@ export class LoggingStrategy implements MappingStrategy {
     config: MappingConfig<S, D> | undefined,
     options: MapperOptions,
     visited: WeakSet<Record<string, unknown>>
-  ): D | Promise<D> {
+  ): D | null | Promise<D | null> {
     const srcName = src && typeof src === 'object' ? ((src as unknown) as Record<string, unknown>).constructor.name : String(src);
     const destName = typeof destType === 'string' ? destType : (destType as { name: string }).name || 'Unknown';
     this.logger(`[LoggingStrategy] mapping ${srcName} -> ${destName}`);
