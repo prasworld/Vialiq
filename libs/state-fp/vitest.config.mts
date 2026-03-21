@@ -1,12 +1,17 @@
 /// <reference types="vitest" />
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
     name: 'state-fp',
     globals: true,
     environment: 'node',
-    include: ['src/**/*.{spec,test}.ts', 'src/**/__tests__/**/*.ts', 'test-d/**/*.spec-d.ts'],
+    // Nx executes from workspace root, so use workspace-relative globs.
+    include: [
+      'libs/state-fp/src/**/*.{spec,test}.ts',
+      'libs/state-fp/src/**/__tests__/**/*.ts',
+      'libs/state-fp/test-d/**/*.spec-d.ts',
+    ],
     coverage: {
       provider: 'v8',
       reportsDirectory: '../../coverage/state-fp',

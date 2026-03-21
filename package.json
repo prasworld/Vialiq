@@ -9,6 +9,8 @@
     "build": "nx build shell --configuration=production",
     "build:dev": "nx build shell --configuration=development",
     "test": "nx test shell",
+    "clean:vitest": "bash ./tools/scripts/clean-vitest.sh",
+    "clean:test": "npm run clean:vitest && rm -rf coverage && nx reset",
     "test:automapper:cov": "npx nx test automapper --skip-nx-cache -- --coverage --reporter verbose",
     "lint": "nx lint shell",
     "format": "nx format:write",

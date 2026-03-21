@@ -46,3 +46,8 @@ Thumbs.db
 __screenshots__/
 
 vitest.config.*.timestamp*
+
+# Vitest residual artifacts
+.vitest
+**/.vitest
+node_modules/.vitest
