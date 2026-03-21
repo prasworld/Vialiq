@@ -54,18 +54,22 @@ export type CartState = {
 
 ```ts
 // src/cart/atom.ts
-import { defineAtom }        from '@vi/state-fp/kernel';
-import { createMemoryAdapter } from '@vi/state-fp/storage';
-import type { CartState }    from './types.js';
+import { defineAtom }     from '@vi/state-fp/kernel';
+import { MemoryAdapter }   from '@vi/state-fp/storage';
+import type { CartState }  from './types.js';
 
 export const cartAtom = defineAtom<CartState>({
   key: 'vi/cart',
   initialState: { items: [], coupon: null, checkoutError: null },
 
-  // Persists the cart to in-memory Storage (MemoryAdapter).
-  // In environments that permit persistent storage, you can replace with
-  // a secure adapter implementation subject to policy review.
-  storage: { adapter: createMemoryAdapter({ ttl: 60 * 60 * 1000 }) },
+  // Persists the cart to an in-memory store (MemoryAdapter + atom TTL).
+  // @vi/state-fp enforces memory-only storage; persistent adapters (IndexedDB/
+  // localStorage) are disallowed by default security policy.
+  storage: {
+    adapter: new MemoryAdapter(),
+    ttl: 60 * 60 * 1000,
+    security: 'memory-only',
+  },
 });
 ```
 

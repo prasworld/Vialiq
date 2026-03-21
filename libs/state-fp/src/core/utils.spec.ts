@@ -168,13 +168,22 @@ describe('deepClone', () => {
   it('falls back to JSON round-trip when structuredClone is unavailable', () => {
     const savedStructuredClone = (globalThis as { structuredClone?: typeof structuredClone }).structuredClone;
     delete (globalThis as { structuredClone?: typeof structuredClone }).structuredClone;
+
+    const stringifySpy = vi.spyOn(JSON, 'stringify');
+    const parseSpy = vi.spyOn(JSON, 'parse');
     try {
       const orig   = { a: 1, b: { c: 2 } };
       const cloned = deepClone(orig);
+
       expect(cloned).toEqual(orig);
       expect(cloned).not.toBe(orig);
       expect(cloned.b).not.toBe(orig.b);
+
+      expect(stringifySpy).toHaveBeenCalled();
+      expect(parseSpy).toHaveBeenCalled();
     } finally {
+      stringifySpy.mockRestore();
+      parseSpy.mockRestore();
       (globalThis as { structuredClone?: typeof structuredClone }).structuredClone = savedStructuredClone;
     }
   });

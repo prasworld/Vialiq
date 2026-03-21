@@ -213,10 +213,19 @@ describe('createSyncEngine', () => {
     const kernel = { subscribe: <S>(a: Atom<S>, l: (v: S) => void) => a.subscribe(l) };
     const engine = createSyncEngine({ kernel });
 
-    engine.share(atom, { channel: 'vi/counter', peerId: 'local' });
-    // Calling share again should not throw or create a new channel
-    expect(() => engine.share(atom, { channel: 'vi/counter', peerId: 'local' })).not.toThrow();
+    const firstUnsub = engine.share(atom, { channel: 'vi/counter', peerId: 'local' });
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
+    const secondUnsub = engine.share(atom, { channel: 'vi/counter', peerId: 'local' });
+
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    expect(secondUnsub).toBe(firstUnsub);
+
+    // still supports proper teardown
+    secondUnsub();
+    expect(engine.getState(atom.key)).toBeUndefined();
+
+    warnSpy.mockRestore();
     engine.destroy();
   });
 
