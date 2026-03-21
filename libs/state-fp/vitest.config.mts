@@ -10,7 +10,7 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reportsDirectory: '../../coverage/state-fp',
-      include: ['src/core/**/*.ts', 'src/kernel/**/*.ts'],
+      include: ['src/**/*.ts'],
       exclude: [
         'src/**/*.spec.ts',
         'src/**/*.test.ts',

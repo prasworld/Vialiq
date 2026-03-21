@@ -48,13 +48,13 @@ package "Reactive Primitives" {
 
 package "Persistence Layer" {
   [Storage Adapters] as storage <<Component>>
-  [IndexedDB Adapter] as idb <<Component>>
-  [LocalStorage Adapter] as ls <<Component>>
+  [MemoryAdapter] as mem <<Component>>
   [Custom Adapters] as custom <<Component>>
   
   note bottom of storage
-    Persist atoms • Restore on startup
-    Encryption/obfuscation support (Phase 5.6)
+    MemoryAdapter only (browser-persistent adapters
+    removed by security policy — no plaintext on disk)
+    TTL sweep · Hydration on startup
   end note
 }
 
@@ -88,7 +88,7 @@ adapters --> kernel : subscribe/command/query
 adapters --> ephemeral : subscribeAnimated
 ephemeral --> subscribers : emit → RAF batch
 kernel --> atoms : setState
-atoms --> storage : persist
+atoms --> storage : persist (MemoryAdapter)
 atoms --> sync : share (broadcast)
 atoms --> events : domainEvent
 sync --> transport : send (message)

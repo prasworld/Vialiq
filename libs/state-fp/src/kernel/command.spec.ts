@@ -35,6 +35,16 @@ describe('command', () => {
     const cmd = command('x');
     expect(cmd.meta!.timestamp).toBeGreaterThan(0);
   });
+
+  it('includes causationId when provided in meta', () => {
+    const cmd = command('x', undefined, { causationId: 'parent-001' });
+    expect((cmd.meta as { causationId?: string }).causationId).toBe('parent-001');
+  });
+
+  it('includes issuedBy when provided in meta', () => {
+    const cmd = command('x', undefined, { issuedBy: 'user-42' });
+    expect((cmd.meta as { issuedBy?: string }).issuedBy).toBe('user-42');
+  });
 });
 
 // ─── createCommandHandler() ──────────────────────────────────────────────────

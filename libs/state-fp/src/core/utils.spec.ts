@@ -117,6 +117,20 @@ describe('uuid', () => {
     const ids = new Set(Array.from({ length: 100 }, () => uuid()));
     expect(ids.size).toBe(100);
   });
+
+  it('falls back to Math.random-based UUID when crypto.randomUUID is unavailable', () => {
+    const savedCrypto = (globalThis as { crypto?: Crypto }).crypto;
+    // Remove crypto to force Math.random fallback
+    delete (globalThis as { crypto?: Crypto }).crypto;
+    try {
+      const id = uuid();
+      expect(id).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+      );
+    } finally {
+      (globalThis as { crypto?: Crypto }).crypto = savedCrypto;
+    }
+  });
 });
 
 // ─── now ─────────────────────────────────────────────────────────────────────
@@ -149,6 +163,29 @@ describe('deepClone', () => {
     const cloned = deepClone(arr);
     expect(cloned).toEqual(arr);
     expect(cloned).not.toBe(arr);
+  });
+
+  it('falls back to JSON round-trip when structuredClone is unavailable', () => {
+    const savedStructuredClone = (globalThis as { structuredClone?: typeof structuredClone }).structuredClone;
+    delete (globalThis as { structuredClone?: typeof structuredClone }).structuredClone;
+
+    const stringifySpy = vi.spyOn(JSON, 'stringify');
+    const parseSpy = vi.spyOn(JSON, 'parse');
+    try {
+      const orig   = { a: 1, b: { c: 2 } };
+      const cloned = deepClone(orig);
+
+      expect(cloned).toEqual(orig);
+      expect(cloned).not.toBe(orig);
+      expect(cloned.b).not.toBe(orig.b);
+
+      expect(stringifySpy).toHaveBeenCalled();
+      expect(parseSpy).toHaveBeenCalled();
+    } finally {
+      stringifySpy.mockRestore();
+      parseSpy.mockRestore();
+      (globalThis as { structuredClone?: typeof structuredClone }).structuredClone = savedStructuredClone;
+    }
   });
 });
 

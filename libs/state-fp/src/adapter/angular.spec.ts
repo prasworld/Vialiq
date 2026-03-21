@@ -98,4 +98,63 @@ describe('createAngularAdapter', () => {
     dispatch({ _kind: 'Command', type: 'counter/inc', meta: { correlationId: 'c1', timestamp: Date.now() } });
     expect(kernel.execute).toHaveBeenCalled();
   });
+
+  it('commandDispatcher returns the Either result from kernel.execute', () => {
+    const apis = {
+      inject: vi.fn(() => ({ onDestroy: (_cb: () => void) => {} })),
+      signal: vi.fn((initial: number) => {
+        let val = initial;
+        return Object.assign(() => val, { set: (n: number) => { val = n; } });
+      }),
+      DestroyRef: Symbol('DestroyRef'),
+    };
+
+    const atom = createAtom('counter', 0);
+    const expected = { _tag: 'Left' as const, left: { code: 'INVALID', message: 'bad' } };
+    const kernel = {
+      subscribe: vi.fn((a: Atom<number>, l: (v: number) => void) => a.subscribe(l)),
+      execute: vi.fn(() => expected),
+      query: vi.fn(),
+    };
+
+    const adapter = createAngularAdapter(apis);
+    const dispatch = adapter.commandDispatcher(atom, kernel as any);
+    const result = dispatch({ _kind: 'Command', type: 'counter/inc', meta: { correlationId: 'c2', timestamp: 0 } });
+    expect(result).toBe(expected);
+  });
+
+  it('toSignal unsubscribes when DestroyRef onDestroy fires', () => {
+    const destroyCallbacks: Array<() => void> = [];
+    let signalValue = 0;
+
+    const apis = {
+      inject: vi.fn(() => ({ onDestroy: (cb: () => void) => destroyCallbacks.push(cb) })),
+      signal: vi.fn((initial: number) => {
+        signalValue = initial;
+        return Object.assign(() => signalValue, { set: (n: number) => { signalValue = n; } });
+      }),
+      DestroyRef: Symbol('DestroyRef'),
+    };
+
+    const atom = createAtom('counter', 10);
+    // Return the REAL atom unsub so destroying the component actually stops updates
+    const kernel = {
+      subscribe: vi.fn((_a: Atom<number>, l: (v: number) => void) => atom.subscribe(l)),
+      execute: vi.fn(),
+      query: vi.fn(),
+    };
+
+    const adapter = createAngularAdapter(apis);
+    adapter.toSignal(atom, kernel as any);
+
+    atom._setState(20);
+    expect(signalValue).toBe(20);
+
+    // Simulate component destruction — adapter registered the kernel unsub via destroyRef.onDestroy
+    destroyCallbacks.forEach(cb => cb());
+
+    // State changes after destruction should not propagate
+    atom._setState(30);
+    expect(signalValue).toBe(20);
+  });
 });

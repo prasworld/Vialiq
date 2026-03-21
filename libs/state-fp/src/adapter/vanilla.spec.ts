@@ -67,4 +67,66 @@ describe('createAdapter', () => {
     expect(adapter.read(atom)).toBe(5);
     expect(adapter.query(atom, q as any)).toBe(50);
   });
+
+  it('destroy() clears all active watch subscriptions', () => {
+    const atom = createAtom('counter', 0);
+    const off1 = vi.fn();
+    const off2 = vi.fn();
+    let callCount = 0;
+    const kernel = {
+      subscribe: vi.fn(() => (++callCount === 1 ? off1 : off2)),
+      execute: vi.fn(),
+      query: vi.fn(),
+    };
+
+    const adapter = createAdapter(kernel as any);
+    adapter.watch(atom, () => {});
+    adapter.watch(atom, () => {});
+
+    adapter.destroy();
+    expect(off1).toHaveBeenCalledTimes(1);
+    expect(off2).toHaveBeenCalledTimes(1);
+  });
+
+  it('individual unwatch removes only that subscription from the set', () => {
+    const atomA = createAtom('a', 1);
+    const atomB = createAtom('b', 2);
+    const offA = vi.fn();
+    const offB = vi.fn();
+    let idx = 0;
+    const offs = [offA, offB];
+    const kernel = {
+      subscribe: vi.fn(() => offs[idx++]),
+      execute: vi.fn(),
+      query: vi.fn(),
+    };
+
+    const adapter = createAdapter(kernel as any);
+    const unwatchA = adapter.watch(atomA, () => {});
+    adapter.watch(atomB, () => {});
+
+    unwatchA();
+    expect(offA).toHaveBeenCalledTimes(1);
+
+    // destroy should only trigger the remaining (B) subscription
+    adapter.destroy();
+    expect(offB).toHaveBeenCalledTimes(1);
+    // offA not called a second time
+    expect(offA).toHaveBeenCalledTimes(1);
+  });
+
+  it('run() returns the Either result from kernel.execute', () => {
+    const atom = createAtom('counter', 0);
+    const expected = { _tag: 'Left', left: { code: 'INVALID', message: 'bad' } };
+    const kernel = {
+      subscribe: vi.fn(),
+      execute: vi.fn(() => expected),
+      query: vi.fn(),
+    };
+
+    const adapter = createAdapter(kernel as any);
+    const cmd = { _kind: 'Command', type: 'counter/inc', meta: { correlationId: 'c1', timestamp: 0 } };
+    const result = adapter.run(atom, cmd as any);
+    expect(result).toBe(expected);
+  });
 });

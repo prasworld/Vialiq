@@ -88,20 +88,35 @@ package "EphemeralStream (High-Frequency)" {
 
 package "Storage Layer" {
   interface StorageAdapter {
-    + save(key, value): Promise<void>
-    + load(key): Promise<value>
-    + clear(key): Promise<void>
+    + name: string
+    + get<T>(key: string): StorageResult<Maybe<T>>
+    + set<T>(key: string, value: T, ttl?: number): StorageResult<void>
+    + delete(key: string): StorageResult<void>
+    + clear(prefix?: string): StorageResult<void>
+    + keys(prefix?: string): StorageResult<string[]>
+    + exists(key: string): StorageResult<boolean>
   }
   
-  class IndexedDBAdapter {
-    - db: IDBDatabase
-    - storeName: string
+  class MemoryAdapter {
+    - store: Map<string, StorageEntry>
+    - sweepIntervalMs: number
     --
-    + save(key, value)
-    + load(key)
+    + get<T>(key: string): StorageResult<Maybe<T>>
+    + set<T>(key: string, value: T, ttl?: number): StorageResult<void>
+    + delete(key: string): StorageResult<void>
+    + clear(prefix?: string): StorageResult<void>
+    + keys(prefix?: string): StorageResult<string[]>
+    + exists(key: string): StorageResult<boolean>
+    + dispose(): void
   }
   
-  StorageAdapter <|-- IndexedDBAdapter
+  note bottom of MemoryAdapter
+    Only permitted adapter.
+    Browser-persistent adapters (IndexedDB, LocalStorage)
+    are blocked by StorageGuard at runtime + compile time.
+  end note
+  
+  StorageAdapter <|-- MemoryAdapter
 }
 
 package "Sync Engine (Cross-Tab Orchestration)" {
