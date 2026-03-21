@@ -232,14 +232,19 @@ class MapperRegistryImpl implements MapperRegistry, PluginAwareRegistry {
     };
 
     if (result instanceof Promise) {
-      return result.then(reportEnd).then(r => this.applyValueTransformers(r as unknown) as D).catch((e) => {
-        reportError(e);
-        throw e;
-      }) as Promise<D>;
+      // Apply transformers before reportEnd so plugins observe the final output.
+      return result
+        .then(r => this.applyValueTransformers(r as unknown) as D)
+        .then(reportEnd)
+        .catch((e) => {
+          reportError(e);
+          throw e;
+        }) as Promise<D>;
     }
 
     try {
-      return this.applyValueTransformers(reportEnd(result as unknown) as unknown) as D;
+      // Apply transformers before reportEnd so plugins observe the final output.
+      return reportEnd(this.applyValueTransformers(result as unknown)) as D;
     } catch (e) {
       return reportError(e as Error) as never;
     }
@@ -277,9 +282,11 @@ class MapperRegistryImpl implements MapperRegistry, PluginAwareRegistry {
 
   /**
    * Recursively apply all registered value transformers to scalar values
-   * in the mapped output object.
+   * in the mapped output object, mutating it in-place.
+   * Mutating preserves the same object identity that afterMap hooks and
+   * plugins interacted with, and retains non-enumerable property descriptors.
    */
-  private applyValueTransformers(value: unknown, visited = new WeakMap<object, unknown>()): unknown {
+  private applyValueTransformers(value: unknown, visited = new WeakSet<object>()): unknown {
     // Fast path: no transformers registered — return as-is to preserve object references.
     if (this.valueTransformers.length === 0) return value;
 
@@ -287,30 +294,29 @@ class MapperRegistryImpl implements MapperRegistry, PluginAwareRegistry {
 
     if (typeof value === 'object') {
       const obj = value as object;
-      if (visited.has(obj)) {
-        return visited.get(obj);
-      }
+      // Cycle guard — already visited, return same reference to break the cycle.
+      if (visited.has(obj)) return obj;
+      visited.add(obj);
 
       if (Array.isArray(obj)) {
-        const arr: unknown[] = [];
-        visited.set(obj, arr);
-        for (const item of obj) {
-          arr.push(this.applyValueTransformers(item, visited));
+        // Mutate elements in-place to preserve array identity.
+        for (let i = 0; i < obj.length; i++) {
+          obj[i] = this.applyValueTransformers(obj[i], visited);
         }
-        return arr;
+        return obj;
       }
 
       if (this.isPlainObject(obj)) {
-        const transformedObj: Record<string, unknown> = {};
-        visited.set(obj, transformedObj);
-        for (const key of Object.keys(obj as Record<string, unknown>)) {
-          transformedObj[key] = this.applyValueTransformers((obj as Record<string, unknown>)[key], visited);
+        // Mutate properties in-place to preserve object identity and any
+        // non-enumerable descriptors added by afterMap or plugins.
+        const record = obj as Record<string, unknown>;
+        for (const key of Object.keys(record)) {
+          record[key] = this.applyValueTransformers(record[key], visited);
         }
-        return transformedObj;
+        return obj;
       }
 
-      // Receive non-plain objects (Date/Map/Set/class instances) as-is.
-      visited.set(obj, obj);
+      // Non-plain objects (Date/Map/Set/class instances) passed through as-is.
       return obj;
     }
 
@@ -323,9 +329,16 @@ class MapperRegistryImpl implements MapperRegistry, PluginAwareRegistry {
   }
 
   mapAsync<S, D>(src: S, destType: Constructor<D> | string): Promise<D> {
-    // Auto-activate AsyncStrategy on first mapAsync call
+    // Auto-activate AsyncStrategy on first mapAsync call.
+    // Insert just before DefaultStrategy so plugin strategies (which are unshifted
+    // ahead of DefaultStrategy) remain able to wrap or override async mappings.
     if (!this.strategies.some(s => s instanceof AsyncStrategy)) {
-      this.strategies.unshift(new AsyncStrategy());
+      const defaultIdx = this.strategies.findIndex(s => s instanceof DefaultStrategy);
+      if (defaultIdx === -1) {
+        this.strategies.push(new AsyncStrategy());
+      } else {
+        this.strategies.splice(defaultIdx, 0, new AsyncStrategy());
+      }
     }
     const result = this.map(src, destType);
     return result instanceof Promise ? result : Promise.resolve(result);
@@ -360,18 +373,22 @@ class MapperRegistryImpl implements MapperRegistry, PluginAwareRegistry {
 
     const reverseKey = this.getProfileKey(dest, source);
 
-    // Preserve reversible profile settings; hooks and preCondition cannot be
-    // safely inverted because the source/destination semantics are swapped.
+    // Only carry over MappingConfig-compatible fields. autoMap/strict are
+    // MapperOptions fields (not MappingConfig fields) and are read from the
+    // registry options by strategies — they must not be set on the config object.
+    // preCondition/beforeMap/afterMap are intentionally omitted because they are
+    // tied to the original source/destination direction.
     const reverseConfig: MappingConfig<unknown, unknown> = {
       memberRules: reverseRules,
-      autoMap: config.autoMap,
-      strict: config.strict,
       namingConvention: config.namingConvention,
-      // preCondition/beforeMap/afterMap are intentionally omitted in reverse
-      // because they are tied to the original source/destination direction.
     };
 
     this.profiles.set(reverseKey, reverseConfig);
+
+    // Notify plugins — mirrors the same hook fired in addProfile().
+    for (const p of this.pluginRegistry.values()) {
+      p.onProfileAdded?.(reverseKey, reverseConfig as unknown);
+    }
   }
 
   assertConfigurationIsValid(): void {
