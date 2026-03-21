@@ -214,13 +214,13 @@ class MapperRegistryImpl implements MapperRegistry, PluginAwareRegistry {
     const errors: string[] = [];
     for (const [profileKey, config] of this.profiles.entries()) {
       for (const rule of config.memberRules) {
-        const r = rule as Record<string, unknown>;
+        const typedRule = rule as MemberRule<unknown, unknown>;
         const hasResolver =
           rule.ignore ||
           rule.mapFrom ||
           rule.mapFromAsync ||
-          r['mapWith'] !== undefined ||
-          r['fromValue'] !== undefined;
+          typedRule.mapWith !== undefined ||
+          typedRule.fromValue !== undefined;
         if (!hasResolver) {
           errors.push(
             `Profile '${profileKey}': member '${rule.destKey}' has no resolver (mapFrom, mapWith, fromValue, mapFromAsync, or ignore)`

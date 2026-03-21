@@ -79,14 +79,14 @@ export class DefaultStrategy implements MappingStrategy {
     // Handle typed member rules where possible so assignments are type-checked
     const typedRules = config.memberRules as MemberRule<S, D, keyof D & string>[];
     for (const r of typedRules) {
-      if (r.ignore) {
-        // remove property if present
-        delete (dest as Partial<Record<string, unknown>>)[r.destKey];
+      // Condition guard — check FIRST so condition() cannot bypass ignore()
+      if (r.condition && !r.condition(src)) {
         continue;
       }
 
-      // Condition guard — skip this rule entirely when predicate fails
-      if (r.condition && !r.condition(src)) {
+      if (r.ignore) {
+        // remove property if present
+        delete (dest as Partial<Record<string, unknown>>)[r.destKey];
         continue;
       }
 

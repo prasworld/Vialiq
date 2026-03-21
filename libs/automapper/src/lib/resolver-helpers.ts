@@ -26,23 +26,23 @@ export function selectResolver<S, D>(
   src: S,
   ctx?: MappingContext
 ): Promise<unknown> | unknown {
-  const r = rule as Record<string, unknown>;
+  const r = rule as MemberRule<S, D> & Record<string, unknown>;
 
-  // fromValue takes precedence
-  if (r['fromValue'] !== undefined) {
-    return (r['fromValue'] as { readonly __v: unknown }).__v;
+  // fromValue takes precedence (check __configured to distinguish set vs not-set)
+  if (r.__configured?.fromValue) {
+    return r.fromValue;
   }
   // mapFromAsync (caller must await)
-  if (r['mapFromAsync'] !== undefined) {
-    return (r['mapFromAsync'] as (s: S, ctx?: MappingContext) => Promise<unknown>)(src, ctx);
+  if (r.mapFromAsync !== undefined) {
+    return r.mapFromAsync(src, ctx);
   }
   // mapFrom (sync)
-  if (r['mapFrom'] !== undefined) {
-    return (r['mapFrom'] as (s: S, ctx?: MappingContext) => unknown)(src, ctx);
+  if (r.mapFrom !== undefined) {
+    return r.mapFrom(src, ctx);
   }
   // mapWith converter
-  if (r['mapWith'] !== undefined) {
-    return (r['mapWith'] as (s: S) => unknown)(src);
+  if (r.mapWith !== undefined) {
+    return r.mapWith(src);
   }
   // No resolver
   return undefined;
@@ -61,13 +61,14 @@ export function applySubstitution(
   value: unknown,
   rule: MemberRule<unknown, unknown> | Record<string, unknown>
 ): unknown {
-  const r = rule as Record<string, unknown>;
+  const r = rule as MemberRule<unknown, unknown> & Record<string, unknown>;
 
-  if ((value === null || value === undefined) && r['nullSubstitution'] !== undefined) {
-    return r['nullSubstitution'];
+  // Use presence checks (__configured) to allow undefined as a configured value
+  if ((value === null || value === undefined) && r.__configured?.nullSubstitution) {
+    return r.nullSubstitution;
   }
-  if (value === undefined && r['defaultValue'] !== undefined) {
-    return r['defaultValue'];
+  if (value === undefined && r.__configured?.defaultValue) {
+    return r.defaultValue;
   }
   return value;
 }

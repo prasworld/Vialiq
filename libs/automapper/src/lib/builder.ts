@@ -16,8 +16,10 @@ export interface MemberRule<S, D, K extends string = string> {
   nullSubstitution?: K extends keyof D ? D[K & keyof D] : unknown;
   /** Use this value when the resolved value is undefined. */
   defaultValue?: K extends keyof D ? D[K & keyof D] : unknown;
-  /** Emit a constant value — boxed to correctly handle fromValue(undefined). */
-  fromValue?: { readonly __v: K extends keyof D ? D[K & keyof D] : unknown };
+  /** Emit a constant value. Can be set to undefined to omit the property. */
+  fromValue?: K extends keyof D ? D[K & keyof D] : unknown;
+  /** Track which optional fields were explicitly configured (to distinguish undefined from not-set). */
+  __configured?: { fromValue?: boolean; nullSubstitution?: boolean; defaultValue?: boolean };
 }
 
 // configuration object collected by profile
@@ -102,16 +104,22 @@ export class MappingBuilder<S, D> {
         rule.mapWith = converter as unknown as MemberRule<S, D>['mapWith'];
       },
       fromValue(val: unknown) {
-        (rule as MemberRule<S, D>).fromValue = { __v: val } as MemberRule<S, D>['fromValue'];
+        rule.fromValue = val as unknown as MemberRule<S, D>['fromValue'];
+        if (!rule.__configured) rule.__configured = {};
+        rule.__configured.fromValue = true;
       },
       condition(fn: (s: S) => boolean) {
         rule.condition = fn;
       },
       nullSubstitution(val: unknown) {
-        (rule as MemberRule<S, D>).nullSubstitution = val as MemberRule<S, D>['nullSubstitution'];
+        rule.nullSubstitution = val as unknown as MemberRule<S, D>['nullSubstitution'];
+        if (!rule.__configured) rule.__configured = {};
+        rule.__configured.nullSubstitution = true;
       },
       defaultValue(val: unknown) {
-        (rule as MemberRule<S, D>).defaultValue = val as MemberRule<S, D>['defaultValue'];
+        rule.defaultValue = val as unknown as MemberRule<S, D>['defaultValue'];
+        if (!rule.__configured) rule.__configured = {};
+        rule.__configured.defaultValue = true;
       },
     });
 

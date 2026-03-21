@@ -217,13 +217,11 @@ describe('defaultValue()', () => {
         o.defaultValue('should-not-appear');
       });
     });
-    // null is not undefined — defaultValue doesn't kick in, but nullSubstitution would
+    // null is not undefined — defaultValue doesn't kick in, but nullSubstitution would (if configured)
     // After applying nullSubstitution check only, null passes through as-is
     const res = m.map(new S(), 'D') as any;
-    // null is "not undefined" so defaultValue is NOT applied; nullSubstitution
-    // would have been applicable. The value is null → still skipped by `if value === undefined` guard.
-    // Actually wait: null !== undefined, so the "if value === undefined" guard
-    // doesn't skip it → null is written to dest.
+    // null !== undefined, so defaultValue is NOT applied. Since nullSubstitution is not configured,
+    // null is not transformed and passes through to dest.badge unmodified.
     expect(res.badge).toBeNull();
   });
 
