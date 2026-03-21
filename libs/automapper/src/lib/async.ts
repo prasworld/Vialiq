@@ -33,7 +33,9 @@ export class AsyncStrategy extends DefaultStrategy {
   ): Promise<D> {
     // preCondition — skip entire mapping if predicate fails
     if (this.isPreConditionFailed(config, src)) {
-      return null as unknown as D;
+      // Explicitly return a resolved Promise so the return type matches the
+      // declared async signature (Promise<D>) rather than casting null as D.
+      return Promise.resolve(null) as unknown as Promise<D>;
     }
 
     const dest: Partial<D> = {} as Partial<D>;

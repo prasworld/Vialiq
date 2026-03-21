@@ -19,7 +19,7 @@ export enum NamingConvention {
 
 /**
  * A custom naming convention function that transforms a property key string.
- * Use `createNamingConvention()` in naming.ts to create a validated instance.
+ * Use `createNamingConvention()` in naming.ts to create a custom convention.
  */
 export type NamingConventionFn = (key: string) => string;
 

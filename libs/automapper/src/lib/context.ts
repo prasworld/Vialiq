@@ -9,12 +9,12 @@ export interface MappingContext<T extends Record<string, unknown> = Record<strin
    * @example
    * b.forMember('address', o => o.mapFrom((s, ctx) => ctx.map(s.address, AddressDto)));
    */
-  map<S, D>(src: S, destType: unknown): D | Promise<D>;
+  map<S, D>(src: S, destType: import('./types').Constructor<D> | string): D | Promise<D>;
 }
 
 export function createContext<T extends Record<string, unknown>>(
   items: T,
-  mapFn?: <S, D>(src: S, destType: unknown) => D | Promise<D>
+  mapFn?: <S, D>(src: S, destType: import('./types').Constructor<D> | string) => D | Promise<D>
 ): MappingContext<T> {
   const hasRandom = typeof crypto !== 'undefined' && typeof (crypto as { randomUUID?: unknown }).randomUUID === 'function';
   const operationId = hasRandom

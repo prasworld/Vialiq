@@ -180,7 +180,9 @@ class MapperRegistryImpl implements MapperRegistry, PluginAwareRegistry {
     }
 
     // Ensure a MappingContext exists so hooks and resolvers can use it.
-    ctx = ctx ?? createContext({}, (s, dest) => this.map(s as S, dest as Constructor<D> | string));
+    // Pass `visited` and the resolved `ctx` so nested ctx.map() calls share
+    // circular-reference tracking and the same operation context.
+    ctx = ctx ?? createContext({}, (s, dest) => this.map(s as S, dest as Constructor<D> | string, visited, ctx));
 
     // Notify plugins about map start and report end/error. Keep mapping
     // result semantics (sync vs async) intact by wrapping promises.
@@ -278,6 +280,9 @@ class MapperRegistryImpl implements MapperRegistry, PluginAwareRegistry {
    * in the mapped output object.
    */
   private applyValueTransformers(value: unknown, visited = new WeakMap<object, unknown>()): unknown {
+    // Fast path: no transformers registered — return as-is to preserve object references.
+    if (this.valueTransformers.length === 0) return value;
+
     if (value === null || value === undefined) return value;
 
     if (typeof value === 'object') {
@@ -342,6 +347,7 @@ class MapperRegistryImpl implements MapperRegistry, PluginAwareRegistry {
     const reverseRules: MemberRule<unknown, unknown>[] = [];
     for (const rule of config.memberRules) {
       if (!rule.mapFrom) continue; // only simple mapFrom rules can be auto-reversed
+      if (rule.destKey.includes('.')) continue; // dotted paths cannot be reversed with simple bracket lookup
       const srcKey = extractPropertyKey(rule.mapFrom as (src: unknown) => unknown);
       if (!srcKey) continue; // skip complex expressions
       reverseRules.push({
