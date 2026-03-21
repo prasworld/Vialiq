@@ -290,9 +290,17 @@ const kernel = createKernel({ debug: true });
 
 ```typescript
 // ✅ WORKS — core paths tested
-const sync = createSyncEngine();
-sync.share(atom); // broadcasts state to other MFEs
-sync.receive(atom); // applies updates from other MFEs
+const sync = createSyncEngine({ kernel });
+// Bidirectional sync channel is established by sharing the atom; inbound state
+// updates are handled automatically by the engine.
+const unsync = sync.share(cartAtom, {
+  channel:  'vi/cart',
+  conflict: 'last-write-wins',
+});
+
+// …later
+unsync();
+sync.destroy();
 ```
 
 **Status:** Core paths tested, production-ready for primary use cases ✅

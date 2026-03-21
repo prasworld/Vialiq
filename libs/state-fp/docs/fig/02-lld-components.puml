@@ -88,20 +88,25 @@ package "EphemeralStream (High-Frequency)" {
 
 package "Storage Layer" {
   interface StorageAdapter {
-    + save(key, value): Promise<void>
-    + load(key): Promise<value>
-    + clear(key): Promise<void>
+    + name: string
+    + get<T>(key: string): StorageResult<Maybe<T>>
+    + set<T>(key: string, value: T, ttl?: number): StorageResult<void>
+    + delete(key: string): StorageResult<void>
+    + clear(prefix?: string): StorageResult<void>
+    + keys(prefix?: string): StorageResult<string[]>
+    + exists(key: string): StorageResult<boolean>
   }
   
   class MemoryAdapter {
     - store: Map<string, StorageEntry>
-    - sweepInterval: number
+    - sweepIntervalMs: number
     --
-    + get(key): Promise<T | undefined>
-    + set(key, value, ttl?): Promise<void>
-    + delete(key): Promise<void>
-    + clear(prefix?): Promise<void>
-    + keys(prefix?): Promise<string[]>
+    + get<T>(key: string): StorageResult<Maybe<T>>
+    + set<T>(key: string, value: T, ttl?: number): StorageResult<void>
+    + delete(key: string): StorageResult<void>
+    + clear(prefix?: string): StorageResult<void>
+    + keys(prefix?: string): StorageResult<string[]>
+    + exists(key: string): StorageResult<boolean>
     + dispose(): void
   }
   

@@ -221,13 +221,9 @@ const devtools = createDevTools({
 });
 kernel.use(devtools.plugin);
 
-// 3. Register the cart domain
-kernel.register(
-  cartAtom,
-  cartHandler,
-  cartApplier,
-  totalQueryHandler,   // co-located query registration
-);
+// 3. Register the cart domain. Query handlers are registered separately in this API.
+kernel.register(cartAtom, cartHandler, cartApplier);
+kernel.registerQuery(cartAtom, totalQueryHandler);
 
 // 4. Hydrate persisted state from storage (async — await before first render)
 await kernel.hydrate(cartAtom);
