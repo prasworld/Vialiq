@@ -6,11 +6,11 @@ export default defineConfig({
     name: 'state-fp',
     globals: true,
     environment: 'node',
-    // Nx executes from workspace root, so use workspace-relative globs.
+    // Executed from project root, so use project-relative globs.
     include: [
-      'libs/state-fp/src/**/*.{spec,test}.ts',
-      'libs/state-fp/src/**/__tests__/**/*.ts',
-      'libs/state-fp/test-d/**/*.spec-d.ts',
+      'src/**/*.{spec,test}.ts',
+      'src/**/__tests__/**/*.ts',
+      'test-d/**/*.spec-d.ts',
     ],
     coverage: {
       provider: 'v8',

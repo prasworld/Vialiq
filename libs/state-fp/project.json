@@ -29,8 +29,8 @@
       "executor": "nx:run-commands",
       "outputs": ["{workspaceRoot}/coverage/state-fp"],
       "options": {
-        "command": "vitest run --config libs/state-fp/vitest.config.mts",
-        "cwd": "."
+        "command": "vitest run --config vitest.config.mts",
+        "cwd": "libs/state-fp"
       }
     },
     "lint": {
