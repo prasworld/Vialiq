@@ -1,6 +1,5 @@
 {
   "name": "@vi/state-fp",
-  "version": "0.5.0",
   "description": "Modular CQRS functional state management — composable, lightweight, zero-dependency",
   "keywords": [
     "state-management",
