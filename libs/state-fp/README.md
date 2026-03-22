@@ -504,7 +504,7 @@ architecture design reference.
 
 ## Package Entrypoints (npm consumers)
 
-All six modules are individually importable as subpath exports. Import only what you need — unused subpaths are never loaded by your bundler.
+All of the following modules are individually importable as subpath exports. Import only what you need — unused subpaths are never loaded by your bundler.
 
 | Subpath | Contents |
 |---|---|
