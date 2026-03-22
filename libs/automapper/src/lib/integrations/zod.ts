@@ -5,7 +5,7 @@
  * from a Zod object schema, mapping each schema key from the matching
  * source property, and optionally validating the mapped output.
  *
- * **Peer dependency**: `zod` (v4) must be installed by the consuming app.
+ * **Peer dependency**: `zod` (>=3) must be installed by the consuming app.
  *
  * @example
  * const UserDtoSchema = z.object({ name: z.string(), age: z.number() });

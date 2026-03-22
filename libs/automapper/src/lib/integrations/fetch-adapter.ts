@@ -81,30 +81,48 @@ function resolveFetch(options?: FetchAdapterOptions): typeof fetch {
 }
 
 /**
+ * Normalise a `HeadersInit` value into a plain `Record<string, string>`.
+ *
+ * Handles all three `HeadersInit` shapes without requiring the global
+ * `Headers` constructor, making it safe in older Node / custom-fetch
+ * environments where `Headers` may be undefined.
+ */
+function normalizeHeaders(headers: HeadersInit | undefined): Record<string, string> {
+  if (!headers) return {};
+  // 2-tuple array: [['content-type', 'application/json'], ...]
+  if (Array.isArray(headers)) {
+    return Object.fromEntries(headers as [string, string][]);
+  }
+  // Headers instance — iterate only when the global constructor is available
+  if (typeof Headers !== 'undefined' && headers instanceof Headers) {
+    const record: Record<string, string> = {};
+    (headers as Headers).forEach((value, key) => { record[key] = value; });
+    return record;
+  }
+  // Plain record (most common case)
+  return { ...(headers as Record<string, string>) };
+}
+
+/**
  * Merge two `RequestInit` objects, correctly combining their `headers`
- * fields even when either side uses a `Headers` instance.  Fields in
- * `override` take precedence; headers from `override` are set on top of
- * (not replacing) headers from `base`.
+ * fields without relying on the global `Headers` constructor.  Fields in
+ * `override` take precedence; headers are shallow-merged into a plain
+ * `Record<string, string>` so this works in any runtime.
  */
 function mergeInit(
   base: RequestInit | undefined,
-  override: RequestInit | undefined
+  override: RequestInit | undefined,
 ): RequestInit {
   if (!base && !override) return {};
   if (!base) return { ...override };
   if (!override) return { ...base };
 
-  // Normalise both header bags into a Headers instance so that spreading
-  // a plain Headers object (which yields no own enumerable keys) doesn't
-  // silently drop the entries.
-  const merged = new Headers(base.headers);
-  if (override.headers) {
-    new Headers(override.headers).forEach((value, key) => {
-      merged.set(key, value);
-    });
-  }
+  const headers: Record<string, string> = {
+    ...normalizeHeaders(base.headers),
+    ...normalizeHeaders(override.headers),
+  };
 
-  return { ...base, ...override, headers: merged };
+  return { ...base, ...override, headers };
 }
 
 // ---------------------------------------------------------------------------

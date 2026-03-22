@@ -927,7 +927,7 @@ npx nx build automapper
 
 # Build for production + create npm tarball
 npx nx build automapper --configuration=production --skip-nx-cache
-cp libs/automapper/publish-package.json dist/libs/automapper/package.json
+npx nx postbuild-publish automapper
 (cd dist/libs/automapper && npm pack)
 
 # Run all unit tests
@@ -979,7 +979,16 @@ import { deepClone, mapWithClone } from '@vi/automapper/deep-clone';
 ### Publish strategy
 
 The source `libs/automapper/package.json` is **not** what ships to npm.
-The build pipeline copies `libs/automapper/publish-package.json` into `dist/libs/automapper/package.json` via the `postbuild-publish` Nx target, overwriting the source file. Only `publish-package.json` declares the `exports` map, `peerDependencies`, and `files` list.
+`postbuild-publish` is a standalone Nx target that copies `libs/automapper/publish-package.json` into `dist/libs/automapper/package.json` and `libs/automapper/LICENSE` into the dist folder. Only `publish-package.json` declares the `exports` map, `peerDependencies`, and `files` list.
+
+`postbuild-publish` is **not** invoked automatically by `nx build automapper`. Run the complete sequence:
+
+```bash
+npx nx build automapper
+npx nx postbuild-publish automapper
+```
+
+Then publish from `dist/libs/automapper/` (or use `npx nx nx-release-publish automapper`).
 
 ---
 
