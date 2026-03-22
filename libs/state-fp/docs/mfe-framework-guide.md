@@ -229,10 +229,11 @@ export class CartComponent {
   onAddToCart(sku: string, qty: number) {
     const result = this.addItem(AddItem({ sku, qty }));
 
-    // result is Either<CommandError, CartState>
-    if (isLeft(result)) {
-      this.notificationService.error(result.left.message);
-    }
+    // result is Result<CommandError, CartState>
+    match(result, {
+      ok:  (_state) => { /* success — state already updated via subscription */ },
+      err: (e)      => this.notificationService.error(e.message),
+    });
   }
 }
 ```
@@ -242,10 +243,10 @@ For async command handlers:
 ```ts
 async onCheckout() {
   const result = await this.kernel.executeAsync(cartAtom, StartCheckout());
-  foldEither(
-    (err) => this.notificationService.error(err.message),
-    (state) => this.router.navigate(['/order-confirmation']),
-  )(result);
+  match(result, {
+    ok:  (_state) => this.router.navigate(['/order-confirmation']),
+    err: (e)      => this.notificationService.error(e.message),
+  });
 }
 ```
 
@@ -298,8 +299,8 @@ pattern with typed Events replaces NgRx Actions + Reducers + Effects with a simp
 ```ts
 // atoms/cart.atom.ts — define atom, handlers, and applier together
 import { defineAtom, createCommandHandler, createEventApplier,
-         createQueryHandler, command, domainEvent } from '@vi/state-fp/kernel';
-import { left, right } from '@vi/state-fp/core';
+         createQueryHandler, command, domainEvent,
+         ok, err } from '@vi/state-fp/kernel';
 import { LocalAdapter } from '@vi/state-fp/storage';
 
 // --- State shape ---
@@ -328,20 +329,20 @@ const addItemHandler = createCommandHandler<CartState, ReturnType<typeof AddItem
   commandType: 'cart/addItem',
   handle: (state, cmd) => {
     if (cmd.payload.qty < 1)
-      return left({ code: 'INVALID_QTY', message: 'Quantity must be ≥ 1' });
-    return right([domainEvent('cart/itemAdded', { item: cmd.payload })]);
+      return err({ code: 'INVALID_QTY', message: 'Quantity must be ≥ 1' });
+    return ok([domainEvent('cart/itemAdded', { item: cmd.payload })]);
   },
 });
 
 const removeItemHandler = createCommandHandler<CartState, ReturnType<typeof RemoveItem>>({
   commandType: 'cart/removeItem',
   handle: (state, cmd) =>
-    right([domainEvent('cart/itemRemoved', { sku: cmd.payload.sku })]),
+    ok([domainEvent('cart/itemRemoved', { sku: cmd.payload.sku })]),
 });
 
 const clearHandler = createCommandHandler<CartState, ReturnType<typeof ClearCart>>({
   commandType: 'cart/clear',
-  handle: () => right([domainEvent('cart/cleared', {})]),
+  handle: () => ok([domainEvent('cart/cleared', {})]),
 });
 
 // --- Event Applier ---
@@ -472,9 +473,10 @@ function CartPage() {
 
   const handleAdd = (item: CartItem) => {
     const result = dispatch(AddItem(item));
-    if (isLeft(result)) {
-      toast.error(result.left.message);
-    }
+    match(result, {
+      ok:  (_state) => { /* success — cart signal auto-updates */ },
+      err: (e)      => toast.error(e.message),
+    });
   };
 
   return (
@@ -502,10 +504,10 @@ function CheckoutButton() {
     const result = await kernel.executeAsync(cartAtom, StartCheckout({ userId }));
     setLoading(false);
 
-    foldEither(
-      (err) => setError(err.message),
-      (state) => router.push('/order-confirmation'),
-    )(result);
+    match(result, {
+      ok:  (_state) => router.push('/order-confirmation'),
+      err: (e)      => setError(e.message),
+    });
   };
 
   return (
@@ -703,9 +705,10 @@ export class CheckoutPage extends LitElement {
     const result = this.payment.dispatch(
       SubmitPayment({ total: this.cart.query(BuildTotal()) })
     );
-    if (isLeft(result)) {
-      this.dispatchEvent(new CustomEvent('payment-error', { detail: result.left }));
-    }
+    match(result, {
+      ok:  (_state) => { /* success — payment signal auto-updates */ },
+      err: (e)      => this.dispatchEvent(new CustomEvent('payment-error', { detail: e })),
+    });
   }
 
   render() {

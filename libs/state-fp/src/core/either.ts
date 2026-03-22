@@ -102,6 +102,74 @@ export const getOrElseL =
   (e: Either<E, A>): A =>
     e._tag === 'Left' ? getDefault(e.left) : e.right;
 
+// ─── Idiomatic Result API ─────────────────────────────────────────────────────
+//
+// The Either type uses Left/Right naming from functional programming tradition.
+// These aliases expose the same mechanics under names that read naturally for
+// application developers: "ok" for success, "err" for failure.
+//
+//   ok(value)         — identical to right(value)
+//   err(error)        — identical to left(error)
+//   isOk(result)      — identical to isRight(result)
+//   isErr(result)     — identical to isLeft(result)
+//   match(result, {}) — pattern-match without touching _tag or .right/.left
+//
+// Either / Result / Left / Right are all the same runtime structure — this is
+// purely ergonomics, not a new type.
+
+/**
+ * Construct a success Result (identical to `right`).
+ *
+ * @example
+ * handle: (_state, cmd) => ok([domainEvent('counter/incremented', { by: cmd.payload.by })])
+ */
+export const ok = right;
+
+/**
+ * Construct a failure Result (identical to `left`).
+ *
+ * @example
+ * handle: (_state, cmd) => err({ code: 'INVALID', message: 'by must be > 0' })
+ */
+export const err = left;
+
+/**
+ * Returns true if the result is a success (identical to `isRight`).
+ *
+ * @example
+ * if (isOk(result)) { console.log('new state:', result.right) }
+ */
+export const isOk = isRight;
+
+/**
+ * Returns true if the result is a failure (identical to `isLeft`).
+ *
+ * @example
+ * if (isErr(result)) { console.log('error:', result.left.message) }
+ */
+export const isErr = isLeft;
+
+/**
+ * Pattern-match on a Result (or Either) without manually checking `_tag`.
+ * The `ok` branch receives the success value directly; the `err` branch
+ * receives the error value directly — no `.right` or `.left` needed.
+ *
+ * @example
+ * const count = match(kernel.execute(counterAtom, cmd), {
+ *   ok:  (state) => state.count,
+ *   err: (e)     => { console.error(e.message); return 0; },
+ * });
+ */
+export function match<E, A, R>(
+  result: Either<E, A>,
+  cases: {
+    ok:  (value: A) => R;
+    err: (error: E) => R;
+  },
+): R {
+  return result._tag === 'Right' ? cases.ok(result.right) : cases.err(result.left);
+}
+
 /** Convert Either to Maybe — Left becomes Nothing. */
 export const eitherToMaybe = <E, A>(e: Either<E, A>): Maybe<A> =>
   e._tag === 'Left'

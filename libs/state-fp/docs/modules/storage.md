@@ -117,7 +117,7 @@ See `src/kernel/storage-guard.ts` for the exact enforcement logic.
 Implement `StorageAdapter` directly:
 
 ```ts
-import { right, left, just, nothing } from '@vi/state-fp/core';
+import { ok, err, just, nothing } from '@vi/state-fp/core';
 import type { StorageAdapter, StorageResult } from '@vi/state-fp/storage';
 
 class RedisAdapter implements StorageAdapter {
@@ -127,10 +127,10 @@ class RedisAdapter implements StorageAdapter {
   async get(key: string) {
     try {
       const raw = await this.client.get(key);
-      if (raw === null) return right(nothing<T>());
-      return right(just(JSON.parse(raw) as T));
+      if (raw === null) return ok(nothing<T>());
+      return ok(just(JSON.parse(raw) as T));
     } catch (e) {
-      return left({ code: 'DESERIALISE_ERROR', message: String(e), cause: e });
+      return err({ code: 'DESERIALISE_ERROR', message: String(e), cause: e });
     }
   }
   // ... set, delete, clear

@@ -380,9 +380,13 @@ Implements the `Either<E, A>` monad.
 
 | Export | What it does |
 |---|---|
-| `left(error)` | Wraps a failure |
-| `right(value)` | Wraps a success |
-| `isLeft(e)` / `isRight(e)` | Type guards |
+| `ok(value)` | Wraps a success (idiomatic) |
+| `err(error)` | Wraps a failure (idiomatic) |
+| `isOk(e)` / `isErr(e)` | Type guards (idiomatic) |
+| `match(e, { ok, err })` | Pattern-match both branches (idiomatic) |
+| `left(error)` | Wraps a failure (FP alias for `err`) |
+| `right(value)` | Wraps a success (FP alias for `ok`) |
+| `isLeft(e)` / `isRight(e)` | Type guards (FP aliases for `isErr`/`isOk`) |
 | `mapEither(fn)(e)` | Transform the success value; pass through failures |
 | `chainEither(fn)(e)` | Like map, but `fn` returns `Either` |
 | `bimapEither(onLeft, onRight)(e)` | Transform both branches |
@@ -570,9 +574,9 @@ const addItemHandler = createCommandHandler<CartState, AddItem>({
   commandType: 'cart/addItem',
   handle: (state, cmd) => {
     if (cmd.payload.qty <= 0)
-      return left({ code: 'INVALID_QTY', message: 'qty must be positive' });
+      return err({ code: 'INVALID_QTY', message: 'qty must be positive' });
 
-    return right([
+    return ok([
       domainEvent('cart/itemAdded', {
         sku: cmd.payload.sku,
         qty: cmd.payload.qty,
@@ -794,11 +798,11 @@ type ExecuteOptimisticOptions<S> = {
    * Async function that confirms the change with an external source (API, DB, etc.).
    * Receives the optimistic state so you can send it as the body of an API call.
    *
-   * - Return `right(undefined)` to confirm and keep the optimistic state.
-   * - Return `left(error)` to trigger atomic rollback to the pre-optimistic state.
+   * - Return `ok(undefined)` to confirm and keep the optimistic state.
+   * - Return `err(error)` to trigger atomic rollback to the pre-optimistic state.
    *   The `onRollback` callback (if provided) is then called with the error.
    *
-   * Note: Never throw inside confirm() — wrap with try/catch and return left(…).
+   * Note: Never throw inside confirm() — wrap with try/catch and return err(…).
    */
   confirm: (optimisticState: S) => Promise<Either<CommandError, void>>;
 
@@ -863,7 +867,7 @@ For commands that involve network calls, timers, or any async work, use `registe
 
 ```ts
 import { createAsyncCommandHandler } from '@vi/state-fp/kernel';
-import { right, left }               from '@vi/state-fp/core';
+import { ok, err }                   from '@vi/state-fp/kernel';
 
 // 1. Define the async handler type
 type SyncCart = Command<'cart/syncWithServer', { userId: string }>;
@@ -878,15 +882,15 @@ export const syncCartHandler = createAsyncCommandHandler<CartState, SyncCart>({
     const response = await fetch(`/api/cart/${cmd.payload.userId}`, { signal });
 
     if (signal.aborted) {
-      return left({ code: 'CANCELLED', message: 'Request was cancelled' });
+      return err({ code: 'CANCELLED', message: 'Request was cancelled' });
     }
 
     if (!response.ok) {
-      return left({ code: 'API_ERROR', message: `HTTP ${response.status}` });
+      return err({ code: 'API_ERROR', message: `HTTP ${response.status}` });
     }
 
     const serverCart: CartState = await response.json();
-    return right(serverCart);  // return the new state directly
+    return ok(serverCart);  // return the new state directly
   },
 });
 
@@ -903,7 +907,7 @@ const result = await kernel.executeAsync(
 );
 
 // 5. Cancel if needed
-controller.abort();               // result will be Left({ code: 'CANCELLED' })
+controller.abort();               // result will be err({ code: 'CANCELLED' })
 ```
 
 **Key differences vs synchronous handlers:**
@@ -1149,7 +1153,7 @@ restores the pre-optimistic state and calls your `onRollback` callback for side-
 
 ```ts
 import { createKernel, defineAtom }  from '@vi/state-fp/kernel';
-import { right, left, isLeft }       from '@vi/state-fp/core';
+import { ok, err, isErr }            from '@vi/state-fp/kernel';
 
 const result = await kernel.executeOptimistic(
   cartAtom,
@@ -1168,14 +1172,14 @@ const result = await kernel.executeOptimistic(
     }),
 
     // 2. Async confirmation — call your API/backend
-    //    Return right(undefined) to keep optimistic state
-    //    Return left(error) to trigger atomic rollback
+    //    Return ok(undefined) to keep optimistic state
+    //    Return err(error) to trigger atomic rollback
     confirm: async (optimisticState) => {
       try {
         await cartApi.addItem('WIDGET-1', 1);
-        return right(undefined);
-      } catch (err) {
-        return left({ code: 'API_ERROR', message: String(err) });
+        return ok(undefined);
+      } catch (e) {
+        return err({ code: 'API_ERROR', message: String(e) });
       }
     },
 
@@ -1187,7 +1191,7 @@ const result = await kernel.executeOptimistic(
   },
 );
 
-if (isLeft(result)) {
+if (isErr(result)) {
   // Atom state is already restored — onRollback already fired
   console.log('Optimistic update failed:', result.left.code);
 }
@@ -1212,12 +1216,12 @@ if (isLeft(result)) {
 
 ```ts
 import { createKernel } from '@vi/state-fp/kernel';
-import { right, left, isRight, isLeft } from '@vi/state-fp/core';
+import { ok, err, isOk, isErr } from '@vi/state-fp/kernel';
 
 describe('optimistic cart update', () => {
   const testItem = { sku: 'WIDGET-1', name: 'Widget', price: 9.99, qty: 1 };
 
-  it('keeps optimistic state when confirm resolves Right', async () => {
+  it('keeps optimistic state when confirm resolves ok', async () => {
     const kernel = createKernel();
     kernel.register(cartAtom, addItemHandler, cartApplier);
 
@@ -1226,15 +1230,15 @@ describe('optimistic cart update', () => {
         ...state,
         items: [...state.items, cmd.payload],
       }),
-      confirm: async () => right(undefined),  // simulated success
+      confirm: async () => ok(undefined),  // simulated success
     });
 
-    expect(isRight(result)).toBe(true);
+    expect(isOk(result)).toBe(true);
     expect(cartAtom.get().items).toHaveLength(1);
     expect(cartAtom.get().items[0].sku).toBe('WIDGET-1');
   });
 
-  it('rolls back to pre-optimistic state when confirm returns Left', async () => {
+  it('rolls back to pre-optimistic state when confirm returns err', async () => {
     const kernel = createKernel();
     kernel.register(cartAtom, addItemHandler, cartApplier);
     const initialState = cartAtom.get();
@@ -1244,10 +1248,10 @@ describe('optimistic cart update', () => {
         ...state,
         items: [...state.items, cmd.payload],
       }),
-      confirm: async () => left({ code: 'API_ERROR', message: 'Network failure' }),
+      confirm: async () => err({ code: 'API_ERROR', message: 'Network failure' }),
     });
 
-    expect(isLeft(result)).toBe(true);
+    expect(isErr(result)).toBe(true);
     expect(cartAtom.get().items).toHaveLength(0);        // rolled back
     expect(cartAtom.get()).toEqual(initialState);         // exact pre-optimistic state
   });
@@ -1259,7 +1263,7 @@ describe('optimistic cart update', () => {
 
     await kernel.executeOptimistic(cartAtom, addItem(testItem), {
       optimisticApplier: (state, cmd) => ({ ...state, items: [...state.items, cmd.payload] }),
-      confirm: async () => left({ code: 'API_ERROR', message: 'Server down' }),
+      confirm: async () => err({ code: 'API_ERROR', message: 'Server down' }),
       onRollback: (err) => rollbackErrors.push(err),
     });
 
@@ -1776,7 +1780,10 @@ function IncrementButton() {
 
   const handleClick = () => {
     const result = dispatch(IncrementBy(1));
-    if (isLeft(result)) console.error(result.left.message);
+    match(result, {
+      ok: () => {},
+      err: (error) => console.error(error.message),
+    });
   };
 
   return <button onClick={handleClick}>+</button>;
@@ -2082,7 +2089,7 @@ export class CartStore {
 
   addItem(item: CartItem): string | null {
     const result = this.dispatch(AddItem(item));
-    return isLeft(result) ? result.left.message : null;
+    return match(result, { ok: () => null, err: (error) => error.message });
   }
 
   removeItem(sku: string): void {
@@ -2091,12 +2098,12 @@ export class CartStore {
 
   applyCoupon(code: string): string | null {
     const result = this.dispatch(ApplyCoupon(code));
-    return isLeft(result) ? result.left.message : null;
+    return match(result, { ok: () => null, err: (error) => error.message });
   }
 
   startCheckout(): string | null {
     const result = this.dispatch(StartCheckout());
-    return isLeft(result) ? result.left.message : null;
+    return match(result, { ok: () => null, err: (error) => error.message });
   }
 
   cancelCheckout(): void {
@@ -2486,23 +2493,22 @@ export const applyCoupon = (code: string): ApplyCoupon =>
 
 ```ts
 // src/cart/handlers.ts
-import { createCommandHandler } from '@vi/state-fp/kernel';
-import { right, left }         from '@vi/state-fp/core';
+import { createCommandHandler, ok, err } from '@vi/state-fp/kernel';
 import { CartState, AddItem, RemoveItem, ApplyCoupon } from './types';
 
 export const addItemHandler = createCommandHandler<CartState, AddItem>({
   commandType: 'cart/addItem',
   handle: (state, cmd) => {
     const { sku, name, price, qty } = cmd.payload;
-    if (qty <= 0) return left({ code: 'INVALID_QTY', message: 'Quantity must be positive' });
-    if (price < 0) return left({ code: 'INVALID_PRICE', message: 'Price must be non-negative' });
+    if (qty <= 0) return err({ code: 'INVALID_QTY', message: 'Quantity must be positive' });
+    if (price < 0) return err({ code: 'INVALID_PRICE', message: 'Price must be non-negative' });
 
     const existing = state.items.find(i => i.sku === sku);
     const items = existing
       ? state.items.map(i => i.sku === sku ? { ...i, qty: i.qty + qty } : i)
       : [...state.items, { sku, name, price, qty }];
 
-    return right([domainEvent('cart/itemAdded', { sku, name, price, qty })]);
+    return ok([domainEvent('cart/itemAdded', { sku, name, price, qty })]);
   },
 });
 
@@ -2510,9 +2516,9 @@ export const removeItemHandler = createCommandHandler<CartState, RemoveItem>({
   commandType: 'cart/removeItem',
   handle: (state, cmd) => {
     if (!state.items.some(i => i.sku === cmd.payload.sku))
-      return left({ code: 'ITEM_NOT_FOUND', message: `SKU ${cmd.payload.sku} not in cart` });
+      return err({ code: 'ITEM_NOT_FOUND', message: `SKU ${cmd.payload.sku} not in cart` });
 
-    return right([domainEvent('cart/itemRemoved', { sku: cmd.payload.sku })]);
+    return ok([domainEvent('cart/itemRemoved', { sku: cmd.payload.sku })]);
   },
 });
 ```
@@ -2607,7 +2613,10 @@ class CartSummaryComponent {
 
   add() {
     const result = this.dispatch(addItem({ sku: 'DEMO-1', name: 'Demo Item', price: 9.99, qty: 1 }));
-    if (isLeft(result)) console.error(result.left.message);
+    match(result, {
+      ok: () => {},
+      err: (error) => console.error(error.message),
+    });
   }
 }
 ```
@@ -2724,7 +2733,7 @@ Tracing `kernel.query(cartAtom, getTotal())`:
 ```ts
 // cart/handlers.spec.ts
 import { addItemHandler } from './handlers';
-import { isLeft, isRight } from '@vi/state-fp/core';
+import { isErr, isOk } from '@vi/state-fp/kernel';
 
 const emptyCart = { items: [], coupon: null };
 
@@ -2732,15 +2741,15 @@ describe('addItemHandler', () => {
   it('rejects zero quantity', () => {
     const cmd = command('cart/addItem', { sku: 'A', name: 'A', price: 5, qty: 0 });
     const result = addItemHandler.handle(emptyCart, cmd);
-    expect(isLeft(result)).toBe(true);
+    expect(isErr(result)).toBe(true);
     // No kernel required — handlers are pure functions
   });
 
   it('emits itemAdded event on valid command', () => {
     const cmd = command('cart/addItem', { sku: 'B', name: 'B', price: 10, qty: 2 });
     const result = addItemHandler.handle(emptyCart, cmd);
-    expect(isRight(result)).toBe(true);
-    if (isRight(result)) {
+    expect(isOk(result)).toBe(true);
+    if (isOk(result)) {
       expect(result.right[0].type).toBe('cart/itemAdded');
       expect(result.right[0].payload.qty).toBe(2);
     }
@@ -2852,14 +2861,14 @@ it('stateSanitizer redacts sensitive fields in DevTools', () => {
 
 ```ts
 import { createKernel, defineAtom } from '@vi/state-fp/kernel';
-import { right, left, isRight, isLeft } from '@vi/state-fp/core';
+import { isOk, isErr } from '@vi/state-fp/kernel';
 
 it('executeAsync falls back to synchronous execute if no async handler registered', async () => {
   const kernel = createKernel();
   kernel.register(counterAtom, incrementHandler, counterApplier);
 
   const result = await kernel.executeAsync(counterAtom, increment(5));
-  expect(isRight(result)).toBe(true);
+  expect(isOk(result)).toBe(true);
   expect(counterAtom.get().count).toBe(5);
 });
 
@@ -2873,7 +2882,7 @@ it('executeAsync respects AbortSignal', async () => {
     signal: controller.signal,
   });
 
-  expect(isLeft(result)).toBe(true);
+  expect(isErr(result)).toBe(true);
   expect(result.left.code).toBe('CANCELLED');
 });
 ```
@@ -2882,14 +2891,14 @@ it('executeAsync respects AbortSignal', async () => {
 
 ```ts
 import { MemoryAdapter } from '@vi/state-fp/storage';
-import { isRight, isJust } from '@vi/state-fp/core';
+import { isOk, isJust } from '@vi/state-fp/core';
 
 it('stores and retrieves a value', async () => {
   const adapter = new MemoryAdapter();
   await adapter.set('test-key', { count: 42 });
   const result = await adapter.get<{ count: number }>('test-key');
-  expect(isRight(result)).toBe(true);
-  if (isRight(result)) {
+  expect(isOk(result)).toBe(true);
+  if (isOk(result)) {
     expect(isJust(result.right)).toBe(true);
     if (isJust(result.right)) {
       expect(result.right.value.count).toBe(42);

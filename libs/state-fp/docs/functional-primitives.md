@@ -247,9 +247,11 @@ export const sequenceEitherArray =
 
 | Location | Usage |
 |---|---|
-| `kernel.execute()` | Returns `Either<CommandError, S>` — both success and typed failure paths |
-| `CommandHandler.handle()` | Returns `Either<CommandError, DomainEvent[]>` |
+| `kernel.execute()` | Returns `Result<CommandError, S>` (= `Either<CommandError, S>`) — both success and typed failure paths |
+| `CommandHandler.handle()` | Returns `Result<CommandError, DomainEvent[]>` |
 | `StorageAdapter.set/get/delete` | Returns `Promise<Either<StorageError, T>>` |
+
+> **Idiomatic aliases:** When writing command handlers, prefer `ok`, `err`, `isOk`, `isErr`, and `match` (all exported from `@vi/state-fp/kernel` and `@vi/state-fp/core`). These are exact aliases for `right`, `left`, `isRight`, `isLeft`, and a convenience for `foldEither` — no FP background required to read the code.
 
 ---
 
@@ -632,7 +634,7 @@ const createInvoiceHandler = reader<HandlerEnv, CommandHandler<InvoiceState, Cre
   ({ clock }) => ({
     commandType: 'invoice/create',
     handle: (state, cmd) =>
-      right([
+      ok([
         domainEvent('invoice/created', {
           id:        uuid(),
           createdAt: clock(),   // injected — not hard-coded Date.now()

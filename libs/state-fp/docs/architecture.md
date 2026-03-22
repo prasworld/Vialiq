@@ -827,6 +827,7 @@ A single `DebugEntry` captures: the **command** (intent), one **domain event** (
 ### @vi/state-fp/core
 ```ts
 just, nothing, fromNullableMaybe, isNothing, isJust, mapMaybe, chainMaybe, foldMaybe
+ok, err, isOk, isErr, match,
 left, right, isLeft, isRight, mapEither, chainEither, foldEither, bimapEither
 io, liftIO, mapIO, chainIO
 task, liftTask, mapTask, chainTask, taskFromPromise        // async IO monad
@@ -912,8 +913,8 @@ VanillaAdapter
 
 ```ts
 import { defineAtom, createKernel, command, domainEvent,
-         createCommandHandler, createEventApplier, createQueryHandler } from '@vi/state-fp/kernel';
-import { right, left } from '@vi/state-fp/core';
+         createCommandHandler, createEventApplier, createQueryHandler,
+         ok, err } from '@vi/state-fp/kernel';
 
 // 1. Atom
 const counterAtom = defineAtom({ key: 'vi/counter', initialState: { count: 0 } });
@@ -923,8 +924,8 @@ const incrementHandler = createCommandHandler({
   commandType: 'counter/incrementBy',
   handle: (state, cmd) =>
     cmd.payload.n > 0
-      ? right([domainEvent('counter/incremented', { by: cmd.payload.n })])
-      : left({ code: 'INVALID', message: 'n must be positive' }),
+      ? ok([domainEvent('counter/incremented', { by: cmd.payload.n })])
+      : err({ code: 'INVALID', message: 'n must be positive' }),
 });
 
 // 3. Event Applier
@@ -944,7 +945,7 @@ kernel.register(counterAtom, incrementHandler, counterApplier);
 kernel.registerQuery(counterAtom, getCountHandler);
 
 // 6. Use
-kernel.execute(counterAtom, command('counter/incrementBy', { n: 3 })); // Right({ count: 3 })
+kernel.execute(counterAtom, command('counter/incrementBy', { n: 3 })); // ok({ count: 3 })
 kernel.query(counterAtom, { _kind: 'Query', type: 'counter/getCount' }); // 3
 ```
 

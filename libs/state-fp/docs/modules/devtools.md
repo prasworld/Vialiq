@@ -121,7 +121,12 @@ const tt = devtools.timeTravel;
 
 // Jump to snapshot at a specific event id
 const result = tt.travelTo('entry-uuid');
-if (isLeft(result)) console.error(result.left);  // TimeTravelError
+match(result, {
+  ok: () => {
+    /* success */
+  },
+  err: (error) => console.error(error),  // TimeTravelError
+});
 
 // Return to present
 tt.returnToPresent();

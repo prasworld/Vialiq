@@ -283,3 +283,116 @@ describe('swapEither', () => {
     expect((swapEither(left(42)) as { right: number }).right).toBe(42);
   });
 });
+
+// ─── Idiomatic Result API ─────────────────────────────────────────────────────
+
+import { ok, err, isOk, isErr, match } from './either.js';
+
+describe('ok / err constructors', () => {
+  it('ok(value) produces the same structure as right(value)', () => {
+    expect(ok(42)).toEqual(right(42));
+  });
+
+  it('err(error) produces the same structure as left(error)', () => {
+    expect(err('bad')).toEqual(left('bad'));
+  });
+});
+
+describe('isOk / isErr guards', () => {
+  it('isOk returns true for ok()', () => {
+    expect(isOk(ok(1))).toBe(true);
+  });
+
+  it('isOk returns false for err()', () => {
+    expect(isOk(err('x'))).toBe(false);
+  });
+
+  it('isErr returns true for err()', () => {
+    expect(isErr(err('x'))).toBe(true);
+  });
+
+  it('isErr returns false for ok()', () => {
+    expect(isErr(ok(1))).toBe(false);
+  });
+
+  it('isOk and isRight agree on the same value', () => {
+    const r = ok(99);
+    expect(isOk(r)).toBe(isRight(r));
+  });
+
+  it('isErr and isLeft agree on the same value', () => {
+    const r = err('e');
+    expect(isErr(r)).toBe(isLeft(r));
+  });
+});
+
+describe('match', () => {
+  it('calls ok branch with the value for a success', () => {
+    const result = match(ok(42), {
+      ok:  (v) => v * 2,
+      err: ()  => -1,
+    });
+    expect(result).toBe(84);
+  });
+
+  it('calls err branch with the error for a failure', () => {
+    const result = match(err('boom'), {
+      ok:  ()    => 'success',
+      err: (msg) => `failed: ${msg}`,
+    });
+    expect(result).toBe('failed: boom');
+  });
+
+  it('is a total function — both branches must return the same type', () => {
+    // Type-check: ok and err must agree on return type R
+    const n: number = match(ok<string, number>(5), {
+      ok:  (v) => v,
+      err: ()  => 0,
+    });
+    expect(n).toBe(5);
+  });
+
+  it('works identically on a value produced by right()', () => {
+    const r = right(7);
+    expect(match(r, { ok: (v) => v, err: () => -1 })).toBe(7);
+  });
+
+  it('works identically on a value produced by left()', () => {
+    const r = left('nope');
+    expect(match(r, { ok: () => 'yes', err: (e) => e })).toBe('nope');
+  });
+
+  it('propagates exceptions thrown from both branches', () => {
+    const r = left('error');
+    expect(() => match(r, {
+      ok: () => { throw new Error('ok failed'); },
+      err: () => { throw new Error('err failed'); },
+    })).toThrow('err failed');
+  });
+});
+
+// ─── Realistic command handler usage ─────────────────────────────────────────
+
+describe('ok / err in a command handler pattern', () => {
+  type CounterState = { count: number };
+  interface IncrPayload { by: number }
+
+  function handleIncrement(state: CounterState, payload: IncrPayload) {
+    if (payload.by <= 0) {
+      return err({ code: 'INVALID' as const, message: 'by must be > 0' });
+    }
+    return ok({ count: state.count + payload.by });
+  }
+
+  it('returns ok for valid command', () => {
+    const result = handleIncrement({ count: 0 }, { by: 5 });
+    expect(isOk(result)).toBe(true);
+    expect(match(result, { ok: (s) => s.count, err: () => -1 })).toBe(5);
+  });
+
+  it('returns err for invalid command', () => {
+    const result = handleIncrement({ count: 0 }, { by: -1 });
+    expect(isErr(result)).toBe(true);
+    expect(match(result, { ok: () => '', err: (e) => e.code })).toBe('INVALID');
+  });
+});
