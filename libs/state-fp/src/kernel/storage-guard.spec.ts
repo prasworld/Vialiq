@@ -3,6 +3,7 @@ import { defineAtom } from './atom.js';
 import { createKernel } from './kernel.js';
 import type { Atom } from './types.js';
 import { MemoryAdapter } from '../storage/memory.js';
+import { getStorageAdapterName, assertApplicationStoragePolicy } from './storage-guard.js';
 
 // Mock adapters for testing guard enforcement.
 // Real implementations are intentionally removed from source.
@@ -76,5 +77,16 @@ describe('application storage safety guard', () => {
     } as unknown as Atom<number>;
 
     expect(() => kernel.register(forgedAtom)).toThrow(/Forbidden storage adapter "local"/i);
+  });
+
+  it('getStorageAdapterName returns undefined when adapter.name is not a string', () => {
+    expect(getStorageAdapterName({ name: 42 })).toBeUndefined();
+    expect(getStorageAdapterName({ name: null })).toBeUndefined();
+    expect(getStorageAdapterName({ name: ['array'] })).toBeUndefined();
+  });
+
+  it('assertApplicationStoragePolicy is a no-op when storage has no adapter', () => {
+    // storage is defined but has no adapter property
+    expect(() => assertApplicationStoragePolicy('vi/test', {})).not.toThrow();
   });
 });

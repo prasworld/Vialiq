@@ -49,7 +49,7 @@ export { SnapshotManager }   from './snapshot.js';
 // ─── Factories ────────────────────────────────────────────────────────────────
 
 export { createTimeTravelController } from './time-travel.js';
-export { createDevTools }             from './devtools.js';
+export { createDevTools, noopDevTools } from './devtools.js';
 
 // ─── Bridge ───────────────────────────────────────────────────────────────────
 

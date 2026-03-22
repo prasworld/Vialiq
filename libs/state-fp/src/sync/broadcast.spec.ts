@@ -72,4 +72,41 @@ describe('createBroadcastBridge', () => {
     a.close();
     expect(a.isOpen).toBe(false);
   });
+
+  it('throws when BroadcastChannel is not available', () => {
+    // Temporarily remove BroadcastChannel to simulate SSR / Node.js
+    delete (globalThis as unknown as { BroadcastChannel?: unknown }).BroadcastChannel;
+    expect(() => createBroadcastBridge('test')).toThrow(/BroadcastChannel is not available/);
+    // Restore for afterEach cleanup
+    (globalThis as unknown as { BroadcastChannel: typeof FakeBroadcastChannel }).BroadcastChannel = FakeBroadcastChannel;
+  });
+
+  it('handles object (non-string) data arriving via BroadcastChannel', () => {
+    const bridge = createBroadcastBridge<number>('c1');
+    const received: SyncMessage<number>[] = [];
+    bridge.subscribe(msg => received.push(msg));
+
+    // Send an object directly (not a JSON string) via the fake channel
+    const raw = new FakeBroadcastChannel('c1');
+    const msg: SyncMessage<number> = { type: 'vi/sync/state', peerId: 'r', atomKey: 'a', state: 99, version: { r: 1 }, ts: 0 };
+    raw.postMessage(msg); // sends as object, not string
+
+    expect(received.length).toBe(1);
+    expect(received[0].type).toBe('vi/sync/state');
+    bridge.close();
+  });
+
+  it('send() is a no-op when bridge is closed', () => {
+    const bridge = createBroadcastBridge<number>('c1');
+    bridge.close();
+    // Should not throw when sending after close
+    expect(() => bridge.send({ type: 'vi/sync/state', peerId: 'x', atomKey: 'a', state: 1, version: {}, ts: 0 })).not.toThrow();
+  });
+
+  it('close() is idempotent — calling twice is safe', () => {
+    const bridge = createBroadcastBridge<number>('c1');
+    bridge.close();
+    expect(() => bridge.close()).not.toThrow();
+    expect(bridge.isOpen).toBe(false);
+  });
 });

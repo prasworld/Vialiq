@@ -194,4 +194,24 @@ describe('Phase 4.5 — SharedEventBus', () => {
     expect(received).toHaveLength(1);
     expect(received[0].event.type).toBe('before-close');
   });
+
+  it('close() is idempotent — calling twice is safe', () => {
+    const bus = createSharedBus({ channel: 'vi-events' });
+    bus.close();
+    expect(() => bus.close()).not.toThrow();
+    expect(bus.isOpen).toBe(false);
+  });
+
+  it('ignores malformed JSON messages arriving from BroadcastChannel peers', () => {
+    const bus      = createSharedBus({ channel: 'vi-events' });
+    const received: CrossMFEEvent[] = [];
+    bus.subscribe({}, e => received.push(e));
+
+    // Simulate a raw BroadcastChannel peer posting invalid JSON
+    const raw = new FakeBroadcastChannel('vi-events');
+    raw.postMessage('{ this is : not json }');
+
+    expect(received).toHaveLength(0);
+    bus.close();
+  });
 });

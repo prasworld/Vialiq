@@ -293,5 +293,75 @@ describe('Phase 4.6 — Universal Transport Guard', () => {
       relay.destroy();
       bc.close();
     });
+
+    it('silently ignores malformed JSON messages forwarded via postMessage', () => {
+      const bc = createBroadcastBridge<unknown>('vi-relay-malformed');
+      const received: SyncMessage[] = [];
+      bc.subscribe(msg => received.push(msg));
+
+      const relay = createPostMessageRelay('vi-relay-malformed', {
+        trustedOrigins: ['https://trusted.com'],
+      });
+
+      // Send a message with valid origin but malformed JSON — should be silently dropped
+      const malformed = new MessageEvent('message', {
+        data: '{ not valid json !!!',
+        origin: 'https://trusted.com',
+      });
+      dispatchWindowMessage(malformed);
+
+      expect(received).toHaveLength(0);
+
+      relay.destroy();
+      bc.close();
+    });
+  });
+
+  describe('createPostMessageTransport — additional coverage', () => {
+    let messageHandlers: Array<(ev: MessageEvent) => void> = [];
+
+    beforeEach(() => {
+      messageHandlers = [];
+      vi.stubGlobal('window', {
+        addEventListener:    (type: string, handler: any) => { if (type === 'message') messageHandlers.push(handler); },
+        removeEventListener: (type: string, handler: any) => { if (type === 'message') { const i = messageHandlers.indexOf(handler); if (i !== -1) messageHandlers.splice(i, 1); } },
+        parent: { postMessage: () => {} },
+      });
+    });
+
+    afterEach(() => { vi.unstubAllGlobals(); });
+
+    it('isOpen starts true and becomes false after close()', () => {
+      const t = createPostMessageTransport('ch', { targetOrigin: 'https://example.com' });
+      expect(t.isOpen).toBe(true);
+      t.close();
+      expect(t.isOpen).toBe(false);
+    });
+
+    it('send() is a no-op after close()', () => {
+      const t = createPostMessageTransport('ch', {
+        targetOrigin: 'https://example.com',
+        targetWindow: { postMessage: vi.fn() } as any,
+      });
+      t.close();
+      expect(() => t.send(dummyMsg)).not.toThrow();
+    });
+
+    it('silently drops malformed JSON messages arriving via postMessage', () => {
+      const received: SyncMessage[] = [];
+      const t = createPostMessageTransport<unknown>('vi-events', {
+        targetOrigin: 'https://example.com',
+      });
+      t.subscribe(msg => received.push(msg as SyncMessage));
+
+      const malformed = new MessageEvent('message', {
+        data: '{ not valid json !!!',
+        origin: 'https://example.com',
+      });
+      messageHandlers.forEach(h => h(malformed));
+
+      expect(received).toHaveLength(0);
+      t.close();
+    });
   });
 });

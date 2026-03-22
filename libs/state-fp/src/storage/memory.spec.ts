@@ -346,4 +346,63 @@ describe('MemoryAdapter', () => {
       expect(adapter.size).toBe(0);
     });
   });
+
+  describe('TTL expiry edge cases', () => {
+    it('get() returns Nothing for an entry set with a negative TTL (immediately expired)', async () => {
+      await adapter.set('instant-expire', 'value', -1);
+      const result = await adapter.get('instant-expire');
+      expect(result._tag).toBe('Right');
+      if (result._tag === 'Right') {
+        expect(result.right._tag).toBe('Nothing');
+      }
+    });
+
+    it('exists() returns false for an immediately expired entry', async () => {
+      await adapter.set('instant-expire-ex', 'value', -1);
+      const result = await adapter.exists('instant-expire-ex');
+      expect(result._tag).toBe('Right');
+      if (result._tag === 'Right') {
+        expect(result.right).toBe(false);
+      }
+    });
+  });
+
+  describe('cloneValue fallback (no structuredClone)', () => {
+    it('uses JSON fallback when structuredClone is not available', async () => {
+      const sc = (globalThis as any).structuredClone;
+      delete (globalThis as any).structuredClone;
+      try {
+        const a2 = new MemoryAdapter();
+        await a2.set('x', { a: 1 });
+        const r = await a2.get<{ a: number }>('x');
+        expect(r._tag).toBe('Right');
+        if (r._tag === 'Right' && r.right._tag === 'Just') {
+          expect(r.right.value).toEqual({ a: 1 });
+        }
+        a2.dispose();
+      } finally {
+        (globalThis as any).structuredClone = sc;
+      }
+    });
+
+    it('returns original value when JSON clone fails (circular reference)', async () => {
+      const sc = (globalThis as any).structuredClone;
+      delete (globalThis as any).structuredClone;
+      try {
+        const a2 = new MemoryAdapter();
+        const circular: Record<string, unknown> = {};
+        circular['self'] = circular; // creates a circular reference
+        await a2.set('circ', circular);
+        const r = await a2.get<typeof circular>('circ');
+        expect(r._tag).toBe('Right');
+        if (r._tag === 'Right' && r.right._tag === 'Just') {
+          // Returns original (clone failed) — value is same reference
+          expect(r.right.value).toBe(circular);
+        }
+        a2.dispose();
+      } finally {
+        (globalThis as any).structuredClone = sc;
+      }
+    });
+  });
 });

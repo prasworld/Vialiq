@@ -140,7 +140,7 @@ import { KERNEL_TOKEN }                     from '@/state-tokens';
 import { authAtom, authHandler, authApplier } from '@/atoms';  // your app's atoms
 
 // Create once at app init
-const devtools = isDevMode() ? createDevTools({ maxEventLogSize: 500 }) : noopDevTools;
+const devtools = isDevMode() ? createDevTools({ maxLogSize: 500 }) : noopDevTools;
 const kernel   = createKernel({ debug: isDevMode() });
 if (isDevMode()) kernel.use(devtools.plugin);
 
@@ -455,7 +455,7 @@ const isProduction = process.env.NODE_ENV === 'production';
 
 export const devtools = isProduction
   ? noopDevTools
-  : createDevTools({ maxEventLogSize: 300 });
+  : createDevTools({ maxLogSize: 300 });
 
 export const kernel = createKernel({ debug: !isProduction });
 if (!isProduction) kernel.use(devtools.plugin);
@@ -1036,7 +1036,7 @@ For each Redux slice you want to migrate:
 import { createDevTools, attachBridge } from '@vi/state-fp/devtools';
 import { createReduxDevToolsBridge }     from '@vi/state-fp/devtools';
 
-export const devtools = createDevTools({ maxEventLogSize: 500 });
+export const devtools = createDevTools({ maxLogSize: 500 });
 
 // Attach console bridge (accessible as window.__VI_STATE_FP__)
 attachBridge(devtools);
@@ -1235,15 +1235,18 @@ handlers in every unit test is verbose and slow.
 
 ```ts
 // test/helpers/fake-kernel.ts
-import { createKernel, defineAtom } from '@vi/state-fp/kernel';
+import { createKernel, defineAtom, createCommandHandler } from '@vi/state-fp/kernel';
+import type { Atom } from '@vi/state-fp/kernel';
+import { ok } from '@vi/state-fp/core';
 
 export function fakeKernelWith<S>(atom: Atom<S>, state: S) {
   const k = createKernel();
-  // Register a pass-through handler that accepts any command for testing
-  k.register(atom, {
-    handles: () => true,
-    handle:  (s) => ok([]),   // no-op command handler
-  }, (s) => s);               // no-op applier
+  // Minimal no-op handler using the required commandType field
+  const noopHandler = createCommandHandler({
+    commandType: '__test/noop__',   // commandType is required (not handles())
+    handle: (_s, _cmd) => ok([]),   // accept any command, emit no events
+  });
+  k.register(atom, noopHandler, (s) => s);  // no-op applier
   // Push initial state directly (test utility only)
   (atom as any)._setState(state, 0);
   return k;

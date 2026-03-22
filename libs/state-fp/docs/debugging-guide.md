@@ -41,7 +41,7 @@ import { createDevTools, noopDevTools } from '@vi/state-fp/devtools';
 // Determine dev mode based on your framework/build setup
 const isDevMode = !process.env.NODE_ENV?.includes('production');
 
-// Create devtools instance (or noop in production)
+// Create devtools instance (noopDevTools in production — zero-cost stand-in)
 export const devtools = isDevMode
   ? createDevTools({
       maxLogSize:    500,      // keep last N events
@@ -63,7 +63,7 @@ import { createKernel } from '@vi/state-fp/kernel';
 const kernel = createKernel({ debug: isDevMode });
 
 // Register devtools plugin BEFORE registering atoms
-if (isDevMode) kernel.use(devtools.plugin);
+kernel.use(devtools.plugin);
 ```
 
 ### Step 4: Verify it's working
@@ -93,16 +93,20 @@ window.__VI_STATE_FP__
 ```ts
 // Use isDevMode from @angular/core
 import { isDevMode } from '@angular/core';
+import { createDevTools, noopDevTools } from '@vi/state-fp/devtools';
 
-export const devtools = isDevMode() ? createDevTools(...) : noopDevTools;
+export const devtools = isDevMode() ? createDevTools({ maxLogSize: 500 }) : noopDevTools;
+kernel.use(devtools.plugin);
 ```
 
 **React / Vanilla JS:**
 ```ts
 // Use process.env.NODE_ENV
-const isDevMode = process.env.NODE_ENV === 'development';
+import { createDevTools, noopDevTools } from '@vi/state-fp/devtools';
 
-export const devtools = isDevMode ? createDevTools(...) : noopDevTools;
+const isDevMode = process.env.NODE_ENV === 'development';
+export const devtools = isDevMode ? createDevTools({ maxLogSize: 500 }) : noopDevTools;
+kernel.use(devtools.plugin);
 ```
 
 ---
@@ -138,11 +142,11 @@ is a two-step process: create the devtools instance, then register it with the k
 ```ts
 // 📍 FRAMEWORK: Angular 14+
 // 📚 IMPORTS:
-import { createKernel }                 from '@vi/state-fp/kernel';
-import { createDevTools, noopDevTools } from '@vi/state-fp/devtools';
-import { isDevMode }                    from '@angular/core';
+import { createKernel }                  from '@vi/state-fp/kernel';
+import { createDevTools, noopDevTools }  from '@vi/state-fp/devtools';
+import { isDevMode }                     from '@angular/core';
 
-// Step 1: Create devtools (dev-mode only)
+// Step 1: Create devtools (noopDevTools is zero-cost in production)
 const devtools = isDevMode()
   ? createDevTools({
       maxLogSize:    500,   // rolling circular buffer — how many events to keep
@@ -154,8 +158,8 @@ const devtools = isDevMode()
 // Step 2: Create kernel with debug mode
 const kernel = createKernel({ debug: isDevMode() });
 
-// Step 3: Connect devtools to kernel
-if (isDevMode()) kernel.use(devtools.plugin);
+// Step 3: Connect devtools to kernel (always safe — noopDevTools plugin is a no-op)
+kernel.use(devtools.plugin);
 ```
 
 **Verify it's working — open your browser console and type:**
@@ -168,10 +172,12 @@ window.__VI_STATE_FP__
 **For React/Vanilla JS:**
 ```ts
 // React/Vanilla: use process.env.NODE_ENV
+import { createDevTools, noopDevTools } from '@vi/state-fp/devtools';
+
 const isDev = process.env.NODE_ENV === 'development';
 const devtools = isDev ? createDevTools({ maxLogSize: 500 }) : noopDevTools;
 const kernel = createKernel({ debug: isDev });
-if (isDev) kernel.use(devtools.plugin);
+kernel.use(devtools.plugin);
 ```
 
 ---
@@ -411,12 +417,12 @@ const handler = createCommandHandler({
 });
 
 const cmd = command('cart/addItem', payload);    // ← must match exactly
-// Typos ('cart/add-item', 'Cart/AddItem') silently produce UNREGISTERED errors
+// Typos ('cart/add-item', 'Cart/AddItem') silently produce NO_HANDLER errors
 ```
 
 **Step 3: Check the atom is registered:**
 ```ts
-// If you get err({ code: 'UNREGISTERED', ... }) — registration was missed
+// If you get err({ code: 'NO_HANDLER', ... }) — registration was missed
 kernel.register(cartAtom, addItemHandler, cartApplier);   // ← must be called before execute()
 ```
 
@@ -445,7 +451,7 @@ const addItemHandler = createCommandHandler({
 ```ts
 // kernel.register(ATOM, HANDLER, APPLIER)
 // If you registered the handler against the wrong atom, execute() on the right atom
-// will return UNREGISTERED
+// will return NO_HANDLER
 
 // ❌ Handler registered against wrong atom
 kernel.register(authAtom, addItemHandler, cartApplier);  // wrong!
@@ -877,7 +883,8 @@ beforeEach(() => {
 
 afterEach(() => {
   // If a test fails, dump the event log to help diagnose
-  if (expect.assertions().count > 0) {
+  const { assertionCalls } = expect.getState();
+  if (assertionCalls === 0) {
     console.log('Event log on failure:', devtools.eventLog.getAll());
   }
 });
@@ -996,7 +1003,7 @@ mousePos.subscribeAnimated((pos) => {
 });
 
 // In React (from adapter):
-const pos = reactAdapter.useEphemeralStream(mousePos);  // animated by default
+const pos = reactAdapter.useEphemeral(mousePos);  // animated by default
 ```
 
 ---

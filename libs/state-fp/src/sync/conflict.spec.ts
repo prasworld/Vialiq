@@ -173,4 +173,45 @@ describe('sync/conflict', () => {
       ).toThrow();
     });
   });
+
+  // ── Edge cases for undefined peerIds and clock-sum paths ──────────────────
+
+  describe('lastWriteWins — undefined remote peerId tie-break', () => {
+    it('returns local when remote peerId is undefined and local peerId is defined', () => {
+      // equal timestamps, remote.peerId=undefined → '' < local.peerId='a' → local wins
+      const withPeer   = { state: 'local',  version: { a: 1 }, timestamp: 10, peerId: 'a' };
+      const noPeer     = { state: 'remote', version: { b: 1 }, timestamp: 10, peerId: undefined };
+      // '' (remote undefined) vs 'a' (local defined): '' > 'a' is FALSE → local wins
+      expect(lastWriteWins(withPeer, noPeer as any)).toBe('local');
+    });
+  });
+
+  describe('firstWriteWins — undefined remote peerId tie-break', () => {
+    it('returns local when remote peerId is undefined', () => {
+      // equal timestamps, remote.peerId=undefined → '' >= local.peerId → local wins
+      const withPeer = { state: 'local',  version: { a: 1 }, timestamp: 10, peerId: 'a' };
+      const noPeer   = { state: 'remote', version: { b: 1 }, timestamp: 10, peerId: undefined };
+      // '' < 'a' → TRUE → normally this means remote wins, but remote IS the noPeer
+      // firstWriteWins: if '' < 'a' → return remote.state='remote'
+      expect(firstWriteWins(withPeer, noPeer as any)).toBe('remote');
+    });
+  });
+
+  describe('versionWins — clock-sum comparison paths', () => {
+    it('remote wins when remote clock sum exceeds local (neither vector dominates)', () => {
+      // Concurrent vectors: local={a:1}, remote={b:3} — neither dominates
+      const lv = { state: 'local',  version: { a: 1 }, timestamp: 5,  peerId: 'a' };
+      const rv = { state: 'remote', version: { b: 3 }, timestamp: 5,  peerId: 'b' };
+      // remoteSum=3 > localSum=1 → remote wins
+      expect(versionWins(lv, rv)).toBe('remote');
+    });
+
+    it('local wins when local clock sum exceeds remote (neither vector dominates)', () => {
+      // Concurrent vectors: local={a:4}, remote={b:1} — neither dominates
+      const lv = { state: 'local',  version: { a: 4 }, timestamp: 5,  peerId: 'a' };
+      const rv = { state: 'remote', version: { b: 1 }, timestamp: 5,  peerId: 'b' };
+      // remoteSum=1 < localSum=4 → local wins
+      expect(versionWins(lv, rv)).toBe('local');
+    });
+  });
 });

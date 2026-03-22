@@ -40,7 +40,7 @@ on the same channel. Conflict resolution is automatic (configurable strategies: 
 
 ```ts
 // ── Shell (owner) ──────────────────────────────────────────────────────────
-import { createKernel, defineAtom, command, domainEvent, ok } from '@vi/state-fp/kernel';
+import { createKernel, defineAtom, command, domainEvent, ok, createCommandHandler, createEventApplier } from '@vi/state-fp/kernel';
 import { createSyncEngine }                                    from '@vi/state-fp/sync';
 
 const kernel  = createKernel();
@@ -292,7 +292,7 @@ For state that changes faster than the frame rate (mouse position, scroll, canva
 `EphemeralStream` with `subscribeAnimated()`:
 
 ```ts
-import { createEphemeralStream } from '@vi/state-fp/kernel';
+import { createEphemeralStream } from '@vi/state-fp/core';
 
 const mousePos = createEphemeralStream<{ x: number; y: number }>();
 

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { Atom } from '../kernel/types.js';
 import { domainEvent, command } from '../kernel/index.js';
-import { createDevTools } from './devtools.js';
+import { createDevTools, noopDevTools } from './devtools.js';
 
 function createAtom<S>(key: string, initial: S): Atom<S> {
   let state = initial;
@@ -133,5 +133,78 @@ describe('createDevTools', () => {
     expect(dt.timeTravel).toBeDefined();
     expect(typeof dt.timeTravel.replayMode).toBe('boolean');
     expect(typeof dt.timeTravel.to).toBe('function');
+  });
+});
+
+describe('noopDevTools', () => {
+  it('plugin name is @vi/devtools/noop', () => {
+    expect(noopDevTools.plugin.name).toBe('@vi/devtools/noop');
+  });
+
+  it('plugin onRegister and onExecute are no-ops (do not throw)', () => {
+    const atom = createAtom('x', 0);
+    expect(() => {
+      noopDevTools.plugin.onRegister?.(atom as unknown as import('../kernel/types.js').Atom<unknown>);
+      noopDevTools.plugin.onExecute?.({
+        atomKey: 'x',
+        command: command('x/inc'),
+        events: [domainEvent('x/incremented')],
+        prevState: 0, nextState: 1, durationMs: 0,
+      });
+    }).not.toThrow();
+  });
+
+  it('eventLog returns empty collections', () => {
+    expect(noopDevTools.eventLog.getAll()).toEqual([]);
+    expect(noopDevTools.eventLog.getByAtom('any')).toEqual([]);
+    expect(noopDevTools.eventLog.getByCorrelation('any')).toEqual([]);
+    expect(noopDevTools.eventLog.getByTimeRange(0, Date.now())).toEqual([]);
+    expect(noopDevTools.eventLog.last(10)).toEqual([]);
+    expect(noopDevTools.eventLog.latest()._tag).toBe('Nothing');
+    expect(noopDevTools.eventLog.totalCount).toBe(0);
+  });
+
+  it('eventLog append and clear are no-ops (do not throw)', () => {
+    expect(() => {
+      noopDevTools.eventLog.append({} as never);
+      noopDevTools.eventLog.clear();
+    }).not.toThrow();
+  });
+
+  it('snapshots returns empty / Nothing results', () => {
+    expect(noopDevTools.snapshots.list()).toEqual([]);
+    expect(noopDevTools.snapshots.get('any')._tag).toBe('Nothing');
+    expect(noopDevTools.snapshots.nearestBefore(10)._tag).toBe('Nothing');
+    expect(noopDevTools.snapshots.export()).toBe('[]');
+  });
+
+  it('snapshots capture returns a valid empty Snapshot shape', () => {
+    const snap = noopDevTools.snapshots.capture({}, undefined, 0);
+    expect(snap.id).toBe('');
+    expect(snap.state).toEqual({});
+  });
+
+  it('snapshots prune and import are no-ops (do not throw)', () => {
+    expect(() => {
+      noopDevTools.snapshots.prune(5);
+      noopDevTools.snapshots.import('[]');
+    }).not.toThrow();
+  });
+
+  it('timeTravel.goTo resolves to Nothing', async () => {
+    const result = await noopDevTools.timeTravel.goTo('any');
+    expect(result._tag).toBe('Nothing');
+  });
+
+  it('timeTravel.canGoTo returns false', () => {
+    expect(noopDevTools.timeTravel.canGoTo('any')).toBe(false);
+  });
+
+  it('timeTravel.position returns Nothing', () => {
+    expect(noopDevTools.timeTravel.position()._tag).toBe('Nothing');
+  });
+
+  it('uninstall does not throw', () => {
+    expect(() => noopDevTools.uninstall()).not.toThrow();
   });
 });

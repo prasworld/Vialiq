@@ -246,4 +246,34 @@ describe('createSyncEngine', () => {
     engine.destroy();
     (globalThis as unknown as { BroadcastChannel?: unknown }).BroadcastChannel = saved;
   });
+
+  it('responds to vi/sync/request messages with current state', async () => {
+    const atom   = createAtom('vi/shared-data', 'hello');
+    const kernel = { subscribe: <S>(a: Atom<S>, l: (v: S) => void) => a.subscribe(l) };
+
+    const engine = createSyncEngine({ kernel });
+    engine.share(atom, { channel: 'vi/shared-data', peerId: 'engine' });
+
+    // Observer to capture replies from engine
+    const bridge   = createBroadcastBridge<string>('vi/shared-data');
+    const replies: { type: string; state?: unknown }[] = [];
+    bridge.subscribe(msg => replies.push(msg));
+
+    // Send a request message — simulating a new peer asking for current state
+    bridge.send({
+      type:    'vi/sync/request',
+      peerId:  'requester',
+      atomKey: 'vi/shared-data',
+    } as any);
+
+    await Promise.resolve();
+
+    // Engine should have replied with its current state
+    const stateReply = replies.find(r => r.type === 'vi/sync/state');
+    expect(stateReply).toBeDefined();
+    expect((stateReply as any).state).toBe('hello');
+
+    bridge.close();
+    engine.destroy();
+  });
 });

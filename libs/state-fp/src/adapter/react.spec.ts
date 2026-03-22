@@ -294,5 +294,45 @@ describe('createReactAdapter', () => {
       expect(stream.subscribe).toHaveBeenCalled();
       expect(stream.subscribeAnimated).not.toHaveBeenCalled();
     });
+
+    it('syncs with stream.last and invokes subscriber callback (animated)', () => {
+      const apis = makeReactAPIs();
+      let savedSubscriber: ((v: number) => void) | undefined;
+      const stream: EphemeralStream<number> = {
+        emit:               vi.fn(),
+        subscribe:          vi.fn().mockReturnValue(() => {}),
+        subscribeAnimated:  vi.fn((cb: (v: number) => void) => { savedSubscriber = cb; return () => {}; }),
+        last:               99, // non-undefined → covers setValue(stream.last) in effect
+      };
+
+      const adapter = createReactAdapter(apis);
+      adapter.useEphemeral(stream);
+      apis._triggerEffect();
+      // The effect should have called setValue(99) and subscribed
+      expect(apis._getState<number>()).toBe(99);
+
+      // Emit a new value through the subscriber callback
+      savedSubscriber?.(200);
+      expect(apis._getState<number>()).toBe(200);
+    });
+
+    it('invokes subscribe callback (non-animated subscriber emits value)', () => {
+      const apis = makeReactAPIs();
+      let savedSubscriber: ((v: number) => void) | undefined;
+      const stream: EphemeralStream<number> = {
+        emit:               vi.fn(),
+        subscribe:          vi.fn((cb: (v: number) => void) => { savedSubscriber = cb; return () => {}; }),
+        subscribeAnimated:  vi.fn().mockReturnValue(() => {}),
+        last:               undefined,
+      };
+
+      const adapter = createReactAdapter(apis);
+      adapter.useEphemeral(stream, false);
+      apis._triggerEffect();
+
+      // Emit a value through the subscriber
+      savedSubscriber?.(55);
+      expect(apis._getState<number>()).toBe(55);
+    });
   });
 });

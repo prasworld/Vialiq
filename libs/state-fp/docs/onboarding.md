@@ -39,7 +39,7 @@ npx nx test state-fp
 npx nx test state-fp --watch
 
 # Typecheck only (no test runner)
-npx nx typecheck state-fp
+npx tsc --project libs/state-fp/tsconfig.json --noEmit
 
 # Lint
 npx nx lint state-fp
@@ -171,7 +171,7 @@ Each file has one clear responsibility. When you're not sure where something liv
 | File | What it does |
 |------|-------------|
 | `angular.ts` | `createAngularAdapter()` — `toSignal`, `toQuerySignal`, `commandDispatcher` |
-| `react.ts` | `createReactAdapter()` — `useAtom`, `useCommand`, `useQuery`, `useEphemeralStream` |
+| `react.ts` | `createReactAdapter()` — `useAtom`, `useCommand`, `useQuery`, `useEphemeral` |
 | `lit.ts` | `createLitController()` + `createLitStreamController()` — Reactive Controllers |
 | `vanilla.ts` | `createVanillaAdapter()` — manual subscribe/unsubscribe helpers |
 | `index.ts` | Public re-exports for `@vi/state-fp/adapter` |
@@ -250,8 +250,8 @@ When writing code, use these imports:
 
 ```ts
 // 📍 @vi/state-fp/core — FP primitives
-import { Just, Nothing, foldMaybe } from '@vi/state-fp/core';  // Maybe
-import { left, right, fold, match } from '@vi/state-fp/core';  // Either (Result)
+import { just, nothing, foldMaybe } from '@vi/state-fp/core';  // Maybe
+import { left, right, foldEither, match } from '@vi/state-fp/core';  // Either (Result)
 import { IO } from '@vi/state-fp/core';  // Lazy computation
 
 // 📍 @vi/state-fp/kernel — CQRS engine
@@ -299,8 +299,10 @@ export const cartAtom = defineAtom<CartState>({
 
 ```ts
 // src/kernel/atoms/cart.ts (same file — co-location is convention)
-import { command, createCommandHandler, domainEvent, ok, err } from '../command';
-import { CartState } from './types';
+import { command, createCommandHandler } from '../command.js';
+import { domainEvent, createEventApplier } from '../event.js';
+import { ok, err } from '../../core/either.js';
+import { CartState } from './types.js';
 
 // Command factories
 export const AddItem    = (p: CartItem) => command('cart/addItem', p);
@@ -326,7 +328,7 @@ export const removeItemHandler = createCommandHandler<CartState, ReturnType<type
 ### Step 3 — Define the event applier
 
 ```ts
-import { createEventApplier } from '../command';
+import { createEventApplier } from '../event.js';
 
 export const cartApplier = createEventApplier<CartState>({
   'cart/itemAdded': (state, e) => ({
@@ -464,7 +466,7 @@ kernel.registerQuery(cartAtom, buildTotalHandler);
 |---------|---------|-----|
 | Calling `kernel.execute()` on a borrowed atom | State appears to change locally but never syncs back; devtools show orphaned commands | Only execute commands on owned atoms. Borrowers call only `atom.get()` and `kernel.subscribe()`. |
 | Using `kernel.execute()` synchronously and expecting async result | `result.right` is `Promise<Either>` not a resolved value | Use `await kernel.executeAsync()` for `AsyncCommandHandler`s |
-| Forgetting to call `kernel.register()` before `kernel.execute()` | `execute()` returns `err({ code: 'UNREGISTERED', ... })` | Always `register()` all handlers before the first `execute()`, typically in `APP_INITIALIZER` or `main.ts` |
+| Forgetting to call `kernel.register()` before `kernel.execute()` | `execute()` returns `err({ code: 'NO_HANDLER', ... })` | Always `register()` all handlers before the first `execute()`, typically in `APP_INITIALIZER` or `main.ts` |
 | Importing `@vi/state-fp` (root) instead of a sub-path | Tree-shaking pulls in all modules | Import from the correct sub-path: `@vi/state-fp/kernel`, `@vi/state-fp/sync`, etc. |
 | Mutating state directly in an applier | `atom.get()` returns stale data; subscribers not notified | Appliers must return a **new** object — never mutate `state`. Use spread: `{ ...state, items: [...state.items, newItem] }` |
 | Using `Either.left` / `Either.right` fields in component code | Fragile — implementation details; TypeScript union narrowing awkward | Use `match(result, { ok, err })` or `isOk(result)` / `isErr(result)` |

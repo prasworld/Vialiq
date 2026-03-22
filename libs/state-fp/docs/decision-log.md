@@ -203,13 +203,13 @@ Define one `exports` entry per module in `package.json`:
 ```jsonc
 {
   "exports": {
-    "./core":     { "import": "./dist/core/index.js" },
-    "./kernel":   { "import": "./dist/kernel/index.js" },
-    "./storage":  { "import": "./dist/storage/index.js" },
-    "./sync":     { "import": "./dist/sync/index.js" },
-    "./devtools": { "import": "./dist/devtools/index.js" },
-    "./adapter":  { "import": "./dist/adapter/index.js" },
-    "./bus":      { "import": "./dist/bus/index.js" }
+    "./core":     { "import": "./core/index.js" },
+    "./kernel":   { "import": "./kernel/index.js" },
+    "./storage":  { "import": "./storage/index.js" },
+    "./sync":     { "import": "./sync/index.js" },
+    "./devtools": { "import": "./devtools/index.js" },
+    "./adapter":  { "import": "./adapter/index.js" },
+    "./bus":      { "import": "./bus/index.js" }
   }
 }
 ```
@@ -291,7 +291,7 @@ requires a browser extension.
 #### Decision
 
 Implement **in-process devtools** (`@vi/state-fp/devtools`) that:
-- Record events in a circular buffer (`EventLog`) up to `maxEventLogSize`
+- Record events in a circular buffer (`EventLog`) up to `maxLogSize`
 - Capture state snapshots (`SnapshotManager`) for fast time-travel replay
 - Expose `window.__VI_STATE_FP__` in development builds
 - Support time-travel via `TimeTravelController`
