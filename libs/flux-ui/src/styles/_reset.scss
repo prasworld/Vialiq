@@ -1,0 +1,186 @@
+/**
+ * Reset Styles
+ * ============
+ * Minimal, MFE-safe reset that doesn't conflict with other frameworks.
+ * Uses CSS Layers for cascade management.
+ */
+
+@layer reset {
+  // ============================================================================
+  // BOX MODEL
+  // ============================================================================
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  // ============================================================================
+  // DOCUMENT ROOT
+  // ============================================================================
+
+  html {
+    // Improve line spacing, prevent font size inflation
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+  }
+
+  // ============================================================================
+  // BODY
+  // ============================================================================
+
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: var(--ds-font-family-base);
+    font-size: var(--ds-font-size-base);
+    line-height: var(--ds-line-height-normal, 1.5);
+    color: var(--ds-color-foreground);
+    background-color: var(--ds-color-background);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  // ============================================================================
+  // TEXT ELEMENTS
+  // ============================================================================
+
+  p, h1, h2, h3, h4, h5, h6, ul, ol, dl {
+    margin: 0;
+    padding: 0;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: inherit;
+    font-size: inherit;
+    line-height: inherit;
+  }
+
+  ul, ol {
+    list-style: none;
+  }
+
+  // ============================================================================
+  // LINKS
+  // ============================================================================
+
+  a {
+    color: inherit;
+    text-decoration: none;
+    background-color: transparent;
+
+    &:active,
+    &:hover {
+      outline: 0;
+    }
+  }
+
+  // ============================================================================
+  // CODE
+  // ============================================================================
+
+  code, pre, samp {
+    font-family: var(--ds-font-family-mono);
+    font-size: 1em;
+  }
+
+  pre {
+    margin: 0;
+    overflow: auto;
+  }
+
+  // ============================================================================
+  // FORM ELEMENTS
+  // ============================================================================
+
+  button,
+  input,
+  select,
+  textarea {
+    margin: 0;
+    padding: 0;
+    font-family: inherit;
+    font-size: 100%;
+    line-height: 1.15;
+  }
+
+  button,
+  input[type="button"],
+  input[type="reset"],
+  input[type="submit"] {
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    -webkit-appearance: button;
+
+    &::-moz-focus-inner {
+      padding: 0;
+      border: 0;
+    }
+  }
+
+  input[type="checkbox"],
+  input[type="radio"] {
+    padding: 0;
+    -webkit-appearance: checkbox;
+  }
+
+  textarea {
+    overflow: auto;
+    resize: vertical;
+  }
+
+  // ============================================================================
+  // TABLES
+  // ============================================================================
+
+  table {
+    border-collapse: collapse;
+    border-spacing: 0;
+  }
+
+  td,
+  th {
+    padding: 0;
+  }
+
+  // ============================================================================
+  // IMAGES & MEDIA
+  // ============================================================================
+
+  img,
+  svg {
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  img {
+    border: 0;
+    vertical-align: middle;
+  }
+
+  // ============================================================================
+  // EMBEDDED CONTENT
+  // ============================================================================
+
+  iframe,
+  video {
+    max-width: 100%;
+  }
+
+  // ============================================================================
+  // MISCELLANEOUS
+  // ============================================================================
+
+  [hidden] {
+    display: none;
+  }
+
+  hr {
+    margin: 0;
+    border: 0;
+    border-top: 1px solid var(--ds-color-border);
+  }
+}

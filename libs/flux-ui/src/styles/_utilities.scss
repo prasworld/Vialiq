@@ -1,0 +1,296 @@
+/**
+ * Utility Classes
+ * ===============
+ * Spacing, typography, and other common utilities.
+ * These are all generated from design tokens.
+ */
+
+@import './_variables.scss';
+
+@layer utilities {
+  // ============================================================================
+  // MARGIN
+  // ============================================================================
+
+  @each $name, $value in $spacing-map {
+    .m-#{$name} {
+      margin: $value;
+    }
+
+    .mx-#{$name} {
+      margin-left: $value;
+      margin-right: $value;
+    }
+
+    .my-#{$name} {
+      margin-top: $value;
+      margin-bottom: $value;
+    }
+
+    .mt-#{$name} {
+      margin-top: $value;
+    }
+
+    .mr-#{$name} {
+      margin-right: $value;
+    }
+
+    .mb-#{$name} {
+      margin-bottom: $value;
+    }
+
+    .ml-#{$name} {
+      margin-left: $value;
+    }
+  }
+
+  // ============================================================================
+  // PADDING
+  // ============================================================================
+
+  @each $name, $value in $spacing-map {
+    .p-#{$name} {
+      padding: $value;
+    }
+
+    .px-#{$name} {
+      padding-left: $value;
+      padding-right: $value;
+    }
+
+    .py-#{$name} {
+      padding-top: $value;
+      padding-bottom: $value;
+    }
+
+    .pt-#{$name} {
+      padding-top: $value;
+    }
+
+    .pr-#{$name} {
+      padding-right: $value;
+    }
+
+    .pb-#{$name} {
+      padding-bottom: $value;
+    }
+
+    .pl-#{$name} {
+      padding-left: $value;
+    }
+  }
+
+  // ============================================================================
+  // TYPOGRAPHY
+  // ============================================================================
+
+  .text-xs {
+    font-size: $font-size-xs;
+  }
+
+  .text-sm {
+    font-size: $font-size-sm;
+  }
+
+  .text-base {
+    font-size: $font-size-base;
+  }
+
+  .text-lg {
+    font-size: $font-size-lg;
+  }
+
+  .text-xl {
+    font-size: $font-size-xl;
+  }
+
+  .text-2xl {
+    font-size: $font-size-2xl;
+  }
+
+  .text-3xl {
+    font-size: $font-size-3xl;
+  }
+
+  .font-light {
+    font-weight: $font-weight-light;
+  }
+
+  .font-normal {
+    font-weight: $font-weight-normal;
+  }
+
+  .font-medium {
+    font-weight: $font-weight-medium;
+  }
+
+  .font-semibold {
+    font-weight: $font-weight-semibold;
+  }
+
+  .font-bold {
+    font-weight: $font-weight-bold;
+  }
+
+  .leading-tight {
+    line-height: $line-height-tight;
+  }
+
+  .leading-normal {
+    line-height: $line-height-normal;
+  }
+
+  .leading-relaxed {
+    line-height: $line-height-relaxed;
+  }
+
+  .text-center {
+    text-align: center;
+  }
+
+  .text-left {
+    text-align: left;
+  }
+
+  .text-right {
+    text-align: right;
+  }
+
+  // ============================================================================
+  // COLORS
+  // ============================================================================
+
+  @each $name, $value in $color-map {
+    .text-#{$name} {
+      color: $value;
+    }
+
+    .bg-#{$name} {
+      background-color: $value;
+    }
+
+    .border-#{$name} {
+      border-color: $value;
+    }
+  }
+
+  // Neutral colors
+  .text-neutral-50 { color: $color-neutral-50; }
+  .text-neutral-100 { color: $color-neutral-100; }
+  .text-neutral-200 { color: $color-neutral-200; }
+  .text-neutral-300 { color: $color-neutral-300; }
+  .text-neutral-400 { color: $color-neutral-400; }
+  .text-neutral-500 { color: $color-neutral-500; }
+  .text-neutral-600 { color: $color-neutral-600; }
+  .text-neutral-700 { color: $color-neutral-700; }
+  .text-neutral-800 { color: $color-neutral-800; }
+  .text-neutral-900 { color: $color-neutral-900; }
+
+  .bg-neutral-50 { background-color: $color-neutral-50; }
+  .bg-neutral-100 { background-color: $color-neutral-100; }
+  .bg-neutral-200 { background-color: $color-neutral-200; }
+  .bg-neutral-300 { background-color: $color-neutral-300; }
+  .bg-neutral-400 { background-color: $color-neutral-400; }
+  .bg-neutral-500 { background-color: $color-neutral-500; }
+  .bg-neutral-600 { background-color: $color-neutral-600; }
+  .bg-neutral-700 { background-color: $color-neutral-700; }
+  .bg-neutral-800 { background-color: $color-neutral-800; }
+  .bg-neutral-900 { background-color: $color-neutral-900; }
+
+  // ============================================================================
+  // SHADOWS
+  // ============================================================================
+
+  @each $name, $value in $shadow-map {
+    .shadow-#{$name} {
+      box-shadow: $value;
+    }
+  }
+
+  // ============================================================================
+  // BORDER RADIUS
+  // ============================================================================
+
+  .rounded-none {
+    border-radius: 0;
+  }
+
+  .rounded-sm {
+    border-radius: $border-radius-sm;
+  }
+
+  .rounded-md {
+    border-radius: $border-radius-md;
+  }
+
+  .rounded-lg {
+    border-radius: $border-radius-lg;
+  }
+
+  .rounded-xl {
+    border-radius: $border-radius-xl;
+  }
+
+  .rounded-full {
+    border-radius: 9999px;
+  }
+
+  // ============================================================================
+  // BORDERS
+  // ============================================================================
+
+  .border-thin {
+    border-width: $border-width-thin;
+    border-style: solid;
+  }
+
+  .border-base {
+    border-width: $border-width-base;
+    border-style: solid;
+  }
+
+  .border-thick {
+    border-width: $border-width-thick;
+    border-style: solid;
+  }
+
+  // ============================================================================
+  // Z-INDEX
+  // ============================================================================
+
+  @each $name, $value in $z-index-map {
+    .z-#{$name} {
+      z-index: $value;
+    }
+  }
+
+  // ============================================================================
+  // OPACITY
+  // ============================================================================
+
+  .opacity-0 { opacity: 0; }
+  .opacity-25 { opacity: 0.25; }
+  .opacity-50 { opacity: 0.5; }
+  .opacity-75 { opacity: 0.75; }
+  .opacity-100 { opacity: 1; }
+
+  // ============================================================================
+  // TRANSITIONS & ANIMATIONS
+  // ============================================================================
+
+  .transition-all {
+    transition: all 0.2s ease-in-out;
+  }
+
+  .transition-colors {
+    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out, border-color 0.2s ease-in-out;
+  }
+
+  .transition-opacity {
+    transition: opacity 0.2s ease-in-out;
+  }
+
+  .duration-100 { transition-duration: 100ms; }
+  .duration-200 { transition-duration: 200ms; }
+  .duration-300 { transition-duration: 300ms; }
+}
