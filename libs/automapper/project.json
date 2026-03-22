@@ -18,6 +18,13 @@
       "options": {
         "outputPath": "dist/libs/automapper",
         "main": "libs/automapper/src/index.ts",
+        "additionalEntryPoints": [
+          "libs/automapper/src/angular.ts",
+          "libs/automapper/src/zod.ts",
+          "libs/automapper/src/orm.ts",
+          "libs/automapper/src/fetch-adapter.ts",
+          "libs/automapper/src/deep-clone.ts"
+        ],
         "tsConfig": "libs/automapper/tsconfig.lib.json",
         "assets": ["libs/*.md"],
         "format": ["esm"]
@@ -27,11 +34,12 @@
       "executor": "nx:run-commands",
       "options": {
         "commands": [
-          "cp libs/automapper/publish-package.json dist/libs/automapper/package.json"
+          "cp libs/automapper/publish-package.json dist/libs/automapper/package.json",
+          "cp libs/automapper/LICENSE dist/libs/automapper/LICENSE"
         ],
         "parallel": false
       },
-      "outputs": ["dist/libs/automapper/package.json"]
+      "outputs": ["dist/libs/automapper/package.json", "dist/libs/automapper/LICENSE"]
     },
     "test": {
       "executor": "@nx/vitest:test",

@@ -1,0 +1,53 @@
+{
+  "name": "@vi/state-fp",
+  "description": "Modular CQRS functional state management — composable, lightweight, zero-dependency",
+  "keywords": [
+    "state-management",
+    "functional",
+    "cqrs",
+    "monads",
+    "monad",
+    "immutable",
+    "storage",
+    "mfe",
+    "micro-frontend",
+    "cross-tab-sync",
+    "devtools",
+    "angular",
+    "react"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "types": "./index.d.ts",
+  "exports": {
+    ".":           { "import": "./index.js",           "types": "./index.d.ts" },
+    "./core":      { "import": "./core/index.js",      "types": "./core/index.d.ts" },
+    "./kernel":    { "import": "./kernel/index.js",    "types": "./kernel/index.d.ts" },
+    "./storage":   { "import": "./storage/index.js",   "types": "./storage/index.d.ts" },
+    "./sync":      { "import": "./sync/index.js",      "types": "./sync/index.d.ts" },
+    "./devtools":  { "import": "./devtools/index.js",  "types": "./devtools/index.d.ts" },
+    "./adapter":   { "import": "./adapter/index.js",   "types": "./adapter/index.d.ts" },
+    "./bus":       { "import": "./bus/index.js",       "types": "./bus/index.d.ts" }
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "core/index.js",
+    "core/index.d.ts",
+    "kernel/index.js",
+    "kernel/index.d.ts",
+    "storage/index.js",
+    "storage/index.d.ts",
+    "sync/index.js",
+    "sync/index.d.ts",
+    "devtools/index.js",
+    "devtools/index.d.ts",
+    "adapter/index.js",
+    "adapter/index.d.ts",
+    "bus/index.js",
+    "bus/index.d.ts",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false
+}

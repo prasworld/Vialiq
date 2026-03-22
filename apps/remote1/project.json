@@ -42,7 +42,7 @@
           ],
           "outputHashing": "all",
           "customWebpackConfig": {
-            "path": "remote1/webpack.prod.config.ts"
+            "path": "apps/remote1/webpack.prod.config.ts"
           }
         },
         "development": {

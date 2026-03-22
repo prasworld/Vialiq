@@ -19,40 +19,5 @@
   ],
   "license": "MIT",
   "type": "module",
-  "types": "./index.d.ts",
-  "exports": {
-    ".": {
-      "import": "./index.js",
-      "types":  "./index.d.ts"
-    },
-    "./core": {
-      "import": "./core/index.js",
-      "types":  "./core/index.d.ts"
-    },
-    "./kernel": {
-      "import": "./kernel/index.js",
-      "types":  "./kernel/index.d.ts"
-    },
-    "./storage": {
-      "import": "./storage/index.js",
-      "types":  "./storage/index.d.ts"
-    },
-    "./sync": {
-      "import": "./sync/index.js",
-      "types":  "./sync/index.d.ts"
-    },
-    "./devtools": {
-      "import": "./devtools/index.js",
-      "types":  "./devtools/index.d.ts"
-    },
-    "./adapter": {
-      "import": "./adapter/index.js",
-      "types":  "./adapter/index.d.ts"
-    },
-    "./bus": {
-      "import": "./bus/index.js",
-      "types":  "./bus/index.d.ts"
-    }
-  },
-  "sideEffects": false
+  "types": "./index.d.ts"
 }

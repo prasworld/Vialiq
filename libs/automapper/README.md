@@ -927,7 +927,7 @@ npx nx build automapper
 
 # Build for production + create npm tarball
 npx nx build automapper --configuration=production --skip-nx-cache
-cp libs/automapper/publish-package.json dist/libs/automapper/package.json
+npx nx postbuild-publish automapper
 (cd dist/libs/automapper && npm pack)
 
 # Run all unit tests
@@ -936,6 +936,59 @@ npx nx test automapper --skip-nx-cache
 # Tests with coverage (emitted to coverage/automapper/)
 npx nx test automapper --skip-nx-cache -- --coverage --reporter verbose
 ```
+
+---
+
+## Package Entrypoints (npm consumers)
+
+The published package exposes the following import paths:
+
+| Import path | Contents | Peer dependency |
+|---|---|---|
+| `@vi/automapper` | Core mapper, builder, strategies, plugins, naming, converters | none |
+| `@vi/automapper/angular` | `provideAutomapper()`, `AUTOMAPPER_TOKEN` | `@angular/core >=15` |
+| `@vi/automapper/zod` | `profileFromZod()`, `validateWithZod()`, `safeValidateWithZod()` | `zod >=3` |
+| `@vi/automapper/orm` | `profileFromColumns()`, `profileFromDescriptor()` | none |
+| `@vi/automapper/fetch-adapter` | `createMappedFetcher()`, `createMappedArrayFetcher()`, `createMappedQueryFn()`, `createMappedSWRFetcher()` | none |
+| `@vi/automapper/deep-clone` | `deepClone()`, `mapWithClone()`, `registerWasmClone()` | none |
+
+Only the subpaths you import are included in your bundle — `@angular/core` and `zod` are never loaded unless you explicitly import from `@vi/automapper/angular` or `@vi/automapper/zod`.
+
+### Examples
+
+```ts
+// Core only — zero peer deps
+import { createMapper } from '@vi/automapper';
+
+// Angular DI (requires @angular/core)
+import { provideAutomapper, AUTOMAPPER_TOKEN } from '@vi/automapper/angular';
+
+// Zod schema integration (requires zod)
+import { profileFromZod } from '@vi/automapper/zod';
+
+// ORM column-list profile — works with TypeORM, MikroORM, Prisma, etc.
+import { profileFromColumns } from '@vi/automapper/orm';
+
+// Fetch adapter — React Query / SWR compatible, no UI-framework dep
+import { createMappedFetcher, createMappedQueryFn } from '@vi/automapper/fetch-adapter';
+
+// Deep clone before mapping (uses structuredClone, WASM-upgradeable)
+import { deepClone, mapWithClone } from '@vi/automapper/deep-clone';
+```
+
+### Publish strategy
+
+The source `libs/automapper/package.json` is **not** what ships to npm.
+`postbuild-publish` is a standalone Nx target that copies `libs/automapper/publish-package.json` into `dist/libs/automapper/package.json` and `libs/automapper/LICENSE` into the dist folder. Only `publish-package.json` declares the `exports` map, `peerDependencies`, and `files` list.
+
+`postbuild-publish` is **not** invoked automatically by `nx build automapper`. Run the complete sequence:
+
+```bash
+npx nx build automapper
+npx nx postbuild-publish automapper
+```
+
+Then publish from `dist/libs/automapper/` (or use `npx nx nx-release-publish automapper`).
 
 ---
 

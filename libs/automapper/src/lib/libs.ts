@@ -12,6 +12,7 @@ export * from './profiling';
 export * from './plugins/logging';
 export * from './resolver-helpers';
 export { DefaultStrategy } from './strategy';
-export { MappingStrategy } from './strategy';
+export type { MappingStrategy } from './strategy';
 export * from './plugin';
 export * from './context';
+export * from './plugin-discovery';
