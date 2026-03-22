@@ -7,6 +7,11 @@ import {
   fromTryAsync,
   isLeft,
   isRight,
+  ok,
+  err,
+  isOk,
+  isErr,
+  match,
   mapEither,
   bimapEither,
   mapLeft,
@@ -285,8 +290,6 @@ describe('swapEither', () => {
 });
 
 // ─── Idiomatic Result API ─────────────────────────────────────────────────────
-
-import { ok, err, isOk, isErr, match } from './either.js';
 
 describe('ok / err constructors', () => {
   it('ok(value) produces the same structure as right(value)', () => {

@@ -124,7 +124,7 @@ class RedisAdapter implements StorageAdapter {
   readonly name = 'RedisAdapter';
   constructor(private readonly client: RedisClient) {}
 
-  async get(key: string) {
+  async get<T>(key: string) {
     try {
       const raw = await this.client.get(key);
       if (raw === null) return ok(nothing<T>());

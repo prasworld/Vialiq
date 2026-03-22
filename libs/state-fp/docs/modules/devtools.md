@@ -117,6 +117,8 @@ snaps.clearAll();
 Navigate to any historical snapshot to inspect past state.
 
 ```ts
+import { match } from '@vi/state-fp/kernel';
+
 const tt = devtools.timeTravel;
 
 // Jump to snapshot at a specific event id

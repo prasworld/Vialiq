@@ -340,6 +340,7 @@ The same kernel works in a plain TypeScript micro-frontend:
 ```ts
 // src/cart/cart-widget.ts
 import { createAdapter } from '@vi/state-fp/adapter';
+import { match }         from '@vi/state-fp/kernel';
 import { kernel }        from './setup.js';
 import { cartAtom }      from './atom.js';
 import { addItem }       from './commands.js';
@@ -440,7 +441,7 @@ describe('cart handler', () => {
 ```ts
 // src/cart/cart.integration.spec.ts
 import { describe, it, expect } from 'vitest';
-import { createKernel }         from '@vi/state-fp/kernel';
+import { createKernel, isOk }   from '@vi/state-fp/kernel';
 import { cartAtom }    from './atom.js';
 import { cartHandler } from './handler.js';
 import { cartApplier } from './applier.js';
@@ -466,6 +467,7 @@ describe('cart kernel integration', () => {
 // src/cart/cart-widget.spec.ts
 import { describe, it, expect, vi } from 'vitest';
 import { createAdapter }  from '@vi/state-fp/adapter';
+import { ok }             from '@vi/state-fp/kernel';
 import { cartAtom }  from './atom.js';
 import { addItem }   from './commands.js';
 

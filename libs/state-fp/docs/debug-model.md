@@ -449,7 +449,7 @@ internal `DebugInterface` records to the plugin, then attach `devtools.plugin` b
 import { createKernel, defineAtom, createCommandHandler, createEventApplier,
          command, domainEvent } from '@vi/state-fp/kernel';
 import { createDevTools } from '@vi/state-fp/devtools';
-import { ok } from '@vi/state-fp/kernel';
+import { ok, isOk } from '@vi/state-fp/kernel';
 
 const counterAtom = defineAtom({ key: 'vi/counter', initialState: { count: 0 } });
 const increment   = () => command('counter/increment', {});
