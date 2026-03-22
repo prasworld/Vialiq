@@ -41,11 +41,15 @@ export interface FetchAdapterOptions {
   /**
    * Custom fetch implementation.  Defaults to the global `fetch`.
    * Inject a custom implementation for testing or server-side usage.
+   *
+   * In environments without a global `fetch` (older Node, some runtimes)
+   * this **must** be provided; otherwise the adapter factory will throw.
    */
   fetchImpl?: typeof fetch;
 
   /**
    * Optional `RequestInit` merged into every request made by this adapter.
+   * Per-call `init` overrides take precedence over these defaults.
    */
   requestInit?: RequestInit;
 }
@@ -55,6 +59,55 @@ export interface FetchAdapterOptions {
  * and maps the response to `D | null` via the registered profile.
  */
 export type MappedFetcher<D> = (url: string, init?: RequestInit) => Promise<D | null>;
+
+// ---------------------------------------------------------------------------
+// Internal helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Resolve and validate the fetch implementation.
+ * Throws a descriptive error if no implementation is available so consumers
+ * get actionable guidance rather than a cryptic "is not a function" crash.
+ */
+function resolveFetch(options?: FetchAdapterOptions): typeof fetch {
+  const impl = options?.fetchImpl ?? globalThis.fetch;
+  if (!impl) {
+    throw new Error(
+      '[automapper fetch-adapter] No fetch implementation is available. ' +
+      'Pass options.fetchImpl or polyfill globalThis.fetch before creating a mapped fetcher.'
+    );
+  }
+  return impl;
+}
+
+/**
+ * Merge two `RequestInit` objects, correctly combining their `headers`
+ * fields even when either side uses a `Headers` instance.  Fields in
+ * `override` take precedence; headers from `override` are set on top of
+ * (not replacing) headers from `base`.
+ */
+function mergeInit(
+  base: RequestInit | undefined,
+  override: RequestInit | undefined
+): RequestInit {
+  if (!base && !override) return {};
+  if (!base) return { ...override };
+  if (!override) return { ...base };
+
+  // Normalise both header bags into a Headers instance so that spreading
+  // a plain Headers object (which yields no own enumerable keys) doesn't
+  // silently drop the entries.
+  const merged = new Headers(base.headers);
+  if (override.headers) {
+    new Headers(override.headers).forEach((value, key) => {
+      merged.set(key, value);
+    });
+  }
+
+  return { ...base, ...override, headers: merged };
+}
+
+// ---------------------------------------------------------------------------
 
 /**
  * Create a `MappedFetcher<D>` that fetches a URL and maps the response
@@ -76,9 +129,9 @@ export function createMappedFetcher<S extends object, D>(
   destType: Constructor<D> | string,
   options?: FetchAdapterOptions
 ): MappedFetcher<D> {
-  const fetchFn = options?.fetchImpl ?? globalThis.fetch;
+  const fetchFn = resolveFetch(options);
   return async (url: string, init?: RequestInit): Promise<D | null> => {
-    const response = await fetchFn(url, { ...options?.requestInit, ...init });
+    const response = await fetchFn(url, mergeInit(options?.requestInit, init));
     if (!response.ok) {
       throw new Error(`[automapper fetch-adapter] HTTP ${response.status} ${response.statusText} for ${url}`);
     }
@@ -101,9 +154,9 @@ export function createMappedArrayFetcher<S extends object, D>(
   destType: Constructor<D> | string,
   options?: FetchAdapterOptions
 ): (url: string, init?: RequestInit) => Promise<Array<D | null>> {
-  const fetchFn = options?.fetchImpl ?? globalThis.fetch;
+  const fetchFn = resolveFetch(options);
   return async (url: string, init?: RequestInit): Promise<Array<D | null>> => {
-    const response = await fetchFn(url, { ...options?.requestInit, ...init });
+    const response = await fetchFn(url, mergeInit(options?.requestInit, init));
     if (!response.ok) {
       throw new Error(`[automapper fetch-adapter] HTTP ${response.status} ${response.statusText} for ${url}`);
     }

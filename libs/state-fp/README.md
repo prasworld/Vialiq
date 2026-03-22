@@ -502,6 +502,38 @@ architecture design reference.
 
 ---
 
+## Package Entrypoints (npm consumers)
+
+All six modules are individually importable as subpath exports. Import only what you need — unused subpaths are never loaded by your bundler.
+
+| Subpath | Contents |
+|---|---|
+| `@vi/state-fp` | Full re-export of all modules (convenience; prefer subpaths for tree-shaking) |
+| `@vi/state-fp/core` | FP primitives: Maybe, Either, IO, Lens, pipe, compose, utilities |
+| `@vi/state-fp/kernel` | Atoms, commands, events, queries, CQRS kernel |
+| `@vi/state-fp/storage` | Pluggable persistence adapters (MemoryAdapter) |
+| `@vi/state-fp/sync` | Cross-tab / cross-worker atom synchronisation |
+| `@vi/state-fp/devtools` | Event log, snapshots, time-travel |
+| `@vi/state-fp/adapter` | React hooks, Angular signals, Lit controllers, vanilla JS |
+| `@vi/state-fp/bus` | Event bus / message bus primitives |
+
+The `exports` map in `package.json` is what Node and modern bundlers use to resolve these paths. Each entry maps to a pre-built ESM chunk in the published tarball:
+
+```
+@vi/state-fp/core        → dist/core/index.js
+@vi/state-fp/kernel      → dist/kernel/index.js
+@vi/state-fp/storage     → dist/storage/index.js
+...
+```
+
+### Publish strategy
+
+`libs/state-fp/package.json` is the source metadata file only — it does **not** contain `exports` or `files`. A separate `libs/state-fp/publish-package.json` holds the full dist manifest (`exports`, `files`, `sideEffects`). The `postbuild-publish` Nx target copies it over `dist/libs/state-fp/package.json` after the build, so npm consumers always get the correct manifest.
+
+Do **not** add `exports` to the source `package.json` — they belong only in `publish-package.json`.
+
+---
+
 ## License
 
 MIT © vi

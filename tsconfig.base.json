@@ -17,6 +17,19 @@
     "paths": {
       "remote1/Routes": ["apps/remote1/src/app/remote-entry/entry.routes.ts"],
       "@vi/automapper": ["libs/automapper/src/index.ts"],
+      "@vi/automapper/angular": ["libs/automapper/src/angular.ts"],
+      "@vi/automapper/zod": ["libs/automapper/src/zod.ts"],
+      "@vi/automapper/orm": ["libs/automapper/src/orm.ts"],
+      "@vi/automapper/fetch-adapter": ["libs/automapper/src/fetch-adapter.ts"],
+      "@vi/automapper/deep-clone": ["libs/automapper/src/deep-clone.ts"],
+      "@vi/state-fp": ["libs/state-fp/src/index.ts"],
+      "@vi/state-fp/core": ["libs/state-fp/src/core/index.ts"],
+      "@vi/state-fp/kernel": ["libs/state-fp/src/kernel/index.ts"],
+      "@vi/state-fp/storage": ["libs/state-fp/src/storage/index.ts"],
+      "@vi/state-fp/sync": ["libs/state-fp/src/sync/index.ts"],
+      "@vi/state-fp/devtools": ["libs/state-fp/src/devtools/index.ts"],
+      "@vi/state-fp/adapter": ["libs/state-fp/src/adapter/index.ts"],
+      "@vi/state-fp/bus": ["libs/state-fp/src/bus/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]

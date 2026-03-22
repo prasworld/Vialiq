@@ -384,13 +384,9 @@ describe('mapWithClone (4-7)', () => {
   });
 
   it('clones before mapping so source mutation after call does not affect result', () => {
-    const mapper = createMapper({ autoMap: true });
-    class Src { value = 1 }
-    mapper.addProfile(Src, 'Dto', (b: any) =>
-      b.forMember('value', (o: any) => o.mapFrom((s: any) => s.value))
-    );
-    const src = new Src();
-    // Note: mapWithClone clones the src; mapping runs on the clone.
+    const mapper = createMapper({ autoMap: false });
+    mapper.addProfile(Object, 'Dto', profileFromColumns(['value']));
+    const src = { value: 1, extra: 'x' };
     const result = mapWithClone(mapper, src, 'Dto') as any;
     src.value = 999; // mutate after clone — result should still have 1
     expect(result.value).toBe(1);

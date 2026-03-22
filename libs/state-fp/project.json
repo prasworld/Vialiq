@@ -12,7 +12,7 @@
         "outputPath": "dist/libs/state-fp",
         "main": "libs/state-fp/src/index.ts",
         "tsConfig": "libs/state-fp/tsconfig.lib.json",
-        "assets": ["libs/state-fp/README.md", "libs/state-fp/package.json"],
+        "assets": ["libs/state-fp/README.md"],
         "format": ["esm"],
         "additionalEntryPoints": [
           "libs/state-fp/src/core/index.ts",
@@ -24,6 +24,16 @@
           "libs/state-fp/src/bus/index.ts"
         ]
       }
+    },
+    "postbuild-publish": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "cp libs/state-fp/publish-package.json dist/libs/state-fp/package.json"
+        ],
+        "parallel": false
+      },
+      "outputs": ["dist/libs/state-fp/package.json"]
     },
     "test": {
       "executor": "nx:run-commands",

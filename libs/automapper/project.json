@@ -18,6 +18,13 @@
       "options": {
         "outputPath": "dist/libs/automapper",
         "main": "libs/automapper/src/index.ts",
+        "additionalEntryPoints": [
+          "libs/automapper/src/angular.ts",
+          "libs/automapper/src/zod.ts",
+          "libs/automapper/src/orm.ts",
+          "libs/automapper/src/fetch-adapter.ts",
+          "libs/automapper/src/deep-clone.ts"
+        ],
         "tsConfig": "libs/automapper/tsconfig.lib.json",
         "assets": ["libs/*.md"],
         "format": ["esm"]

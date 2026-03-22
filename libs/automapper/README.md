@@ -939,6 +939,50 @@ npx nx test automapper --skip-nx-cache -- --coverage --reporter verbose
 
 ---
 
+## Package Entrypoints (npm consumers)
+
+The published package exposes the following import paths:
+
+| Import path | Contents | Peer dependency |
+|---|---|---|
+| `@vi/automapper` | Core mapper, builder, strategies, plugins, naming, converters | none |
+| `@vi/automapper/angular` | `provideAutomapper()`, `AUTOMAPPER_TOKEN` | `@angular/core >=15` |
+| `@vi/automapper/zod` | `profileFromZod()`, `validateWithZod()`, `safeValidateWithZod()` | `zod >=3` |
+| `@vi/automapper/orm` | `profileFromColumns()`, `profileFromDescriptor()` | none |
+| `@vi/automapper/fetch-adapter` | `createMappedFetcher()`, `createMappedArrayFetcher()`, `createMappedQueryFn()`, `createMappedSWRFetcher()` | none |
+| `@vi/automapper/deep-clone` | `deepClone()`, `mapWithClone()`, `registerWasmClone()` | none |
+
+Only the subpaths you import are included in your bundle — `@angular/core` and `zod` are never loaded unless you explicitly import from `@vi/automapper/angular` or `@vi/automapper/zod`.
+
+### Examples
+
+```ts
+// Core only — zero peer deps
+import { createMapper } from '@vi/automapper';
+
+// Angular DI (requires @angular/core)
+import { provideAutomapper, AUTOMAPPER_TOKEN } from '@vi/automapper/angular';
+
+// Zod schema integration (requires zod)
+import { profileFromZod } from '@vi/automapper/zod';
+
+// ORM column-list profile — works with TypeORM, MikroORM, Prisma, etc.
+import { profileFromColumns } from '@vi/automapper/orm';
+
+// Fetch adapter — React Query / SWR compatible, no UI-framework dep
+import { createMappedFetcher, createMappedQueryFn } from '@vi/automapper/fetch-adapter';
+
+// Deep clone before mapping (uses structuredClone, WASM-upgradeable)
+import { deepClone, mapWithClone } from '@vi/automapper/deep-clone';
+```
+
+### Publish strategy
+
+The source `libs/automapper/package.json` is **not** what ships to npm.
+The build pipeline copies `libs/automapper/publish-package.json` into `dist/libs/automapper/package.json` via the `postbuild-publish` Nx target, overwriting the source file. Only `publish-package.json` declares the `exports` map, `peerDependencies`, and `files` list.
+
+---
+
 > Source: `libs/automapper/src/lib`
 > Tests: `libs/automapper/src/lib/__tests__`
 > Roadmap: `libs/automapper/docs/implementation_roadmap.md`
