@@ -141,15 +141,15 @@ enterprise scenarios.
 **Goal:** make @vi/automapper usable in any environment and discoverable via
 a plugin registry.
 
-| # | Task | Priority | Effort |
-|---|---|---|---|
-| 4-1 | NestJS module (`AutomapperModule.forRoot`) with DI-aware profile loading | High | L |
-| 4-2 | Angular provider helper (`provideAutomapper`) | High | M |
-| 4-3 | Zod schema integration — derive mapper profile from Zod shape | Medium | L |
-| 4-4 | Plugin discovery registry / npm tag convention | Medium | M |
-| 4-5 | MikroORM / TypeORM entity → DTO plugin | Low | XL |
-| 4-6 | React Query / SWR adapter (maps API responses on the fly) | Low | L |
-| 4-7 | WASM-accelerated deep-clone path for large object graphs | Low | XL |
+| # | Task | Priority | Effort | Status |
+|---|---|---|---|---|
+| 4-1 | NestJS module (`AutomapperModule.forRoot`) with DI-aware profile loading | High | L | ⏳ Deferred — workspace has no NestJS app; implement as peer-dep integration when a NestJS app is added |
+| 4-2 | Angular provider helper (`provideAutomapper`) | High | M | ✅ Done |
+| 4-3 | Zod schema integration — derive mapper profile from Zod shape | Medium | L | ✅ Done |
+| 4-4 | Plugin discovery registry / npm tag convention | Medium | M | ✅ Done |
+| 4-5 | MikroORM / TypeORM entity → DTO plugin | Low | XL | ✅ Done — ORM-agnostic `profileFromColumns` + `profileFromDescriptor` in `integrations/orm.ts`; works with TypeORM, MikroORM, Prisma and any column-list schema |
+| 4-6 | React Query / SWR adapter (maps API responses on the fly) | Low | L | ✅ Done — `createMappedFetcher`, `createMappedArrayFetcher`, `createMappedQueryFn`, `createMappedSWRFetcher` in `integrations/fetch-adapter.ts`; pure-TS, no React dep required |
+| 4-7 | WASM-accelerated deep-clone path for large object graphs | Low | XL | ✅ Done — `deepClone`, `mapWithClone`, `registerWasmClone`, `resetCloneBackend` in `utils/deep-clone.ts`; JS implementation ships today with a pluggable WASM-backend slot |
 
 ---
 
