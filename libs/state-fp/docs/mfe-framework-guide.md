@@ -38,6 +38,13 @@
 9. [DevTools in Each Framework](#9-devtools-in-each-framework)
 10. [Common Patterns and Anti-Patterns](#10-common-patterns-and-anti-patterns)
 11. [Quick Reference Cheatsheet](#11-quick-reference-cheatsheet)
+12. [Tricky Implementations](#12-tricky-implementations)
+    - [12.1 Testing — Stubbing the Kernel](#121-testing--stubbing-the-kernel)
+    - [12.2 Async Command Loading State](#122-async-command-loading-state)
+    - [12.3 MFE Loading Race — Remote Starts Before Shell Has Synced](#123-mfe-loading-race--remote-starts-before-shell-has-synced)
+    - [12.4 Multi-Atom Derived State](#124-multi-atom-derived-state)
+    - [12.5 SSR / Server-Side Rendering Edge Cases](#125-ssr--server-side-rendering-edge-cases)
+    - [12.6 Typed Error Handling Across Frameworks](#126-typed-error-handling-across-frameworks)
 
 ---
 
@@ -114,6 +121,7 @@ The kernel is a singleton service. Provide it at the application (or remote shel
 via an `InjectionToken` and Angular's DI system.
 
 ```ts
+// 📍 FRAMEWORK: Angular
 // libs/state-tokens.ts — published by the shell remote as a shared module
 import { InjectionToken } from '@angular/core';
 import type { Kernel }    from '@vi/state-fp/kernel';
@@ -122,15 +130,17 @@ export const KERNEL_TOKEN = new InjectionToken<Kernel>('vi/kernel');
 ```
 
 ```ts
+// 📍 FRAMEWORK: Angular
 // apps/shell/src/app/app.config.ts
 import { ApplicationConfig, signal, effect, DestroyRef, inject, isDevMode } from '@angular/core';
 import { createKernel }                     from '@vi/state-fp/kernel';
 import { createDevTools, noopDevTools }     from '@vi/state-fp/devtools';
 import { createAngularAdapter }             from '@vi/state-fp/adapter';
 import { KERNEL_TOKEN }                     from '@/state-tokens';
+import { authAtom, authHandler, authApplier } from '@/atoms';  // your app's atoms
 
 // Create once at app init
-const devtools = isDevMode() ? createDevTools({ maxEventLogSize: 500 }) : noopDevTools;
+const devtools = isDevMode() ? createDevTools({ maxLogSize: 500 }) : noopDevTools;
 const kernel   = createKernel({ debug: isDevMode() });
 if (isDevMode()) kernel.use(devtools.plugin);
 
@@ -145,6 +155,7 @@ export const appConfig: ApplicationConfig = {
       provide: APP_INITIALIZER,
       useFactory: () => async () => {
         kernel.register(authAtom, authHandler, authApplier);
+        // Register other shell atoms as needed...
         await kernel.hydrate();
       },
       multi: true,
@@ -158,8 +169,13 @@ remote's `ApplicationConfig`. The important part is that the remote **borrows** 
 kernel instance from the shell — never creates its own.
 
 ```ts
+// 📍 FRAMEWORK: Angular (remote MFE)
+// 📚 SETUP: authAtom and themeAtom from shell's public API (same key names)
+import { createKernel }          from '@vi/state-fp/kernel';
+import { createSyncEngine }      from '@vi/state-fp/sync';
+import { authAtom, themeAtom }  from '@/atoms';  // from shell's public API
+
 // apps/header-remote/src/app/app.config.ts
-// The remote receives the kernel via BroadcastChannel sync — no direct import from shell
 export const appConfig: ApplicationConfig = {
   providers: [
     {
@@ -183,6 +199,13 @@ Once the kernel is provided, `ngAdapter.toSignal()` creates Angular Signals that
 automatically unsubscribe when the component is destroyed:
 
 ```ts
+// 📍 FRAMEWORK: Angular
+// 📚 SETUP: ngAdapter created in app.config.ts, KERNEL_TOKEN provided, authAtom imported
+import { Component, inject } from '@angular/core';
+import { KERNEL_TOKEN } from '@/state-tokens';
+import { authAtom } from '@/atoms';
+import { ngAdapter } from '@/app.config';  // exported from setup
+
 @Component({
   selector: 'app-user-badge',
   standalone: true,
@@ -205,6 +228,9 @@ For derived computed values without a round-trip to the kernel query bus, use An
 `computed()` directly on top of the signal:
 
 ```ts
+// 📍 IMPORTS:
+import { computed } from '@angular/core';
+
 readonly displayName = computed(() => {
   const user = this.auth();
   return user.isAuthenticated ? user.profile.name : 'Guest';
@@ -214,12 +240,24 @@ readonly displayName = computed(() => {
 For values that require a full `QueryHandler` (complex projections, cross-atom derivations):
 
 ```ts
+// 📍 IMPORTS:
+import { BuildTotal } from '@/queries';  // your query handler
+
 readonly cartTotal = ngAdapter.toQuerySignal(cartAtom, this.kernel, BuildTotal);
 ```
 
 ### 3.3 Dispatching Commands
 
 ```ts
+// 📍 FRAMEWORK: Angular
+// 📚 IMPORTS:
+import { Component, inject } from '@angular/core';
+import { match } from '@vi/state-fp/core';
+import { KERNEL_TOKEN } from '@/state-tokens';
+import { cartAtom } from '@/atoms';
+import { AddItem } from '@/commands';
+import { ngAdapter } from '@/app.config';
+
 @Component({ ... })
 export class CartComponent {
   private kernel   = inject(KERNEL_TOKEN);
@@ -417,7 +455,7 @@ const isProduction = process.env.NODE_ENV === 'production';
 
 export const devtools = isProduction
   ? noopDevTools
-  : createDevTools({ maxEventLogSize: 300 });
+  : createDevTools({ maxLogSize: 300 });
 
 export const kernel = createKernel({ debug: !isProduction });
 if (!isProduction) kernel.use(devtools.plugin);
@@ -429,9 +467,10 @@ export const reactAdapter = createReactAdapter({
 ```
 
 ```tsx
+// 📍 FRAMEWORK: React
 // main.tsx — wrap the root
 import { createRoot }    from 'react-dom/client';
-import { reactAdapter }  from './state/kernel';
+import { kernel, reactAdapter }  from './state/kernel';
 
 createRoot(document.getElementById('root')!).render(
   <reactAdapter.Provider kernel={kernel}>
@@ -444,6 +483,12 @@ For a React remote in an MFE shell that needs to borrow atoms from the shell,
 the setup is identical but the kernel is configured as a borrower:
 
 ```tsx
+// 📍 FRAMEWORK: React (remote MFE)
+// 📚 SETUP: authAtom imported from shell's public API or defined identically with same key
+import { createKernel }   from '@vi/state-fp/kernel';
+import { createSyncEngine } from '@vi/state-fp/sync';
+import { authAtom }       from '@/atoms';  // from shell's public API
+
 // apps/cart-remote/src/state/kernel.ts
 const remoteKernel = createKernel({ debug: !isProduction });
 if (!isProduction) remoteKernel.use(devtools.plugin);
@@ -458,6 +503,14 @@ export { remoteKernel as kernel };
 ### 4.2 The Three Core Hooks
 
 ```tsx
+// 📍 FRAMEWORK: React
+// 📚 SETUP: reactAdapter created in state/kernel.ts (see §4.1)
+import { match }       from '@vi/state-fp/core';
+import { cartAtom }    from '@/atoms';
+import { AddItem, RemoveItem, ClearCart } from '@/commands';
+import { BuildTotal }  from '@/queries';
+import { reactAdapter } from './state/kernel';  // from setup
+
 function CartPage() {
   // 1. useAtom — subscribe to full atom state
   //    Component re-renders whenever cartAtom state changes
@@ -983,7 +1036,7 @@ For each Redux slice you want to migrate:
 import { createDevTools, attachBridge } from '@vi/state-fp/devtools';
 import { createReduxDevToolsBridge }     from '@vi/state-fp/devtools';
 
-export const devtools = createDevTools({ maxEventLogSize: 500 });
+export const devtools = createDevTools({ maxLogSize: 500 });
 
 // Attach console bridge (accessible as window.__VI_STATE_FP__)
 attachBridge(devtools);
@@ -1159,4 +1212,482 @@ shellSync.share(myAtom, { channel: 'vi-my-atom', conflict: 'owner-wins' });
 // Remote — receiver: share on the same channel; shell's 'owner-wins' policy applies
 const remoteSync = createSyncEngine({ kernel: remoteKernel });
 remoteSync.share(myAtom, { channel: 'vi-my-atom', conflict: 'owner-wins' });
+```
+
+---
+
+## 12. Tricky Implementations
+
+This section covers patterns that developers frequently get wrong or find non-obvious when
+using `@vi/state-fp` in real applications.
+
+---
+
+### 12.1 Testing — Stubbing the Kernel
+
+**Problem:** Components that use `ngAdapter.toSignal()`, `reactAdapter.useAtom()`, or
+`createLitController()` depend on a live kernel. Setting up a real kernel with atoms and
+handlers in every unit test is verbose and slow.
+
+**Solution:** Create a minimal test kernel with stub state.
+
+#### Angular — Testing Signals without TestBed
+
+```ts
+// test/helpers/fake-kernel.ts
+import { createKernel, defineAtom, createCommandHandler } from '@vi/state-fp/kernel';
+import type { Atom } from '@vi/state-fp/kernel';
+import { ok } from '@vi/state-fp/core';
+
+export function fakeKernelWith<S>(atom: Atom<S>, state: S) {
+  const k = createKernel();
+  // Minimal no-op handler using the required commandType field
+  const noopHandler = createCommandHandler({
+    commandType: '__test/noop__',   // commandType is required (not handles())
+    handle: (_s, _cmd) => ok([]),   // accept any command, emit no events
+  });
+  k.register(atom, noopHandler, (s) => s);  // no-op applier
+  // Push initial state directly (test utility only)
+  (atom as any)._setState(state, 0);
+  return k;
+}
+```
+
+```ts
+// counter.component.spec.ts
+import { signal, DestroyRef } from '@angular/core';
+import { createAngularAdapter } from '@vi/state-fp/adapter';
+import { fakeKernelWith }       from '../test/helpers/fake-kernel';
+
+describe('CounterComponent', () => {
+  it('displays the count from the atom', () => {
+    // Arrange: create a fake DestroyRef (never fires onDestroy in tests)
+    const destroyRef = { onDestroy: (_fn: () => void) => {} } as unknown as DestroyRef;
+    const inject     = <T>(_token: unknown): T => destroyRef as unknown as T;
+    const adapter    = createAngularAdapter({ signal, inject, DestroyRef });
+    const kernel     = fakeKernelWith(counterAtom, { count: 42 });
+
+    // Act
+    const countSignal = adapter.toSignal(counterAtom, kernel);
+
+    // Assert
+    expect(countSignal()).toBe(42);   // signal is initialised with atom state
+  });
+});
+```
+
+#### React — Testing Hooks with `renderHook`
+
+```tsx
+// counter.hook.spec.tsx
+import { renderHook, act }  from '@testing-library/react';
+import { createReactAdapter } from '@vi/state-fp/adapter';
+import { makeTestKernel }     from '../test/helpers/make-test-kernel';
+
+const { useAtom } = createReactAdapter({ useState, useEffect, useRef, useMemo, useContext, createContext });
+
+it('updates when kernel state changes', async () => {
+  const { kernel } = makeTestKernel(counterAtom, { count: 0 });
+
+  const wrapper = ({ children }: { children: React.ReactNode }) => (
+    <KernelProvider kernel={kernel}>{children}</KernelProvider>
+  );
+
+  const { result } = renderHook(() => useAtom(counterAtom), { wrapper });
+  expect(result.current[0].count).toBe(0);
+
+  // Simulate a state change by executing a command
+  act(() => {
+    kernel.execute(counterAtom, Increment({ by: 5 }));
+  });
+
+  expect(result.current[0].count).toBe(5);
+});
+```
+
+#### Lit — Testing without a Browser
+
+```ts
+// auth-badge.spec.ts — using @web/test-runner or Vitest with happy-dom
+import { fixture, html } from '@open-wc/testing';
+import './auth-badge.element';   // registers the custom element
+
+it('shows the username when authenticated', async () => {
+  // Inject test state before mounting
+  (authAtom as any)._setState({ isAuthenticated: true, displayName: 'Alice' }, 1);
+
+  const el = await fixture<AuthBadge>(html`<vi-auth-badge></vi-auth-badge>`);
+  const span = el.shadowRoot!.querySelector('span')!;
+  expect(span.textContent).toBe('Alice');
+});
+```
+
+**Key insight:** Use `(atom as any)._setState(state, version)` to inject test state into an
+atom without going through the command/event pipeline. This is an intentional escape hatch
+for testing — do NOT use it in production code.
+
+---
+
+### 12.2 Async Command Loading State
+
+**Problem:** A command that makes a network call (e.g., `submitOrder`) takes several seconds.
+How do you show a spinner during execution and re-enable the button on completion or error?
+
+**Pattern:** Track loading state in a separate atom alongside command dispatch.
+
+#### Angular
+
+```ts
+// atoms/checkout.atom.ts
+export type CheckoutState = {
+  items:      CartItem[];
+  submitting: boolean;
+  error:      string | null;
+};
+
+export const checkoutAtom = defineAtom<CheckoutState>({
+  key: 'vi/checkout',
+  initialState: { items: [], submitting: false, error: null },
+});
+```
+
+```ts
+// components/checkout.component.ts
+@Component({
+  template: `
+    <button [disabled]="checkout().submitting" (click)="submit()">
+      {{ checkout().submitting ? 'Submitting…' : 'Place Order' }}
+    </button>
+    @if (checkout().error) {
+      <p class="error">{{ checkout().error }}</p>
+    }
+  `,
+})
+export class CheckoutComponent {
+  private kernel = inject(KERNEL_TOKEN);
+  readonly checkout = ngAdapter.toSignal(checkoutAtom, this.kernel);
+
+  async submit() {
+    // 1. Optimistically set submitting = true
+    this.kernel.execute(checkoutAtom, SetSubmitting({ submitting: true }));
+
+    // 2. Run the async command
+    const result = await this.kernel.executeAsync(checkoutAtom, SubmitOrder());
+
+    // 3. Clear submitting and set error if failed
+    match(result, {
+      ok:  (_s) => this.router.navigate(['/confirmation']),
+      err: (e)  => this.kernel.execute(checkoutAtom, SetError({ error: e.message })),
+    });
+  }
+}
+// Handler for SetSubmitting clears the error and flips the flag:
+// 'checkout/setSubmitting': (s, e) => ({ ...s, submitting: e.payload.submitting, error: null })
+// Handler for SetError: (s, e) => ({ ...s, submitting: false, error: e.payload.error })
+```
+
+#### React
+
+```tsx
+function CheckoutButton() {
+  const [checkout, , dispatch] = reactAdapter.useAtom(checkoutAtom);
+  const { submitting, error } = checkout;
+
+  const handleSubmit = async () => {
+    dispatch(SetSubmitting({ submitting: true }));
+
+    const result = await kernel.executeAsync(checkoutAtom, SubmitOrder());
+
+    match(result, {
+      ok:  (_s) => navigate('/confirmation'),
+      err: (e)  => dispatch(SetError({ error: e.message })),
+    });
+  };
+
+  return (
+    <>
+      <button disabled={submitting} onClick={handleSubmit}>
+        {submitting ? 'Submitting…' : 'Place Order'}
+      </button>
+      {error && <p className="error">{error}</p>}
+    </>
+  );
+}
+```
+
+**Important:** `executeAsync` is the correct way to call an `AsyncCommandHandler`. Do NOT
+call `kernel.execute()` with an async handler — it returns `Promise<Either>` wrapped in an
+outer `Either`, which is a double-nested type that is difficult to work with.
+
+---
+
+### 12.3 MFE Loading Race — Remote Starts Before Shell Has Synced
+
+**Problem:** The cart remote loads and renders before the shell has broadcast its initial
+`authAtom` state. The remote shows "Guest" for a brief flash even though the user is
+logged in.
+
+**Pattern:** Subscribe once and wait for a meaningful first value.
+
+```ts
+// apps/cart-remote/src/state/kernel.ts
+
+// The remote borrows authAtom from shell via BroadcastChannel
+const sync = createSyncEngine({ kernel: remoteKernel });
+sync.share(authAtom, { channel: 'vi-auth', conflict: 'owner-wins' });
+
+// Problem: authAtom.get() immediately after share() returns the initialState ({ token: null })
+// because the shell has not yet broadcast its current state.
+
+// Solution: wait for the first non-null token with a timeout
+export function waitForAuth(timeoutMs = 2000): Promise<AuthState> {
+  return new Promise((resolve) => {
+    // If already populated, resolve immediately
+    const current = authAtom.get();
+    if (current.token !== null) { resolve(current); return; }
+
+    // Otherwise wait for the first sync message
+    const off = remoteKernel.subscribe(authAtom, (state) => {
+      if (state.token !== null) {
+        off();
+        resolve(state);
+      }
+    });
+
+    // Timeout fallback — resolve with guest state if shell never responds
+    setTimeout(() => { off(); resolve(authAtom.get()); }, timeoutMs);
+  });
+}
+```
+
+```ts
+// apps/cart-remote/src/main.ts
+await waitForAuth();   // block first render until auth is known
+bootstrap(CartRemoteComponent, { ... });
+```
+
+**Alternative:** Use a `loading` signal that resolves on first kernel subscription:
+
+```ts
+// Angular
+readonly authReady = signal(false);
+
+ngOnInit() {
+  const off = this.kernel.subscribe(authAtom, () => {
+    this.authReady.set(true);
+    off();
+  });
+}
+// Template: @if (authReady()) { ... } @else { <spinner> }
+```
+
+---
+
+### 12.4 Multi-Atom Derived State
+
+**Problem:** A component needs derived data from two separate atoms (e.g., cart items +
+user loyalty points to compute a discounted total).
+
+**Pattern:** Combine atom signals at the framework layer — not inside the kernel.
+
+#### Angular — `computed()` over two signals
+
+```ts
+@Component({
+  template: `<p>Total after discount: {{ discountedTotal() | currency }}</p>`,
+})
+export class CheckoutSummaryComponent {
+  private kernel = inject(KERNEL_TOKEN);
+
+  readonly cart   = ngAdapter.toSignal(cartAtom, this.kernel);   // CartState
+  readonly loyalty = ngAdapter.toSignal(loyaltyAtom, this.kernel); // LoyaltyState
+
+  // Computed automatically re-evaluates when either signal changes
+  readonly discountedTotal = computed(() => {
+    const rawTotal  = this.cart().items.reduce((s, i) => s + i.price * i.qty, 0);
+    const discount  = this.loyalty().points > 100 ? 0.05 : 0;
+    return rawTotal * (1 - discount);
+  });
+}
+```
+
+#### React — `useMemo` over two atom states
+
+```tsx
+function CheckoutSummary() {
+  const [cart]    = reactAdapter.useAtom(cartAtom);
+  const [loyalty] = reactAdapter.useAtom(loyaltyAtom);
+
+  const discountedTotal = useMemo(() => {
+    const rawTotal = cart.items.reduce((s, i) => s + i.price * i.qty, 0);
+    const discount = loyalty.points > 100 ? 0.05 : 0;
+    return rawTotal * (1 - discount);
+  }, [cart, loyalty]);
+
+  return <p>Total after discount: {discountedTotal.toFixed(2)}</p>;
+}
+```
+
+#### Why not use a single Query across atoms?
+
+`kernel.query(atom, query)` only receives the state of **one** atom. Cross-atom derivations
+are intentionally outside the kernel scope (following DDD bounded context principles). The
+framework's own computed primitive is the right tool for cross-atom derivation.
+
+---
+
+### 12.5 SSR / Server-Side Rendering Edge Cases
+
+**Problem:** Your app is server-rendered (Angular Universal, Next.js) and BroadcastChannel
+is not available in Node.js. The kernel, sync engine, and bus must not throw.
+
+**Solution:** All modules handle missing `BroadcastChannel` gracefully via transport
+auto-detection.
+
+```ts
+// src/sync/transport.ts (internal)
+export const createAutoTransport = (channel: string): SyncTransport => {
+  if (typeof BroadcastChannel !== 'undefined') {
+    return createBroadcastBridge(channel);
+  }
+  return createNoopTransport();   // server: sends to /dev/null, never receives
+};
+```
+
+```ts
+// src/bus/index.ts (internal)
+export const createSharedBus = (options): SharedEventBus => {
+  if (typeof BroadcastChannel === 'undefined') {
+    return createNoopBus();   // server: publish() and subscribe() are no-ops
+  }
+  return createBroadcastBus(options);
+};
+```
+
+**What you must do:**
+1. Provide initial state via `kernel.hydrate()` before rendering — do not rely on sync to
+   populate borrowed atoms on the server.
+2. Do not call `sync.share()` unconditionally in a server-only module — the noop transport
+   is harmless but the `share()` call itself schedules a hydration request that has no effect.
+3. For Angular Universal, wrap kernel creation in `isPlatformBrowser`:
+
+```ts
+// apps/shell/src/app/app.config.ts
+import { isPlatformBrowser, PLATFORM_ID } from '@angular/common';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    {
+      provide: KERNEL_TOKEN,
+      useFactory: (platformId: object) => {
+        const kernel = createKernel();
+        if (isPlatformBrowser(platformId)) {
+          // BroadcastChannel-dependent setup only in the browser
+          const sync = createSyncEngine({ kernel });
+          sync.share(authAtom, { channel: 'vi-auth', conflict: 'owner-wins' });
+        }
+        return kernel;
+      },
+      deps: [PLATFORM_ID],
+    },
+  ],
+};
+```
+
+**Hydration on the client:** After client-side bootstrap, the sync engine receives the
+first BroadcastChannel message from the shell (if the shell is also running in the same
+browser context) and updates the atoms. The `waitForAuth()` pattern from section 12.3 also
+applies here.
+
+---
+
+### 12.6 Typed Error Handling Across Frameworks
+
+**Problem:** A command handler returns `err({ code: 'OUT_OF_STOCK', message: '...' })`.
+How do you surface this in Angular templates, React JSX, and Lit templates in a consistent
+way — without casting to `any` or using try/catch?
+
+**Pattern:** Use `match()` at the dispatch site; store error in atom state when persistent
+feedback is needed.
+
+```ts
+// atoms/cart.atom.ts — include error in state shape
+export type CartState = {
+  items: CartItem[];
+  lastError: { code: string; message: string } | null;
+};
+```
+
+#### Angular
+
+```ts
+// Option A: match() at command dispatch site (transient notification)
+onAddToCart(sku: string) {
+  const result = this.kernel.execute(cartAtom, AddItem({ sku, qty: 1 }));
+  match(result, {
+    ok:  (_s) => { /* success */ },
+    err: (e)  => this.snackBar.open(e.message, 'Dismiss'),
+  });
+}
+
+// Option B: store error in atom state (persistent, visible in template)
+onAddToCart(sku: string) {
+  const result = this.kernel.execute(cartAtom, AddItem({ sku, qty: 1 }));
+  if (isErr(result)) {
+    this.kernel.execute(cartAtom, SetCartError({ error: result.left }));
+  }
+}
+// Template reads: cart().lastError?.message
+```
+
+#### React
+
+```tsx
+// Option A: local state for transient error
+function CartPage() {
+  const [error, setError] = useState<string | null>(null);
+  const dispatch = reactAdapter.useCommand(cartAtom);
+
+  const handleAdd = (sku: string) => {
+    const result = dispatch(AddItem({ sku, qty: 1 }));
+    match(result, {
+      ok:  ()  => setError(null),
+      err: (e) => setError(e.message),
+    });
+  };
+
+  return (
+    <>
+      {error && <Alert severity="error">{error}</Alert>}
+      <button onClick={() => handleAdd('SKU-001')}>Add to cart</button>
+    </>
+  );
+}
+
+// Option B: error in atom state (same pattern as Angular option B above)
+```
+
+**Key rule:** `match(result, { ok, err })` is always type-safe — TypeScript ensures both
+branches are handled. Never use `result.right` or `result.left` directly in component code —
+those fields are `Left`/`Right` implementation details.
+
+**Custom error codes for UI branching:**
+
+```ts
+// handler
+if (stock < cmd.payload.qty) {
+  return err({ code: 'OUT_OF_STOCK' as const, message: `Only ${stock} left` });
+}
+if (!auth.isAuthenticated) {
+  return err({ code: 'UNAUTHENTICATED' as const, message: 'Please log in first' });
+}
+
+// component
+match(result, {
+  ok: () => {},
+  err: (e) => {
+    if (e.code === 'OUT_OF_STOCK')    showOutOfStockBanner(e.message);
+    if (e.code === 'UNAUTHENTICATED') router.navigate(['/login']);
+  },
+});
 ```

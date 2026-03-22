@@ -110,3 +110,55 @@ export function createDevTools(options: DevToolsOptions = {}): DevToolsInstance 
 
   return { plugin, eventLog, snapshots, timeTravel, uninstall };
 }
+
+// ─── No-op DevTools (production) ──────────────────────────────────────────────
+
+/**
+ * A zero-cost stand-in for {@link DevToolsInstance} used in production builds.
+ *
+ * All methods are no-ops; all collections are empty; `plugin` does nothing when
+ * registered with the kernel. This lets call-sites use a single code path:
+ *
+ * ```ts
+ * import { createDevTools, noopDevTools } from '@vi/state-fp/devtools';
+ *
+ * const devtools = isDevMode ? createDevTools({ maxLogSize: 500 }) : noopDevTools;
+ * kernel.use(devtools.plugin);  // safe in both modes
+ * ```
+ */
+export const noopDevTools: DevToolsInstance = {
+  plugin: {
+    name: '@vi/devtools/noop',
+    onRegister:  () => { /* no-op */ },
+    onExecute:   () => { /* no-op */ },
+  },
+  eventLog: {
+    append:           () => { /* no-op */ },
+    getAll:           () => [],
+    getByAtom:        () => [],
+    getByCorrelation: () => [],
+    getByTimeRange:   () => [],
+    last:             () => [],
+    latest:           () => ({ _tag: 'Nothing' as const }),
+    clear:            () => { /* no-op */ },
+    totalCount:       0,
+  } as unknown as EventLog,
+  snapshots: {
+    capture:       (_states: Record<string, unknown>, _trigId: string | undefined, _count: number, _label?: string) => ({
+      id: '', timestamp: 0, eventCount: 0, triggerEventId: undefined,
+      state: {}, label: undefined,
+    }),
+    list:          () => [],
+    get:           () => ({ _tag: 'Nothing' as const }),
+    nearestBefore: () => ({ _tag: 'Nothing' as const }),
+    prune:         () => { /* no-op */ },
+    export:        () => '[]',
+    import:        () => { /* no-op */ },
+  } as unknown as SnapshotManager,
+  timeTravel: {
+    goTo:     async () => ({ _tag: 'Nothing' as const }),
+    canGoTo:  () => false,
+    position: () => ({ _tag: 'Nothing' as const }),
+  } as unknown as import('./time-travel.js').TimeTravelController,
+  uninstall: () => { /* no-op */ },
+};

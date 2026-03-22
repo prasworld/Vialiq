@@ -104,4 +104,114 @@ describe('TimeTravelController', () => {
     expect(snapErr._tag).toBe('Left');
     if (snapErr._tag === 'Left') expect(snapErr.left.code).toBe('SNAPSHOT_NOT_FOUND');
   });
+
+  it('returns REENTRANT_REPLAY error when to() is called while already in replay mode', async () => {
+    const atom = createAtom('counter', { count: 0 });
+    const log  = new EventLog(20);
+    const snaps = new SnapshotManager(10);
+    log.append(entry('e1', 'counter', { count: 1 }, 1));
+    log.append(entry('e2', 'counter', { count: 2 }, 2));
+
+    const tt = createTimeTravelController(() => [atom], log, snaps);
+    await tt.to('e1'); // enters replay mode
+
+    const result = await tt.to('e2'); // should fail
+    expect(result._tag).toBe('Left');
+    if (result._tag === 'Left') expect(result.left.code).toBe('REENTRANT_REPLAY');
+  });
+
+  it('toSnapshot restores snapshot state and enters replay mode', async () => {
+    const atom  = createAtom('counter', { count: 99 });
+    const log   = new EventLog(20);
+    const snaps = new SnapshotManager(10);
+    log.append(entry('e1', 'counter', { count: 1 }, 1));
+    // Manually capture a snapshot at event count 1
+    snaps.capture({ counter: { count: 5 } }, 'e1', 1);
+    const snapId = snaps.list()[0].id;
+
+    const tt = createTimeTravelController(() => [atom], log, snaps);
+    const result = tt.toSnapshot(snapId);
+
+    expect(result._tag).toBe('Right');
+    expect(tt.replayMode).toBe(true);
+    expect(atom.get()).toEqual({ count: 5 });
+
+    tt.exit();
+    expect(atom.get()).toEqual({ count: 99 }); // original restored
+  });
+
+  it('stepForward at end of log returns Right without moving', async () => {
+    const atom  = createAtom('counter', { count: 0 });
+    const log   = new EventLog(20);
+    const snaps = new SnapshotManager(10);
+    log.append(entry('e1', 'counter', { count: 1 }, 1));
+
+    const tt = createTimeTravelController(() => [atom], log, snaps);
+    await tt.to('e1');
+
+    const result = tt.stepForward(); // already at end
+    expect(result._tag).toBe('Right');
+  });
+
+  it('stepBackward at position 0 returns Right without moving', async () => {
+    const atom  = createAtom('counter', { count: 0 });
+    const log   = new EventLog(20);
+    const snaps = new SnapshotManager(10);
+    log.append(entry('e1', 'counter', { count: 1 }, 1));
+
+    const tt = createTimeTravelController(() => [atom], log, snaps);
+    await tt.to('e1');
+
+    const result = tt.stepBackward(); // already at position 0
+    expect(result._tag).toBe('Right');
+  });
+
+  it('stepForward returns UNKNOWN error when not in replay mode', () => {
+    const atom  = createAtom('counter', { count: 0 });
+    const log   = new EventLog(20);
+    const snaps = new SnapshotManager(10);
+    const tt = createTimeTravelController(() => [atom], log, snaps);
+
+    const result = tt.stepForward();
+    expect(result._tag).toBe('Left');
+    if (result._tag === 'Left') expect(result.left.code).toBe('UNKNOWN');
+  });
+
+  it('stepBackward returns UNKNOWN error when not in replay mode', () => {
+    const atom  = createAtom('counter', { count: 0 });
+    const log   = new EventLog(20);
+    const snaps = new SnapshotManager(10);
+    const tt = createTimeTravelController(() => [atom], log, snaps);
+
+    const result = tt.stepBackward();
+    expect(result._tag).toBe('Left');
+    if (result._tag === 'Left') expect(result.left.code).toBe('UNKNOWN');
+  });
+
+  it('exit() is a no-op when not in replay mode', async () => {
+    const atom = createAtom('counter', { count: 5 });
+    const log  = new EventLog(20);
+    const snaps = new SnapshotManager(10);
+    const tt = createTimeTravelController(() => [atom], log, snaps);
+
+    expect(() => tt.exit()).not.toThrow();
+    expect(atom.get()).toEqual({ count: 5 }); // unchanged
+  });
+
+  it('uses snapshot checkpoint to replay only remaining events', async () => {
+    const atom  = createAtom('counter', { count: 0 });
+    const log   = new EventLog(20);
+    const snaps = new SnapshotManager(10);
+    for (let i = 1; i <= 5; i++) {
+      log.append(entry(`e${i}`, 'counter', { count: i }, i));
+    }
+    // Capture snapshot at event count 3
+    snaps.capture({ counter: { count: 3 } }, 'e3', 3);
+
+    const tt = createTimeTravelController(() => [atom], log, snaps);
+    const result = await tt.to('e5');
+
+    expect(result._tag).toBe('Right');
+    expect(atom.get()).toEqual({ count: 5 });
+  });
 });

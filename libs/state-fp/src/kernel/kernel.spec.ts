@@ -1237,3 +1237,80 @@ describe('branch coverage — executeAsync Left + debug layer', () => {
     expect(entry.events).toEqual([]);
   });
 });
+
+// ─── Coverage for executeAsync — signal.aborted in .then() path ──────────────
+
+describe('branch coverage — executeAsync signal.aborted in resolve path', () => {
+  type LoadCmd = Command<'counter/load'>;
+
+  const loadApplier = createEventApplier<CounterState>({
+    'counter/loaded': (_, event) => ({
+      count: (event as DomainEvent<string, { value: number }>).payload!.value,
+    }),
+  });
+
+  it('returns CANCELLED when signal is aborted while handleAsync resolves', async () => {
+    const kernel  = createKernel();
+    const counter = makeCounter();
+    const ac      = new AbortController();
+
+    const asyncHandler: AsyncCommandHandler<CounterState, LoadCmd> = {
+      commandType: 'counter/load',
+      handleAsync: async () => {
+        // Abort BEFORE returning so signal.aborted is TRUE when .then() checks
+        ac.abort();
+        return right([domainEvent('counter/loaded', { value: 42 })]);
+      },
+    };
+
+    kernel.registerAsync(counter, asyncHandler, loadApplier);
+    const result = await kernel.executeAsync(counter, command('counter/load'), { signal: ac.signal });
+
+    expect(result._tag).toBe('Left');
+    expect((result as { left: { code: string } }).left.code).toBe('CANCELLED');
+    expect(counter.get().count).toBe(0); // state unchanged — no events applied
+  });
+
+  it('calls onExecute plugin hook for successful executeAsync', async () => {
+    const onExecute = vi.fn();
+    const kernel    = createKernel();
+    kernel.use({ onExecute });
+    const counter   = makeCounter();
+
+    const asyncHandler: AsyncCommandHandler<CounterState, LoadCmd> = {
+      commandType: 'counter/load',
+      handleAsync: async () => right([domainEvent('counter/loaded', { value: 7 })]),
+    };
+
+    kernel.registerAsync(counter, asyncHandler, loadApplier);
+    await kernel.executeAsync(counter, command('counter/load'));
+
+    expect(onExecute).toHaveBeenCalledTimes(1);
+    expect(onExecute.mock.calls[0][0].command.type).toBe('counter/load');
+  });
+});
+
+// ─── Coverage for executeOptimistic confirm success with onExecute plugin ─────
+
+describe('branch coverage — executeOptimistic onExecute plugin on success', () => {
+  type CartState = { items: string[] };
+
+  it('calls onExecute plugin hook after successful executeOptimistic confirm', async () => {
+    const onExecute = vi.fn();
+    const kernel    = createKernel();
+    kernel.use({ onExecute });
+
+    const atom = defineAtom<CartState>({ key: 'vi/cart-plugin-cov', initialState: { items: [] } });
+    kernel.register(atom);
+
+    await kernel.executeOptimistic(atom, command('cart/add', {}), {
+      optimisticApplier: (state) => ({ items: [...state.items, 'item'] }),
+      confirm: async () => ({ _tag: 'Right' as const, right: undefined }),
+    });
+
+    expect(onExecute).toHaveBeenCalledTimes(1);
+    const call = onExecute.mock.calls[0][0];
+    expect(call.prevState).toEqual({ items: [] });
+    expect(call.nextState).toEqual({ items: ['item'] });
+  });
+});

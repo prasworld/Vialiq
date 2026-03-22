@@ -67,4 +67,15 @@ describe('EventLog', () => {
     restored.deserialize(serialized);
     expect(restored.getAll().map(e => e.id)).toEqual(['1', '2', '3']);
   });
+
+  it('latest() returns Nothing on an empty log', () => {
+    const log = new EventLog();
+    expect(log.latest()._tag).toBe('Nothing');
+  });
+
+  it('getByAtom returns empty array for an atom not in the log', () => {
+    const log = new EventLog();
+    log.append(makeEntry('1', 'a', 'c1', 10));
+    expect(log.getByAtom('no-such-atom')).toEqual([]);
+  });
 });

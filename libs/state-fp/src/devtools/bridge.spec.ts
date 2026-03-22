@@ -96,4 +96,80 @@ describe('installBridge', () => {
     await bridge.timeTravelTo('does-not-exist');
     expect(warn).toHaveBeenCalled();
   });
+
+  it('exportLog and importLog round-trip correctly', () => {
+    const log = new EventLog();
+    const snapshots = new SnapshotManager();
+    log.append(makeEntry('ex1'));
+    log.append(makeEntry('ex2'));
+
+    const timeTravel = {
+      replayMode:    false,
+      replayPosition: 0,
+      to:           vi.fn(async () => ({ _tag: 'Right' as const, right: undefined })),
+      toSnapshot:   vi.fn(() => ({ _tag: 'Right' as const, right: undefined })),
+      stepForward:  vi.fn(() => ({ _tag: 'Right' as const, right: undefined })),
+      stepBackward: vi.fn(() => ({ _tag: 'Right' as const, right: undefined })),
+      exit:         vi.fn(),
+    };
+
+    installBridge(log, snapshots, timeTravel, () => []);
+    const bridge = (globalThis as unknown as { window: Record<string, any> }).window[BRIDGE_GLOBAL_KEY];
+
+    const exported = bridge.exportLog();
+    expect(typeof exported).toBe('string');
+
+    const parsed = JSON.parse(exported);
+    expect(parsed.length).toBe(2);
+    expect(parsed[0].id).toBe('ex1');
+
+    // importLog replaces the log
+    bridge.importLog(JSON.stringify([makeEntry('imp1')]));
+    expect(log.getAll().length).toBe(1);
+    expect(log.getAll()[0].id).toBe('imp1');
+  });
+
+  it('returns no-op uninstall when window is not defined', () => {
+    // Delete the mocked window to simulate non-browser
+    delete (globalThis as unknown as { window?: unknown }).window;
+
+    const log      = new EventLog();
+    const snapshots = new SnapshotManager();
+    const timeTravel = {
+      replayMode:    false,
+      replayPosition: 0,
+      to:           vi.fn(async () => ({ _tag: 'Right' as const, right: undefined })),
+      toSnapshot:   vi.fn(() => ({ _tag: 'Right' as const, right: undefined })),
+      stepForward:  vi.fn(() => ({ _tag: 'Right' as const, right: undefined })),
+      stepBackward: vi.fn(() => ({ _tag: 'Right' as const, right: undefined })),
+      exit:         vi.fn(),
+    };
+
+    const uninstall = installBridge(log, snapshots, timeTravel, () => []);
+    // Should not throw
+    expect(() => uninstall()).not.toThrow();
+  });
+
+  it('uninstall is safe even if window disappears after install', () => {
+    // window IS set in beforeEach, so install succeeds
+    const log       = new EventLog();
+    const snapshots = new SnapshotManager();
+    const timeTravel = {
+      replayMode:    false,
+      replayPosition: 0,
+      to:           vi.fn(async () => ({ _tag: 'Right' as const, right: undefined })),
+      toSnapshot:   vi.fn(() => ({ _tag: 'Right' as const, right: undefined })),
+      stepForward:  vi.fn(() => ({ _tag: 'Right' as const, right: undefined })),
+      stepBackward: vi.fn(() => ({ _tag: 'Right' as const, right: undefined })),
+      exit:         vi.fn(),
+    };
+
+    const uninstall = installBridge(log, snapshots, timeTravel, () => []);
+
+    // Remove window after install — simulates environment teardown
+    delete (globalThis as unknown as { window?: unknown }).window;
+
+    // Calling uninstall now should not throw despite window being gone
+    expect(() => uninstall()).not.toThrow();
+  });
 });
