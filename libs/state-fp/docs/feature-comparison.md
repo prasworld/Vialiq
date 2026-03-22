@@ -25,7 +25,7 @@
 | Feature | Implementation | Tests | Coverage | Status |
 |---------|---|---|---|---|
 | **core/maybe** | Monad with `just`, `nothing`, `map`, `flatMap`, `getOrElse` | 39 | 100% | ✅ Complete |
-| **core/either** | Bifunctor with `right`, `left`, `fold`, `mapLeft` | 39 | 100% | ✅ Complete |
+| **core/either** | Bifunctor with `ok`/`err`/`match` (idiomatic) + `right`, `left`, `fold`, `mapLeft` | 64 | 100% | ✅ Complete |
 | **core/io** | I/O monad for side effects | 17 | 100% | ✅ Complete |
 | **core/lens** | Functional optics for nested state | 15 | 100% | ✅ Complete |
 | **core/utils** | Utilities: `uuid()`, `now()`, type guards | 27 | 90.54% | ✅ Sufficient |

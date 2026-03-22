@@ -19,6 +19,7 @@ export type {
   Either,
   Left,
   Right,
+  Result,
   IO,
   IORef,
   Lens,
@@ -71,6 +72,12 @@ export {
   eitherToMaybe,
   sequenceEither,
   swapEither,
+  // ── Idiomatic Result API ──────────────────────────────────────────────────
+  ok,
+  err,
+  isOk,
+  isErr,
+  match,
 } from './either.js';
 
 // ─── IO ───────────────────────────────────────────────────────────────────────

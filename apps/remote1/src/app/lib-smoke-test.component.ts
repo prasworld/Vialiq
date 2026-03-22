@@ -8,9 +8,10 @@
  *   @vi/automapper/angular    – provideAutomapper, AUTOMAPPER_TOKEN
  *   @vi/automapper/orm        – profileFromColumns
  *   @vi/automapper/deep-clone – deepClone
- *   @vi/state-fp/core         – just, nothing, isJust, isNothing, right, left
+ *   @vi/state-fp/core         – just, nothing, isJust, isNothing
  *   @vi/state-fp/kernel       – defineAtom, createKernel, command, domainEvent,
- *                               createCommandHandler, createEventApplier
+ *                               createCommandHandler, createEventApplier,
+ *                               ok, err, match
  *
  * This component is NEVER shipped to users — it exists purely so that
  * `npx nx build remote1` verifies the end-to-end import chain.
@@ -30,7 +31,7 @@ import { profileFromColumns } from '@vi/automapper/orm';
 import { deepClone } from '@vi/automapper/deep-clone';
 
 // ── @vi/state-fp/core ─────────────────────────────────────────────────────────
-import { just, nothing, isJust, isNothing, right, left } from '@vi/state-fp/core';
+import { just, nothing, isJust, isNothing } from '@vi/state-fp/core';
 
 // ── @vi/state-fp/kernel ───────────────────────────────────────────────────────
 import {
@@ -40,6 +41,9 @@ import {
   domainEvent,
   createCommandHandler,
   createEventApplier,
+  ok,
+  err,
+  match,
 } from '@vi/state-fp/kernel';
 import type { Command } from '@vi/state-fp/kernel';
 
@@ -80,12 +84,12 @@ const incrementHandler = createCommandHandler<CounterState, Command>({
   validate: (payload) => {
     const p = payload as { by?: number };
     return typeof p?.by === 'number' && p.by > 0
-      ? right(undefined as void)
-      : left({ code: 'VALIDATION_ERROR' as const, message: 'by must be > 0' });
+      ? ok(undefined as void)
+      : err({ code: 'VALIDATION_ERROR' as const, message: 'by must be > 0' });
   },
   handle: (_state, cmd) => {
     const by = (cmd as unknown as { payload: { by: number } }).payload.by;
-    return right([domainEvent('remote1/counter/incremented', { by })]);
+    return ok([domainEvent('remote1/counter/incremented', { by })]);
   },
 });
 
@@ -137,9 +141,11 @@ export class LibSmokeTestComponent implements OnInit {
     const kernel = createKernel();
     kernel.register(counterAtom, incrementHandler, counterApplier);
     const result = kernel.execute(counterAtom, command('remote1/counter/increment', { by: 5 }));
-    if (result._tag === 'Right') {
-      lines.push(`state-fp/kernel  → new count: ${(result.right as CounterState).count}`);
-    }
+    const newCount = match(result, {
+      ok:  (state) => (state as CounterState).count,
+      err: (e) => { lines.push(`state-fp/kernel  → error: ${e.message}`); return -1; },
+    });
+    lines.push(`state-fp/kernel  → new count: ${newCount}`);
 
     this.output = lines.join('\n');
   }

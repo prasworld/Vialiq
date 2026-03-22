@@ -10,6 +10,8 @@
  *   createKernel,
  *   command, domainEvent, query,
  *   createCommandHandler, createEventApplier, createQueryHandler,
+ *   // Idiomatic result helpers (re-exported from core for convenience)
+ *   ok, err, isOk, isErr, match,
  * } from '@vi/state-fp/kernel';
  */
 
@@ -48,6 +50,12 @@ export type {
   // Utility
   Unsubscribe,
 } from './types.js';
+
+// ─── Result helpers (re-exported from core for command-handler ergonomics) ────
+// Import these alongside createCommandHandler so you never need a second import.
+
+export type { Either, Result } from '../core/types.js';
+export { ok, err, isOk, isErr, match } from '../core/either.js';
 
 // ─── Atom ─────────────────────────────────────────────────────────────────────
 

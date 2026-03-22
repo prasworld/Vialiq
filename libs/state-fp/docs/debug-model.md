@@ -449,14 +449,14 @@ internal `DebugInterface` records to the plugin, then attach `devtools.plugin` b
 import { createKernel, defineAtom, createCommandHandler, createEventApplier,
          command, domainEvent } from '@vi/state-fp/kernel';
 import { createDevTools } from '@vi/state-fp/devtools';
-import { right } from '@vi/state-fp/core';
+import { ok, isOk } from '@vi/state-fp/kernel';
 
 const counterAtom = defineAtom({ key: 'vi/counter', initialState: { count: 0 } });
 const increment   = () => command('counter/increment', {});
 
 const handler = createCommandHandler({
   commandType: 'counter/increment',
-  handle: (_state) => right([domainEvent('counter/incremented', { by: 1 })]),
+  handle: (_state) => ok([domainEvent('counter/incremented', { by: 1 })]),
 });
 const applier = createEventApplier<{ count: number }>({
   'counter/incremented': (state, e) => ({ count: state.count + e.payload.by }),
@@ -503,7 +503,7 @@ describe('counter devtools', () => {
     const event1Id = log[0].id;
 
     const result = await devtools.timeTravel.to(event1Id);
-    expect(result._tag).toBe('Right');
+    expect(isOk(result)).toBe(true);
     expect(counterAtom.get()).toEqual({ count: 1 });
 
     devtools.timeTravel.exit();

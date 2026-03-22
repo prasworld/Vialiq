@@ -107,7 +107,7 @@ export const checkoutFailed = (reason: string)           => domainEvent('cart/ch
 
 ```ts
 // src/cart/handler.ts
-import { createCommandHandler, right, left } from '@vi/state-fp/kernel';
+import { createCommandHandler, ok, err } from '@vi/state-fp/kernel';
 import type { CartState } from './types.js';
 import { itemAdded, itemRemoved, qtyUpdated, couponApplied } from './events.js';
 
@@ -119,29 +119,29 @@ export const cartHandler = createCommandHandler<CartState, Command>({
         const item = cmd.payload as CartItem;
         const existing = state.items.find(i => i.id === item.id);
         if (existing) {
-          return right([qtyUpdated(item.id, existing.qty + item.qty)]);
+          return ok([qtyUpdated(item.id, existing.qty + item.qty)]);
         }
-        return right([itemAdded(item)]);
+        return ok([itemAdded(item)]);
       }
       case 'cart/removeItem': {
         const { id } = cmd.payload as { id: string };
         if (!state.items.find(i => i.id === id)) {
-          return left({ code: 'NOT_FOUND', message: `Item ${id} not in cart` });
+          return err({ code: 'NOT_FOUND', message: `Item ${id} not in cart` });
         }
-        return right([itemRemoved(id)]);
+        return ok([itemRemoved(id)]);
       }
       case 'cart/setQty': {
         const { id, qty } = cmd.payload as { id: string; qty: number };
-        if (qty < 1) return left({ code: 'INVALID_QTY', message: 'Qty must be ≥ 1' });
-        return right([qtyUpdated(id, qty)]);
+        if (qty < 1) return err({ code: 'INVALID_QTY', message: 'Qty must be ≥ 1' });
+        return ok([qtyUpdated(id, qty)]);
       }
       case 'cart/applyCoupon': {
         const { code } = cmd.payload as { code: string };
-        if (code.length < 4) return left({ code: 'INVALID_COUPON', message: 'Coupon too short' });
-        return right([couponApplied(code)]);
+        if (code.length < 4) return err({ code: 'INVALID_COUPON', message: 'Coupon too short' });
+        return ok([couponApplied(code)]);
       }
       default:
-        return left({ code: 'NO_HANDLER', message: `Unknown command: ${cmd.type}` });
+        return err({ code: 'NO_HANDLER', message: `Unknown command: ${cmd.type}` });
     }
   },
 });
@@ -252,7 +252,7 @@ while the network request is in flight, then rolls back on failure:
 import { kernel }   from './setup.js';
 import { cartAtom } from './atom.js';
 import { cartApplier } from './applier.js';
-import { domainEvent, right, left } from '@vi/state-fp/kernel';
+import { domainEvent, ok, err } from '@vi/state-fp/kernel';
 
 export async function submitCheckout(paymentToken: string) {
   return kernel.executeOptimistic(
@@ -270,14 +270,14 @@ export async function submitCheckout(paymentToken: string) {
         });
         if (!res.ok) {
           const { message } = await res.json();
-          return left({ code: 'CHECKOUT_FAILED', message });
+          return err({ code: 'CHECKOUT_FAILED', message });
         }
-        return right(optimisticState);
+        return ok(optimisticState);
       },
 
-      // Called if confirm() returns Left — state is automatically rolled back
-      onRollback: async (err) => {
-        console.error('Checkout failed, cart restored:', err.message);
+      // Called if confirm() returns err — state is automatically rolled back
+      onRollback: async (e) => {
+        console.error('Checkout failed, cart restored:', e.message);
       },
     },
   );
@@ -340,6 +340,7 @@ The same kernel works in a plain TypeScript micro-frontend:
 ```ts
 // src/cart/cart-widget.ts
 import { createAdapter } from '@vi/state-fp/adapter';
+import { match }         from '@vi/state-fp/kernel';
 import { kernel }        from './setup.js';
 import { cartAtom }      from './atom.js';
 import { addItem }       from './commands.js';
@@ -354,7 +355,10 @@ const off = app.watch(cartAtom, (cart) => {
 // Add item on button click
 document.getElementById('add-btn')!.addEventListener('click', () => {
   const result = app.run(cartAtom, addItem({ id: 'shoe-1', name: 'Shoes', price: 49.99, qty: 1 }));
-  if (result._tag === 'Left') console.error(result.left.message);
+  match(result, {
+    ok:  (_state) => { /* cart signal auto-updates */ },
+    err: (e)      => console.error(e.message),
+  });
 });
 
 // Clean up on unmount
@@ -405,7 +409,7 @@ console.log('Snapshots:', devtools.snapshots.list());
 ```ts
 // src/cart/handler.spec.ts
 import { describe, it, expect } from 'vitest';
-import { right, left }          from '@vi/state-fp/core';
+import { isOk, isErr }          from '@vi/state-fp/kernel';
 import { cartHandler }          from './handler.js';
 import { addItem, removeItem }  from './commands.js';
 
@@ -414,7 +418,7 @@ const emptyCart = { items: [], coupon: null, checkoutError: null };
 describe('cart handler', () => {
   it('addItem yields itemAdded event', () => {
     const result = cartHandler.handle(emptyCart, addItem({ id: '1', name: 'Hat', price: 10, qty: 1 }));
-    expect(result._tag).toBe('Right');
+    expect(isOk(result)).toBe(true);
     expect(result.right[0].type).toBe('cart/itemAdded');
   });
 
@@ -424,9 +428,9 @@ describe('cart handler', () => {
     expect(result.right[0].type).toBe('cart/qtyUpdated');
   });
 
-  it('removeItem on missing item returns Left', () => {
+  it('removeItem on missing item returns err', () => {
     const result = cartHandler.handle(emptyCart, removeItem('missing'));
-    expect(result._tag).toBe('Left');
+    expect(isErr(result)).toBe(true);
     expect(result.left.code).toBe('NOT_FOUND');
   });
 });
@@ -437,7 +441,7 @@ describe('cart handler', () => {
 ```ts
 // src/cart/cart.integration.spec.ts
 import { describe, it, expect } from 'vitest';
-import { createKernel }         from '@vi/state-fp/kernel';
+import { createKernel, isOk }   from '@vi/state-fp/kernel';
 import { cartAtom }    from './atom.js';
 import { cartHandler } from './handler.js';
 import { cartApplier } from './applier.js';
@@ -450,7 +454,7 @@ describe('cart kernel integration', () => {
 
     const result = kernel.execute(cartAtom, addItem({ id: '1', name: 'Hat', price: 10, qty: 1 }));
 
-    expect(result._tag).toBe('Right');
+    expect(isOk(result)).toBe(true);
     expect(cartAtom.get().items).toHaveLength(1);
     expect(cartAtom.get().items[0].name).toBe('Hat');
   });
@@ -463,6 +467,7 @@ describe('cart kernel integration', () => {
 // src/cart/cart-widget.spec.ts
 import { describe, it, expect, vi } from 'vitest';
 import { createAdapter }  from '@vi/state-fp/adapter';
+import { ok }             from '@vi/state-fp/kernel';
 import { cartAtom }  from './atom.js';
 import { addItem }   from './commands.js';
 
@@ -470,7 +475,7 @@ describe('cart widget adapter', () => {
   it('watch delivers current state immediately', () => {
     const kernel = {
       subscribe: vi.fn().mockReturnValue(() => {}),
-      execute: vi.fn().mockReturnValue({ _tag: 'Right', right: [] }),
+      execute: vi.fn().mockReturnValue(ok([])),
       query: vi.fn(),
     };
     const adapter = createAdapter(kernel as any);

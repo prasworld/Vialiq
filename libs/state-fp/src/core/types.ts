@@ -23,6 +23,29 @@ export type Left<E>      = { readonly _tag: 'Left';  readonly left:  E };
 export type Right<A>     = { readonly _tag: 'Right'; readonly right: A };
 export type Either<E, A> = Left<E> | Right<A>;
 
+/**
+ * Idiomatic alias for `Either<E, A>`.
+ *
+ * Use `Result` when you want names that read naturally in application code.
+ * Pair with `ok()`, `err()`, `isOk()`, `isErr()`, and `match()` from the
+ * same module.
+ *
+ * ```ts
+ * import { ok, err, match, Result } from '@vi/state-fp/core';
+ * // or from '@vi/state-fp/kernel' (re-exported for command handlers)
+ *
+ * function divide(a: number, b: number): Result<string, number> {
+ *   return b === 0 ? err('division by zero') : ok(a / b);
+ * }
+ *
+ * const count = match(kernel.execute(counterAtom, cmd), {
+ *   ok:  (state) => state.count,
+ *   err: (e)     => 0,
+ * });
+ * ```
+ */
+export type Result<E, A> = Either<E, A>;
+
 // ─── IO ───────────────────────────────────────────────────────────────────────
 /**
  * IO<A> represents a computation that produces a value of type A and may have side effects.

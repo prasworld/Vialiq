@@ -32,11 +32,10 @@ pnpm add @vi/state-fp
 ## Quick Start — Counter
 
 ```ts
-import { defineAtom }          from '@vi/state-fp/kernel';
-import { createKernel }        from '@vi/state-fp/kernel';
-import { command, createCommandHandler, createEventApplier, domainEvent }
-                                from '@vi/state-fp/kernel';
-import { right, left }          from '@vi/state-fp/core';
+import { defineAtom, createKernel, command,
+         createCommandHandler, createEventApplier, domainEvent,
+         ok, err, match }
+  from '@vi/state-fp/kernel';
 
 // 1. Define the atom (state container)
 const counterAtom = defineAtom({
@@ -44,45 +43,40 @@ const counterAtom = defineAtom({
   initialState: 0,
 });
 
-// 2. Define commands
-const increment = (by = 1) => command('counter/increment', { by });
-const decrement = (by = 1) => command('counter/decrement', { by });
-
-// 3. Define domain events (emitted by command handlers)
-const incremented = (by: number) => domainEvent('counter/incremented', { by });
-const decremented = (by: number) => domainEvent('counter/decremented', { by });
-
-// 4. Command handler — pure function: (state, cmd) → Either<Error, Event[]>
-const counterHandler = createCommandHandler<number, ReturnType<typeof increment>>({
+// 2. Command handler — pure function: validates and produces events.
+//    Return ok([...events]) on success, err({code, message}) on failure.
+const counterHandler = createCommandHandler<number, ReturnType<typeof command<'counter/increment', { by: number }>>>({
   commandType: 'counter/increment',
-  validate:    (payload) => {
+  validate: (payload) => {
     const p = payload as { by: number };
-    return p.by > 0 ? right(undefined) : left({ code: 'VALIDATION_ERROR' as const, message: 'by must be > 0' });
+    return p.by > 0
+      ? ok(undefined)
+      : err({ code: 'VALIDATION_ERROR' as const, message: 'by must be > 0' });
   },
-  handle: (_state, cmd) => right([incremented(cmd.payload.by)]),
+  handle: (_state, cmd) => ok([domainEvent('counter/incremented', { by: cmd.payload.by })]),
 });
 
-// 5. Event applier — pure function: (state, event) → state
+// 3. Event applier — pure function: folds events into next state
 const counterApplier = createEventApplier<number>({
   'counter/incremented': (s, e) => s + e.payload.by,
   'counter/decremented': (s, e) => s - e.payload.by,
 });
 
-// 6. Wire it all together
+// 4. Wire together
 const kernel = createKernel();
-
 kernel.register(counterAtom, counterHandler, counterApplier);
 
-// Subscribe to state changes
+// 5. Subscribe + execute
 kernel.subscribe(counterAtom, state => console.log('count:', state));
 
-// Execute commands
-const result = await kernel.execute(counterAtom, increment(5));
-// count: 5
+const result = kernel.execute(counterAtom, command('counter/increment', { by: 5 }));
+// → count: 5
 
-if (result._tag === 'Right') {
-  console.log('events:', result.right); // [{ type: 'counter/incremented', ... }]
-}
+// 6. Handle the result with match() — no Left/Right needed
+const newCount = match(result, {
+  ok:  (state) => state,
+  err: (e)     => { console.error(e.message); return -1; },
+});
 ```
 
 ---
@@ -95,11 +89,13 @@ FP primitives with zero dependencies.
 
 ```ts
 import {
-  // Maybe monad
+  // Maybe — optional value
   just, nothing, fromNullable, isJust, isNothing,
-  mapMaybe, chainMaybe, foldMaybe, getOrElse,
-  // Either monad
-  left, right, fromTry, isLeft, isRight,
+  mapMaybe, chainMaybe, foldMaybe, getOrElseMaybe,
+  // Result (idiomatic success/failure) — preferred API
+  ok, err, isOk, isErr, match,
+  // Either (traditional FP names — same runtime type as Result)
+  left, right, isLeft, isRight, fromTry, fromTryAsync,
   mapEither, chainEither, foldEither,
   // IO monad
   io, liftIO, mapIO, chainIO, newIORef,
@@ -109,6 +105,10 @@ import {
   pipe, compose, uuid, now, deepClone, memoize,
 } from '@vi/state-fp/core';
 ```
+
+> **Naming convention:** `ok` / `err` / `isOk` / `isErr` / `match` are the preferred
+> names for result handling. `right` / `left` / `isRight` / `isLeft` are identical
+> functions kept for completeness; use whichever reads more naturally for the context.
 
 ### `@vi/state-fp/kernel`
 
@@ -121,12 +121,15 @@ import {
   command, domainEvent,
   createCommandHandler, createEventApplier,
   query, createQueryHandler,
+  // Result helpers re-exported here for convenience —
+  // no extra import needed when writing command handlers
+  ok, err, isOk, isErr, match,
 } from '@vi/state-fp/kernel';
 ```
 
 **CQRS write path:**
 ```
-command → CommandHandler(state, cmd) → Either<CommandError, DomainEvent[]>
+command → CommandHandler(state, cmd) → Result<CommandError, DomainEvent[]>
                                      ↓
                           EventApplier(state, event) → S
 ```
@@ -221,8 +224,8 @@ import {
   command, domainEvent,
   createCommandHandler, createEventApplier,
   query, createQueryHandler,
+  ok, err,
 } from '@vi/state-fp/kernel';
-import { right, left } from '@vi/state-fp/core';
 
 // --- State shape ---
 interface Counter { count: number; total: number }
@@ -237,14 +240,14 @@ const ResetCounter = ()          => command('counter/reset', {});
 // --- Domain events (produced by handlers) ---
 const incremented = (by: number) => domainEvent('counter/incremented', { by });
 
-// --- Command handler: (state, cmd) → Either<Error, DomainEvent[]> ---
+// --- Command handler: (state, cmd) → Result<Error, DomainEvent[]> ---
 const incrementHandler = createCommandHandler<Counter, ReturnType<typeof IncrementBy>>({
   commandType: 'counter/increment',
   validate: (payload) => {
     const p = payload as { by: number };
-    return p.by > 0 ? right(undefined) : left({ code: 'VALIDATION_ERROR' as const, message: 'by must be > 0' });
+    return p.by > 0 ? ok(undefined) : err({ code: 'VALIDATION_ERROR' as const, message: 'by must be > 0' });
   },
-  handle: (_state, cmd) => right([incremented(cmd.payload.by)]),
+  handle: (_state, cmd) => ok([incremented(cmd.payload.by)]),
 });
 
 // --- Event applier: (state, event) → state (pure, no side-effects) ---
@@ -339,7 +342,7 @@ export const ngAdapter = createAngularAdapter({ signal, inject, DestroyRef });
 ```ts
 // ─── src/features/counter/counter.store.ts — all wiring lives here ────────────
 import { Injectable, inject }  from '@angular/core';
-import { isLeft }               from '@vi/state-fp/core';
+import { isErr }                from '@vi/state-fp/core';
 import { KERNEL }               from '../../app/app.config';  // InjectionToken<Kernel>
 import { ngAdapter }            from '../../core/state/ng-adapter';
 import { counterAtom, IncrementBy, DecrementBy } from './counter.domain';
@@ -359,7 +362,7 @@ export class CounterStore {
 
   increment(by = 1): string | null {
     const result = this.dispatch(IncrementBy(by));
-    return isLeft(result) ? result.left.message : null;
+    return isErr(result) ? result.left.message : null;
   }
 
   decrement(by = 1): void { this.dispatch(DecrementBy(by)); }

@@ -18,6 +18,7 @@
 export type {
   Maybe, Nothing, Just,
   Either, Left, Right,
+  Result,
   IO, IORef,
   Lens, OptionalLens,
   Patch,
@@ -45,6 +46,8 @@ export {
   getOrElse as getOrElseEither,
   getOrElseL as getOrElseLEither,
   eitherToMaybe, sequenceEither, swapEither,
+  // Idiomatic Result API
+  ok, err, isOk, isErr, match,
 } from './core/either.js';
 
 export {
