@@ -7,7 +7,7 @@ export default [
     rules: {},
     languageOptions: {
       parserOptions: {
-        project: ['libs/design-system/tsconfig.*?.json'],
+        project: ['libs/flux-ui/tsconfig.*?.json'],
       },
     },
   },
