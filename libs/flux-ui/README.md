@@ -1,4 +1,4 @@
-# Design System
+# Flux UI
 
 A custom, lightweight CSS/SASS framework built for microfrontend architectures. Optimized for Module Federation with type-safe design tokens and minimal bundle footprint.
 
@@ -17,18 +17,18 @@ A custom, lightweight CSS/SASS framework built for microfrontend architectures. 
 
 ### Shell App Setup
 
-```typescript
+```scss
 // In apps/shell/src/styles.scss
-@import '@design-system/core/styles/variables';
-@import '@design-system/core/styles/reset';
-@import '@design-system/core/styles/layout';
-@import '@design-system/core/styles/utilities';
+@import '@vi/flux-ui/styles/_variables.scss';
+@import '@vi/flux-ui/styles/_reset.scss';
+@import '@vi/flux-ui/styles/_layout.scss';
+@import '@vi/flux-ui/styles/_utilities.scss';
 ```
 
 ### Using Tokens
 
 ```typescript
-import { tokens } from '@design-system/core';
+import { tokens } from '@vi/flux-ui';
 
 const buttonStyle = {
   padding: tokens.spacing.md,        // 24px

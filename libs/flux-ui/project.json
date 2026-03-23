@@ -12,9 +12,19 @@
         "outputPath": "dist/libs/flux-ui",
         "main": "libs/flux-ui/src/index.ts",
         "tsConfig": "libs/flux-ui/tsconfig.lib.json",
-        "assets": ["libs/flux-ui/README.md"],
+        "assets": [
+          "libs/flux-ui/README.md",
+          {
+            "input": "libs/flux-ui/src/styles",
+            "glob": "**/*.scss",
+            "output": "styles"
+          }
+        ],
         "format": ["esm"],
-        "thirdPartySourcemaps": false
+        "thirdPartySourcemaps": false,
+        "additionalEntryPoints": [
+          "libs/flux-ui/src/tokens/index.ts"
+        ]
       },
       "configurations": {
         "production": {

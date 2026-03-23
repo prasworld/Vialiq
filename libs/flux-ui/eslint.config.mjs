@@ -1,4 +1,5 @@
 import baseConfig from '../../eslint.config.mjs';
+import globals from 'globals';
 
 export default [
   ...baseConfig,
@@ -13,9 +14,9 @@ export default [
   },
   {
     files: ['**/*.spec.ts', '**/*.test.ts'],
-    env: {
-      node: true,
-    },
     rules: {},
+    languageOptions: {
+      globals: globals.node,
+    },
   },
 ];

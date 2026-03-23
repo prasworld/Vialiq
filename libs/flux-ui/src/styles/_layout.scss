@@ -125,22 +125,6 @@
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   }
 
-  .gap-xs {
-    gap: var(--ds-spacing-xs);
-  }
-
-  .gap-sm {
-    gap: var(--ds-spacing-sm);
-  }
-
-  .gap-md {
-    gap: var(--ds-spacing-md);
-  }
-
-  .gap-lg {
-    gap: var(--ds-spacing-lg);
-  }
-
   // ============================================================================
   // DISPLAY
   // ============================================================================
