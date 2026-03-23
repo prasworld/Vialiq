@@ -5,29 +5,32 @@
   "description": "Custom minimal CSS/SASS framework for microfrontend product",
   "license": "MIT",
   "module": "./index.js",
-  "types": "./src/index.d.ts",
+  "types": "./index.d.ts",
   "exports": {
     ".": {
-      "types": "./src/index.d.ts",
-      "default": "./index.js"
+      "import": "./index.js",
+      "types": "./index.d.ts"
     },
     "./tokens": {
-      "types": "./src/tokens/index.d.ts",
-      "default": "./tokens/index.js"
+      "import": "./tokens/index.js",
+      "types": "./tokens/index.d.ts"
     },
     "./styles": {
-      "types": "./src/styles/index.d.ts",
-      "default": "./styles/index.js"
+      "import": "./styles/index.js",
+      "types": "./styles/index.d.ts"
     },
+    "./styles/*": "./styles/*",
     "./flux-ui.css": "./flux-ui.css"
   },
   "files": [
     "index.js",
+    "index.d.ts",
     "tokens/index.js",
+    "tokens/index.d.ts",
     "styles/index.js",
+    "styles/index.d.ts",
     "styles/**/*.scss",
     "flux-ui.css",
-    "src/**/*.d.ts",
     "README.md"
   ]
 }

@@ -73,12 +73,12 @@ Tokens are exported in three formats to serve different consumption patterns:
 ```typescript
 export const tokens = {
   colors: {
-    primary: 'var(--ds-color-primary)',
-    secondary: 'var(--ds-color-secondary)',
+    primary: 'var(--vi-color-primary)',
+    secondary: 'var(--vi-color-secondary)',
   },
   spacing: {
-    xs: 'var(--ds-spacing-xs)',
-    sm: 'var(--ds-spacing-sm)',
+    xs: 'var(--vi-spacing-xs)',
+    sm: 'var(--vi-spacing-sm)',
   },
 } as const;
 
@@ -127,18 +127,18 @@ $spacing-sm: 16px;
 
 ```css
 :root {
-  --ds-color-primary: #0066cc;
-  --ds-spacing-sm: 16px;
+  --vi-color-primary: #0066cc;
+  --vi-spacing-sm: 16px;
 }
 
 /* Usage in CSS/HTML: */
 element {
-  padding: var(--ds-spacing-sm);
-  color: var(--ds-color-primary);
+  padding: var(--vi-spacing-sm);
+  color: var(--vi-color-primary);
 }
 
 /* Or JavaScript: */
-element.style.padding = getComputedStyle(root).getPropertyValue('--ds-spacing-sm');
+element.style.padding = getComputedStyle(root).getPropertyValue('--vi-spacing-sm');
 ```
 
 **Advantages:**
@@ -407,7 +407,7 @@ Already built into utilities:
 // Optional: App-specific overrides
 :root {
   // Can override tokens at runtime here
-  --ds-color-primary: #FF6B35;  // Brand color override for this deployment
+  --vi-color-primary: #FF6B35;  // Brand color override for this deployment
 }
 ```
 
@@ -485,9 +485,9 @@ libs/flux-ui/
 
 ```scss
 :root[data-theme="dark"] {
-  --ds-color-background: #1f2937;
-  --ds-color-foreground: #f9fafb;
-  --ds-color-primary: #60a5fa;
+  --vi-color-background: #1f2937;
+  --vi-color-foreground: #f9fafb;
+  --vi-color-primary: #60a5fa;
 }
 ```
 
@@ -515,7 +515,7 @@ export class ThemeService {
 
   setCustomColor(token: string, value: string) {
     const root = document.documentElement;
-    root.style.setProperty(`--ds-color-${token}`, value);
+    root.style.setProperty(`--vi-color-${token}`, value);
   }
 }
 ```
@@ -626,7 +626,7 @@ Total: ~200 utility classes
 **A:** Verify `@vi/flux-ui` is in `shared` config for Module Federation.
 
 ### Q: CSS variables not changing with theme?
-**A:** Use `document.documentElement.style.setProperty('--ds-color-primary', '#newColor')`, not CSS file changes.
+**A:** Use `document.documentElement.style.setProperty('--vi-color-primary', '#newColor')`, not CSS file changes.
 
 ---
 

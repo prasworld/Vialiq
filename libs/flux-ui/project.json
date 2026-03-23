@@ -47,13 +47,17 @@
     },
     "postbuild-publish": {
       "executor": "nx:run-commands",
+      "dependsOn": ["build", "build-css"],
       "options": {
         "commands": [
-          "cp libs/flux-ui/publish-package.json dist/libs/flux-ui/package.json"
+          "cp libs/flux-ui/publish-package.json dist/libs/flux-ui/package.json",
+          "cp dist/libs/flux-ui/src/index.d.ts dist/libs/flux-ui/index.d.ts",
+          "cp dist/libs/flux-ui/src/tokens/index.d.ts dist/libs/flux-ui/tokens/index.d.ts",
+          "cp dist/libs/flux-ui/src/styles/index.d.ts dist/libs/flux-ui/styles/index.d.ts"
         ],
         "parallel": false
       },
-      "outputs": ["dist/libs/flux-ui/package.json"]
+      "outputs": ["{workspaceRoot}/dist/libs/flux-ui/package.json"]
     },
     "lint": {
       "executor": "@nx/eslint:lint",

@@ -65,9 +65,9 @@
 All colors available as CSS custom properties in `:root`:
 
 ```css
---ds-color-primary: #0066cc;
---ds-color-neutral-100: #f3f4f6;
---ds-color-success: #10b981;
+--vi-color-primary: #0066cc;
+--vi-color-neutral-100: #f3f4f6;
+--vi-color-success: #10b981;
 /* ... etc */
 ```
 
@@ -102,9 +102,9 @@ xl (40px):   Page sections, container gaps
 ### CSS Variable Names
 
 ```css
---ds-spacing-xs: 8px;
---ds-spacing-sm: 16px;
---ds-spacing-md: 24px;
+--vi-spacing-xs: 8px;
+--vi-spacing-sm: 16px;
+--vi-spacing-md: 24px;
 /* ... etc */
 ```
 
@@ -166,9 +166,9 @@ xl (40px):   Page sections, container gaps
 ### CSS Variable Names
 
 ```css
---ds-font-family-base: ...;
---ds-font-size-base: 16px;
---ds-font-size-lg: 18px;
+--vi-font-family-base: ...;
+--vi-font-size-base: 16px;
+--vi-font-size-lg: 18px;
 /* ... etc */
 ```
 
@@ -215,8 +215,8 @@ xl:  Modal dialog, main overlay
 ### CSS Variable Names
 
 ```css
---ds-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
---ds-shadow-md: 0 4px 6px -1px rgba(...), ...;
+--vi-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+--vi-shadow-md: 0 4px 6px -1px rgba(...), ...;
 /* ... etc */
 ```
 
@@ -254,8 +254,8 @@ xl:  Modal dialog, main overlay
 ### CSS Variable Names
 
 ```css
---ds-border-radius-sm: 2px;
---ds-border-radius-md: 4px;
+--vi-border-radius-sm: 2px;
+--vi-border-radius-md: 4px;
 /* ... etc */
 ```
 
@@ -361,8 +361,8 @@ The 10-point increments (1000, 1020, 1030, etc.) allow for edge cases without re
 import { tokens } from '@vi/flux-ui';
 
 // Direct access
-const buttonPadding = tokens.spacing.md;    // 'var(--ds-spacing-md)'
-const buttonColor = tokens.colors.primary;  // 'var(--ds-color-primary)'
+const buttonPadding = tokens.spacing.md;    // 'var(--vi-spacing-md)'
+const buttonColor = tokens.colors.primary;  // 'var(--vi-color-primary)'
 
 // In inline styles
 const style = {
@@ -411,19 +411,19 @@ const style = {
 
 ```css
 .button {
-  padding: var(--ds-spacing-sm) var(--ds-spacing-md);
-  background-color: var(--ds-color-primary);
-  border-radius: var(--ds-border-radius-md);
+  padding: var(--vi-spacing-sm) var(--vi-spacing-md);
+  background-color: var(--vi-color-primary);
+  border-radius: var(--vi-border-radius-md);
 }
 ```
 
 ```javascript
 // Access in JavaScript
 const root = document.documentElement;
-const primaryColor = getComputedStyle(root).getPropertyValue('--ds-color-primary');
+const primaryColor = getComputedStyle(root).getPropertyValue('--vi-color-primary');
 
 // Change theme at runtime
-root.style.setProperty('--ds-color-primary', '#FF6B35');
+root.style.setProperty('--vi-color-primary', '#FF6B35');
 ```
 
 **Advantages:**

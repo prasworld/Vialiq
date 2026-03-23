@@ -6,7 +6,8 @@
  */
 
 // Declare CSS layer order up-front so cascade is predictable regardless of
-// import order. Layers declared later have higher precedence.
+// import order. Later layers win in a conflict — utilities beats components
+// beats reset. Only layer order matters; selector specificity is ignored.
 // Order: reset (lowest) → components → utilities (highest)
 @layer reset, components, utilities;
 

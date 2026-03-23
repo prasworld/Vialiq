@@ -2,7 +2,7 @@
 
 **Date:** March 2026  
 **Project:** Microfrontend Architecture with Module Federation  
-**Status:** Approved ✅  
+**Status:** Proposed ⏳  
 **Decision:** Build Custom Minimal CSS/SASS Framework
 
 ---
@@ -149,7 +149,7 @@ const buttonClasses = `px-${tokens.spacing.md}`;  // ✅ TS validates key
 
 // Also available as CSS variables
 const buttonStyle = { 
-  padding: tokens.spacing.md  // var(--ds-spacing-md)
+  padding: tokens.spacing.md  // var(--vi-spacing-md)
 };
 ```
 
@@ -210,8 +210,8 @@ Use in style files, compile-time only.
 **CSS Custom Properties:**
 ```css
 :root {
-  --ds-color-primary: #0066cc;
-  --ds-spacing-sm: 16px;
+  --vi-color-primary: #0066cc;
+  --vi-spacing-sm: 16px;
 }
 ```
 Use in apps, runtime accessible, themeable.
@@ -219,8 +219,8 @@ Use in apps, runtime accessible, themeable.
 **TypeScript Constants:**
 ```typescript
 export const tokens = {
-  colors: { primary: 'var(--ds-color-primary)' },
-  spacing: { sm: 'var(--ds-spacing-sm)' }
+  colors: { primary: 'var(--vi-color-primary)' },
+  spacing: { sm: 'var(--vi-spacing-sm)' }
 }
 ```
 Use in component code, type-safe.
