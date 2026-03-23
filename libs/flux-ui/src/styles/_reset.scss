@@ -33,11 +33,11 @@
   body {
     margin: 0;
     padding: 0;
-    font-family: var(--ds-font-family-base);
-    font-size: var(--ds-font-size-base);
-    line-height: var(--ds-line-height-normal, 1.5);
-    color: var(--ds-color-foreground);
-    background-color: var(--ds-color-background);
+    font-family: var(--vi-font-family-base);
+    font-size: var(--vi-font-size-base);
+    line-height: var(--vi-line-height-normal, 1.5);
+    color: var(--vi-color-foreground);
+    background-color: var(--vi-color-background);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -81,7 +81,7 @@
   // ============================================================================
 
   code, pre, samp {
-    font-family: var(--ds-font-family-mono);
+    font-family: var(--vi-font-family-mono);
     font-size: 1em;
   }
 
@@ -181,6 +181,6 @@
   hr {
     margin: 0;
     border: 0;
-    border-top: 1px solid var(--ds-color-border);
+    border-top: 1px solid var(--vi-color-border);
   }
 }

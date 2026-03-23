@@ -20,33 +20,33 @@ export const tokens = {
    */
   colors: {
     // Brand colors
-    primary: 'var(--ds-color-primary)',
-    secondary: 'var(--ds-color-secondary)',
+    primary: 'var(--vi-color-primary)',
+    secondary: 'var(--vi-color-secondary)',
 
     // Semantic colors
-    success: 'var(--ds-color-success)',
-    warning: 'var(--ds-color-warning)',
-    error: 'var(--ds-color-error)',
-    info: 'var(--ds-color-info)',
+    success: 'var(--vi-color-success)',
+    warning: 'var(--vi-color-warning)',
+    error: 'var(--vi-color-error)',
+    info: 'var(--vi-color-info)',
 
     // Neutral palette
     neutral: {
-      50: 'var(--ds-color-neutral-50)',
-      100: 'var(--ds-color-neutral-100)',
-      200: 'var(--ds-color-neutral-200)',
-      300: 'var(--ds-color-neutral-300)',
-      400: 'var(--ds-color-neutral-400)',
-      500: 'var(--ds-color-neutral-500)',
-      600: 'var(--ds-color-neutral-600)',
-      700: 'var(--ds-color-neutral-700)',
-      800: 'var(--ds-color-neutral-800)',
-      900: 'var(--ds-color-neutral-900)',
+      50: 'var(--vi-color-neutral-50)',
+      100: 'var(--vi-color-neutral-100)',
+      200: 'var(--vi-color-neutral-200)',
+      300: 'var(--vi-color-neutral-300)',
+      400: 'var(--vi-color-neutral-400)',
+      500: 'var(--vi-color-neutral-500)',
+      600: 'var(--vi-color-neutral-600)',
+      700: 'var(--vi-color-neutral-700)',
+      800: 'var(--vi-color-neutral-800)',
+      900: 'var(--vi-color-neutral-900)',
     },
 
     // Functional colors
-    background: 'var(--ds-color-background)',
-    foreground: 'var(--ds-color-foreground)',
-    border: 'var(--ds-color-border)',
+    background: 'var(--vi-color-background)',
+    foreground: 'var(--vi-color-foreground)',
+    border: 'var(--vi-color-border)',
   },
 
   /**
@@ -54,13 +54,13 @@ export const tokens = {
    * 8px base unit system: xs (8px), sm (16px), md (24px), lg (32px), xl (40px), etc.
    */
   spacing: {
-    xs: 'var(--ds-spacing-xs)',    // 8px
-    sm: 'var(--ds-spacing-sm)',    // 16px
-    md: 'var(--ds-spacing-md)',    // 24px
-    lg: 'var(--ds-spacing-lg)',    // 32px
-    xl: 'var(--ds-spacing-xl)',    // 40px
-    '2xl': 'var(--ds-spacing-2xl)', // 48px
-    '3xl': 'var(--ds-spacing-3xl)', // 56px
+    xs: 'var(--vi-spacing-xs)',    // 8px
+    sm: 'var(--vi-spacing-sm)',    // 16px
+    md: 'var(--vi-spacing-md)',    // 24px
+    lg: 'var(--vi-spacing-lg)',    // 32px
+    xl: 'var(--vi-spacing-xl)',    // 40px
+    '2xl': 'var(--vi-spacing-2xl)', // 48px
+    '3xl': 'var(--vi-spacing-3xl)', // 56px
   },
 
   /**
@@ -69,17 +69,17 @@ export const tokens = {
    */
   typography: {
     fontFamily: {
-      base: 'var(--ds-font-family-base)',
-      mono: 'var(--ds-font-family-mono)',
+      base: 'var(--vi-font-family-base)',
+      mono: 'var(--vi-font-family-mono)',
     },
     fontSize: {
-      xs: 'var(--ds-font-size-xs)',     // 12px
-      sm: 'var(--ds-font-size-sm)',     // 14px
-      base: 'var(--ds-font-size-base)', // 16px
-      lg: 'var(--ds-font-size-lg)',     // 18px
-      xl: 'var(--ds-font-size-xl)',     // 20px
-      '2xl': 'var(--ds-font-size-2xl)', // 24px
-      '3xl': 'var(--ds-font-size-3xl)', // 30px
+      xs: 'var(--vi-font-size-xs)',     // 12px
+      sm: 'var(--vi-font-size-sm)',     // 14px
+      base: 'var(--vi-font-size-base)', // 16px
+      lg: 'var(--vi-font-size-lg)',     // 18px
+      xl: 'var(--vi-font-size-xl)',     // 20px
+      '2xl': 'var(--vi-font-size-2xl)', // 24px
+      '3xl': 'var(--vi-font-size-3xl)', // 30px
     },
     fontWeight: {
       light: 300,
@@ -100,10 +100,10 @@ export const tokens = {
    * Depth levels for elevation
    */
   shadows: {
-    sm: 'var(--ds-shadow-sm)',
-    md: 'var(--ds-shadow-md)',
-    lg: 'var(--ds-shadow-lg)',
-    xl: 'var(--ds-shadow-xl)',
+    sm: 'var(--vi-shadow-sm)',
+    md: 'var(--vi-shadow-md)',
+    lg: 'var(--vi-shadow-lg)',
+    xl: 'var(--vi-shadow-xl)',
   },
 
   /**
@@ -113,10 +113,10 @@ export const tokens = {
   borders: {
     radius: {
       none: '0',
-      sm: 'var(--ds-border-radius-sm)',   // 2px
-      md: 'var(--ds-border-radius-md)',   // 4px
-      lg: 'var(--ds-border-radius-lg)',   // 8px
-      xl: 'var(--ds-border-radius-xl)',   // 12px
+      sm: 'var(--vi-border-radius-sm)',   // 2px
+      md: 'var(--vi-border-radius-md)',   // 4px
+      lg: 'var(--vi-border-radius-lg)',   // 8px
+      xl: 'var(--vi-border-radius-xl)',   // 12px
       full: '9999px',
     },
     width: {

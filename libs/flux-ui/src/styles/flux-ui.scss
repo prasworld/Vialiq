@@ -1,0 +1,14 @@
+/**
+ * Flux UI — Full CSS Bundle
+ * =========================
+ * Single-file CSS output for consumers that do not use a SCSS preprocessor
+ * (plain HTML projects, CDN distribution, Shadow DOM, Storybook, etc.).
+ *
+ * Import order matters: variables establishes @layer order + :root tokens,
+ * then reset → layout → utilities are applied in cascade layer sequence.
+ */
+
+@use 'variables';
+@use 'reset';
+@use 'layout';
+@use 'utilities';

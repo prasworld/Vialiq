@@ -1,0 +1,33 @@
+{
+  "name": "@vi/flux-ui",
+  "version": "0.0.1",
+  "type": "module",
+  "description": "Custom minimal CSS/SASS framework for microfrontend product",
+  "license": "MIT",
+  "module": "./index.js",
+  "types": "./src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "default": "./index.js"
+    },
+    "./tokens": {
+      "types": "./src/tokens/index.d.ts",
+      "default": "./tokens/index.js"
+    },
+    "./styles": {
+      "types": "./src/styles/index.d.ts",
+      "default": "./styles/index.js"
+    },
+    "./flux-ui.css": "./flux-ui.css"
+  },
+  "files": [
+    "index.js",
+    "tokens/index.js",
+    "styles/index.js",
+    "styles/**/*.scss",
+    "flux-ui.css",
+    "src/**/*.d.ts",
+    "README.md"
+  ]
+}

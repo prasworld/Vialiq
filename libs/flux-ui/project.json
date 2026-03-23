@@ -23,7 +23,8 @@
         "format": ["esm"],
         "thirdPartySourcemaps": false,
         "additionalEntryPoints": [
-          "libs/flux-ui/src/tokens/index.ts"
+          "libs/flux-ui/src/tokens/index.ts",
+          "libs/flux-ui/src/styles/index.ts"
         ]
       },
       "configurations": {
@@ -35,11 +36,20 @@
         }
       }
     },
+    "build-css": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "sass libs/flux-ui/src/styles/flux-ui.scss dist/libs/flux-ui/flux-ui.css --style=compressed --no-source-map"
+        ]
+      },
+      "outputs": ["{workspaceRoot}/dist/libs/flux-ui/flux-ui.css"]
+    },
     "postbuild-publish": {
       "executor": "nx:run-commands",
       "options": {
         "commands": [
-          "cp libs/flux-ui/package.json dist/libs/flux-ui/package.json"
+          "cp libs/flux-ui/publish-package.json dist/libs/flux-ui/package.json"
         ],
         "parallel": false
       },

@@ -5,6 +5,11 @@
  * CSS variables allow runtime theming, SCSS variables provide compile-time values.
  */
 
+// Declare CSS layer order up-front so cascade is predictable regardless of
+// import order. Layers declared later have higher precedence.
+// Order: reset (lowest) → components → utilities (highest)
+@layer reset, components, utilities;
+
 // ============================================================================
 // COLOR TOKENS
 // ============================================================================
@@ -175,59 +180,67 @@ $z-index-map: (
 
 :root {
   // Colors
-  --ds-color-primary: #{$color-primary};
-  --ds-color-secondary: #{$color-secondary};
-  --ds-color-success: #{$color-success};
-  --ds-color-warning: #{$color-warning};
-  --ds-color-error: #{$color-error};
-  --ds-color-info: #{$color-info};
+  --vi-color-primary: #{$color-primary};
+  --vi-color-secondary: #{$color-secondary};
+  --vi-color-success: #{$color-success};
+  --vi-color-warning: #{$color-warning};
+  --vi-color-error: #{$color-error};
+  --vi-color-info: #{$color-info};
 
   // Neutral palette
-  --ds-color-neutral-50: #{$color-neutral-50};
-  --ds-color-neutral-100: #{$color-neutral-100};
-  --ds-color-neutral-200: #{$color-neutral-200};
-  --ds-color-neutral-300: #{$color-neutral-300};
-  --ds-color-neutral-400: #{$color-neutral-400};
-  --ds-color-neutral-500: #{$color-neutral-500};
-  --ds-color-neutral-600: #{$color-neutral-600};
-  --ds-color-neutral-700: #{$color-neutral-700};
-  --ds-color-neutral-800: #{$color-neutral-800};
-  --ds-color-neutral-900: #{$color-neutral-900};
+  --vi-color-neutral-50: #{$color-neutral-50};
+  --vi-color-neutral-100: #{$color-neutral-100};
+  --vi-color-neutral-200: #{$color-neutral-200};
+  --vi-color-neutral-300: #{$color-neutral-300};
+  --vi-color-neutral-400: #{$color-neutral-400};
+  --vi-color-neutral-500: #{$color-neutral-500};
+  --vi-color-neutral-600: #{$color-neutral-600};
+  --vi-color-neutral-700: #{$color-neutral-700};
+  --vi-color-neutral-800: #{$color-neutral-800};
+  --vi-color-neutral-900: #{$color-neutral-900};
 
   // Functional colors
-  --ds-color-background: #{$color-background};
-  --ds-color-foreground: #{$color-foreground};
-  --ds-color-border: #{$color-border};
+  --vi-color-background: #{$color-background};
+  --vi-color-foreground: #{$color-foreground};
+  --vi-color-border: #{$color-border};
 
   // Spacing
-  --ds-spacing-xs: #{$spacing-xs};
-  --ds-spacing-sm: #{$spacing-sm};
-  --ds-spacing-md: #{$spacing-md};
-  --ds-spacing-lg: #{$spacing-lg};
-  --ds-spacing-xl: #{$spacing-xl};
-  --ds-spacing-2xl: #{$spacing-2xl};
-  --ds-spacing-3xl: #{$spacing-3xl};
+  --vi-spacing-xs: #{$spacing-xs};
+  --vi-spacing-sm: #{$spacing-sm};
+  --vi-spacing-md: #{$spacing-md};
+  --vi-spacing-lg: #{$spacing-lg};
+  --vi-spacing-xl: #{$spacing-xl};
+  --vi-spacing-2xl: #{$spacing-2xl};
+  --vi-spacing-3xl: #{$spacing-3xl};
 
   // Typography
-  --ds-font-family-base: #{$font-family-base};
-  --ds-font-family-mono: #{$font-family-mono};
-  --ds-font-size-xs: #{$font-size-xs};
-  --ds-font-size-sm: #{$font-size-sm};
-  --ds-font-size-base: #{$font-size-base};
-  --ds-font-size-lg: #{$font-size-lg};
-  --ds-font-size-xl: #{$font-size-xl};
-  --ds-font-size-2xl: #{$font-size-2xl};
-  --ds-font-size-3xl: #{$font-size-3xl};
+  --vi-font-family-base: #{$font-family-base};
+  --vi-font-family-mono: #{$font-family-mono};
+  --vi-font-size-xs: #{$font-size-xs};
+  --vi-font-size-sm: #{$font-size-sm};
+  --vi-font-size-base: #{$font-size-base};
+  --vi-font-size-lg: #{$font-size-lg};
+  --vi-font-size-xl: #{$font-size-xl};
+  --vi-font-size-2xl: #{$font-size-2xl};
+  --vi-font-size-3xl: #{$font-size-3xl};
+  --vi-font-weight-light: #{$font-weight-light};
+  --vi-font-weight-normal: #{$font-weight-normal};
+  --vi-font-weight-medium: #{$font-weight-medium};
+  --vi-font-weight-semibold: #{$font-weight-semibold};
+  --vi-font-weight-bold: #{$font-weight-bold};
+  --vi-line-height-tight: #{$line-height-tight};
+  --vi-line-height-normal: #{$line-height-normal};
+  --vi-line-height-relaxed: #{$line-height-relaxed};
 
   // Shadows
-  --ds-shadow-sm: #{$shadow-sm};
-  --ds-shadow-md: #{$shadow-md};
-  --ds-shadow-lg: #{$shadow-lg};
-  --ds-shadow-xl: #{$shadow-xl};
+  --vi-shadow-sm: #{$shadow-sm};
+  --vi-shadow-md: #{$shadow-md};
+  --vi-shadow-lg: #{$shadow-lg};
+  --vi-shadow-xl: #{$shadow-xl};
 
   // Borders
-  --ds-border-radius-sm: #{$border-radius-sm};
-  --ds-border-radius-md: #{$border-radius-md};
-  --ds-border-radius-lg: #{$border-radius-lg};
-  --ds-border-radius-xl: #{$border-radius-xl};
+  --vi-border-radius-sm: #{$border-radius-sm};
+  --vi-border-radius-md: #{$border-radius-md};
+  --vi-border-radius-lg: #{$border-radius-lg};
+  --vi-border-radius-xl: #{$border-radius-xl};
 }
