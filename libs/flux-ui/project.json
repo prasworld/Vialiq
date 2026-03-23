@@ -16,7 +16,7 @@
           "libs/flux-ui/README.md",
           {
             "input": "libs/flux-ui/src/styles",
-            "glob": "**/*.scss",
+            "glob": "_*.scss",
             "output": "styles"
           }
         ],
@@ -38,6 +38,7 @@
     },
     "build-css": {
       "executor": "nx:run-commands",
+      "dependsOn": ["build"],
       "options": {
         "commands": [
           "sass libs/flux-ui/src/styles/flux-ui.scss dist/libs/flux-ui/flux-ui.css --style=compressed --no-source-map"
@@ -51,9 +52,9 @@
       "options": {
         "commands": [
           "cp libs/flux-ui/publish-package.json dist/libs/flux-ui/package.json",
-          "cp dist/libs/flux-ui/src/index.d.ts dist/libs/flux-ui/index.d.ts",
-          "cp dist/libs/flux-ui/src/tokens/index.d.ts dist/libs/flux-ui/tokens/index.d.ts",
-          "cp dist/libs/flux-ui/src/styles/index.d.ts dist/libs/flux-ui/styles/index.d.ts"
+          "[ -f dist/libs/flux-ui/src/index.d.ts ] && cp dist/libs/flux-ui/src/index.d.ts dist/libs/flux-ui/index.d.ts || true",
+          "[ -f dist/libs/flux-ui/src/tokens/index.d.ts ] && cp dist/libs/flux-ui/src/tokens/index.d.ts dist/libs/flux-ui/tokens/index.d.ts || true",
+          "[ -f dist/libs/flux-ui/src/styles/index.d.ts ] && cp dist/libs/flux-ui/src/styles/index.d.ts dist/libs/flux-ui/styles/index.d.ts || true"
         ],
         "parallel": false
       },
