@@ -128,13 +128,13 @@ const value = tokens.spacing.md;  // IDE autocomplete, type checking
 
 ```css
 :root {
-  --ds-spacing-md: 24px;
-  --ds-color-primary: #0066cc;
+  --vi-spacing-md: 24px;
+  --vi-color-primary: #0066cc;
 }
 
 .button {
-  padding: var(--ds-spacing-md);
-  background: var(--ds-color-primary);
+  padding: var(--vi-spacing-md);
+  background: var(--vi-color-primary);
 }
 ```
 
@@ -144,7 +144,7 @@ const value = tokens.spacing.md;  // IDE autocomplete, type checking
 
 ```html
 <div class="m-md">Margin 24px</div>
-<div class="p-lg mx-auto">Padding 32px, centered</div>
+<div class="p-lg" style="margin-left: auto; margin-right: auto; width: max-content;">Padding 32px, centered</div>
 <div class="mt-sm mb-lg">Top margin 16px, bottom 32px</div>
 ```
 
@@ -181,18 +181,18 @@ document.documentElement.setAttribute('data-theme', 'dark');
 
 // Update CSS variables
 const root = document.documentElement;
-root.style.setProperty('--ds-color-primary', '#60a5fa');
+root.style.setProperty('--vi-color-primary', '#60a5fa');
 ```
 
 **SCSS:**
 
 ```scss
 :root {
-  --ds-color-background: #ffffff;
+  --vi-color-background: #ffffff;
 }
 
 :root[data-theme="dark"] {
-  --ds-color-background: #1f2937;
+  --vi-color-background: #1f2937;
 }
 ```
 

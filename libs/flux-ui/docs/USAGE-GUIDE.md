@@ -171,9 +171,9 @@ export class RemoteEntryComponent {
 import { tokens } from '@vi/flux-ui';
 
 // Type-safe token access
-const padding = tokens.spacing.md;        // 'var(--ds-spacing-md)'
-const color = tokens.colors.primary;      // 'var(--ds-color-primary)'
-const shadow = tokens.shadows.lg;         // 'var(--ds-shadow-lg)'
+const padding = tokens.spacing.md;        // 'var(--vi-spacing-md)'
+const color = tokens.colors.primary;      // 'var(--vi-color-primary)'
+const shadow = tokens.shadows.lg;         // 'var(--vi-shadow-lg)'
 
 // Usage in inline styles
 const style = {
@@ -200,10 +200,10 @@ const style = {
 
 ```css
 .button {
-  padding: var(--ds-spacing-sm) var(--ds-spacing-md);
-  background-color: var(--ds-color-primary);
-  border-radius: var(--ds-border-radius-md);
-  box-shadow: var(--ds-shadow-md);
+  padding: var(--vi-spacing-sm) var(--vi-spacing-md);
+  background-color: var(--vi-color-primary);
+  border-radius: var(--vi-border-radius-md);
+  box-shadow: var(--vi-shadow-md);
 }
 ```
 

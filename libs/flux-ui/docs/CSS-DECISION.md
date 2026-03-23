@@ -145,11 +145,13 @@ Remote2 MFE
 import { tokens } from '@vi/flux-ui';
 
 // Type-safe component code
-const buttonClasses = `px-${tokens.spacing.md}`;  // ✅ TS validates key
+type SpacingKey = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
+const spacingKey: SpacingKey = 'md';
+const buttonClasses = `px-${spacingKey}`;  // ✅ TS validates key
 
-// Also available as CSS variables
-const buttonStyle = { 
-  padding: tokens.spacing.md  // var(--vi-spacing-md)
+// Also available as CSS variables (runtime values)
+const buttonStyle = {
+  padding: tokens.spacing[spacingKey],  // var(--vi-spacing-md)
 };
 ```
 
