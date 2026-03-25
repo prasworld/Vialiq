@@ -1,8 +1,16 @@
 /**
- * CSS Variables & SCSS Variables
- * ==============================
- * Central source for all design system values in both CSS and SCSS.
- * CSS variables allow runtime theming, SCSS variables provide compile-time values.
+ * Design Tokens: SCSS Bridge Variables
+ * =====================================
+ * Pattern: $token: var(--vi-token, <compile-time-fallback>);
+ *
+ * SCSS variables emit var() at CSS level so runtime theming works.
+ * The hardcoded fallback is used by pre-processors, SSR, and unit tests.
+ *
+ * CSS custom property definitions (:root, scoped themes) live in the theming
+ * layer — this file is intentionally theme-agnostic.
+ *
+ * NOTE: Breakpoints and z-index stay as raw SCSS values — CSS custom properties
+ * are not supported inside @media queries or as integer math operands.
  */
 
 // Declare CSS layer order up-front so cascade is predictable regardless of
@@ -12,99 +20,369 @@
 @layer reset, components, utilities;
 
 // ============================================================================
-// COLOR TOKENS
+// SCSS BRIDGE VARIABLES
 // ============================================================================
 
-$color-primary: #0066cc;
-$color-secondary: #f0f4f8;
+// -- Palette: Grey  (Tailwind gray — UI chrome, text, borders) ---------------
 
-$color-success: #10b981;
-$color-warning: #f59e0b;
-$color-error: #ef4444;
-$color-info: #3b82f6;
+$color-grey-100: var(--vi-color-grey-100, #f3f4f6);
+$color-grey-200: var(--vi-color-grey-200, #e5e7eb);
+$color-grey-300: var(--vi-color-grey-300, #d1d5db);
+$color-grey-400: var(--vi-color-grey-400, #9ca3af);
+$color-grey-500: var(--vi-color-grey-500, #6b7280);
+$color-grey-600: var(--vi-color-grey-600, #4b5563);
+$color-grey-700: var(--vi-color-grey-700, #374151);
+$color-grey-800: var(--vi-color-grey-800, #1f2937);
+$color-grey-900: var(--vi-color-grey-900, #111827);
 
-// Neutral palette - 10 levels from light to dark
-$color-neutral-50: #f9fafb;
-$color-neutral-100: #f3f4f6;
-$color-neutral-200: #e5e7eb;
-$color-neutral-300: #d1d5db;
-$color-neutral-400: #9ca3af;
-$color-neutral-500: #6b7280;
-$color-neutral-600: #4b5563;
-$color-neutral-700: #374151;
-$color-neutral-800: #1f2937;
-$color-neutral-900: #111827;
+// -- Palette: Red  (Tailwind red) --------------------------------------------
 
-$color-background: #ffffff;
-$color-foreground: #111827;
-$color-border: #e5e7eb;
+$color-red-100: var(--vi-color-red-100, #fee2e2);
+$color-red-200: var(--vi-color-red-200, #fecaca);
+$color-red-300: var(--vi-color-red-300, #fca5a5);
+$color-red-400: var(--vi-color-red-400, #f87171);
+$color-red-500: var(--vi-color-red-500, #ef4444);
+$color-red-600: var(--vi-color-red-600, #dc2626);
+$color-red-700: var(--vi-color-red-700, #b91c1c);
+$color-red-800: var(--vi-color-red-800, #991b1b);
+$color-red-900: var(--vi-color-red-900, #7f1d1d);
 
-// Color map for loops
-$color-map: (
-  'primary': $color-primary,
-  'secondary': $color-secondary,
-  'success': $color-success,
-  'warning': $color-warning,
-  'error': $color-error,
-  'info': $color-info,
+// -- Palette: Yellow  (Tailwind yellow) --------------------------------------
+
+$color-yellow-100: var(--vi-color-yellow-100, #fef9c3);
+$color-yellow-200: var(--vi-color-yellow-200, #fef08a);
+$color-yellow-300: var(--vi-color-yellow-300, #fde047);
+$color-yellow-400: var(--vi-color-yellow-400, #facc15);
+$color-yellow-500: var(--vi-color-yellow-500, #eab308);
+$color-yellow-600: var(--vi-color-yellow-600, #ca8a04);
+$color-yellow-700: var(--vi-color-yellow-700, #a16207);
+$color-yellow-800: var(--vi-color-yellow-800, #854d0e);
+$color-yellow-900: var(--vi-color-yellow-900, #713f12);
+
+// -- Palette: Green  (Tailwind green) ----------------------------------------
+
+$color-green-100: var(--vi-color-green-100, #dcfce7);
+$color-green-200: var(--vi-color-green-200, #bbf7d0);
+$color-green-300: var(--vi-color-green-300, #86efac);
+$color-green-400: var(--vi-color-green-400, #4ade80);
+$color-green-500: var(--vi-color-green-500, #22c55e);
+$color-green-600: var(--vi-color-green-600, #16a34a);
+$color-green-700: var(--vi-color-green-700, #15803d);
+$color-green-800: var(--vi-color-green-800, #166534);
+$color-green-900: var(--vi-color-green-900, #14532d);
+
+// -- Palette: Blue  (Tailwind blue) ------------------------------------------
+
+$color-blue-100: var(--vi-color-blue-100, #dbeafe);
+$color-blue-200: var(--vi-color-blue-200, #bfdbfe);
+$color-blue-300: var(--vi-color-blue-300, #93c5fd);
+$color-blue-400: var(--vi-color-blue-400, #60a5fa);
+$color-blue-500: var(--vi-color-blue-500, #3b82f6);
+$color-blue-600: var(--vi-color-blue-600, #2563eb);
+$color-blue-700: var(--vi-color-blue-700, #1d4ed8);
+$color-blue-800: var(--vi-color-blue-800, #1e40af);
+$color-blue-900: var(--vi-color-blue-900, #1e3a8a);
+
+// -- Palette: Purple  (Tailwind purple) --------------------------------------
+
+$color-purple-100: var(--vi-color-purple-100, #f3e8ff);
+$color-purple-200: var(--vi-color-purple-200, #e9d5ff);
+$color-purple-300: var(--vi-color-purple-300, #d8b4fe);
+$color-purple-400: var(--vi-color-purple-400, #c084fc);
+$color-purple-500: var(--vi-color-purple-500, #a855f7);
+$color-purple-600: var(--vi-color-purple-600, #9333ea);
+$color-purple-700: var(--vi-color-purple-700, #7e22ce);
+$color-purple-800: var(--vi-color-purple-800, #6b21a8);
+$color-purple-900: var(--vi-color-purple-900, #581c87);
+
+// -- Semantic colors (brand + status) ----------------------------------------
+// These map named design intents onto palette values.
+
+$color-primary:   var(--vi-color-primary,   #0066cc);
+$color-secondary: var(--vi-color-secondary, #f0f4f8);
+$color-success:   var(--vi-color-success,   #22c55e);   // green-500
+$color-warning:   var(--vi-color-warning,   #eab308);   // yellow-500
+$color-error:     var(--vi-color-error,     #ef4444);   // red-500
+$color-info:      var(--vi-color-info,      #3b82f6);   // blue-500
+
+// -- Functional colors -------------------------------------------------------
+
+$color-background: var(--vi-color-background, #ffffff);
+$color-foreground: var(--vi-color-foreground, #111827);  // grey-900
+$color-border:     var(--vi-color-border,     #e5e7eb);  // grey-200
+
+// -- Primitive: Spacing ------------------------------------------------------
+
+$spacing-unit: var(--vi-spacing-unit, 8px);
+$spacing-xs:   var(--vi-spacing-xs,   8px);
+$spacing-sm:   var(--vi-spacing-sm,   16px);
+$spacing-md:   var(--vi-spacing-md,   24px);
+$spacing-lg:   var(--vi-spacing-lg,   32px);
+$spacing-xl:   var(--vi-spacing-xl,   40px);
+$spacing-2xl:  var(--vi-spacing-2xl,  48px);
+$spacing-3xl:  var(--vi-spacing-3xl,  56px);
+
+// -- Primitive: Typography ---------------------------------------------------
+
+$font-family-base: var(--vi-font-family-base, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+$font-family-mono: var(--vi-font-family-mono, 'Menlo', 'Monaco', 'Courier New', monospace);
+
+$font-size-xs:   var(--vi-font-size-xs,   12px);
+$font-size-sm:   var(--vi-font-size-sm,   14px);
+$font-size-base: var(--vi-font-size-base, 16px);
+$font-size-lg:   var(--vi-font-size-lg,   18px);
+$font-size-xl:   var(--vi-font-size-xl,   20px);
+$font-size-2xl:  var(--vi-font-size-2xl,  24px);
+$font-size-3xl:  var(--vi-font-size-3xl,  30px);
+
+$font-weight-light:    var(--vi-font-weight-light,    300);
+$font-weight-normal:   var(--vi-font-weight-normal,   400);
+$font-weight-medium:   var(--vi-font-weight-medium,   500);
+$font-weight-semibold: var(--vi-font-weight-semibold, 600);
+$font-weight-bold:     var(--vi-font-weight-bold,     700);
+
+$line-height-tight:   var(--vi-line-height-tight,   1.2);
+$line-height-normal:  var(--vi-line-height-normal,  1.5);
+$line-height-relaxed: var(--vi-line-height-relaxed, 1.75);
+
+// -- Primitive: Shadows ------------------------------------------------------
+
+$shadow-sm: var(--vi-shadow-sm, 0 1px 2px 0 rgba(0, 0, 0, 0.05));
+$shadow-md: var(--vi-shadow-md, 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06));
+$shadow-lg: var(--vi-shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05));
+$shadow-xl: var(--vi-shadow-xl, 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04));
+
+// -- Primitive: Borders ------------------------------------------------------
+
+$border-radius-sm: var(--vi-border-radius-sm, 2px);
+$border-radius-md: var(--vi-border-radius-md, 4px);
+$border-radius-lg: var(--vi-border-radius-lg, 8px);
+$border-radius-xl: var(--vi-border-radius-xl, 12px);
+
+$border-width-thin:  var(--vi-border-width-thin,  1px);
+$border-width-base:  var(--vi-border-width-base,  2px);
+$border-width-thick: var(--vi-border-width-thick, 4px);
+
+// -- Component tokens: Button ------------------------------------------------
+
+$button-primary-bg:        var(--vi-button-primary-bg,        #0066cc);
+$button-primary-bg-hover:  var(--vi-button-primary-bg-hover,  #0052a3);
+$button-primary-bg-active: var(--vi-button-primary-bg-active, #003d7a);
+$button-primary-text:      var(--vi-button-primary-text,      #ffffff);
+$button-primary-border:    var(--vi-button-primary-border,    #0066cc);
+
+$button-secondary-bg:       var(--vi-button-secondary-bg,       #f0f4f8);
+$button-secondary-bg-hover: var(--vi-button-secondary-bg-hover, #e5e7eb);  // grey-200
+$button-secondary-text:     var(--vi-button-secondary-text,     #111827);  // grey-900
+$button-secondary-border:   var(--vi-button-secondary-border,   #e5e7eb);  // grey-200
+
+$button-danger-bg:       var(--vi-button-danger-bg,       #ef4444);  // red-500
+$button-danger-bg-hover: var(--vi-button-danger-bg-hover, #dc2626);  // red-600
+$button-danger-text:     var(--vi-button-danger-text,     #ffffff);
+$button-danger-border:   var(--vi-button-danger-border,   #ef4444);  // red-500
+
+$button-padding-x:    var(--vi-button-padding-x,    24px);
+$button-padding-y:    var(--vi-button-padding-y,    8px);
+$button-border-radius: var(--vi-button-border-radius, 4px);
+$button-font-weight:  var(--vi-button-font-weight,  500);
+$button-font-size:    var(--vi-button-font-size,    14px);
+
+// -- Component tokens: Input -------------------------------------------------
+
+$input-bg:            var(--vi-input-bg,            #ffffff);
+$input-text:          var(--vi-input-text,          #111827);
+$input-border:        var(--vi-input-border,        #e5e7eb);
+$input-border-focus:  var(--vi-input-border-focus,  #0066cc);
+$input-border-error:  var(--vi-input-border-error,  #ef4444);
+$input-placeholder:   var(--vi-input-placeholder,   #9ca3af);  // grey-400
+$input-padding-x:     var(--vi-input-padding-x,     16px);
+$input-padding-y:     var(--vi-input-padding-y,     8px);
+$input-border-radius: var(--vi-input-border-radius, 4px);
+$input-font-size:     var(--vi-input-font-size,     16px);
+
+// -- Component tokens: Card --------------------------------------------------
+
+$card-bg:            var(--vi-card-bg,            #ffffff);
+$card-border:        var(--vi-card-border,        #e5e7eb);  // grey-200
+$card-border-radius: var(--vi-card-border-radius, 8px);
+$card-shadow:        var(--vi-card-shadow,        0 1px 2px 0 rgba(0, 0, 0, 0.05));
+$card-padding:       var(--vi-card-padding,       32px);
+
+// -- Component tokens: Badge -------------------------------------------------
+
+$badge-border-radius: var(--vi-badge-border-radius, 12px);
+$badge-font-size:     var(--vi-badge-font-size,     12px);
+$badge-font-weight:   var(--vi-badge-font-weight,   500);
+$badge-padding-x:     var(--vi-badge-padding-x,     8px);
+$badge-padding-y:     var(--vi-badge-padding-y,     4px);
+
+// ============================================================================
+// THEMEABLE TOKENS (set by vi-theme mixin)
+// ============================================================================
+// Pattern: $token-name: var(--vi-token-name, fallback);
+// Use these in component styles. Values are set by @include vi-theme() in theme layer.
+// Example: background-color: $layer-01; → resolves to theme-defined --vi-layer-01 value
+
+// -- Text colors
+$text-primary:         var(--vi-text-primary,         #{$color-grey-900});
+$text-secondary:       var(--vi-text-secondary,       #{$color-grey-700});
+$text-tertiary:        var(--vi-text-tertiary,        #{$color-grey-600});
+$text-inverse:         var(--vi-text-inverse,         #{$color-grey-100});
+$text-success:         var(--vi-text-success,         #{$color-green-700});
+$text-warning:         var(--vi-text-warning,         #{$color-yellow-800});
+$text-error:           var(--vi-text-error,           #{$color-red-700});
+$text-info:            var(--vi-text-info,            #{$color-blue-700});
+
+// -- Background colors
+$bg-primary:           var(--vi-bg-primary,           #{$color-grey-100});
+$bg-secondary:         var(--vi-bg-secondary,         #{$color-grey-200});
+$bg-tertiary:          var(--vi-bg-tertiary,          #{$color-grey-300});
+$bg-inverse:           var(--vi-bg-inverse,           #{$color-grey-900});
+$bg-success:           var(--vi-bg-success,           #e6f9f0);
+$bg-warning:           var(--vi-bg-warning,           #fff8e1);
+$bg-error:             var(--vi-bg-error,             #ffebee);
+$bg-info:              var(--vi-bg-info,              #e3f2fd);
+
+// -- Layers / depth
+$layer-01:             var(--vi-layer-01,             #{$color-grey-100});
+$layer-02:             var(--vi-layer-02,             #{$color-grey-200});
+$layer-03:             var(--vi-layer-03,             #{$color-grey-300});
+$layer-hover:          var(--vi-layer-hover,          #{$color-grey-200});
+$layer-active:         var(--vi-layer-active,         #{$color-grey-300});
+
+// -- Border colors
+$border-default:       var(--vi-border-default,       #{$color-grey-200});
+$border-strong:        var(--vi-border-strong,        #{$color-grey-300});
+$border-subtle:        var(--vi-border-subtle,        #{$color-grey-100});
+
+// -- Focus / interaction
+$focus-ring:           var(--vi-focus-ring,           #{$color-blue-500});
+
+// -- Component-specific
+$button-primary-bg:    var(--vi-button-primary-bg,    #{$color-blue-600});
+$button-primary-text:  var(--vi-button-primary-text,  #ffffff);
+$button-secondary-bg:  var(--vi-button-secondary-bg,  #{$color-grey-200});
+$button-secondary-text: var(--vi-button-secondary-text, #{$color-grey-900});
+$button-danger-bg:     var(--vi-button-danger-bg,     #{$color-red-600});
+$button-danger-text:   var(--vi-button-danger-text,   #ffffff);
+
+$input-bg:             var(--vi-input-bg,             #ffffff);
+$input-text:           var(--vi-input-text,           #{$color-grey-900});
+$input-border:         var(--vi-input-border,         #{$color-grey-200});
+$input-placeholder:    var(--vi-input-placeholder,    #{$color-grey-500});
+$input-focus-ring:     var(--vi-input-focus-ring,     #{$color-blue-500});
+
+$card-bg:              var(--vi-card-bg,              #ffffff);
+$card-border:          var(--vi-card-border,          #{$color-grey-200});
+
+// ============================================================================
+// SCSS MAPS  (for programmatic class generation via @each)
+// ============================================================================
+
+// Per-palette maps — used by the $palette-maps registry below.
+
+$color-grey-map: (
+  '100': $color-grey-100,
+  '200': $color-grey-200,
+  '300': $color-grey-300,
+  '400': $color-grey-400,
+  '500': $color-grey-500,
+  '600': $color-grey-600,
+  '700': $color-grey-700,
+  '800': $color-grey-800,
+  '900': $color-grey-900,
 );
 
-// ============================================================================
-// SPACING SYSTEM
-// ============================================================================
+$color-red-map: (
+  '100': $color-red-100,
+  '200': $color-red-200,
+  '300': $color-red-300,
+  '400': $color-red-400,
+  '500': $color-red-500,
+  '600': $color-red-600,
+  '700': $color-red-700,
+  '800': $color-red-800,
+  '900': $color-red-900,
+);
 
-$spacing-unit: 8px;
-$spacing-xs: calc($spacing-unit * 1);    // 8px
-$spacing-sm: calc($spacing-unit * 2);    // 16px
-$spacing-md: calc($spacing-unit * 3);    // 24px
-$spacing-lg: calc($spacing-unit * 4);    // 32px
-$spacing-xl: calc($spacing-unit * 5);    // 40px
-$spacing-2xl: calc($spacing-unit * 6);   // 48px
-$spacing-3xl: calc($spacing-unit * 7);   // 56px
+$color-yellow-map: (
+  '100': $color-yellow-100,
+  '200': $color-yellow-200,
+  '300': $color-yellow-300,
+  '400': $color-yellow-400,
+  '500': $color-yellow-500,
+  '600': $color-yellow-600,
+  '700': $color-yellow-700,
+  '800': $color-yellow-800,
+  '900': $color-yellow-900,
+);
+
+$color-green-map: (
+  '100': $color-green-100,
+  '200': $color-green-200,
+  '300': $color-green-300,
+  '400': $color-green-400,
+  '500': $color-green-500,
+  '600': $color-green-600,
+  '700': $color-green-700,
+  '800': $color-green-800,
+  '900': $color-green-900,
+);
+
+$color-blue-map: (
+  '100': $color-blue-100,
+  '200': $color-blue-200,
+  '300': $color-blue-300,
+  '400': $color-blue-400,
+  '500': $color-blue-500,
+  '600': $color-blue-600,
+  '700': $color-blue-700,
+  '800': $color-blue-800,
+  '900': $color-blue-900,
+);
+
+$color-purple-map: (
+  '100': $color-purple-100,
+  '200': $color-purple-200,
+  '300': $color-purple-300,
+  '400': $color-purple-400,
+  '500': $color-purple-500,
+  '600': $color-purple-600,
+  '700': $color-purple-700,
+  '800': $color-purple-800,
+  '900': $color-purple-900,
+);
+
+// Palette registry — loop over this in utilities to generate all shade classes
+// e.g. .text-grey-500, .bg-red-100, .text-purple-900
+$palette-maps: (
+  'grey':   $color-grey-map,
+  'red':    $color-red-map,
+  'yellow': $color-yellow-map,
+  'green':  $color-green-map,
+  'blue':   $color-blue-map,
+  'purple': $color-purple-map,
+);
+
+// Semantic map — used for .text-primary, .bg-success, etc.
+$color-map: (
+  'primary':   $color-primary,
+  'secondary': $color-secondary,
+  'success':   $color-success,
+  'warning':   $color-warning,
+  'error':     $color-error,
+  'info':      $color-info,
+);
 
 $spacing-map: (
-  'xs': $spacing-xs,
-  'sm': $spacing-sm,
-  'md': $spacing-md,
-  'lg': $spacing-lg,
-  'xl': $spacing-xl,
+  'xs':  $spacing-xs,
+  'sm':  $spacing-sm,
+  'md':  $spacing-md,
+  'lg':  $spacing-lg,
+  'xl':  $spacing-xl,
   '2xl': $spacing-2xl,
   '3xl': $spacing-3xl,
 );
-
-// ============================================================================
-// TYPOGRAPHY
-// ============================================================================
-
-$font-family-base: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
-$font-family-mono: 'Menlo', 'Monaco', 'Courier New', monospace;
-
-$font-size-xs: 12px;
-$font-size-sm: 14px;
-$font-size-base: 16px;
-$font-size-lg: 18px;
-$font-size-xl: 20px;
-$font-size-2xl: 24px;
-$font-size-3xl: 30px;
-
-$font-weight-light: 300;
-$font-weight-normal: 400;
-$font-weight-medium: 500;
-$font-weight-semibold: 600;
-$font-weight-bold: 700;
-
-$line-height-tight: 1.2;
-$line-height-normal: 1.5;
-$line-height-relaxed: 1.75;
-
-// ============================================================================
-// SHADOWS (Elevation system)
-// ============================================================================
-
-$shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-$shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-$shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-$shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 
 $shadow-map: (
   'sm': $shadow-sm,
@@ -113,135 +391,44 @@ $shadow-map: (
   'xl': $shadow-xl,
 );
 
-// ============================================================================
-// BORDERS
-// ============================================================================
-
-$border-radius-sm: 2px;
-$border-radius-md: 4px;
-$border-radius-lg: 8px;
-$border-radius-xl: 12px;
-
-$border-width-thin: 1px;
-$border-width-base: 2px;
-$border-width-thick: 4px;
-
-// ============================================================================
-// RESPONSIVE BREAKPOINTS (Mobile First)
-// ============================================================================
-
-$breakpoint-xs: 0;
-$breakpoint-sm: 640px;
-$breakpoint-md: 768px;
-$breakpoint-lg: 1024px;
-$breakpoint-xl: 1280px;
+// Raw values — CSS custom properties are not valid in @media queries
+$breakpoint-xs:  0;
+$breakpoint-sm:  640px;
+$breakpoint-md:  768px;
+$breakpoint-lg:  1024px;
+$breakpoint-xl:  1280px;
 $breakpoint-2xl: 1536px;
 
 $breakpoint-map: (
-  'xs': $breakpoint-xs,
-  'sm': $breakpoint-sm,
-  'md': $breakpoint-md,
-  'lg': $breakpoint-lg,
-  'xl': $breakpoint-xl,
+  'xs':  $breakpoint-xs,
+  'sm':  $breakpoint-sm,
+  'md':  $breakpoint-md,
+  'lg':  $breakpoint-lg,
+  'xl':  $breakpoint-xl,
   '2xl': $breakpoint-2xl,
 );
 
-// ============================================================================
-// Z-INDEX SCALE
-// ============================================================================
-
-$z-index-hide: -1;
-$z-index-auto: auto;
-$z-index-base: 0;
+// Raw integers — used as z-index values (integer arithmetic context)
+$z-index-hide:     -1;
+$z-index-auto:     auto;
+$z-index-base:     0;
 $z-index-dropdown: 1000;
-$z-index-sticky: 1020;
-$z-index-fixed: 1030;
+$z-index-sticky:   1020;
+$z-index-fixed:    1030;
 $z-index-backdrop: 1040;
-$z-index-modal: 1050;
-$z-index-popover: 1060;
-$z-index-tooltip: 1070;
+$z-index-modal:    1050;
+$z-index-popover:  1060;
+$z-index-tooltip:  1070;
 
 $z-index-map: (
-  'hide': $z-index-hide,
-  'auto': $z-index-auto,
-  'base': $z-index-base,
+  'hide':     $z-index-hide,
+  'auto':     $z-index-auto,
+  'base':     $z-index-base,
   'dropdown': $z-index-dropdown,
-  'sticky': $z-index-sticky,
-  'fixed': $z-index-fixed,
+  'sticky':   $z-index-sticky,
+  'fixed':    $z-index-fixed,
   'backdrop': $z-index-backdrop,
-  'modal': $z-index-modal,
-  'popover': $z-index-popover,
-  'tooltip': $z-index-tooltip,
+  'modal':    $z-index-modal,
+  'popover':  $z-index-popover,
+  'tooltip':  $z-index-tooltip,
 );
-
-// ============================================================================
-// CSS CUSTOM PROPERTIES
-// ============================================================================
-// These are exported to CSS so components can access them at runtime
-
-:root {
-  // Colors
-  --vi-color-primary: #{$color-primary};
-  --vi-color-secondary: #{$color-secondary};
-  --vi-color-success: #{$color-success};
-  --vi-color-warning: #{$color-warning};
-  --vi-color-error: #{$color-error};
-  --vi-color-info: #{$color-info};
-
-  // Neutral palette
-  --vi-color-neutral-50: #{$color-neutral-50};
-  --vi-color-neutral-100: #{$color-neutral-100};
-  --vi-color-neutral-200: #{$color-neutral-200};
-  --vi-color-neutral-300: #{$color-neutral-300};
-  --vi-color-neutral-400: #{$color-neutral-400};
-  --vi-color-neutral-500: #{$color-neutral-500};
-  --vi-color-neutral-600: #{$color-neutral-600};
-  --vi-color-neutral-700: #{$color-neutral-700};
-  --vi-color-neutral-800: #{$color-neutral-800};
-  --vi-color-neutral-900: #{$color-neutral-900};
-
-  // Functional colors
-  --vi-color-background: #{$color-background};
-  --vi-color-foreground: #{$color-foreground};
-  --vi-color-border: #{$color-border};
-
-  // Spacing
-  --vi-spacing-xs: #{$spacing-xs};
-  --vi-spacing-sm: #{$spacing-sm};
-  --vi-spacing-md: #{$spacing-md};
-  --vi-spacing-lg: #{$spacing-lg};
-  --vi-spacing-xl: #{$spacing-xl};
-  --vi-spacing-2xl: #{$spacing-2xl};
-  --vi-spacing-3xl: #{$spacing-3xl};
-
-  // Typography
-  --vi-font-family-base: #{$font-family-base};
-  --vi-font-family-mono: #{$font-family-mono};
-  --vi-font-size-xs: #{$font-size-xs};
-  --vi-font-size-sm: #{$font-size-sm};
-  --vi-font-size-base: #{$font-size-base};
-  --vi-font-size-lg: #{$font-size-lg};
-  --vi-font-size-xl: #{$font-size-xl};
-  --vi-font-size-2xl: #{$font-size-2xl};
-  --vi-font-size-3xl: #{$font-size-3xl};
-  --vi-font-weight-light: #{$font-weight-light};
-  --vi-font-weight-normal: #{$font-weight-normal};
-  --vi-font-weight-medium: #{$font-weight-medium};
-  --vi-font-weight-semibold: #{$font-weight-semibold};
-  --vi-font-weight-bold: #{$font-weight-bold};
-  --vi-line-height-tight: #{$line-height-tight};
-  --vi-line-height-normal: #{$line-height-normal};
-  --vi-line-height-relaxed: #{$line-height-relaxed};
-
-  // Shadows
-  --vi-shadow-sm: #{$shadow-sm};
-  --vi-shadow-md: #{$shadow-md};
-  --vi-shadow-lg: #{$shadow-lg};
-  --vi-shadow-xl: #{$shadow-xl};
-
-  // Borders
-  --vi-border-radius-sm: #{$border-radius-sm};
-  --vi-border-radius-md: #{$border-radius-md};
-  --vi-border-radius-lg: #{$border-radius-lg};
-  --vi-border-radius-xl: #{$border-radius-xl};
-}

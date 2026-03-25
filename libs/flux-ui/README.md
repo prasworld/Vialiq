@@ -60,10 +60,16 @@ const buttonStyle = {
 
 ## Documentation
 
-- **[CSS-DECISION.md](./docs/CSS-DECISION.md)** - Why we chose a custom framework
+### Strategic & Planning
+- **[QUICK-COMPARISON.md](./docs/QUICK-COMPARISON.md)** ⭐ Decision matrix for framework comparison
+- **[FRAMEWORK-COMPARISON.md](./docs/FRAMEWORK-COMPARISON.md)** - Detailed comparison with Bootstrap, Tailwind, Material, etc.
+- **[COMPONENT-LAYER-ROADMAP.md](./docs/COMPONENT-LAYER-ROADMAP.md)** - Web Components implementation strategy & timelines
+
+### Technical Reference
 - **[ARCHITECTURE.md](./docs/ARCHITECTURE.md)** - Technical deep dive
-- **[USAGE-GUIDE.md](./docs/USAGE-GUIDE.md)** - How to use in your apps
 - **[TOKEN-SPEC.md](./docs/TOKEN-SPEC.md)** - Complete token reference
+- **[CSS-DECISION.md](./docs/CSS-DECISION.md)** - Why we chose a custom framework
+- **[USAGE-GUIDE.md](./docs/USAGE-GUIDE.md)** - How to use in your apps
 
 ## Architecture
 

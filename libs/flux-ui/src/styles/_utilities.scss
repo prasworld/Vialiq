@@ -174,28 +174,19 @@
     }
   }
 
-  // Neutral colors
-  .text-neutral-50 { color: $color-neutral-50; }
-  .text-neutral-100 { color: $color-neutral-100; }
-  .text-neutral-200 { color: $color-neutral-200; }
-  .text-neutral-300 { color: $color-neutral-300; }
-  .text-neutral-400 { color: $color-neutral-400; }
-  .text-neutral-500 { color: $color-neutral-500; }
-  .text-neutral-600 { color: $color-neutral-600; }
-  .text-neutral-700 { color: $color-neutral-700; }
-  .text-neutral-800 { color: $color-neutral-800; }
-  .text-neutral-900 { color: $color-neutral-900; }
+  // Palette shades: grey, red, yellow, green, blue, purple — 100–900
+  // Generates .text-{palette}-{shade} and .bg-{palette}-{shade} for all palettes.
+  @each $palette-name, $palette in $palette-maps {
+    @each $shade, $value in $palette {
+      .text-#{$palette-name}-#{$shade} {
+        color: $value;
+      }
 
-  .bg-neutral-50 { background-color: $color-neutral-50; }
-  .bg-neutral-100 { background-color: $color-neutral-100; }
-  .bg-neutral-200 { background-color: $color-neutral-200; }
-  .bg-neutral-300 { background-color: $color-neutral-300; }
-  .bg-neutral-400 { background-color: $color-neutral-400; }
-  .bg-neutral-500 { background-color: $color-neutral-500; }
-  .bg-neutral-600 { background-color: $color-neutral-600; }
-  .bg-neutral-700 { background-color: $color-neutral-700; }
-  .bg-neutral-800 { background-color: $color-neutral-800; }
-  .bg-neutral-900 { background-color: $color-neutral-900; }
+      .bg-#{$palette-name}-#{$shade} {
+        background-color: $value;
+      }
+    }
+  }
 
   // ============================================================================
   // SHADOWS
