@@ -1,6 +1,7 @@
 {
   "name": "@vi/state-fp",
   "version": "0.5.0",
+  "type": "module",
   "description": "Modular CQRS functional state management — composable, lightweight, zero-dependency",
   "keywords": [
     "state-management",
@@ -18,6 +19,46 @@
     "react"
   ],
   "license": "MIT",
-  "type": "module",
-  "types": "./index.d.ts"
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./core": {
+      "types": "./dist/core/index.d.ts",
+      "default": "./dist/core/index.js"
+    },
+    "./kernel": {
+      "types": "./dist/kernel/index.d.ts",
+      "default": "./dist/kernel/index.js"
+    },
+    "./storage": {
+      "types": "./dist/storage/index.d.ts",
+      "default": "./dist/storage/index.js"
+    },
+    "./sync": {
+      "types": "./dist/sync/index.d.ts",
+      "default": "./dist/sync/index.js"
+    },
+    "./devtools": {
+      "types": "./dist/devtools/index.d.ts",
+      "default": "./dist/devtools/index.js"
+    },
+    "./adapter": {
+      "types": "./dist/adapter/index.d.ts",
+      "default": "./dist/adapter/index.js"
+    },
+    "./bus": {
+      "types": "./dist/bus/index.d.ts",
+      "default": "./dist/bus/index.js"
+    }
+  },
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.d.ts",
+    "dist/README.md",
+    "dist/package.json"
+  ]
 }
