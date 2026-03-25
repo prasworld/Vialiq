@@ -27,7 +27,16 @@
         ],
         "tsConfig": "libs/automapper/tsconfig.lib.json",
         "assets": ["libs/*.md"],
-        "format": ["esm"]
+        "format": ["esm"],
+        "thirdPartySourcemaps": false
+      },
+      "configurations": {
+        "production": {
+          "minify": true,
+          "sourceMap": false,
+          "thirdPartySourcemaps": false,
+          "optimization": true
+        }
       }
     },
     "postbuild-publish": {

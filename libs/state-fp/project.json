@@ -14,6 +14,7 @@
         "tsConfig": "libs/state-fp/tsconfig.lib.json",
         "assets": ["libs/state-fp/README.md"],
         "format": ["esm"],
+        "thirdPartySourcemaps": false,
         "additionalEntryPoints": [
           "libs/state-fp/src/core/index.ts",
           "libs/state-fp/src/kernel/index.ts",
@@ -23,6 +24,14 @@
           "libs/state-fp/src/adapter/index.ts",
           "libs/state-fp/src/bus/index.ts"
         ]
+      },
+      "configurations": {
+        "production": {
+          "minify": true,
+          "sourceMap": false,
+          "thirdPartySourcemaps": false,
+          "optimization": true
+        }
       }
     },
     "postbuild-publish": {

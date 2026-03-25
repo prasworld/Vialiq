@@ -9,8 +9,8 @@
 
   Implementation notes:
   - Runs `npx nx build automapper` from the repository root (detected by finding package.json upwards).
-  - Copies `libs/automapper/publish-package.json` into `dist/libs/automapper/package.json` if present;
-    otherwise falls back to `libs/automapper/package.json`.
+  - Copies `libs/automapper/publish-package.json` into `dist/libs/automapper/package.json`;
+    hard-fails if publish-package.json is absent so a broken package can never be produced silently.
   - If `--pack` is passed, runs `npm pack` inside `dist/libs/automapper`.
   - If `--publish` is passed, runs `npm publish --access public` inside `dist/libs/automapper`.
 */
@@ -66,33 +66,15 @@ async function main() {
   }
 
   const publishPkgPath = path.join(repoRoot, 'libs', 'automapper', 'publish-package.json');
-  const fallbackPkgPath = path.join(repoRoot, 'libs', 'automapper', 'package.json');
   const targetPkgPath = path.join(distDir, 'package.json');
 
-  let srcPkg = null;
-  if (fs.existsSync(publishPkgPath)) {
-    srcPkg = publishPkgPath;
-    console.log(`Using publish-package.json at ${publishPkgPath}`);
-  } else if (fs.existsSync(fallbackPkgPath)) {
-    srcPkg = fallbackPkgPath;
-    console.log(`publish-package.json not found, using libs/automapper/package.json at ${fallbackPkgPath}`);
-  } else {
-    console.warn('No publish-package.json or libs/automapper/package.json found. Creating minimal package.json.');
+  if (!fs.existsSync(publishPkgPath)) {
+    console.error(`publish-package.json not found at ${publishPkgPath}. Cannot produce a valid dist package.`);
+    process.exit(1);
   }
 
-  if (srcPkg) {
-    fs.copyFileSync(srcPkg, targetPkgPath);
-    console.log(`Copied ${srcPkg} -> ${targetPkgPath}`);
-  } else {
-    // Minimal fallback package.json
-    const minimal = {
-      name: '@vi/automapper',
-      version: '0.0.0-development',
-      description: 'Automapper library (auto-generated package.json)',
-    };
-    fs.writeFileSync(targetPkgPath, JSON.stringify(minimal, null, 2), 'utf8');
-    console.log(`Wrote minimal package.json to ${targetPkgPath}`);
-  }
+  fs.copyFileSync(publishPkgPath, targetPkgPath);
+  console.log(`Copied ${publishPkgPath} -> ${targetPkgPath}`);
 
   // 3) Optionally pack
   if (doPack) {
