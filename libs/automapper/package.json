@@ -3,40 +3,5 @@
   "version": "0.0.1",
   "type": "module",
   "description": "Lightweight object mapping and transformation library",
-  "license": "MIT",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
-    },
-    "./angular": {
-      "types": "./dist/angular.d.ts",
-      "default": "./dist/angular.js"
-    },
-    "./zod": {
-      "types": "./dist/zod.d.ts",
-      "default": "./dist/zod.js"
-    },
-    "./orm": {
-      "types": "./dist/orm.d.ts",
-      "default": "./dist/orm.js"
-    },
-    "./fetch-adapter": {
-      "types": "./dist/fetch-adapter.d.ts",
-      "default": "./dist/fetch-adapter.js"
-    },
-    "./deep-clone": {
-      "types": "./dist/deep-clone.d.ts",
-      "default": "./dist/deep-clone.js"
-    }
-  },
-  "files": [
-    "dist/**/*.js",
-    "dist/**/*.d.ts",
-    "dist/LICENSE",
-    "dist/README.md",
-    "dist/package.json"
-  ]
+  "license": "MIT"
 }
