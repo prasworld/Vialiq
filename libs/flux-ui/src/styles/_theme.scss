@@ -1,0 +1,175 @@
+/**
+ * Theme System
+ * ============
+ * Themeable tokens as composable SCSS maps + vi-theme() mixin.
+ * 
+ * Pattern:
+ *   1. Define theme maps (e.g. $vi-theme--light, $vi-theme--dark)
+ *   2. Call @include vi-theme($theme-map) inside a selector
+ *   3. Mixin emits CSS custom properties for each token in the map
+ * 
+ * Usage:
+ *   :root {
+ *     @include vi-theme($vi-theme--light, $emit-custom-properties: true);
+ *   }
+ * 
+ *   [data-theme="dark"] {
+ *     @include vi-theme($vi-theme--dark, $emit-custom-properties: true, $emit-difference: true);
+ *   }
+ */
+
+@use 'sass:map';
+@use './variables' as *;
+
+// ============================================================================
+// LIGHT THEME
+// ============================================================================
+// Comprehensive token map for light theme.
+// Keys are token names; values are references to palette variables from _variables.scss
+
+$vi-theme--light: (
+  // Text colors
+  'text-primary':           $color-grey-900,
+  'text-secondary':         $color-grey-700,
+  'text-tertiary':          $color-grey-600,
+  'text-inverse':           $color-grey-100,
+  'text-success':           $color-green-700,
+  'text-warning':           $color-yellow-800,
+  'text-error':             $color-red-700,
+  'text-info':              $color-blue-700,
+
+  // Background colors
+  'bg-primary':             $color-grey-100,
+  'bg-secondary':           $color-grey-200,
+  'bg-tertiary':            $color-grey-300,
+  'bg-inverse':             $color-grey-900,
+  'bg-success':             #e6f9f0,
+  'bg-warning':             #fff8e1,
+  'bg-error':               #ffebee,
+  'bg-info':                #e3f2fd,
+
+  // Layer/depth
+  'layer-01':               $color-grey-100,      // Surface
+  'layer-02':               $color-grey-200,      // Raised
+  'layer-03':               $color-grey-300,      // Elevated
+  'layer-hover':            $color-grey-200,
+  'layer-active':           $color-grey-300,
+
+  // Border colors
+  'border-default':         $color-grey-200,
+  'border-strong':          $color-grey-300,
+  'border-subtle':          $color-grey-100,
+
+  // Focus/interaction
+  'focus-ring':             $color-blue-500,
+  'hover-overlay':          rgba(0, 0, 0, 0.04),
+  'active-overlay':         rgba(0, 0, 0, 0.08),
+
+  // Component-specific
+  'button-primary-bg':      $color-blue-600,
+  'button-primary-text':    #ffffff,
+  'button-secondary-bg':    $color-grey-200,
+  'button-secondary-text':  $color-grey-900,
+  'button-danger-bg':       $color-red-600,
+  'button-danger-text':     #ffffff,
+
+  'input-bg':               #ffffff,
+  'input-text':             $color-grey-900,
+  'input-border':           $color-grey-200,
+  'input-placeholder':      $color-grey-500,
+  'input-focus-ring':       $color-blue-500,
+
+  'card-bg':                #ffffff,
+  'card-border':            $color-grey-200,
+);
+
+// ============================================================================
+// DARK THEME
+// ============================================================================
+// Inherits from light theme; overrides tokens for dark adaptation.
+
+$vi-theme--dark: map.merge($vi-theme--light, (
+  // Text colors — inverted
+  'text-primary':           $color-grey-100,
+  'text-secondary':         $color-grey-300,
+  'text-tertiary':          $color-grey-400,
+  'text-inverse':           $color-grey-900,
+
+  // Background colors — dark
+  'bg-primary':             $color-grey-900,
+  'bg-secondary':           $color-grey-800,
+  'bg-tertiary':            $color-grey-700,
+  'bg-inverse':             $color-grey-100,
+
+  // Layer/depth
+  'layer-01':               $color-grey-900,
+  'layer-02':               $color-grey-800,
+  'layer-03':               $color-grey-700,
+  'layer-hover':            $color-grey-800,
+  'layer-active':           $color-grey-700,
+
+  // Border colors — lighter for contrast
+  'border-default':         $color-grey-700,
+  'border-strong':          $color-grey-600,
+  'border-subtle':          $color-grey-800,
+
+  // Focus/interaction — adapted
+  'focus-ring':             $color-blue-400,
+  'hover-overlay':          rgba(255, 255, 255, 0.04),
+  'active-overlay':         rgba(255, 255, 255, 0.08),
+
+  // Component-specific
+  'button-primary-text':    #ffffff,
+  'button-secondary-bg':    $color-grey-700,
+  'button-secondary-text':  $color-grey-100,
+  'button-danger-text':     #ffffff,
+
+  'input-bg':               $color-grey-800,
+  'input-text':             $color-grey-100,
+  'input-border':           $color-grey-700,
+  'input-placeholder':      $color-grey-500,
+
+  'card-bg':                $color-grey-900,
+  'card-border':            $color-grey-800,
+));
+
+// ============================================================================
+// VI-THEME MIXIN
+// ============================================================================
+/**
+ * Apply a theme by setting SCSS variables and optionally emitting CSS custom properties.
+ * 
+ * Parameters:
+ *   $theme                   — Theme token map (e.g., $vi-theme--light)
+ *   $emit-custom-properties  — (default: false) Emit CSS custom properties (--vi-*)
+ *   $emit-difference         — (default: false) Only emit tokens differing from $vi-theme--light
+ *   $parent-theme            — (optional) Explicit parent for diff comparison (default: $vi-theme--light)
+ */
+
+@mixin vi-theme(
+  $theme,
+  $emit-custom-properties: false,
+  $emit-difference: false,
+  $parent-theme: $vi-theme--light
+) {
+  @each $token-key, $token-value in $theme {
+    // Only emit CSS custom properties if requested
+    @if $emit-custom-properties {
+      // Check if we should emit based on emit-difference flag
+      $should-emit: true;
+
+      @if $emit-difference {
+        $parent-value: map.get($parent-theme, $token-key);
+        @if $parent-value == $token-value {
+          $should-emit: false;
+        }
+      }
+
+      @if $should-emit {
+        // Emit: --vi-text-primary: var(--vi-color-grey-900, #111827);
+        // (where $token-value = $color-grey-900 from _variables.scss)
+        --vi-#{$token-key}: #{$token-value};
+      }
+    }
+  }
+}
