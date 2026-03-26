@@ -131,7 +131,7 @@ $fontBase: $font-size-base;                  // var(--vi-font-size-base, 16px)
   --vi-color-primary: #0066cc;
   --vi-spacing-md: 24px;
   --vi-font-size-lg: 18px;
-  /* ... 150+ total properties */
+  /* ... ~98 total properties */
 }
 
 .my-element {
@@ -186,7 +186,7 @@ function App() {
   return (
     <div style={{ color: tokens.colors.primary }}>
       <h1 className="text-3xl font-bold">Welcome</h1>
-      <button className="bg-primary text-white p-md rounded-md">
+      <button className="bg-primary text-grey-100 p-md rounded-md">
         Click Me
       </button>
     </div>
@@ -294,7 +294,7 @@ Pre-built CSS classes for common styling patterns.
 ```html
 <!-- Semantic colors -->
 <div class="text-primary">Primary text</div>
-<div class="bg-success text-white">Success background</div>
+<div class="bg-success text-grey-100">Success background</div>
 <div class="border-error">Error border</div>
 
 <!-- Palette colors -->
@@ -343,12 +343,12 @@ Pre-built CSS classes for common styling patterns.
 
 ```html
 <!-- Button -->
-<button class="px-md py-sm bg-primary text-white font-semibold rounded-md shadow-md hover:opacity-90">
+<button class="px-md py-sm bg-primary text-grey-100 font-semibold rounded-md shadow-md">
   Click Me
 </button>
 
 <!-- Card -->
-<div class="bg-white border-thin border-neutral-300 rounded-lg p-lg shadow-md">
+<div class="bg-grey-100 border-thin border-neutral-300 rounded-lg p-lg shadow-md">
   <h2 class="text-2xl font-bold text-primary mb-md">Card Title</h2>
   <p class="text-neutral-600 leading-relaxed">Card content goes here...</p>
 </div>
@@ -356,7 +356,7 @@ Pre-built CSS classes for common styling patterns.
 <!-- Form Input -->
 <div class="flex flex-col gap-sm">
   <label class="text-sm font-medium text-foreground">Email</label>
-  <input class="border-thin border-neutral-300 rounded-md px-md py-sm text-base focus:ring-2 focus:ring-blue-500" />
+  <input class="border-thin border-neutral-300 rounded-md px-md py-sm text-base" />
 </div>
 
 <!-- Grid Layout -->
@@ -786,7 +786,7 @@ Choose the pattern that best fits your use case.
 <!-- Now all utilities available via classes -->
 <div class="flex justify-center items-center gap-md p-lg">
   <h1 class="text-3xl font-bold text-primary">Hello</h1>
-  <button class="px-md py-sm bg-success text-white rounded-md">
+  <button class="px-md py-sm bg-success text-grey-100 rounded-md">
     Action
   </button>
 </div>

@@ -25,7 +25,7 @@ Flux UI is a **production-ready, lightweight CSS/SASS framework** for microfront
 | **Total Token Count** | ✅ **150+** | Across CSS, SCSS, TypeScript |
 
 **Export Formats:**
-- ✅ CSS Custom Properties (:root block, 282+ properties)
+- ✅ CSS Custom Properties (:root block, ~98 properties)
 - ✅ SCSS Bridge Variables (with fallbacks: `$token: var(--vi-token, fallback)`)
 - ✅ TypeScript Constants (fully typed, IDE autocomplete)
 
@@ -41,7 +41,7 @@ Flux UI is a **production-ready, lightweight CSS/SASS framework** for microfront
 **Post-Build Statistics:**
 - **Total CSS Output:** 29 KB uncompressed, ~8 KB gzipped
 - **Utility Count:** 400-500 individual classes
-- **CSS Custom Properties:** 282+ in :root
+- **CSS Custom Properties:** ~98 in :root
 - **Compilation Status:** ✅ All layers present (reset → components → utilities)
 
 **Complete Utility Coverage:**
@@ -417,7 +417,7 @@ Type Definitions: ✅ COMPLETE
 
 ```css
 :root {
-  /* Colors: 282+ properties */
+  /* Colors: ~63 properties (palettes + semantic + functional) */
   --vi-color-primary: #0066cc;
   --vi-color-grey-100: #f3f4f6;
   /* ... all palettes + semantic + functional */

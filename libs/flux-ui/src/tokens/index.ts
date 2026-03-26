@@ -193,7 +193,8 @@ export const tokens = {
   /**
    * BREAKPOINT TOKENS
    * Responsive design breakpoints (raw pixel values, not CSS vars)
-   * Use in @media queries: @media (min-width: #{tokens.breakpoints.sm})
+   * Use in a JS template literal: `@media (min-width: ${tokens.breakpoints.sm})`
+   * Use in plain CSS: @media (min-width: 640px)
    */
   breakpoints: {
     xs: '0',
@@ -207,7 +208,7 @@ export const tokens = {
   /**
    * Z-INDEX TOKENS
    * Stacking context levels (raw integers, not CSS vars)
-   * Use in CSS: z-index: #{tokens.zIndex.modal}
+   * Use in CSS: z-index: tokens.zIndex.modal (e.g. 1050)
    */
   zIndex: {
     hide: -1,

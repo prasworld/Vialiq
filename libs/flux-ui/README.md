@@ -54,8 +54,8 @@ yarn add @vi/flux-ui
 
 // Now all utilities available:
 // - Classes: .p-md, .text-lg, .bg-primary, .flex, .gap-sm, etc.
-// - Mixins: @include vi-theme($vi-theme--light);
 // - Variables: $spacing-md, $color-primary, $font-size-base, etc.
+// - Theming: @use '@vi/flux-ui/styles/theme' as theme; then @include theme.vi-theme(theme.$vi-theme--light, $emit-custom-properties: true);
 ```
 
 **Advantages:**
@@ -69,9 +69,10 @@ yarn add @vi/flux-ui
 ```scss
 // button.component.scss
 @use '@vi/flux-ui/styles/variables' as *;
+@use '@vi/flux-ui/styles/theme' as theme;
 
 :host {
-  @include vi-theme($vi-theme--light, $emit-custom-properties: false);
+  @include theme.vi-theme(theme.$vi-theme--light, $emit-custom-properties: true);
 }
 
 .button {
@@ -97,7 +98,7 @@ yarn add @vi/flux-ui
 <!-- Now all utilities available via classes -->
 <div class="flex justify-center items-center gap-md p-lg">
   <h1 class="text-3xl font-bold text-primary">Hello</h1>
-  <button class="px-md py-sm bg-success text-white rounded-md">Action</button>
+  <button class="px-md py-sm bg-success text-grey-100 rounded-md">Action</button>
 </div>
 ```
 
@@ -163,7 +164,7 @@ const buttonStyle = {
 ```html
 <div class="flex justify-between items-center gap-md p-lg">
   <h1 class="text-2xl font-bold">Title</h1>
-  <button class="bg-primary text-white rounded-md">Action</button>
+  <button class="bg-primary text-grey-100 rounded-md">Action</button>
 </div>
 ```
 
@@ -295,7 +296,7 @@ const value = tokens.spacing.md;  // IDE autocomplete, type checking
 
 ```html
 <p class="text-primary">Colored text</p>
-<div class="bg-success text-white">Success state</div>
+<div class="bg-success text-grey-100">Success state</div>
 <div class="border-lg border-error">Error border</div>
 ```
 
