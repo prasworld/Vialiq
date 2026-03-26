@@ -16,6 +16,8 @@
     "baseUrl": ".",
     "paths": {
       "remote1/Routes": ["apps/remote1/src/app/remote-entry/entry.routes.ts"],
+      "@vi/flux-ui": ["libs/flux-ui/src/index.ts"],
+      "@vi/flux-ui/styles": ["libs/flux-ui/src/styles/index.ts"],
       "@vi/automapper": ["libs/automapper/src/index.ts"],
       "@vi/automapper/angular": ["libs/automapper/src/angular.ts"],
       "@vi/automapper/zod": ["libs/automapper/src/zod.ts"],

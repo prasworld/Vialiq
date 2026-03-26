@@ -1,0 +1,72 @@
+{
+  "name": "flux-ui",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "libs/flux-ui/src",
+  "prefix": "ui",
+  "targets": {
+    "build": {
+      "executor": "@nx/esbuild:esbuild",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/flux-ui",
+        "main": "libs/flux-ui/src/index.ts",
+        "tsConfig": "libs/flux-ui/tsconfig.lib.json",
+        "assets": [
+          "libs/flux-ui/README.md",
+          {
+            "input": "libs/flux-ui/src/styles",
+            "glob": "_*.scss",
+            "output": "styles"
+          }
+        ],
+        "format": ["esm"],
+        "thirdPartySourcemaps": false,
+        "additionalEntryPoints": [
+          "libs/flux-ui/src/tokens/index.ts",
+          "libs/flux-ui/src/styles/index.ts"
+        ]
+      },
+      "configurations": {
+        "production": {
+          "minify": true,
+          "sourceMap": false,
+          "thirdPartySourcemaps": false,
+          "optimization": true
+        }
+      }
+    },
+    "build-css": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["build"],
+      "options": {
+        "commands": [
+          "sass libs/flux-ui/src/styles/flux-ui.scss dist/libs/flux-ui/flux-ui.css --style=compressed --no-source-map"
+        ]
+      },
+      "outputs": ["{workspaceRoot}/dist/libs/flux-ui/flux-ui.css"]
+    },
+    "postbuild-publish": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["build", "build-css"],
+      "options": {
+        "commands": [
+          "cp libs/flux-ui/publish-package.json dist/libs/flux-ui/package.json",
+          "[ -f dist/libs/flux-ui/src/index.d.ts ] && cp dist/libs/flux-ui/src/index.d.ts dist/libs/flux-ui/index.d.ts || true",
+          "[ -f dist/libs/flux-ui/src/tokens/index.d.ts ] && cp dist/libs/flux-ui/src/tokens/index.d.ts dist/libs/flux-ui/tokens/index.d.ts || true",
+          "[ -f dist/libs/flux-ui/src/styles/index.d.ts ] && cp dist/libs/flux-ui/src/styles/index.d.ts dist/libs/flux-ui/styles/index.d.ts || true"
+        ],
+        "parallel": false
+      },
+      "outputs": ["{workspaceRoot}/dist/libs/flux-ui/package.json"]
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["libs/flux-ui/**/*.ts", "libs/flux-ui/eslint.config.mjs"]
+      }
+    }
+  },
+  "tags": ["type:ui", "scope:flux-ui"]
+}
