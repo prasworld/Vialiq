@@ -14,9 +14,8 @@
  */
 
 // Declare CSS layer order up-front so cascade is predictable regardless of
-// import order. Later layers win in a conflict — utilities beats components
-// beats reset. Only layer order matters; selector specificity is ignored.
-// Order: reset (lowest) → components → utilities (highest)
+// import order. Between layers, later ones win. Within a layer, normal selector
+// specificity still applies. Order: reset (lowest) → components → utilities (highest)
 @layer reset, components, utilities;
 
 // ============================================================================
@@ -148,132 +147,22 @@ $line-height-relaxed: var(--vi-line-height-relaxed, 1.75);
 // -- Primitive: Shadows ------------------------------------------------------
 
 $shadow-sm: var(--vi-shadow-sm, 0 1px 2px 0 rgba(0, 0, 0, 0.05));
-$shadow-md: var(--vi-shadow-md, 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06));
-$shadow-lg: var(--vi-shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05));
-$shadow-xl: var(--vi-shadow-xl, 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04));
+$shadow-md: var(--vi-shadow-md, 0 4px 6px -1px rgba(0, 0, 0, 0.1));
+$shadow-lg: var(--vi-shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.1));
+$shadow-xl: var(--vi-shadow-xl, 0 20px 25px -5px rgba(0, 0, 0, 0.1));
 
-// -- Primitive: Borders ------------------------------------------------------
+// -- Primitive: Border radius ------------------------------------------------
 
 $border-radius-sm: var(--vi-border-radius-sm, 2px);
 $border-radius-md: var(--vi-border-radius-md, 4px);
 $border-radius-lg: var(--vi-border-radius-lg, 8px);
 $border-radius-xl: var(--vi-border-radius-xl, 12px);
 
+// -- Primitive: Border widths ------------------------------------------------
+
 $border-width-thin:  var(--vi-border-width-thin,  1px);
 $border-width-base:  var(--vi-border-width-base,  2px);
-$border-width-thick: var(--vi-border-width-thick, 4px);
-
-// -- Component tokens: Button ------------------------------------------------
-
-$button-primary-bg:        var(--vi-button-primary-bg,        #0066cc);
-$button-primary-bg-hover:  var(--vi-button-primary-bg-hover,  #0052a3);
-$button-primary-bg-active: var(--vi-button-primary-bg-active, #003d7a);
-$button-primary-text:      var(--vi-button-primary-text,      #ffffff);
-$button-primary-border:    var(--vi-button-primary-border,    #0066cc);
-
-$button-secondary-bg:       var(--vi-button-secondary-bg,       #f0f4f8);
-$button-secondary-bg-hover: var(--vi-button-secondary-bg-hover, #e5e7eb);  // grey-200
-$button-secondary-text:     var(--vi-button-secondary-text,     #111827);  // grey-900
-$button-secondary-border:   var(--vi-button-secondary-border,   #e5e7eb);  // grey-200
-
-$button-danger-bg:       var(--vi-button-danger-bg,       #ef4444);  // red-500
-$button-danger-bg-hover: var(--vi-button-danger-bg-hover, #dc2626);  // red-600
-$button-danger-text:     var(--vi-button-danger-text,     #ffffff);
-$button-danger-border:   var(--vi-button-danger-border,   #ef4444);  // red-500
-
-$button-padding-x:    var(--vi-button-padding-x,    24px);
-$button-padding-y:    var(--vi-button-padding-y,    8px);
-$button-border-radius: var(--vi-button-border-radius, 4px);
-$button-font-weight:  var(--vi-button-font-weight,  500);
-$button-font-size:    var(--vi-button-font-size,    14px);
-
-// -- Component tokens: Input -------------------------------------------------
-
-$input-bg:            var(--vi-input-bg,            #ffffff);
-$input-text:          var(--vi-input-text,          #111827);
-$input-border:        var(--vi-input-border,        #e5e7eb);
-$input-border-focus:  var(--vi-input-border-focus,  #0066cc);
-$input-border-error:  var(--vi-input-border-error,  #ef4444);
-$input-placeholder:   var(--vi-input-placeholder,   #9ca3af);  // grey-400
-$input-padding-x:     var(--vi-input-padding-x,     16px);
-$input-padding-y:     var(--vi-input-padding-y,     8px);
-$input-border-radius: var(--vi-input-border-radius, 4px);
-$input-font-size:     var(--vi-input-font-size,     16px);
-
-// -- Component tokens: Card --------------------------------------------------
-
-$card-bg:            var(--vi-card-bg,            #ffffff);
-$card-border:        var(--vi-card-border,        #e5e7eb);  // grey-200
-$card-border-radius: var(--vi-card-border-radius, 8px);
-$card-shadow:        var(--vi-card-shadow,        0 1px 2px 0 rgba(0, 0, 0, 0.05));
-$card-padding:       var(--vi-card-padding,       32px);
-
-// -- Component tokens: Badge -------------------------------------------------
-
-$badge-border-radius: var(--vi-badge-border-radius, 12px);
-$badge-font-size:     var(--vi-badge-font-size,     12px);
-$badge-font-weight:   var(--vi-badge-font-weight,   500);
-$badge-padding-x:     var(--vi-badge-padding-x,     8px);
-$badge-padding-y:     var(--vi-badge-padding-y,     4px);
-
-// ============================================================================
-// THEMEABLE TOKENS (set by vi-theme mixin)
-// ============================================================================
-// Pattern: $token-name: var(--vi-token-name, fallback);
-// Use these in component styles. Values are set by @include vi-theme() in theme layer.
-// Example: background-color: $layer-01; → resolves to theme-defined --vi-layer-01 value
-
-// -- Text colors
-$text-primary:         var(--vi-text-primary,         #{$color-grey-900});
-$text-secondary:       var(--vi-text-secondary,       #{$color-grey-700});
-$text-tertiary:        var(--vi-text-tertiary,        #{$color-grey-600});
-$text-inverse:         var(--vi-text-inverse,         #{$color-grey-100});
-$text-success:         var(--vi-text-success,         #{$color-green-700});
-$text-warning:         var(--vi-text-warning,         #{$color-yellow-800});
-$text-error:           var(--vi-text-error,           #{$color-red-700});
-$text-info:            var(--vi-text-info,            #{$color-blue-700});
-
-// -- Background colors
-$bg-primary:           var(--vi-bg-primary,           #{$color-grey-100});
-$bg-secondary:         var(--vi-bg-secondary,         #{$color-grey-200});
-$bg-tertiary:          var(--vi-bg-tertiary,          #{$color-grey-300});
-$bg-inverse:           var(--vi-bg-inverse,           #{$color-grey-900});
-$bg-success:           var(--vi-bg-success,           #e6f9f0);
-$bg-warning:           var(--vi-bg-warning,           #fff8e1);
-$bg-error:             var(--vi-bg-error,             #ffebee);
-$bg-info:              var(--vi-bg-info,              #e3f2fd);
-
-// -- Layers / depth
-$layer-01:             var(--vi-layer-01,             #{$color-grey-100});
-$layer-02:             var(--vi-layer-02,             #{$color-grey-200});
-$layer-03:             var(--vi-layer-03,             #{$color-grey-300});
-$layer-hover:          var(--vi-layer-hover,          #{$color-grey-200});
-$layer-active:         var(--vi-layer-active,         #{$color-grey-300});
-
-// -- Border colors
-$border-default:       var(--vi-border-default,       #{$color-grey-200});
-$border-strong:        var(--vi-border-strong,        #{$color-grey-300});
-$border-subtle:        var(--vi-border-subtle,        #{$color-grey-100});
-
-// -- Focus / interaction
-$focus-ring:           var(--vi-focus-ring,           #{$color-blue-500});
-
-// -- Component-specific
-$button-primary-bg:    var(--vi-button-primary-bg,    #{$color-blue-600});
-$button-primary-text:  var(--vi-button-primary-text,  #ffffff);
-$button-secondary-bg:  var(--vi-button-secondary-bg,  #{$color-grey-200});
-$button-secondary-text: var(--vi-button-secondary-text, #{$color-grey-900});
-$button-danger-bg:     var(--vi-button-danger-bg,     #{$color-red-600});
-$button-danger-text:   var(--vi-button-danger-text,   #ffffff);
-
-$input-bg:             var(--vi-input-bg,             #ffffff);
-$input-text:           var(--vi-input-text,           #{$color-grey-900});
-$input-border:         var(--vi-input-border,         #{$color-grey-200});
-$input-placeholder:    var(--vi-input-placeholder,    #{$color-grey-500});
-$input-focus-ring:     var(--vi-input-focus-ring,     #{$color-blue-500});
-
-$card-bg:              var(--vi-card-bg,              #ffffff);
-$card-border:          var(--vi-card-border,          #{$color-grey-200});
+$border-width-thick: var(--vi-border-width-thick, 3px);
 
 // ============================================================================
 // SCSS MAPS  (for programmatic class generation via @each)

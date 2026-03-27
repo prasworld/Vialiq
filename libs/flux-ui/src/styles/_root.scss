@@ -1,0 +1,112 @@
+/**
+ * CSS Custom Properties Initialization
+ * ====================================
+ * Generated programmatically from _variables.scss maps.
+ * 
+ * This file generates the :root block with all CSS custom properties
+ * derived from the SCSS token definitions, enabling CSS-only consumers
+ * and runtime theming.
+ */
+
+@use 'variables' as *;
+
+:root {
+  // ========================================================================
+  // Color Palettes
+  // ========================================================================
+  @each $palette-name, $palette-map in $palette-maps {
+    @each $shade, $value in $palette-map {
+      --vi-color-#{$palette-name}-#{$shade}: #{strip-units($value)};
+    }
+  }
+
+  // ========================================================================
+  // Semantic Colors
+  // ========================================================================
+  @each $color-name, $color-value in $color-map {
+    --vi-color-#{$color-name}: #{strip-units($color-value)};
+  }
+
+  // ========================================================================
+  // Functional Colors
+  // ========================================================================
+  --vi-color-background: #{strip-units($color-background)};
+  --vi-color-foreground: #{strip-units($color-foreground)};
+  --vi-color-border: #{strip-units($color-border)};
+
+  // ========================================================================
+  // Spacing
+  // ========================================================================
+  @each $spacing-name, $spacing-value in $spacing-map {
+    --vi-spacing-#{$spacing-name}: #{strip-units($spacing-value)};
+  }
+
+  // ========================================================================
+  // Typography — Families
+  // ========================================================================
+  --vi-font-family-base: #{strip-units($font-family-base)};
+  --vi-font-family-mono: #{strip-units($font-family-mono)};
+
+  // ========================================================================
+  // Typography — Sizes
+  // ========================================================================
+  --vi-font-size-xs: #{strip-units($font-size-xs)};
+  --vi-font-size-sm: #{strip-units($font-size-sm)};
+  --vi-font-size-base: #{strip-units($font-size-base)};
+  --vi-font-size-lg: #{strip-units($font-size-lg)};
+  --vi-font-size-xl: #{strip-units($font-size-xl)};
+  --vi-font-size-2xl: #{strip-units($font-size-2xl)};
+  --vi-font-size-3xl: #{strip-units($font-size-3xl)};
+
+  // ========================================================================
+  // Typography — Weights
+  // ========================================================================
+  --vi-font-weight-light: #{strip-units($font-weight-light)};
+  --vi-font-weight-normal: #{strip-units($font-weight-normal)};
+  --vi-font-weight-medium: #{strip-units($font-weight-medium)};
+  --vi-font-weight-semibold: #{strip-units($font-weight-semibold)};
+  --vi-font-weight-bold: #{strip-units($font-weight-bold)};
+
+  // ========================================================================
+  // Typography — Line Heights
+  // ========================================================================
+  --vi-line-height-tight: #{strip-units($line-height-tight)};
+  --vi-line-height-normal: #{strip-units($line-height-normal)};
+  --vi-line-height-relaxed: #{strip-units($line-height-relaxed)};
+
+  // ========================================================================
+  // Shadows
+  // ========================================================================
+  @each $shadow-name, $shadow-value in $shadow-map {
+    --vi-shadow-#{$shadow-name}: #{strip-units($shadow-value)};
+  }
+
+  // ========================================================================
+  // Border Radius
+  // ========================================================================
+  --vi-border-radius-sm: #{strip-units($border-radius-sm)};
+  --vi-border-radius-md: #{strip-units($border-radius-md)};
+  --vi-border-radius-lg: #{strip-units($border-radius-lg)};
+  --vi-border-radius-xl: #{strip-units($border-radius-xl)};
+
+  // ========================================================================
+  // Border Widths
+  // ========================================================================
+  --vi-border-width-thin: #{strip-units($border-width-thin)};
+  --vi-border-width-base: #{strip-units($border-width-base)};
+  --vi-border-width-thick: #{strip-units($border-width-thick)};
+}
+
+/**
+ * Strip var() wrapper from CSS custom properties
+ * Used to extract the fallback value for :root initialization
+ */
+@function strip-units($value) {
+  @if type-of($value) == 'string' and str-index($value, 'var(') {
+    // Extracts fallback from var(--vi-token, fallback)
+    $start: str-index($value, ',') + 2;
+    $end: str-length($value) - 1;
+    @return str-slice($value, $start, $end);
+  }
+  @return $value;
+}

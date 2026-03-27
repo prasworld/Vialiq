@@ -4,11 +4,12 @@
  * Single-file CSS output for consumers that do not use a SCSS preprocessor
  * (plain HTML projects, CDN distribution, Shadow DOM, Storybook, etc.).
  *
- * Import order matters: variables establishes @layer order + :root tokens,
- * then reset → layout → utilities are applied in cascade layer sequence.
+ * Import order matters: variables declares the @layer order, root emits
+ * :root custom properties, then reset → layout → utilities follow.
  */
 
 @use 'variables';
+@use 'root';
 @use 'reset';
 @use 'layout';
 @use 'utilities';

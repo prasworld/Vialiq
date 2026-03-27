@@ -13,19 +13,141 @@ A custom, lightweight CSS/SASS framework built for microfrontend architectures. 
 - 📱 **Responsive** - Mobile-first breakpoint system
 - ♿ **Accessible** - WCAG-compliant patterns and defaults
 
-## Quick Start
+## Installation
 
-### Shell App Setup
+### NPM
 
-```scss
-// In apps/shell/src/styles.scss
-@import '@vi/flux-ui/styles/_variables.scss';
-@import '@vi/flux-ui/styles/_reset.scss';
-@import '@vi/flux-ui/styles/_layout.scss';
-@import '@vi/flux-ui/styles/_utilities.scss';
+```bash
+npm install @vi/flux-ui
+# or
+yarn add @vi/flux-ui
 ```
 
-### Using Tokens
+### Monorepo (Local)
+
+```typescript
+// In tsconfig.base.json (already configured)
+{
+  "compilerOptions": {
+    "paths": {
+      "@vi/flux-ui": ["libs/flux-ui/src/index.ts"],
+      "@vi/flux-ui/tokens": ["libs/flux-ui/src/tokens/index.ts"],
+      "@vi/flux-ui/styles": ["libs/flux-ui/src/styles/index.ts"]
+    }
+  }
+}
+```
+
+## Integration Guide
+
+### Option 1: SCSS Consumer (Recommended for Angular/Nx Apps)
+
+**Best for:** Angular apps, build-time optimization, theming
+
+```scss
+// In your app/src/styles.scss (or global style)
+
+@use '@vi/flux-ui/styles/_variables.scss' as *;
+@use '@vi/flux-ui/styles/_reset.scss';
+@use '@vi/flux-ui/styles/_layout.scss';
+@use '@vi/flux-ui/styles/_utilities.scss';
+
+// Now all utilities available:
+// - Classes: .p-md, .text-lg, .bg-primary, .flex, .gap-sm, etc.
+// - Variables: $spacing-md, $color-primary, $font-size-base, etc.
+// - Theming: @use '@vi/flux-ui/styles/theme' as theme; then @include theme.vi-theme(theme.$vi-theme--light, $emit-custom-properties: true);
+```
+
+**Advantages:**
+- ✅ Tree-shaking: Only include used styles (via build process)
+- ✅ Variable access: Use `$spacing-md` in your component SCSS
+- ✅ Theming: @include mixins for custom theme scopes
+- ✅ Smaller bundle: Only compiled styles you actually use
+- ✅ Full control: Extend/override tokens before build
+
+**Example Component (Angular):**
+```scss
+// button.component.scss
+@use '@vi/flux-ui/styles/variables' as *;
+@use '@vi/flux-ui/styles/theme' as theme;
+
+:host {
+  @include theme.vi-theme(theme.$vi-theme--light, $emit-custom-properties: true);
+}
+
+.button {
+  padding: $spacing-sm $spacing-md;
+  background-color: $color-primary;
+  border-radius: $border-radius-md;
+  font-weight: $font-weight-semibold;
+  
+  &:hover {
+    background-color: $color-primary-hover; // Theme token
+  }
+}
+```
+
+### Option 2: CSS-Only Consumer (Plain HTML / No Build)
+
+**Best for:** Static sites, CDN delivery, Shadow DOM isolation, Storybook
+
+```html
+<!-- In your HTML <head> -->
+<link rel="stylesheet" href="./node_modules/@vi/flux-ui/flux-ui.css">
+
+<!-- Now all utilities available via classes -->
+<div class="flex justify-center items-center gap-md p-lg">
+  <h1 class="text-3xl font-bold text-primary">Hello</h1>
+  <button class="px-md py-sm bg-success text-grey-100 rounded-md">Action</button>
+</div>
+```
+
+**Advantages:**
+- ✅ Zero build step needed
+- ✅ Works anywhere (plain HTML, iframes, Shadow DOM)
+- ✅ CDN-friendly: Single CSS file
+- ✅ Fast delivery: CSS pre-compiled and minified
+- ✅ No SCSS knowledge required
+
+**Size & Performance:**
+- Uncompressed: 35 KB
+- Gzipped: ~8 KB
+- Source map: 8.6 KB (for debugging)
+
+### Option 3: Hybrid (TypeScript + CSS)
+
+**Best for:** Web Components (Lit, vanilla JS)
+
+```typescript
+// In your component file
+import '@vi/flux-ui/flux-ui.css';          // Import pre-compiled CSS
+import { tokens } from '@vi/flux-ui';      // Import tokens for JS styling
+
+class MyComponent extends LitElement {
+  static styles = css`
+    :host {
+      padding: ${tokens.spacing.md};
+      color: var(--vi-color-foreground);
+    }
+  `;
+  
+  render() {
+    return html`
+      <div class="flex gap-md p-lg">
+        <span>Content</span>
+      </div>
+    `;
+  }
+}
+```
+
+**Advantages:**
+- ✅ Pre-compiled CSS for utilities
+- ✅ Type-safe tokens for JS-driven styles
+- ✅ Works with Web Components & frameworks
+- ✅ Best of both worlds
+
+## Using Tokens
 
 ```typescript
 import { tokens } from '@vi/flux-ui';
@@ -42,7 +164,7 @@ const buttonStyle = {
 ```html
 <div class="flex justify-between items-center gap-md p-lg">
   <h1 class="text-2xl font-bold">Title</h1>
-  <button class="bg-primary text-white rounded-md">Action</button>
+  <button class="bg-primary text-grey-100 rounded-md">Action</button>
 </div>
 ```
 
@@ -61,9 +183,10 @@ const buttonStyle = {
 ## Documentation
 
 ### Strategic & Planning
-- **[QUICK-COMPARISON.md](./docs/QUICK-COMPARISON.md)** ⭐ Decision matrix for framework comparison
+- **[ADR-001-component-library-strategy.md](./docs/ADR-001-component-library-strategy.md)** ⭐ **START HERE** — Angular vs Web Components, build vs buy decision
+- **[QUICK-COMPARISON.md](./docs/QUICK-COMPARISON.md)** - CSS framework decision matrix
 - **[FRAMEWORK-COMPARISON.md](./docs/FRAMEWORK-COMPARISON.md)** - Detailed comparison with Bootstrap, Tailwind, Material, etc.
-- **[COMPONENT-LAYER-ROADMAP.md](./docs/COMPONENT-LAYER-ROADMAP.md)** - Web Components implementation strategy & timelines
+- **[COMPONENT-LAYER-ROADMAP.md](./docs/COMPONENT-LAYER-ROADMAP.md)** - Angular component implementation guide
 
 ### Technical Reference
 - **[ARCHITECTURE.md](./docs/ARCHITECTURE.md)** - Technical deep dive
@@ -93,7 +216,7 @@ Design System (Shared)
 
 ```typescript
 // apps/shell/src/bootstrap.ts
-import '@design-system/core/styles';  // Load once for all MFEs
+import '@vi/flux-ui/flux-ui.css';  // Load once for all MFEs
 
 bootstrapApplication(App).catch(err => console.error(err));
 ```
@@ -104,7 +227,7 @@ bootstrapApplication(App).catch(err => console.error(err));
 // apps/remote1/src/bootstrap.ts
 // ❌ DO NOT import styles (shell already loaded them)
 
-import { tokens } from '@design-system/core';  // ✅ Import tokens only
+import { tokens } from '@vi/flux-ui';  // ✅ Import tokens only
 
 bootstrapApplication(RemoteEntry).catch(err => console.error(err));
 ```
@@ -114,7 +237,7 @@ bootstrapApplication(RemoteEntry).catch(err => console.error(err));
 ### TypeScript (Type-Safe)
 
 ```typescript
-import { tokens } from '@design-system/core';
+import { tokens } from '@vi/flux-ui';
 
 const value = tokens.spacing.md;  // IDE autocomplete, type checking
 ```
@@ -122,7 +245,7 @@ const value = tokens.spacing.md;  // IDE autocomplete, type checking
 ### SCSS (Build-Time)
 
 ```scss
-@import '@design-system/core/styles/variables';
+@use '@vi/flux-ui/styles/variables' as *;
 
 .button {
   padding: $spacing-md;
@@ -159,7 +282,7 @@ const value = tokens.spacing.md;  // IDE autocomplete, type checking
 ```html
 <h1 class="text-3xl font-bold">Heading</h1>
 <p class="text-base leading-relaxed">Body text with comfortable spacing</p>
-<code class="text-sm text-neutral-600">Code snippet</code>
+<code class="text-sm text-grey-600">Code snippet</code>
 ```
 
 ### Layout
@@ -173,7 +296,7 @@ const value = tokens.spacing.md;  // IDE autocomplete, type checking
 
 ```html
 <p class="text-primary">Colored text</p>
-<div class="bg-success text-white">Success state</div>
+<div class="bg-success text-grey-100">Success state</div>
 <div class="border-lg border-error">Error border</div>
 ```
 

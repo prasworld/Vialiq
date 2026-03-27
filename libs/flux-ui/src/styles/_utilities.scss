@@ -188,6 +188,21 @@
     }
   }
 
+  // -- Neutral alias for grey (semantic naming) --
+  @each $shade, $value in $color-grey-map {
+    .text-neutral-#{$shade} {
+      color: $value;
+    }
+
+    .bg-neutral-#{$shade} {
+      background-color: $value;
+    }
+
+    .border-neutral-#{$shade} {
+      border-color: $value;
+    }
+  }
+
   // ============================================================================
   // SHADOWS
   // ============================================================================
@@ -264,6 +279,138 @@
   .opacity-50 { opacity: 0.5; }
   .opacity-75 { opacity: 0.75; }
   .opacity-100 { opacity: 1; }
+
+  // ============================================================================
+  // DISPLAY
+  // ============================================================================
+
+  .block {
+    display: block;
+  }
+
+  .inline {
+    display: inline;
+  }
+
+  .inline-block {
+    display: inline-block;
+  }
+
+  .hidden {
+    display: none;
+  }
+
+  // ============================================================================
+  // FLEXBOX
+  // ============================================================================
+
+  .flex {
+    display: flex;
+  }
+
+  .flex-row {
+    flex-direction: row;
+  }
+
+  .flex-col {
+    flex-direction: column;
+  }
+
+  .flex-wrap {
+    flex-wrap: wrap;
+  }
+
+  .flex-nowrap {
+    flex-wrap: nowrap;
+  }
+
+  .justify-start {
+    justify-content: flex-start;
+  }
+
+  .justify-end {
+    justify-content: flex-end;
+  }
+
+  .justify-center {
+    justify-content: center;
+  }
+
+  .justify-between {
+    justify-content: space-between;
+  }
+
+  .justify-around {
+    justify-content: space-around;
+  }
+
+  .justify-evenly {
+    justify-content: space-evenly;
+  }
+
+  .items-start {
+    align-items: flex-start;
+  }
+
+  .items-end {
+    align-items: flex-end;
+  }
+
+  .items-center {
+    align-items: center;
+  }
+
+  .items-stretch {
+    align-items: stretch;
+  }
+
+  .items-baseline {
+    align-items: baseline;
+  }
+
+  .flex-1 {
+    flex: 1 1 0%;
+  }
+
+  .flex-auto {
+    flex: 1 1 auto;
+  }
+
+  .flex-none {
+    flex: none;
+  }
+
+  // ============================================================================
+  // GRID
+  // ============================================================================
+
+  .grid {
+    display: grid;
+  }
+
+  @for $i from 1 through 12 {
+    .grid-cols-#{$i} {
+      grid-template-columns: repeat(#{$i}, minmax(0, 1fr));
+    }
+  }
+
+  // ============================================================================
+  // GAP
+  // ============================================================================
+
+  @each $name, $value in $spacing-map {
+    .gap-#{$name} {
+      gap: $value;
+    }
+
+    .gap-x-#{$name} {
+      column-gap: $value;
+    }
+
+    .gap-y-#{$name} {
+      row-gap: $value;
+    }
+  }
 
   // ============================================================================
   // TRANSITIONS & ANIMATIONS

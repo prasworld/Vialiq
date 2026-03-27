@@ -6,17 +6,20 @@
 
 ## Quick Reference: Architecture Decision
 
-### Why Web Components?
+> ⚠️ **SUPERSEDED** — This document preceded ADR-001. The Web Components approach below
+> was written before verifying the consuming stack. Since all consumers are Angular 21,
+> the current recommendation is **Angular components + Angular CDK**.
+> See [ADR-001](./ADR-001-component-library-strategy.md) for the authoritative decision.
 
-| Approach | MFE Compatibility | Framework Flexibility | Bundle Impact | Performance |
-|----------|------------------|----------------------|----------------|-------------|
-| **Web Components** (Recommended) | ✅ Perfect | ✅ Any framework | Low | Fast |
-| HTML Templates | ✅ Perfect | ⚠️ Limited JS | Very Low | Fast |
-| React Components | ❌ React-only | ❌ Fragrant | Medium | Fast |
-| Vue Components | ❌ Vue-only | ❌ Fragrant | Medium | Fast |
-| Vanilla Classes | ✅ Good | ✅ Good | Low | Varies |
+### Why Angular Components (not Web Components)
 
-**Decision: Web Components (with React wrapper for convenience)**
+| Approach | MFE Compatibility | Angular Forms | Type Checking | DevTools | Recommended |
+|----------|------------------|---------------|---------------|----------|-------------|
+| **Angular Components** | ✅ Native MFE | ✅ Native | ✅ Full | ✅ Full | **YES** |
+| Web Components (Lit) | ⚠️ Needs schema | ❌ Broken | ❌ Disabled | ❌ Black box | No |
+| React Components | ❌ React-only | ❌ N/A | ✅ | ✅ | No |
+
+**Decision: Angular components + Angular CDK primitives**
 
 ---
 

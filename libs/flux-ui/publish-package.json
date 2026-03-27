@@ -25,12 +25,13 @@
   "files": [
     "index.js",
     "index.d.ts",
-    "tokens/index.js",
-    "tokens/index.d.ts",
-    "styles/index.js",
-    "styles/index.d.ts",
-    "styles/**/*.scss",
+    "index.js.map",
+    "index.d.ts.map",
+    "tokens/",
+    "styles/",
+    "src/",
     "flux-ui.css",
+    "flux-ui.css.map",
     "README.md"
   ]
 }

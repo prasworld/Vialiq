@@ -6,7 +6,7 @@
  * Pattern:
  *   1. Define theme maps (e.g. $vi-theme--light, $vi-theme--dark)
  *   2. Call @include vi-theme($theme-map) inside a selector
- *   3. Mixin sets SCSS variables globally + optionally emits CSS custom properties
+ *   3. Mixin emits CSS custom properties for each token in the map
  * 
  * Usage:
  *   :root {
@@ -19,6 +19,7 @@
  */
 
 @use 'sass:map';
+@use './variables' as *;
 
 // ============================================================================
 // LIGHT THEME

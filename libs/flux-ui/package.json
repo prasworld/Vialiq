@@ -3,8 +3,5 @@
   "version": "0.0.1",
   "type": "module",
   "description": "Custom minimal CSS/SASS framework for microfrontend product",
-  "license": "MIT",
-  "devDependencies": {
-    "sass": "^1.97.3"
-  }
+  "license": "MIT"
 }

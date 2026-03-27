@@ -4,6 +4,8 @@
  * Flexbox and Grid utility styles for common layout patterns
  */
 
+@use './variables' as *;
+
 @layer utilities {
   // ============================================================================
   // FLEXBOX
@@ -66,23 +68,23 @@
   }
 
   .gap-xs {
-    gap: var(--vi-spacing-xs);
+    gap: $spacing-xs;
   }
 
   .gap-sm {
-    gap: var(--vi-spacing-sm);
+    gap: $spacing-sm;
   }
 
   .gap-md {
-    gap: var(--vi-spacing-md);
+    gap: $spacing-md;
   }
 
   .gap-lg {
-    gap: var(--vi-spacing-lg);
+    gap: $spacing-lg;
   }
 
   .gap-xl {
-    gap: var(--vi-spacing-xl);
+    gap: $spacing-xl;
   }
 
   .flex-1 {

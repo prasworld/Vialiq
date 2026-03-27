@@ -230,7 +230,7 @@ const style = {
 ```html
 <p class="text-lg font-semibold leading-tight">Large, semibold, tight</p>
 <p class="text-base font-normal leading-relaxed">Base, normal, relaxed</p>
-<code class="text-sm text-neutral-600">Small monospace text</code>
+<code class="text-sm text-grey-600">Small monospace text</code>
 ```
 
 ### Color Utilities
@@ -243,7 +243,7 @@ const style = {
 
 <!-- Background colors -->
 <div class="bg-primary">Primary background</div>
-<div class="bg-neutral-100">Light neutral background</div>
+<div class="bg-grey-100">Light neutral background</div>
 
 <!-- Border colors -->
 <div class="border-primary border-base">Blue border</div>
@@ -365,11 +365,11 @@ export class ButtonComponent {
     }
 
     &--secondary {
-      background: $color-neutral-200;
+      background: $color-grey-200;
       color: $color-foreground;
 
       &:hover:not(:disabled) {
-        background: $color-neutral-300;
+        background: $color-grey-300;
       }
     }
 

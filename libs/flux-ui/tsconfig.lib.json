@@ -2,12 +2,17 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "../../dist/out-tsc",
-    "module": "esnext",
     "declaration": true,
     "declarationMap": true,
     "inlineSources": true,
-    "types": []
+    "types": ["node"]
   },
-  "exclude": ["src/test-setup.ts", "src/**/*.spec.ts", "vitest.config.mts", "src/**/*.test.ts"],
+  "exclude": [
+    "src/test-setup.ts",
+    "src/**/*.spec.ts",
+    "vite.config.mjs",
+    "vitest.config.mts",
+    "src/**/*.test.ts"
+  ],
   "include": ["src/**/*.ts"]
 }

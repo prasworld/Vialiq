@@ -31,7 +31,10 @@
       "@vi/state-fp/sync": ["libs/state-fp/src/sync/index.ts"],
       "@vi/state-fp/devtools": ["libs/state-fp/src/devtools/index.ts"],
       "@vi/state-fp/adapter": ["libs/state-fp/src/adapter/index.ts"],
-      "@vi/state-fp/bus": ["libs/state-fp/src/bus/index.ts"]
+      "@vi/state-fp/bus": ["libs/state-fp/src/bus/index.ts"],
+      "@vi/flux-ui": ["libs/flux-ui/src/index.ts"],
+      "@vi/flux-ui/tokens": ["libs/flux-ui/src/tokens/index.ts"],
+      "@vi/flux-ui/styles": ["libs/flux-ui/src/styles/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]

@@ -19,28 +19,94 @@ export const tokens = {
    * Primary brand colors, semantic colors for states, and functional colors
    */
   colors: {
-    // Brand colors
     primary: 'var(--vi-color-primary)',
     secondary: 'var(--vi-color-secondary)',
-
-    // Semantic colors
     success: 'var(--vi-color-success)',
     warning: 'var(--vi-color-warning)',
     error: 'var(--vi-color-error)',
     info: 'var(--vi-color-info)',
 
-    // Neutral palette
+    // Neutral palette (grey aliases)
     neutral: {
-      50: 'var(--vi-color-neutral-50)',
-      100: 'var(--vi-color-neutral-100)',
-      200: 'var(--vi-color-neutral-200)',
-      300: 'var(--vi-color-neutral-300)',
-      400: 'var(--vi-color-neutral-400)',
-      500: 'var(--vi-color-neutral-500)',
-      600: 'var(--vi-color-neutral-600)',
-      700: 'var(--vi-color-neutral-700)',
-      800: 'var(--vi-color-neutral-800)',
-      900: 'var(--vi-color-neutral-900)',
+      100: 'var(--vi-color-grey-100)',
+      200: 'var(--vi-color-grey-200)',
+      300: 'var(--vi-color-grey-300)',
+      400: 'var(--vi-color-grey-400)',
+      500: 'var(--vi-color-grey-500)',
+      600: 'var(--vi-color-grey-600)',
+      700: 'var(--vi-color-grey-700)',
+      800: 'var(--vi-color-grey-800)',
+      900: 'var(--vi-color-grey-900)',
+    },
+
+    // Color palettes
+    palettes: {
+      grey: {
+        100: 'var(--vi-color-grey-100)',
+        200: 'var(--vi-color-grey-200)',
+        300: 'var(--vi-color-grey-300)',
+        400: 'var(--vi-color-grey-400)',
+        500: 'var(--vi-color-grey-500)',
+        600: 'var(--vi-color-grey-600)',
+        700: 'var(--vi-color-grey-700)',
+        800: 'var(--vi-color-grey-800)',
+        900: 'var(--vi-color-grey-900)',
+      },
+      red: {
+        100: 'var(--vi-color-red-100)',
+        200: 'var(--vi-color-red-200)',
+        300: 'var(--vi-color-red-300)',
+        400: 'var(--vi-color-red-400)',
+        500: 'var(--vi-color-red-500)',
+        600: 'var(--vi-color-red-600)',
+        700: 'var(--vi-color-red-700)',
+        800: 'var(--vi-color-red-800)',
+        900: 'var(--vi-color-red-900)',
+      },
+      yellow: {
+        100: 'var(--vi-color-yellow-100)',
+        200: 'var(--vi-color-yellow-200)',
+        300: 'var(--vi-color-yellow-300)',
+        400: 'var(--vi-color-yellow-400)',
+        500: 'var(--vi-color-yellow-500)',
+        600: 'var(--vi-color-yellow-600)',
+        700: 'var(--vi-color-yellow-700)',
+        800: 'var(--vi-color-yellow-800)',
+        900: 'var(--vi-color-yellow-900)',
+      },
+      green: {
+        100: 'var(--vi-color-green-100)',
+        200: 'var(--vi-color-green-200)',
+        300: 'var(--vi-color-green-300)',
+        400: 'var(--vi-color-green-400)',
+        500: 'var(--vi-color-green-500)',
+        600: 'var(--vi-color-green-600)',
+        700: 'var(--vi-color-green-700)',
+        800: 'var(--vi-color-green-800)',
+        900: 'var(--vi-color-green-900)',
+      },
+      blue: {
+        100: 'var(--vi-color-blue-100)',
+        200: 'var(--vi-color-blue-200)',
+        300: 'var(--vi-color-blue-300)',
+        400: 'var(--vi-color-blue-400)',
+        500: 'var(--vi-color-blue-500)',
+        600: 'var(--vi-color-blue-600)',
+        700: 'var(--vi-color-blue-700)',
+        800: 'var(--vi-color-blue-800)',
+        900: 'var(--vi-color-blue-900)',
+      },
+      purple: {
+        100: 'var(--vi-color-purple-100)',
+        200: 'var(--vi-color-purple-200)',
+        300: 'var(--vi-color-purple-300)',
+        400: 'var(--vi-color-purple-400)',
+        500: 'var(--vi-color-purple-500)',
+        600: 'var(--vi-color-purple-600)',
+        700: 'var(--vi-color-purple-700)',
+        800: 'var(--vi-color-purple-800)',
+        900: 'var(--vi-color-purple-900)',
+      },
     },
 
     // Functional colors
@@ -54,13 +120,13 @@ export const tokens = {
    * 8px base unit system: xs (8px), sm (16px), md (24px), lg (32px), xl (40px), etc.
    */
   spacing: {
-    xs: 'var(--vi-spacing-xs)',    // 8px
-    sm: 'var(--vi-spacing-sm)',    // 16px
-    md: 'var(--vi-spacing-md)',    // 24px
-    lg: 'var(--vi-spacing-lg)',    // 32px
-    xl: 'var(--vi-spacing-xl)',    // 40px
-    '2xl': 'var(--vi-spacing-2xl)', // 48px
-    '3xl': 'var(--vi-spacing-3xl)', // 56px
+    xs: 'var(--vi-spacing-xs)',
+    sm: 'var(--vi-spacing-sm)',
+    md: 'var(--vi-spacing-md)',
+    lg: 'var(--vi-spacing-lg)',
+    xl: 'var(--vi-spacing-xl)',
+    '2xl': 'var(--vi-spacing-2xl)',
+    '3xl': 'var(--vi-spacing-3xl)',
   },
 
   /**
@@ -73,13 +139,13 @@ export const tokens = {
       mono: 'var(--vi-font-family-mono)',
     },
     fontSize: {
-      xs: 'var(--vi-font-size-xs)',     // 12px
-      sm: 'var(--vi-font-size-sm)',     // 14px
-      base: 'var(--vi-font-size-base)', // 16px
-      lg: 'var(--vi-font-size-lg)',     // 18px
-      xl: 'var(--vi-font-size-xl)',     // 20px
-      '2xl': 'var(--vi-font-size-2xl)', // 24px
-      '3xl': 'var(--vi-font-size-3xl)', // 30px
+      xs: 'var(--vi-font-size-xs)',
+      sm: 'var(--vi-font-size-sm)',
+      base: 'var(--vi-font-size-base)',
+      lg: 'var(--vi-font-size-lg)',
+      xl: 'var(--vi-font-size-xl)',
+      '2xl': 'var(--vi-font-size-2xl)',
+      '3xl': 'var(--vi-font-size-3xl)',
     },
     fontWeight: {
       light: 300,
@@ -112,27 +178,26 @@ export const tokens = {
    */
   borders: {
     radius: {
-      none: '0',
-      sm: 'var(--vi-border-radius-sm)',   // 2px
-      md: 'var(--vi-border-radius-md)',   // 4px
-      lg: 'var(--vi-border-radius-lg)',   // 8px
-      xl: 'var(--vi-border-radius-xl)',   // 12px
-      full: '9999px',
+      sm: 'var(--vi-border-radius-sm)',
+      md: 'var(--vi-border-radius-md)',
+      lg: 'var(--vi-border-radius-lg)',
+      xl: 'var(--vi-border-radius-xl)',
     },
     width: {
-      none: '0',
-      thin: '1px',
-      base: '2px',
-      thick: '4px',
+      thin: 'var(--vi-border-width-thin)',
+      base: 'var(--vi-border-width-base)',
+      thick: 'var(--vi-border-width-thick)',
     },
   },
 
   /**
-   * BREAKPOINTS
-   * Responsive design breakpoints (mobile-first)
+   * BREAKPOINT TOKENS
+   * Responsive design breakpoints (raw pixel values, not CSS vars)
+   * Use in a JS template literal: `@media (min-width: ${tokens.breakpoints.sm})`
+   * Use in plain CSS: @media (min-width: 640px)
    */
   breakpoints: {
-    xs: '0px',
+    xs: '0',
     sm: '640px',
     md: '768px',
     lg: '1024px',
@@ -141,8 +206,9 @@ export const tokens = {
   },
 
   /**
-   * Z-INDEX SCALE
-   * Consistent stacking context management
+   * Z-INDEX TOKENS
+   * Stacking context levels (raw integers, not CSS vars)
+   * Use in CSS: z-index: tokens.zIndex.modal (e.g. 1050)
    */
   zIndex: {
     hide: -1,
@@ -159,36 +225,7 @@ export const tokens = {
 } as const;
 
 /**
- * DEFAULT COLOR VALUES (Actual hex/rgb values)
- * Used for CSS variable initialization and fallbacks
+ * Type-safe token value extractor
+ * Preserves exact string/number types from tokens object
  */
-export const colorDefaults = {
-  primary: '#0066cc',
-  secondary: '#f0f4f8',
-  success: '#10b981',
-  warning: '#f59e0b',
-  error: '#ef4444',
-  info: '#3b82f6',
-  neutral: {
-    50: '#f9fafb',
-    100: '#f3f4f6',
-    200: '#e5e7eb',
-    300: '#d1d5db',
-    400: '#9ca3af',
-    500: '#6b7280',
-    600: '#4b5563',
-    700: '#374151',
-    800: '#1f2937',
-    900: '#111827',
-  },
-  background: '#ffffff',
-  foreground: '#111827',
-  border: '#e5e7eb',
-};
-
-/**
- * Export token keys for validation and type checking
- */
-export type TokenKey = keyof typeof tokens;
-export type ColorKey = keyof typeof tokens.colors;
-export type SpacingKey = keyof typeof tokens.spacing;
+export type TokenValue = typeof tokens;
