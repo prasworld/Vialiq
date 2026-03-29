@@ -15,11 +15,10 @@
       "import": "./tokens/index.js",
       "types": "./tokens/index.d.ts"
     },
-    "./styles": {
-      "import": "./styles/index.js",
-      "types": "./styles/index.d.ts"
-    },
-    "./styles/*": "./styles/*",
+    "./styles": "./styles/_index.scss",
+    "./styles/*": "./styles/_*.scss",
+    "./components": "./components/_index.scss",
+    "./components/*": "./components/_*.scss",
     "./flux-ui.css": "./flux-ui.css"
   },
   "files": [
@@ -27,9 +26,10 @@
     "index.d.ts",
     "index.js.map",
     "index.d.ts.map",
-    "tokens/",
+    "*.scss",
     "styles/",
-    "src/",
+    "components/",
+    "tokens/",
     "flux-ui.css",
     "flux-ui.css.map",
     "README.md"
