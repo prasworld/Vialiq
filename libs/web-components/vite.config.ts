@@ -6,6 +6,7 @@ export default defineConfig({
     target: 'ES2022', // Required for modern decorators
   },
   build: {
+    emptyOutDir: true,
     lib: {
       entry: path.resolve(__dirname, 'src/index.ts'),
       name: 'vi-web-components',

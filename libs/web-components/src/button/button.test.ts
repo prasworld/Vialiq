@@ -45,6 +45,24 @@ describe('vi-button', () => {
     await expect(colorAfter).not.toEqual(colorBefore);
   });
 
+  it('sets aria-disabled and tabindex on host when disabled', async () => {
+    await browser.execute(() => {
+      document.body.innerHTML = '<vi-button id="a11y-test" variant="primary">Save</vi-button>';
+    });
+
+    const host = await $('#a11y-test');
+
+    // Enabled state
+    await expect(host).toHaveAttribute('aria-disabled', 'false');
+    await expect(host).toHaveAttribute('tabindex', '0');
+
+    // Disabled state
+    await browser.execute((el) => el.setAttribute('disabled', ''), host);
+    await browser.pause(50);
+    await expect(host).toHaveAttribute('aria-disabled', 'true');
+    await expect(host).toHaveAttribute('tabindex', '-1');
+  });
+
   it('does not call click handler when disabled', async () => {
     await browser.execute(() => {
       document.body.innerHTML = '<vi-button id="disabled-click" variant="primary">Submit</vi-button>';
