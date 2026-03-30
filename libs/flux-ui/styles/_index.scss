@@ -1,5 +1,5 @@
 // Forwards all global style modules in cascade order.
-// Usage: @use '@vi/flux-ui/styles';
+// Usage: @use '@vialiq/flux-ui/styles';
 @forward 'root';
 @forward 'reset';
 @forward 'theme';
