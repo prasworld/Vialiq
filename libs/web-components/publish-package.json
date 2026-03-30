@@ -1,0 +1,37 @@
+{
+  "name": "@vi/web-components",
+  "version": "0.0.1",
+  "type": "module",
+  "description": "Lit web component library built on @vi/flux-ui design tokens",
+  "license": "MIT",
+  "module": "./index.js",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./index.js",
+      "types": "./index.d.ts"
+    },
+    "./button": {
+      "import": "./button/index.js",
+      "types": "./button/index.d.ts"
+    }
+  },
+  "peerDependencies": {
+    "lit": "^3.0.0"
+  },
+  "keywords": [
+    "web-components",
+    "custom-elements",
+    "lit",
+    "design-system",
+    "microfrontend",
+    "flux-ui"
+  ],
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "index.js.map",
+    "button/",
+    "README.md"
+  ]
+}

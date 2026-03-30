@@ -1,0 +1,10 @@
+{
+  "name": "@vi/web-components",
+  "version": "0.0.1",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "storybook": "storybook dev --config-dir .storybook --port 6006",
+    "build-storybook": "storybook build --config-dir .storybook --output-dir dist/storybook"
+  }
+}
