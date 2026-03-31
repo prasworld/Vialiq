@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to `@vi/state-fp` are documented here.
+All notable changes to `@vialiq/state-fp` are documented here.
 
 This file follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) conventions.
 Versions follow [Semantic Versioning](https://semver.org/).
@@ -38,11 +38,11 @@ Versions follow [Semantic Versioning](https://semver.org/).
 ## [0.4.0] — Phase 4: Sync + Devtools
 
 ### Added
-- Cross-tab atom synchronisation (`@vi/state-fp/sync`) via BroadcastChannel.
+- Cross-tab atom synchronisation (`@vialiq/state-fp/sync`) via BroadcastChannel.
   Conflict strategies: `last-write-wins`, `first-write-wins`, `owner-wins`, `version-wins`, custom resolver.
 - Version vector implementation for causal tracking across peers (`createVersionVector`, `increment`, `merge`, `isConcurrent`).
 - Transport abstraction (`createAutoTransport`, `createPostMessageTransport`, `createNoopTransport`, `createPostMessageRelay`).
-- DevTools module (`@vi/state-fp/devtools`): `EventLog` (circular buffer, O(1) indices), `SnapshotManager`, `TimeTravelController`, `DevToolsBridge` (`window.__VI_STATE_FP__`).
+- DevTools module (`@vialiq/state-fp/devtools`): `EventLog` (circular buffer, O(1) indices), `SnapshotManager`, `TimeTravelController`, `DevToolsBridge` (`window.__VI_STATE_FP__`).
 - `KernelPlugin` API — lifecycle hooks (`onRegister`, `onExecute`) plugged into the kernel.
 - `EphemeralStream` — push-based event bus with RAF-batched delivery (`subscribeAnimated`).
 - `debug: true` kernel option to enable `DebugInterface` hooks.
@@ -52,7 +52,7 @@ Versions follow [Semantic Versioning](https://semver.org/).
 ## [0.3.0] — Phase 3: Storage + Persistence
 
 ### Added
-- Storage module (`@vi/state-fp/storage`): `MemoryAdapter`, `LocalAdapter`, `SessionAdapter`, `IndexedDbAdapter`.
+- Storage module (`@vialiq/state-fp/storage`): `MemoryAdapter`, `LocalAdapter`, `SessionAdapter`, `IndexedDbAdapter`.
 - `StorageAdapter<T>` interface — `Either<StorageError, ...>` return types; errors never throw.
 - Atom-level storage config (`defineAtom.storage`) with optional TTL and custom key.
 - `kernel.hydrate(atom)` — loads persisted state at startup.
@@ -75,7 +75,7 @@ Versions follow [Semantic Versioning](https://semver.org/).
 ## [0.1.0] — Phase 1: Functional Primitives + Atom
 
 ### Added
-- Initial library scaffolding (`@vi/state-fp` Nx project).
+- Initial library scaffolding (`@vialiq/state-fp` Nx project).
 - `Maybe<A>` — `just`, `nothing`, `fromNullable`, `isJust`, `isNothing`, `mapMaybe`, `chainMaybe`, `foldMaybe`, `getOrElseMaybe`.
 - `Either<E, A>` — `right`, `left`, `isRight`, `isLeft`, `mapEither`, `chainEither`, `foldEither`.
 - `IO<A>` — `io`, `liftIO`, `mapIO`.

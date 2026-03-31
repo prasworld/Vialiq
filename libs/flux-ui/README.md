@@ -18,9 +18,9 @@ A custom, lightweight CSS/SASS framework built for microfrontend architectures. 
 ### NPM
 
 ```bash
-npm install @vi/flux-ui
+npm install @vialiq/flux-ui
 # or
-yarn add @vi/flux-ui
+yarn add @vialiq/flux-ui
 ```
 
 ### Monorepo (Local)
@@ -30,9 +30,9 @@ yarn add @vi/flux-ui
 {
   "compilerOptions": {
     "paths": {
-      "@vi/flux-ui": ["libs/flux-ui/src/index.ts"],
-      "@vi/flux-ui/tokens": ["libs/flux-ui/src/tokens/index.ts"],
-      "@vi/flux-ui/styles": ["libs/flux-ui/src/styles/index.ts"]
+      "@vialiq/flux-ui": ["libs/flux-ui/src/index.ts"],
+      "@vialiq/flux-ui/tokens": ["libs/flux-ui/src/tokens/index.ts"],
+      "@vialiq/flux-ui/styles": ["libs/flux-ui/src/styles/index.ts"]
     }
   }
 }
@@ -47,15 +47,15 @@ yarn add @vi/flux-ui
 ```scss
 // In your app/src/styles.scss (or global style)
 
-@use '@vi/flux-ui/styles/_variables.scss' as *;
-@use '@vi/flux-ui/styles/_reset.scss';
-@use '@vi/flux-ui/styles/_layout.scss';
-@use '@vi/flux-ui/styles/_utilities.scss';
+@use '@vialiq/flux-ui/styles/_variables.scss' as *;
+@use '@vialiq/flux-ui/styles/_reset.scss';
+@use '@vialiq/flux-ui/styles/_layout.scss';
+@use '@vialiq/flux-ui/styles/_utilities.scss';
 
 // Now all utilities available:
 // - Classes: .p-md, .text-lg, .bg-primary, .flex, .gap-sm, etc.
 // - Variables: $spacing-md, $color-primary, $font-size-base, etc.
-// - Theming: @use '@vi/flux-ui/styles/theme' as theme; then @include theme.vi-theme(theme.$vi-theme--light, $emit-custom-properties: true);
+// - Theming: @use '@vialiq/flux-ui/styles/theme' as theme; then @include theme.vi-theme(theme.$vi-theme--light, $emit-custom-properties: true);
 ```
 
 **Advantages:**
@@ -68,8 +68,8 @@ yarn add @vi/flux-ui
 **Example Component (Angular):**
 ```scss
 // button.component.scss
-@use '@vi/flux-ui/styles/variables' as *;
-@use '@vi/flux-ui/styles/theme' as theme;
+@use '@vialiq/flux-ui/styles/variables' as *;
+@use '@vialiq/flux-ui/styles/theme' as theme;
 
 :host {
   @include theme.vi-theme(theme.$vi-theme--light, $emit-custom-properties: true);
@@ -93,7 +93,7 @@ yarn add @vi/flux-ui
 
 ```html
 <!-- In your HTML <head> -->
-<link rel="stylesheet" href="./node_modules/@vi/flux-ui/flux-ui.css">
+<link rel="stylesheet" href="./node_modules/@vialiq/flux-ui/flux-ui.css">
 
 <!-- Now all utilities available via classes -->
 <div class="flex justify-center items-center gap-md p-lg">
@@ -120,8 +120,8 @@ yarn add @vi/flux-ui
 
 ```typescript
 // In your component file
-import '@vi/flux-ui/flux-ui.css';          // Import pre-compiled CSS
-import { tokens } from '@vi/flux-ui';      // Import tokens for JS styling
+import '@vialiq/flux-ui/flux-ui.css';          // Import pre-compiled CSS
+import { tokens } from '@vialiq/flux-ui';      // Import tokens for JS styling
 
 class MyComponent extends LitElement {
   static styles = css`
@@ -150,7 +150,7 @@ class MyComponent extends LitElement {
 ## Using Tokens
 
 ```typescript
-import { tokens } from '@vi/flux-ui';
+import { tokens } from '@vialiq/flux-ui';
 
 const buttonStyle = {
   padding: tokens.spacing.md,        // 24px
@@ -216,7 +216,7 @@ Design System (Shared)
 
 ```typescript
 // apps/shell/src/bootstrap.ts
-import '@vi/flux-ui/flux-ui.css';  // Load once for all MFEs
+import '@vialiq/flux-ui/flux-ui.css';  // Load once for all MFEs
 
 bootstrapApplication(App).catch(err => console.error(err));
 ```
@@ -227,7 +227,7 @@ bootstrapApplication(App).catch(err => console.error(err));
 // apps/remote1/src/bootstrap.ts
 // ❌ DO NOT import styles (shell already loaded them)
 
-import { tokens } from '@vi/flux-ui';  // ✅ Import tokens only
+import { tokens } from '@vialiq/flux-ui';  // ✅ Import tokens only
 
 bootstrapApplication(RemoteEntry).catch(err => console.error(err));
 ```
@@ -237,7 +237,7 @@ bootstrapApplication(RemoteEntry).catch(err => console.error(err));
 ### TypeScript (Type-Safe)
 
 ```typescript
-import { tokens } from '@vi/flux-ui';
+import { tokens } from '@vialiq/flux-ui';
 
 const value = tokens.spacing.md;  // IDE autocomplete, type checking
 ```
@@ -245,7 +245,7 @@ const value = tokens.spacing.md;  // IDE autocomplete, type checking
 ### SCSS (Build-Time)
 
 ```scss
-@use '@vi/flux-ui/styles/variables' as *;
+@use '@vialiq/flux-ui/styles/variables' as *;
 
 .button {
   padding: $spacing-md;

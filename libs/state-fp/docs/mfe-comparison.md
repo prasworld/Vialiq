@@ -1,10 +1,10 @@
 # MFE State Management — Competitive Analysis
 
-> **Purpose:** Research record comparing `@vi/state-fp` against established state management
+> **Purpose:** Research record comparing `@vialiq/state-fp` against established state management
 > libraries in the context of Micro-Frontend (MFE) architectures. Used to identify gaps,
 > validate design decisions, and inform the development roadmap in `phases.md`.
 >
-> **Audience:** Architects and senior engineers evaluating `@vi/state-fp` for production MFE use.
+> **Audience:** Architects and senior engineers evaluating `@vialiq/state-fp` for production MFE use.
 >
 > **Last updated:** Post Phase-1 build stabilisation.
 
@@ -16,7 +16,7 @@
 2. [Problem Space — Why MFE State Is Hard](#2-problem-space--why-mfe-state-is-hard)
 3. [Library Profiles](#3-library-profiles)
 4. [Side-by-Side Comparison Table](#4-side-by-side-comparison-table)
-5. [What @vi/state-fp Does Well](#5-what-vi-state-fp-does-well)
+5. [What @vialiq/state-fp Does Well](#5-what-vi-state-fp-does-well)
 6. [Gaps Identified](#6-gaps-identified)
 7. [Architectural Decisions Validated](#7-architectural-decisions-validated)
 8. [Recommendations Added to Roadmap](#8-recommendations-added-to-roadmap)
@@ -67,7 +67,7 @@ remotes to share one store creates:
 | **Run-time integration via iframes** | Each remote is isolated iframe | State must be serialised to cross frame boundary |
 | **Edge-side composition** | Server stitches HTML from multiple services | State exists server-side; minimal client coordination |
 
-`@vi/state-fp` targets **run-time JavaScript integration** — the most complex and most
+`@vialiq/state-fp` targets **run-time JavaScript integration** — the most complex and most
 common production MFE pattern.
 
 ### 2.3 State Categories in MFEs
@@ -87,7 +87,7 @@ The `single-spa` documentation (their recommended setup page) explicitly states:
 > If you must share state, use a shared utility module with cross-microfrontend imports
 > or a browser-native mechanism like BroadcastChannel or Custom Events."
 
-This directly validates `@vi/state-fp`'s BroadcastChannel sync strategy over
+This directly validates `@vialiq/state-fp`'s BroadcastChannel sync strategy over
 a shared Redux store injected into each remote.
 
 ---
@@ -246,7 +246,7 @@ The scope-based model means each MFE can run in its own scope without global pol
 
 ## 4. Side-by-Side Comparison Table
 
-| Capability | Redux Toolkit | Zustand | Jotai | XState v5 | NgRx | TanStack Q | Effector | **@vi/state-fp** |
+| Capability | Redux Toolkit | Zustand | Jotai | XState v5 | NgRx | TanStack Q | Effector | **@vialiq/state-fp** |
 |---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 | CQRS discipline (Command/Event) | ⚠️ | ❌ | ❌ | ⚠️ | ⚠️ | ❌ | ⚠️ | ✅ |
 | Typed domain events | ⚠️ | ❌ | ❌ | ✅ | ⚠️ | ❌ | ✅ | ✅ |
@@ -274,7 +274,7 @@ The scope-based model means each MFE can run in its own scope without global pol
 
 ---
 
-## 5. What @vi/state-fp Does Well
+## 5. What @vialiq/state-fp Does Well
 
 ### 5.1 CQRS Discipline
 
@@ -292,7 +292,7 @@ XState machines come closest but encode state as FSM nodes rather than pure data
 ### 5.2 Per-Atom Isolation with Ownership Model
 
 Jotai also has per-atom primitives but has no ownership concept. Any code can read and
-write any atom. `@vi/state-fp` enforces that state mutations only flow through
+write any atom. `@vialiq/state-fp` enforces that state mutations only flow through
 `kernel.execute()` with a registered CommandHandler — no back-door writes.
 
 ### 5.3 BroadcastChannel Sync with Conflict Resolution
@@ -304,13 +304,13 @@ resolution protocol. This is a genuine differentiator for MFE architectures wher
 - A product list remote and a cart remote both need the cart item count
 - The header remote needs the user display name
 
-All of these are served by `@vi/state-fp/sync` without any shared runtime dependency
+All of these are served by `@vialiq/state-fp/sync` without any shared runtime dependency
 between remotes.
 
 ### 5.4 In-Process Debug Layer (No Extension Required)
 
 Redux DevTools, NgRx DevTools, and XState visualiser all require a browser extension or
-a separate development server. `@vi/state-fp/devtools` exposes its entire debug surface
+a separate development server. `@vialiq/state-fp/devtools` exposes its entire debug surface
 via `window.__VI_STATE_FP__` — accessible from any browser console without any tooling.
 
 This is especially important in enterprise environments where browser extension installation
@@ -378,7 +378,7 @@ const result = await kernel.executeOptimistic(atom, cmd, {
 
 ### Gap 4 — Cross-MFE Event Bus ❌ PENDING (Phase 4.5)
 
-**Status:** Not yet implemented. `@vi/state-fp/bus` planned.
+**Status:** Not yet implemented. `@vialiq/state-fp/bus` planned.
 
 **Proposed solution:**
 ```ts

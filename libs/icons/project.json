@@ -1,0 +1,51 @@
+{
+  "name": "icons",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "libs/icons/src",
+  "tags": ["scope:ui", "type:icons"],
+  "targets": {
+    "build": {
+      "executor": "@nx/vite:build",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/icons",
+        "configFile": "libs/icons/vite.config.ts",
+        "tsConfig": "libs/icons/tsconfig.lib.json"
+      },
+      "configurations": {
+        "production": {
+          "mode": "production"
+        }
+      }
+    },
+
+    "generate-icons": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node libs/icons/tools/generate-icons.mjs",
+        "cwd": "{workspaceRoot}"
+      }
+    },
+
+    "postbuild-publish": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["build"],
+      "options": {
+        "commands": [
+          "npx tsc -p libs/icons/tsconfig.lib.json --emitDeclarationOnly --noEmit false",
+          "cp libs/icons/publish-package.json dist/libs/icons/package.json"
+        ],
+        "parallel": false
+      }
+    },
+
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["libs/icons/**/*.ts"]
+      }
+    }
+  }
+}

@@ -4,12 +4,12 @@
  * Exercises every subpath import to prove they all resolve and type-check
  * correctly inside a `@nx/angular:webpack-browser` build:
  *
- *   @vi/automapper            – createMapper
- *   @vi/automapper/angular    – provideAutomapper, AUTOMAPPER_TOKEN
- *   @vi/automapper/orm        – profileFromColumns
- *   @vi/automapper/deep-clone – deepClone
- *   @vi/state-fp/core         – just, nothing, isJust, isNothing
- *   @vi/state-fp/kernel       – defineAtom, createKernel, command, domainEvent,
+ *   @vialiq/automapper            – createMapper
+ *   @vialiq/automapper/angular    – provideAutomapper, AUTOMAPPER_TOKEN
+ *   @vialiq/automapper/orm        – profileFromColumns
+ *   @vialiq/automapper/deep-clone – deepClone
+ *   @vialiq/state-fp/core         – just, nothing, isJust, isNothing
+ *   @vialiq/state-fp/kernel       – defineAtom, createKernel, command, domainEvent,
  *                               createCommandHandler, createEventApplier,
  *                               ok, err, match
  *
@@ -18,22 +18,22 @@
  */
 import { Component, OnInit } from '@angular/core';
 
-// ── @vi/automapper (core) ─────────────────────────────────────────────────────
-import { createMapper } from '@vi/automapper';
+// ── @vialiq/automapper (core) ─────────────────────────────────────────────────
+import { createMapper } from '@vialiq/automapper';
 
-// ── @vi/automapper/angular ────────────────────────────────────────────────────
-import { provideAutomapper, AUTOMAPPER_TOKEN } from '@vi/automapper/angular';
+// ── @vialiq/automapper/angular ────────────────────────────────────────────────
+import { provideAutomapper, AUTOMAPPER_TOKEN } from '@vialiq/automapper/angular';
 
-// ── @vi/automapper/orm ────────────────────────────────────────────────────────
-import { profileFromColumns } from '@vi/automapper/orm';
+// ── @vialiq/automapper/orm ────────────────────────────────────────────────────
+import { profileFromColumns } from '@vialiq/automapper/orm';
 
-// ── @vi/automapper/deep-clone ─────────────────────────────────────────────────
-import { deepClone } from '@vi/automapper/deep-clone';
+// ── @vialiq/automapper/deep-clone ─────────────────────────────────────────────
+import { deepClone } from '@vialiq/automapper/deep-clone';
 
-// ── @vi/state-fp/core ─────────────────────────────────────────────────────────
-import { just, nothing, isJust, isNothing } from '@vi/state-fp/core';
+// ── @vialiq/state-fp/core ─────────────────────────────────────────────────────
+import { just, nothing, isJust, isNothing } from '@vialiq/state-fp/core';
 
-// ── @vi/state-fp/kernel ───────────────────────────────────────────────────────
+// ── @vialiq/state-fp/kernel ───────────────────────────────────────────────────
 import {
   defineAtom,
   createKernel,
@@ -44,8 +44,8 @@ import {
   ok,
   err,
   match,
-} from '@vi/state-fp/kernel';
-import type { Command } from '@vi/state-fp/kernel';
+} from '@vialiq/state-fp/kernel';
+import type { Command } from '@vialiq/state-fp/kernel';
 
 // ─── Exported provider token (referenced in app.config.ts if needed) ──────────
 export { AUTOMAPPER_TOKEN };
@@ -111,7 +111,7 @@ export class LibSmokeTestComponent implements OnInit {
   ngOnInit(): void {
     const lines: string[] = [];
 
-    // ── @vi/automapper core + orm ────────────────────────────────────────────
+    // ── @vialiq/automapper core + orm ────────────────────────────────────────────
     const mapper = createMapper({ autoMap: false });
     // UserEntity is a class, so it can be used as the registry key directly.
     mapper.addProfile(UserEntity, 'UserDto',
@@ -125,19 +125,19 @@ export class LibSmokeTestComponent implements OnInit {
     lines.push('automapper/orm   ok: ' + dto.firstName + ' ' + dto.lastName);
     lines.push('automapper/orm   passwordHash excluded: ' + !('passwordHash' in (dto as object)));
 
-    // ── @vi/automapper/deep-clone ─────────────────────────────────────────────
+    // ── @vialiq/automapper/deep-clone ─────────────────────────────────────────────
     const original = { nested: { value: 42 } };
     const clone = deepClone(original);
     clone.nested.value = 99;
     lines.push(`deep-clone       → original unmodified: ${original.nested.value === 42}`);
 
-    // ── @vi/state-fp/core ─────────────────────────────────────────────────────
+    // ── @vialiq/state-fp/core ─────────────────────────────────────────────────────
     const maybeVal  = just(42);
     const maybeNone = nothing<number>();
     lines.push(`state-fp/core    → isJust(just(42)):     ${isJust(maybeVal)}`);
     lines.push(`state-fp/core    → isNothing(nothing()): ${isNothing(maybeNone)}`);
 
-    // ── @vi/state-fp/kernel (synchronous execute) ─────────────────────────────
+    // ── @vialiq/state-fp/kernel (synchronous execute) ─────────────────────────────
     const kernel = createKernel();
     kernel.register(counterAtom, incrementHandler, counterApplier);
     const result = kernel.execute(counterAtom, command('remote1/counter/increment', { by: 5 }));

@@ -9,9 +9,6 @@ const config: StorybookConfig = {
   },
   stories: ['../src/**/*.stories.ts'],
   addons: ['@storybook/addon-essentials'],
-  docs: {
-    autodocs: 'tag',
-  },
   async viteFinal(config) {
     return mergeConfig(config, {
       // Replace esbuild (which doesn't support TC39 standard decorators) with

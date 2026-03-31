@@ -185,7 +185,7 @@ export function createReactAdapter(apis: ReactAPIs): ReactKernelAdapter {
     const kernel = apis.useContext(KernelContext);
     if (kernel === null) {
       throw new Error(
-        '[@vi/state-fp/adapter] useAtom / useCommand / useQuery called outside of <Provider>. ' +
+        '[@vialiq/state-fp/adapter] useAtom / useCommand / useQuery called outside of <Provider>. ' +
         'Wrap your component tree with <reactAdapter.Provider kernel={kernel}>.',
       );
     }
@@ -219,7 +219,6 @@ export function createReactAdapter(apis: ReactAPIs): ReactKernelAdapter {
     // `atom` and `kernel` are the values actually closed over — include both
     // so the effect re-subscribes when either the atom instance or the kernel
     // instance changes (not just when atom.key changes).
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [atom, kernel]);
 
     return [state, atom] as const;
@@ -252,12 +251,10 @@ export function createReactAdapter(apis: ReactAPIs): ReactKernelAdapter {
     const [state] = useAtom(atom);
 
     return apis.useMemo<R>(
-      // eslint-disable-next-line react-hooks/exhaustive-deps
       () => kernel.query<R>(atom as Atom<unknown>, q),
       // `state` invalidates the memo on atom state change.
       // `q` and `kernel` are also closed over — including them ensures the
       // memo recomputes if the query object or kernel instance changes.
-      // eslint-disable-next-line react-hooks/exhaustive-deps
       [state, q, kernel],
     );
   }
@@ -274,7 +271,6 @@ export function createReactAdapter(apis: ReactAPIs): ReactKernelAdapter {
         ? stream.subscribeAnimated((v: T) => setValue(v))
         : stream.subscribe((v: T) => setValue(v));
       return off;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [stream, animated]);
 
     return value;
@@ -290,22 +286,22 @@ export function createReactAdapter(apis: ReactAPIs): ReactKernelAdapter {
 /** @deprecated Use `createReactAdapter` instead. */
 export const StateFpProvider: unknown = () => {
   throw new Error(
-    '[@vi/state-fp/adapter] StateFpProvider is a legacy stub. ' +
+    '[@vialiq/state-fp/adapter] StateFpProvider is a legacy stub. ' +
     'Use createReactAdapter({ useState, useEffect, useRef, useMemo, useContext, createContext, createElement }).Provider instead.',
   );
 };
 
 /** @deprecated Use `createReactAdapter` instead. */
 export const useAtom = (): never => {
-  throw new Error('[@vi/state-fp/adapter] useAtom is a legacy stub. Use createReactAdapter(...).useAtom instead.');
+  throw new Error('[@vialiq/state-fp/adapter] useAtom is a legacy stub. Use createReactAdapter(...).useAtom instead.');
 };
 
 /** @deprecated Use `createReactAdapter` instead. */
 export const useCommand = (): never => {
-  throw new Error('[@vi/state-fp/adapter] useCommand is a legacy stub. Use createReactAdapter(...).useCommand instead.');
+  throw new Error('[@vialiq/state-fp/adapter] useCommand is a legacy stub. Use createReactAdapter(...).useCommand instead.');
 };
 
 /** @deprecated Use `createReactAdapter` instead. */
 export const useQuery = (): never => {
-  throw new Error('[@vi/state-fp/adapter] useQuery is a legacy stub. Use createReactAdapter(...).useQuery instead.');
+  throw new Error('[@vialiq/state-fp/adapter] useQuery is a legacy stub. Use createReactAdapter(...).useQuery instead.');
 };

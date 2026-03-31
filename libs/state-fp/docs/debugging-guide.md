@@ -1,7 +1,7 @@
-# @vi/state-fp — Debugging Guide
+# @vialiq/state-fp — Debugging Guide
 
 > **Purpose:** Step-by-step recipes for diagnosing and fixing state problems.  
-> **Audience:** Developers with working knowledge of `@vi/state-fp` who have hit a bug.  
+> **Audience:** Developers with working knowledge of `@vialiq/state-fp` who have hit a bug.  
 > **See also:** [debug-model.md](./debug-model.md) for full DevTools API reference;
 > [modules/devtools.md](./modules/devtools.md) for the module quick-reference.
 
@@ -13,17 +13,17 @@ Before you can use any debugging recipes, DevTools must be installed and importe
 
 ### Step 1: Install the devtools package
 
-`@vi/state-fp/devtools` is a **separate module** from the core kernel. Install it via your package manager:
+`@vialiq/state-fp/devtools` is a **separate module** from the core kernel. Install it via your package manager:
 
 ```bash
 # Using pnpm (recommended for Nx workspaces)
-pnpm add @vi/state-fp
+pnpm add @vialiq/state-fp
 
 # Using npm
-npm install @vi/state-fp
+npm install @vialiq/state-fp
 
 # Using yarn
-yarn add @vi/state-fp
+yarn add @vialiq/state-fp
 ```
 
 > The package is already published to npm. If you're working in the Nx monorepo locally,
@@ -36,7 +36,7 @@ DevTools must be created **once at app initialization**, before registering any 
 ```ts
 // 📍 FRAMEWORK: Framework-agnostic
 // 📚 IMPORTS:
-import { createDevTools, noopDevTools } from '@vi/state-fp/devtools';
+import { createDevTools, noopDevTools } from '@vialiq/state-fp/devtools';
 
 // Determine dev mode based on your framework/build setup
 const isDevMode = !process.env.NODE_ENV?.includes('production');
@@ -58,7 +58,7 @@ Pass devtools to your kernel via the plugin system:
 ```ts
 // 📍 FRAMEWORK: Framework-agnostic
 // 📚 IMPORTS:
-import { createKernel } from '@vi/state-fp/kernel';
+import { createKernel } from '@vialiq/state-fp/kernel';
 
 const kernel = createKernel({ debug: isDevMode });
 
@@ -93,7 +93,7 @@ window.__VI_STATE_FP__
 ```ts
 // Use isDevMode from @angular/core
 import { isDevMode } from '@angular/core';
-import { createDevTools, noopDevTools } from '@vi/state-fp/devtools';
+import { createDevTools, noopDevTools } from '@vialiq/state-fp/devtools';
 
 export const devtools = isDevMode() ? createDevTools({ maxLogSize: 500 }) : noopDevTools;
 kernel.use(devtools.plugin);
@@ -102,7 +102,7 @@ kernel.use(devtools.plugin);
 **React / Vanilla JS:**
 ```ts
 // Use process.env.NODE_ENV
-import { createDevTools, noopDevTools } from '@vi/state-fp/devtools';
+import { createDevTools, noopDevTools } from '@vialiq/state-fp/devtools';
 
 const isDevMode = process.env.NODE_ENV === 'development';
 export const devtools = isDevMode ? createDevTools({ maxLogSize: 500 }) : noopDevTools;
@@ -142,8 +142,8 @@ is a two-step process: create the devtools instance, then register it with the k
 ```ts
 // 📍 FRAMEWORK: Angular 14+
 // 📚 IMPORTS:
-import { createKernel }                  from '@vi/state-fp/kernel';
-import { createDevTools, noopDevTools }  from '@vi/state-fp/devtools';
+import { createKernel }                  from '@vialiq/state-fp/kernel';
+import { createDevTools, noopDevTools }  from '@vialiq/state-fp/devtools';
 import { isDevMode }                     from '@angular/core';
 
 // Step 1: Create devtools (noopDevTools is zero-cost in production)
@@ -172,7 +172,7 @@ window.__VI_STATE_FP__
 **For React/Vanilla JS:**
 ```ts
 // React/Vanilla: use process.env.NODE_ENV
-import { createDevTools, noopDevTools } from '@vi/state-fp/devtools';
+import { createDevTools, noopDevTools } from '@vialiq/state-fp/devtools';
 
 const isDev = process.env.NODE_ENV === 'development';
 const devtools = isDev ? createDevTools({ maxLogSize: 500 }) : noopDevTools;
@@ -393,7 +393,7 @@ handle: (state, cmd) => {
 **Step 1: Log the error explicitly:**
 ```ts
 // 📍 IMPORTS:
-import { match }    from '@vi/state-fp/core';
+import { match }    from '@vialiq/state-fp/core';
 import { AddItem }  from '@/commands';  // your app's command
 
 const result = kernel.execute(cartAtom, AddItem({ sku, qty }));
@@ -407,8 +407,8 @@ match(result, {
 **Step 2: Check the command type matches the handler:**
 ```ts
 // 📍 IMPORTS:
-import { createCommandHandler } from '@vi/state-fp/kernel';
-import { command }               from '@vi/state-fp/kernel';
+import { createCommandHandler } from '@vialiq/state-fp/kernel';
+import { command }               from '@vialiq/state-fp/kernel';
 
 // The handler's commandType must EXACTLY match the command's type
 const handler = createCommandHandler({
@@ -429,9 +429,9 @@ kernel.register(cartAtom, addItemHandler, cartApplier);   // ← must be called 
 **Step 4: Debug inside the handler:**
 ```ts
 // 📍 IMPORTS:
-import { createCommandHandler } from '@vi/state-fp/kernel';
-import { ok, err }              from '@vi/state-fp/core';
-import { domainEvent }          from '@vi/state-fp/kernel';
+import { createCommandHandler } from '@vialiq/state-fp/kernel';
+import { ok, err }              from '@vialiq/state-fp/core';
+import { domainEvent }          from '@vialiq/state-fp/kernel';
 
 const addItemHandler = createCommandHandler({
   commandType: 'cart/addItem',
@@ -865,9 +865,9 @@ In Vitest tests, add debug output by attaching a devtools instance before each t
 // 📍 TEST FRAMEWORK: Vitest
 // 📚 IMPORTS:
 import { beforeEach, afterEach, it, describe, expect } from 'vitest';
-import { createKernel }   from '@vi/state-fp/kernel';
-import { createDevTools } from '@vi/state-fp/devtools';
-import { isOk }           from '@vi/state-fp/core';
+import { createKernel }   from '@vialiq/state-fp/kernel';
+import { createDevTools } from '@vialiq/state-fp/devtools';
+import { isOk }           from '@vialiq/state-fp/core';
 import { cartAtom }       from '@/atoms';  // import your atom
 import { addItemHandler, cartApplier } from '@/configs';  // import your handlers
 
@@ -924,7 +924,7 @@ expect.extend({
 
 ```ts
 // 📍 IMPORTS:
-import type { KernelPlugin } from '@vi/state-fp/kernel';
+import type { KernelPlugin } from '@vialiq/state-fp/kernel';
 
 // KernelPlugin that logs commands taking > 10ms
 const performancePlugin: KernelPlugin = {
@@ -983,7 +983,7 @@ const subscriberCountPlugin: KernelPlugin = {
 
 ```ts
 // 📍 IMPORTS:
-import { createEphemeralStream } from '@vi/state-fp/core';
+import { createEphemeralStream } from '@vialiq/state-fp/core';
 
 const mousePos = createEphemeralStream<{x: number; y: number}>();
 

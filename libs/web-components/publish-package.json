@@ -1,23 +1,34 @@
 {
-  "name": "@vi/web-components",
-  "version": "0.0.1",
+  "name": "@vialiq/web-components",
+  "version": "0.0.3",
   "type": "module",
-  "description": "Lit web component library built on @vi/flux-ui design tokens",
+  "sideEffects": true,
+  "description": "Lit web component library built on @vialiq/flux-ui design tokens",
   "license": "MIT",
   "module": "./index.js",
   "types": "./index.d.ts",
   "exports": {
     ".": {
-      "import": "./index.js",
+      "default": "./index.js",
       "types": "./index.d.ts"
     },
     "./button": {
-      "import": "./button/index.js",
-      "types": "./button/index.d.ts"
+      "default": "./button/vi-button.js",
+      "types": "./button/vi-button.d.ts"
+    },
+    "./icons/vi-icon": {
+      "default": "./icons/vi-icon.js",
+      "types": "./icons/vi-icon.d.ts"
+    },
+    "./icons/registry": {
+      "default": "./icons/registry.js",
+      "types": "./icons/registry.d.ts"
     }
   },
   "peerDependencies": {
-    "lit": "^3.0.0"
+    "lit": "^3.0.0",
+    "@vialiq/flux-ui": "^0.0.1",
+    "@vialiq/icons": "^0.0.1"
   },
   "keywords": [
     "web-components",
@@ -28,10 +39,11 @@
     "flux-ui"
   ],
   "files": [
-    "index.js",
-    "index.d.ts",
-    "index.js.map",
+    "*.js",
+    "*.d.ts",
+    "base/",
     "button/",
+    "icons/",
     "README.md"
   ]
 }

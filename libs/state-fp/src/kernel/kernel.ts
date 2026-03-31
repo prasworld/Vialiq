@@ -1,5 +1,5 @@
 /**
- * @vi/state-fp/kernel — createKernel.
+ * @vialiq/state-fp/kernel — createKernel.
  *
  * The Kernel is the runtime coordinator:
  *   - Routes commands through CommandBus → CommandHandler → EventApplier → Atom
@@ -66,7 +66,7 @@ interface AtomRegistration<S = unknown> {
  * const kernel = createKernel();
  *
  * // With devtools
- * import { createDevTools } from '@vi/state-fp/devtools';
+ * import { createDevTools } from '@vialiq/state-fp/devtools';
  * const kernel = createKernel({ debug: true });
  * // — or —
  * const kernel = createKernel({ devtools: createDevTools({ maxEvents: 500 }) });

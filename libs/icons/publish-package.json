@@ -1,0 +1,29 @@
+{
+  "name": "@vialiq/icons",
+  "version": "0.0.1",
+  "type": "module",
+  "description": "SVG icon definitions for the @vi design system",
+  "license": "MIT",
+  "module": "./index.js",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "default": "./index.js",
+      "types": "./index.d.ts"
+    },
+    "./*": {
+      "default": "./*.js",
+      "types": "./*.d.ts"
+    }
+  },
+  "keywords": [
+    "icons",
+    "svg",
+    "design-system"
+  ],
+  "files": [
+    "*.js",
+    "*.d.ts",
+    "*.js.map"
+  ]
+}

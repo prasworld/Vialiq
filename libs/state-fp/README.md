@@ -1,19 +1,19 @@
-# @vi/state-fp
+# @vialiq/state-fp
 
 > Modular CQRS functional state management — composable, lightweight, zero runtime dependencies.
 
 ## Overview
 
-`@vi/state-fp` is a TypeScript-first state management library organized around **six independently importable modules** following a strict **CQRS** (Command / Query Responsibility Segregation) architecture.
+`@vialiq/state-fp` is a TypeScript-first state management library organized around **six independently importable modules** following a strict **CQRS** (Command / Query Responsibility Segregation) architecture.
 
 | Module          | Import path                  | Purpose                                      |
 |-----------------|------------------------------|----------------------------------------------|
-| **core**        | `@vi/state-fp/core`          | FP primitives: Maybe, Either, IO, Lens, utils |
-| **kernel**      | `@vi/state-fp/kernel`        | Atoms, commands, events, queries, kernel      |
-| **storage**     | `@vi/state-fp/storage`       | Pluggable adapters: memory, localStorage, IDB |
-| **sync**        | `@vi/state-fp/sync`          | Cross-tab sync via BroadcastChannel           |
-| **devtools**    | `@vi/state-fp/devtools`      | Event log, snapshots, time-travel, bridge     |
-| **adapter**     | `@vi/state-fp/adapter`       | React hooks, Angular signals, Lit controllers, vanilla JS |
+| **core**        | `@vialiq/state-fp/core`          | FP primitives: Maybe, Either, IO, Lens, utils |
+| **kernel**      | `@vialiq/state-fp/kernel`        | Atoms, commands, events, queries, kernel      |
+| **storage**     | `@vialiq/state-fp/storage`       | Pluggable adapters: memory, localStorage, IDB |
+| **sync**        | `@vialiq/state-fp/sync`          | Cross-tab sync via BroadcastChannel           |
+| **devtools**    | `@vialiq/state-fp/devtools`      | Event log, snapshots, time-travel, bridge     |
+| **adapter**     | `@vialiq/state-fp/adapter`       | React hooks, Angular signals, Lit controllers, vanilla JS |
 
 Import only what you need — all modules are individually tree-shakeable.
 
@@ -22,9 +22,9 @@ Import only what you need — all modules are individually tree-shakeable.
 ## Installation
 
 ```bash
-npm install @vi/state-fp
+npm install @vialiq/state-fp
 # or
-pnpm add @vi/state-fp
+pnpm add @vialiq/state-fp
 ```
 
 ---
@@ -35,7 +35,7 @@ pnpm add @vi/state-fp
 import { defineAtom, createKernel, command,
          createCommandHandler, createEventApplier, domainEvent,
          ok, err, match }
-  from '@vi/state-fp/kernel';
+  from '@vialiq/state-fp/kernel';
 
 // 1. Define the atom (state container)
 const counterAtom = defineAtom({
@@ -83,7 +83,7 @@ const newCount = match(result, {
 
 ## Module Reference
 
-### `@vi/state-fp/core`
+### `@vialiq/state-fp/core`
 
 FP primitives with zero dependencies.
 
@@ -103,14 +103,14 @@ import {
   lens, prop, composeLens, view, over, set,
   // Utils
   pipe, compose, uuid, now, deepClone, memoize,
-} from '@vi/state-fp/core';
+} from '@vialiq/state-fp/core';
 ```
 
 > **Naming convention:** `ok` / `err` / `isOk` / `isErr` / `match` are the preferred
 > names for result handling. `right` / `left` / `isRight` / `isLeft` are identical
 > functions kept for completeness; use whichever reads more naturally for the context.
 
-### `@vi/state-fp/kernel`
+### `@vialiq/state-fp/kernel`
 
 CQRS engine: atoms, commands, events, queries.
 
@@ -124,7 +124,7 @@ import {
   // Result helpers re-exported here for convenience —
   // no extra import needed when writing command handlers
   ok, err, isOk, isErr, match,
-} from '@vi/state-fp/kernel';
+} from '@vialiq/state-fp/kernel';
 ```
 
 **CQRS write path:**
@@ -139,29 +139,29 @@ command → CommandHandler(state, cmd) → Result<CommandError, DomainEvent[]>
 query → QueryHandler(state, query) → R   (pure, synchronous, never fails)
 ```
 
-### `@vi/state-fp/storage`
+### `@vialiq/state-fp/storage`
 
 Pluggable persistence backends.
 
 ```ts
 import {
   MemoryAdapter,      // in-process Map, TTL, cleared on page reload
-} from '@vi/state-fp/storage';
+} from '@vialiq/state-fp/storage';
 ```
 
 All adapter methods return `StorageResult<T>` = `Promise<Either<StorageError, T>>` so
 failures are explicit and type-safe.
 
 > **Note:** `LocalAdapter`, `SessionAdapter`, and `IndexedDbAdapter` are not available
-> in `@vi/state-fp/storage`. Only `MemoryAdapter` is exported — all application state
+> in `@vialiq/state-fp/storage`. Only `MemoryAdapter` is exported — all application state
 > is kept in process memory. See `src/storage/index.ts` for the rationale.
 
-### `@vi/state-fp/sync`
+### `@vialiq/state-fp/sync`
 
 Cross-tab / cross-worker atom synchronisation.
 
 ```ts
-import { createSyncEngine } from '@vi/state-fp/sync';
+import { createSyncEngine } from '@vialiq/state-fp/sync';
 
 const sync   = createSyncEngine({ kernel });
 const unsync = sync.share(counterAtom, {
@@ -183,12 +183,12 @@ Conflict strategies:
 | `version-wins`     | Vector with highest total clock wins               |
 | `(local, remote) => S` | Custom resolver function                      |
 
-### `@vi/state-fp/devtools`
+### `@vialiq/state-fp/devtools`
 
 Event log, snapshot manager, and time-travel.
 
 ```ts
-import { createDevTools } from '@vi/state-fp/devtools';
+import { createDevTools } from '@vialiq/state-fp/devtools';
 
 const devt = createDevTools({
   maxLogSize:   500,
@@ -211,13 +211,13 @@ window.__VI_STATE_FP__.timeTravelTo('<id>');
 window.__VI_STATE_FP__.exportLog();
 ```
 
-### `@vi/state-fp/adapter`
+### `@vialiq/state-fp/adapter`
 
 Framework integration helpers — all adapters use a **factory pattern** so the library has zero compile-time dependency on any UI framework.
 
 #### Defining Commands and Queries
 
-Commands and queries are **plain functions you define** using helpers from `@vi/state-fp/kernel`. The adapter examples below all reference `IncrementBy` and `BuildTotal` — here is how to define them:
+Commands and queries are **plain functions you define** using helpers from `@vialiq/state-fp/kernel`. The adapter examples below all reference `IncrementBy` and `BuildTotal` — here is how to define them:
 
 ```ts
 import {
@@ -225,7 +225,7 @@ import {
   createCommandHandler, createEventApplier,
   query, createQueryHandler,
   ok, err,
-} from '@vi/state-fp/kernel';
+} from '@vialiq/state-fp/kernel';
 
 // --- State shape ---
 interface Counter { count: number; total: number }
@@ -280,7 +280,7 @@ See sequence diagram: `docs/fig/13-sequence-react-adapter.puml`
 ```tsx
 // src/app/adapter.ts — create once, import everywhere
 import { useState, useEffect, useRef, useMemo, useContext, createContext, createElement } from 'react';
-import { createReactAdapter } from '@vi/state-fp/adapter';
+import { createReactAdapter } from '@vialiq/state-fp/adapter';
 
 export const reactAdapter = createReactAdapter({
   useState, useEffect, useRef, useMemo, useContext, createContext, createElement,
@@ -334,7 +334,7 @@ The adapter provides low-level primitives. In production you wrap them in an
 ```ts
 // ─── src/core/state/ng-adapter.ts — created once, imported by stores ─────────
 import { signal, inject, DestroyRef } from '@angular/core';
-import { createAngularAdapter }       from '@vi/state-fp/adapter';
+import { createAngularAdapter }       from '@vialiq/state-fp/adapter';
 
 export const ngAdapter = createAngularAdapter({ signal, inject, DestroyRef });
 ```
@@ -342,7 +342,7 @@ export const ngAdapter = createAngularAdapter({ signal, inject, DestroyRef });
 ```ts
 // ─── src/features/counter/counter.store.ts — all wiring lives here ────────────
 import { Injectable, inject }  from '@angular/core';
-import { isErr }                from '@vi/state-fp/core';
+import { isErr }                from '@vialiq/state-fp/core';
 import { KERNEL }               from '../../app/app.config';  // InjectionToken<Kernel>
 import { ngAdapter }            from '../../core/state/ng-adapter';
 import { counterAtom, IncrementBy, DecrementBy } from './counter.domain';
@@ -410,7 +410,7 @@ import { customElement }          from 'lit/decorators.js';
 import {
   createLitController,
   createLitStreamController,
-} from '@vi/state-fp/adapter';
+} from '@vialiq/state-fp/adapter';
 
 // IncrementBy, BuildTotal, counterAtom, kernel — defined in your domain model (see above)
 import { IncrementBy, BuildTotal, counterAtom } from './counter.commands';
@@ -449,7 +449,7 @@ class CounterButton extends LitElement {
 #### Vanilla JS / TypeScript
 
 ```ts
-import { createAdapter } from '@vi/state-fp/adapter';
+import { createAdapter } from '@vialiq/state-fp/adapter';
 
 const app = createAdapter(kernel);
 
@@ -511,21 +511,21 @@ All of the following modules are individually importable as subpath exports. Imp
 
 | Subpath | Contents |
 |---|---|
-| `@vi/state-fp` | Full re-export of all modules (convenience; prefer subpaths for tree-shaking) |
-| `@vi/state-fp/core` | FP primitives: Maybe, Either, IO, Lens, pipe, compose, utilities |
-| `@vi/state-fp/kernel` | Atoms, commands, events, queries, CQRS kernel |
-| `@vi/state-fp/storage` | Pluggable persistence adapters (MemoryAdapter) |
-| `@vi/state-fp/sync` | Cross-tab / cross-worker atom synchronisation |
-| `@vi/state-fp/devtools` | Event log, snapshots, time-travel |
-| `@vi/state-fp/adapter` | React hooks, Angular signals, Lit controllers, vanilla JS |
-| `@vi/state-fp/bus` | Event bus / message bus primitives |
+| `@vialiq/state-fp` | Full re-export of all modules (convenience; prefer subpaths for tree-shaking) |
+| `@vialiq/state-fp/core` | FP primitives: Maybe, Either, IO, Lens, pipe, compose, utilities |
+| `@vialiq/state-fp/kernel` | Atoms, commands, events, queries, CQRS kernel |
+| `@vialiq/state-fp/storage` | Pluggable persistence adapters (MemoryAdapter) |
+| `@vialiq/state-fp/sync` | Cross-tab / cross-worker atom synchronisation |
+| `@vialiq/state-fp/devtools` | Event log, snapshots, time-travel |
+| `@vialiq/state-fp/adapter` | React hooks, Angular signals, Lit controllers, vanilla JS |
+| `@vialiq/state-fp/bus` | Event bus / message bus primitives |
 
 The `exports` map in `package.json` is what Node and modern bundlers use to resolve these paths. Each entry maps to a pre-built ESM chunk in the published tarball:
 
 ```
-@vi/state-fp/core        → dist/core/index.js
-@vi/state-fp/kernel      → dist/kernel/index.js
-@vi/state-fp/storage     → dist/storage/index.js
+@vialiq/state-fp/core        → dist/core/index.js
+@vialiq/state-fp/kernel      → dist/kernel/index.js
+@vialiq/state-fp/storage     → dist/storage/index.js
 ...
 ```
 

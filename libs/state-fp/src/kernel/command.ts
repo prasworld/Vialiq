@@ -1,5 +1,5 @@
 /**
- * @vi/state-fp/kernel — Command types, factory, and CommandBus.
+ * @vialiq/state-fp/kernel — Command types, factory, and CommandBus.
  *
  * Commands express intent. They carry business semantics and are
  * validated by a CommandHandler before any state changes occur.

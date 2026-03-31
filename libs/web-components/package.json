@@ -1,10 +1,17 @@
 {
-  "name": "@vi/web-components",
+  "name": "@vialiq/web-components",
   "version": "0.0.1",
   "type": "module",
   "private": true,
   "scripts": {
     "storybook": "storybook dev --config-dir .storybook --port 6006",
     "build-storybook": "storybook build --config-dir .storybook --output-dir dist/storybook"
+  },
+  "dependencies": {
+    "@vialiq/icons": "*",
+    "lit": "^3.0.0"
+  },
+  "devDependencies": {
+    "@wdio/cli": "^9.27.0"
   }
 }

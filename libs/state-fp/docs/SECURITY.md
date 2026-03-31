@@ -1,8 +1,8 @@
-# @vi/state-fp — Security Architecture
+# @vialiq/state-fp — Security Architecture
 
 ## Core Principle: Memory-Only Application State
 
-**@vi/state-fp enforces memory-only storage for all application state. This is a non-negotiable architectural decision, not an optional feature.**
+**@vialiq/state-fp enforces memory-only storage for all application state. This is a non-negotiable architectural decision, not an optional feature.**
 
 ## Why Browser Persistence is Forbidden
 
@@ -103,11 +103,11 @@ const store = create(
 );
 ```
 
-**@vi/state-fp follows this pattern:**
+**@vialiq/state-fp follows this pattern:**
 - Memory-only by default (and only option)
 - DevTools are dev-only (disabled in production via `process.env.NODE_ENV !== 'production'`)
 - No browser persistence for sensitive app state
-- Separate `@vi/config` library for non-sensitive config (theme, locale, feature flags)
+- Separate `@vialiq/config` library for non-sensitive config (theme, locale, feature flags)
 
 ---
 
@@ -118,8 +118,8 @@ const store = create(
 All attempts to use browser-persistent storage are blocked at runtime:
 
 ```ts
-import { defineAtom } from '@vi/state-fp/kernel';
-import { LocalAdapter } from '@vi/state-fp/storage'; // ❌ Not exported
+import { defineAtom } from '@vialiq/state-fp/kernel';
+import { LocalAdapter } from '@vialiq/state-fp/storage'; // ❌ Not exported
 
 // ❌ Compile error: LocalAdapter not available
 const authAtom = defineAtom({
@@ -132,7 +132,7 @@ const authAtom = defineAtom({
 Even if a developer obtains `LocalAdapter` from elsewhere:
 
 ```ts
-import { LocalAdapter } from '@vi/state-fp/src/storage/local'; // ❌ Dark imports
+import { LocalAdapter } from '@vialiq/state-fp/src/storage/local'; // ❌ Dark imports
 
 const authAtom = defineAtom({
   key: 'auth',
@@ -153,8 +153,8 @@ DevTools plugin is environment-gated:
 
 ```ts
 // app/kernel.ts  (dev build)
-import { createKernel } from '@vi/state-fp/kernel';
-import { createDevTools } from '@vi/state-fp/devtools';
+import { createKernel } from '@vialiq/state-fp/kernel';
+import { createDevTools } from '@vialiq/state-fp/devtools';
 
 export const kernel = createKernel({ debug: true });
 
@@ -164,7 +164,7 @@ kernel.use(devtools.plugin);
 
 ```ts
 // app/kernel.ts  (production build)
-import { createKernel } from '@vi/state-fp/kernel';
+import { createKernel } from '@vialiq/state-fp/kernel';
 
 // No devtools plugin — zero overhead, nothing ships to the browser
 export const kernel = createKernel({ debug: false });
@@ -178,7 +178,7 @@ export const kernel = createKernel({ debug: false });
 
 ### 3. Comparable to Redux/NgRx Safety
 
-| Feature | Redux/NgRx | @vi/state-fp |
+| Feature | Redux/NgRx | @vialiq/state-fp |
 |---------|------------|--------------|
 | Default storage | Memory only | Memory only |
 | Persistent adapters available | Explicit plugin required | Not available |
@@ -191,17 +191,17 @@ export const kernel = createKernel({ debug: false });
 
 ## For Non-Sensitive Configuration
 
-**@vi/state-fp is purpose-built for sensitive application state.** For non-sensitive configuration (theme, locale, feature flags), use the separate `@vi/config` library:
+**@vialiq/state-fp is purpose-built for sensitive application state.** For non-sensitive configuration (theme, locale, feature flags), use the separate `@vialiq/config` library:
 
 ```ts
-// Application state — @vi/state-fp (memory-only)
+// Application state — @vialiq/state-fp (memory-only)
 const authAtom = defineAtom({
   key: 'auth',
   initialState: { token: null, userId: null },
   // ← No storage = memory-only (REQUIRED)
 });
 
-// User preferences — @vi/config (can use browser persistence)
+// User preferences — @vialiq/config (can use browser persistence)
 const preferencesConfig = createConfig({
   key: 'user/preferences',
   initialState: { theme: 'light', locale: 'en' },
@@ -220,7 +220,7 @@ const preferencesConfig = createConfig({
 
 ## Threat Model
 
-| Threat | Attack Vector | @vi/state-fp Mitigation |
+| Threat | Attack Vector | @vialiq/state-fp Mitigation |
 |--------|---------------|--------------------------|
 | **Malicious insider** | Physical access → DevTools | Memory-only: no plaintext on disk; state cleared on reload |
 | **Disgruntled employee** | DevTools → copy secrets | DevTools disabled in production ( noopDevTools); dev-only bridge |
@@ -234,7 +234,7 @@ const preferencesConfig = createConfig({
 
 ## Implementation Checklist
 
-- ✅ MemoryAdapter only in public API (`@vi/state-fp/storage`)
+- ✅ MemoryAdapter only in public API (`@vialiq/state-fp/storage`)
 - ✅ Forbidden adapters (Local, Session, IndexedDB, Obfuscated) removed from source
 - ✅ Runtime guard (`assertApplicationStoragePolicy`) on all registration paths
 - ✅ DevTools conditional: `createDevTools()` in dev, `noopDevTools` in prod
@@ -259,8 +259,8 @@ const preferencesConfig = createConfig({
 This is a **non-negotiable architectural constraint**, not a limitation to be worked around. If you need persistent storage for sensitive data:
 
 1. **Validate with security/compliance team** — sensitive data should never persist in the browser
-2. **Consider @vi/config** — for non-sensitive configuration
+2. **Consider @vialiq/config** — for non-sensitive configuration
 3. **Use server-side sessions** — authentication and sensitive app state belong on the server
-4. **Use IndexedDB in @vi/config** — explicitly designed for safe persistence of non-sensitive data
+4. **Use IndexedDB in @vialiq/config** — explicitly designed for safe persistence of non-sensitive data
 
-Contact the @vi/state-fp team with security concerns before suggesting changes to this policy.
+Contact the @vialiq/state-fp team with security concerns before suggesting changes to this policy.

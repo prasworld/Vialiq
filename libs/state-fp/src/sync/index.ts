@@ -1,12 +1,12 @@
 /**
- * @vi/state-fp/sync
+ * @vialiq/state-fp/sync
  *
  * Cross-tab and cross-worker atom synchronisation powered by BroadcastChannel.
  *
  * Quick start:
  * ```ts
- * import { createKernel, defineAtom } from '@vi/state-fp/kernel';
- * import { createSyncEngine }         from '@vi/state-fp/sync';
+ * import { createKernel, defineAtom } from '@vialiq/state-fp/kernel';
+ * import { createSyncEngine }         from '@vialiq/state-fp/sync';
  *
  * const kernel = createKernel();
  * const counter = defineAtom({ key: 'counter', initialState: 0 });

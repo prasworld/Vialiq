@@ -1,5 +1,5 @@
 {
-  "name": "@vi/flux-ui",
+  "name": "@vialiq/flux-ui",
   "version": "0.0.1",
   "type": "module",
   "description": "Custom minimal CSS/SASS framework for microfrontend product",
@@ -8,15 +8,15 @@
   "types": "./index.d.ts",
   "exports": {
     ".": {
-      "import": "./index.js",
+      "default": "./index.js",
       "types": "./index.d.ts"
     },
     "./tokens": {
-      "import": "./tokens/index.js",
+      "default": "./tokens/index.js",
       "types": "./tokens/index.d.ts"
     },
     "./styles": {
-      "import": "./styles/index.js",
+      "default": "./styles/index.js",
       "types": "./styles/index.d.ts"
     },
     "./styles/*": "./styles/*",

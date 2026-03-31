@@ -11,8 +11,7 @@
  *   3. Compile-time fallback (from $color-primary) → #0066cc
  */
 
-@use '@vi/flux-ui/styles/variables' as tokens;
-@use '@vi/flux-ui/components/button' as button-base;
+@use '@vialiq/flux-ui/styles/variables' as tokens;
 
 // ============================================================================
 // Host defaults — establishes component-scoped CSS custom properties.

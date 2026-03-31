@@ -30,9 +30,12 @@
 
     "postbuild-publish": {
       "executor": "nx:run-commands",
-      "dependsOn": ["build"],
       "options": {
         "commands": [
+          "npx vite build --config libs/web-components/vite.config.ts",
+          "npx tsc -p libs/web-components/tsconfig.lib.json --emitDeclarationOnly --noEmit false",
+          "cp -r dist/libs/web-components/libs/web-components/src/* dist/libs/web-components/",
+          "rm -rf dist/libs/web-components/libs",
           "cp libs/web-components/publish-package.json dist/libs/web-components/package.json"
         ],
         "parallel": false

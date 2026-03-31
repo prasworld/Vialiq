@@ -1,10 +1,10 @@
 # MFE State Management — Per-Framework Integration Guide
 
 > **Purpose:** This guide answers the question: *"My team builds Angular (or React, or Lit) micro-frontend
-> remotes. How do I integrate `@vi/state-fp` and make state management as easy as possible?"*
+> remotes. How do I integrate `@vialiq/state-fp` and make state management as easy as possible?"*
 >
 > **Audience:** Frontend developers joining a micro-frontend project who already know their
-> framework (Angular / React / Lit) but are new to `@vi/state-fp`.
+> framework (Angular / React / Lit) but are new to `@vialiq/state-fp`.
 
 ---
 
@@ -33,8 +33,8 @@
    - [6.1 Shell Owns the Kernel](#61-shell-owns-the-kernel)
    - [6.2 Remote Borrows Atoms](#62-remote-borrows-atoms)
    - [6.3 Cross-MFE Domain Events](#63-cross-mfe-domain-events)
-7. [NgRx Bridge — Migrating an Angular MFE to @vi/state-fp](#7-ngrx-bridge--migrating-an-angular-mfe-to-vistate-fp)
-8. [Redux Bridge — Migrating a React MFE to @vi/state-fp](#8-redux-bridge--migrating-a-react-mfe-to-vistate-fp)
+7. [NgRx Bridge — Migrating an Angular MFE to @vialiq/state-fp](#7-ngrx-bridge--migrating-an-angular-mfe-to-vistate-fp)
+8. [Redux Bridge — Migrating a React MFE to @vialiq/state-fp](#8-redux-bridge--migrating-a-react-mfe-to-vistate-fp)
 9. [DevTools in Each Framework](#9-devtools-in-each-framework)
 10. [Common Patterns and Anti-Patterns](#10-common-patterns-and-anti-patterns)
 11. [Quick Reference Cheatsheet](#11-quick-reference-cheatsheet)
@@ -50,14 +50,14 @@
 
 ## 1. The Core Principle: One Kernel, Many Frameworks
 
-`@vi/state-fp` is **framework-agnostic at its core**. The kernel, atoms, and commands work
+`@vialiq/state-fp` is **framework-agnostic at its core**. The kernel, atoms, and commands work
 identically whether consumed from Angular, React, Lit, or plain JavaScript. Framework adapters
 are thin, optional wrappers that translate the kernel's `subscribe()` API into framework-native
 reactive primitives (Signals, Hooks, Reactive Controllers).
 
 ```
                      ┌─────────────────────────────────────────┐
-                     │           @vi/state-fp/kernel             │
+                     │           @vialiq/state-fp/kernel             │
                      │    Atoms · Commands · Queries · Events    │
                      └──────┬────────────┬──────────┬───────────┘
                             │            │          │
@@ -108,7 +108,7 @@ Payment Remote (lit)
 **Rules:**
 1. **One owner per atom** — only the owning MFE executes commands against it
 2. **Borrowers are read-only** — they subscribe to receive state, never call `kernel.execute()`
-3. **Sync happens via BroadcastChannel** — the `@vi/state-fp/sync` module handles this automatically
+3. **Sync happens via BroadcastChannel** — the `@vialiq/state-fp/sync` module handles this automatically
 4. **No shared JS runtime required** — borrowers don't import from the owner's bundle
 
 ---
@@ -124,7 +124,7 @@ via an `InjectionToken` and Angular's DI system.
 // 📍 FRAMEWORK: Angular
 // libs/state-tokens.ts — published by the shell remote as a shared module
 import { InjectionToken } from '@angular/core';
-import type { Kernel }    from '@vi/state-fp/kernel';
+import type { Kernel }    from '@vialiq/state-fp/kernel';
 
 export const KERNEL_TOKEN = new InjectionToken<Kernel>('vi/kernel');
 ```
@@ -133,9 +133,9 @@ export const KERNEL_TOKEN = new InjectionToken<Kernel>('vi/kernel');
 // 📍 FRAMEWORK: Angular
 // apps/shell/src/app/app.config.ts
 import { ApplicationConfig, signal, effect, DestroyRef, inject, isDevMode } from '@angular/core';
-import { createKernel }                     from '@vi/state-fp/kernel';
-import { createDevTools, noopDevTools }     from '@vi/state-fp/devtools';
-import { createAngularAdapter }             from '@vi/state-fp/adapter';
+import { createKernel }                     from '@vialiq/state-fp/kernel';
+import { createDevTools, noopDevTools }     from '@vialiq/state-fp/devtools';
+import { createAngularAdapter }             from '@vialiq/state-fp/adapter';
 import { KERNEL_TOKEN }                     from '@/state-tokens';
 import { authAtom, authHandler, authApplier } from '@/atoms';  // your app's atoms
 
@@ -171,8 +171,8 @@ kernel instance from the shell — never creates its own.
 ```ts
 // 📍 FRAMEWORK: Angular (remote MFE)
 // 📚 SETUP: authAtom and themeAtom from shell's public API (same key names)
-import { createKernel }          from '@vi/state-fp/kernel';
-import { createSyncEngine }      from '@vi/state-fp/sync';
+import { createKernel }          from '@vialiq/state-fp/kernel';
+import { createSyncEngine }      from '@vialiq/state-fp/sync';
 import { authAtom, themeAtom }  from '@/atoms';  // from shell's public API
 
 // apps/header-remote/src/app/app.config.ts
@@ -252,7 +252,7 @@ readonly cartTotal = ngAdapter.toQuerySignal(cartAtom, this.kernel, BuildTotal);
 // 📍 FRAMEWORK: Angular
 // 📚 IMPORTS:
 import { Component, inject } from '@angular/core';
-import { match } from '@vi/state-fp/core';
+import { match } from '@vialiq/state-fp/core';
 import { KERNEL_TOKEN } from '@/state-tokens';
 import { cartAtom } from '@/atoms';
 import { AddItem } from '@/commands';
@@ -291,13 +291,13 @@ async onCheckout() {
 ### 3.4 Coexisting with NgRx
 
 If your team already uses NgRx for Angular-internal state (component interaction, routing,
-effects), `@vi/state-fp` slots in as the **cross-MFE layer** without replacing NgRx.
+effects), `@vialiq/state-fp` slots in as the **cross-MFE layer** without replacing NgRx.
 
 ```
 Angular Remote
   ├── NgRx Store           — component-local state (form state, pagination, UI flags)
   │     └── Effects        — async operations within this remote
-  └── @vi/state-fp kernel  — shared state received from / sent to other MFEs
+  └── @vialiq/state-fp kernel  — shared state received from / sent to other MFEs
         └── authAtom       — borrowed from shell
         └── cartAtom       — owned here; synced to header + cart remotes
 ```
@@ -329,7 +329,7 @@ export class StateBridgeService {
 }
 ```
 
-For **greenfield Angular MFEs**, prefer `@vi/state-fp` exclusively (no NgRx) — the CQRS
+For **greenfield Angular MFEs**, prefer `@vialiq/state-fp` exclusively (no NgRx) — the CQRS
 pattern with typed Events replaces NgRx Actions + Reducers + Effects with a simpler model.
 
 ### 3.5 Complete Angular Example
@@ -338,8 +338,8 @@ pattern with typed Events replaces NgRx Actions + Reducers + Effects with a simp
 // atoms/cart.atom.ts — define atom, handlers, and applier together
 import { defineAtom, createCommandHandler, createEventApplier,
          createQueryHandler, command, domainEvent,
-         ok, err } from '@vi/state-fp/kernel';
-import { LocalAdapter } from '@vi/state-fp/storage';
+         ok, err } from '@vialiq/state-fp/kernel';
+import { LocalAdapter } from '@vialiq/state-fp/storage';
 
 // --- State shape ---
 export type CartItem = { sku: string; qty: number; price: number };
@@ -444,9 +444,9 @@ export class CartSummaryComponent {
 
 ```tsx
 // state/kernel.ts — created once per React app
-import { createKernel }                 from '@vi/state-fp/kernel';
-import { createDevTools, noopDevTools } from '@vi/state-fp/devtools';
-import { createReactAdapter }           from '@vi/state-fp/adapter';
+import { createKernel }                 from '@vialiq/state-fp/kernel';
+import { createDevTools, noopDevTools } from '@vialiq/state-fp/devtools';
+import { createReactAdapter }           from '@vialiq/state-fp/adapter';
 import {
   useState, useEffect, useRef, useMemo, useContext, createContext,
 } from 'react';
@@ -485,8 +485,8 @@ the setup is identical but the kernel is configured as a borrower:
 ```tsx
 // 📍 FRAMEWORK: React (remote MFE)
 // 📚 SETUP: authAtom imported from shell's public API or defined identically with same key
-import { createKernel }   from '@vi/state-fp/kernel';
-import { createSyncEngine } from '@vi/state-fp/sync';
+import { createKernel }   from '@vialiq/state-fp/kernel';
+import { createSyncEngine } from '@vialiq/state-fp/sync';
 import { authAtom }       from '@/atoms';  // from shell's public API
 
 // apps/cart-remote/src/state/kernel.ts
@@ -505,7 +505,7 @@ export { remoteKernel as kernel };
 ```tsx
 // 📍 FRAMEWORK: React
 // 📚 SETUP: reactAdapter created in state/kernel.ts (see §4.1)
-import { match }       from '@vi/state-fp/core';
+import { match }       from '@vialiq/state-fp/core';
 import { cartAtom }    from '@/atoms';
 import { AddItem, RemoveItem, ClearCart } from '@/commands';
 import { BuildTotal }  from '@/queries';
@@ -591,13 +591,13 @@ function CheckoutButton() {
 
 ### 4.4 Coexisting with Redux Toolkit
 
-For teams with an existing Redux Toolkit setup, `@vi/state-fp` can be introduced
+For teams with an existing Redux Toolkit setup, `@vialiq/state-fp` can be introduced
 as the **cross-MFE layer only** without replacing the Redux store:
 
 ```
 React Remote
   ├── Redux store          — component-local state, forms, UI flags, RTK Query server cache
-  └── @vi/state-fp kernel  — borrowed shared atoms from shell (auth, theme, cart totals)
+  └── @vialiq/state-fp kernel  — borrowed shared atoms from shell (auth, theme, cart totals)
 ```
 
 **Bridge pattern** — sync a Redux slice with an atom:
@@ -619,9 +619,9 @@ startAppListening({
 });
 ```
 
-For **greenfield React MFEs**, prefer using `@vi/state-fp` exclusively:
+For **greenfield React MFEs**, prefer using `@vialiq/state-fp` exclusively:
 - Remove Redux Toolkit — the CQRS pattern covers the same use cases with better MFE isolation
-- Use `@vi/state-fp` for all client state
+- Use `@vialiq/state-fp` for all client state
 - Use TanStack Query (or similar) for server-cache state (RTK Query's domain)
 
 ### 4.5 Complete React Example
@@ -672,8 +672,8 @@ an `AtomController<S>` that implements this interface.
 
 ```ts
 // state/kernel.ts — the single module published by the shell as a shared dependency
-import { createKernel }                 from '@vi/state-fp/kernel';
-import { createDevTools, noopDevTools } from '@vi/state-fp/devtools';
+import { createKernel }                 from '@vialiq/state-fp/kernel';
+import { createDevTools, noopDevTools } from '@vialiq/state-fp/devtools';
 
 const isProduction = !location.hostname.includes('localhost');
 
@@ -687,7 +687,7 @@ import map — `vi-state-kernel` is declared as a shared module in webpack/Vite 
 
 ```ts
 // apps/product-card-remote/src/elements/product-card.element.ts
-import { createLitController } from '@vi/state-fp/adapter';
+import { createLitController } from '@vialiq/state-fp/adapter';
 import { kernel }               from 'vi-state-kernel'; // shared singleton via import map
 ```
 
@@ -696,7 +696,7 @@ import { kernel }               from 'vi-state-kernel'; // shared singleton via 
 ```ts
 import { LitElement, html, css } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
-import { createLitController } from '@vi/state-fp/adapter';
+import { createLitController } from '@vialiq/state-fp/adapter';
 import { kernel, cartAtom, AddItem, RemoveItem, BuildTotal } from '../state/kernel';
 
 @customElement('vi-cart-widget')
@@ -782,7 +782,7 @@ export class CheckoutPage extends LitElement {
 // elements/auth-badge.element.ts
 import { LitElement, html, css } from 'lit';
 import { customElement }          from 'lit/decorators.js';
-import { createLitController }    from '@vi/state-fp/adapter';
+import { createLitController }    from '@vialiq/state-fp/adapter';
 import { kernel, authAtom }       from 'vi-state-kernel';
 import { LogOut }                 from '../atoms/auth.atom';
 
@@ -831,8 +831,8 @@ shared atoms. That is the **shell**. The shell:
 ```ts
 // apps/shell/src/state/kernel.ts
 
-import { createKernel }    from '@vi/state-fp/kernel';
-import { createSyncEngine} from '@vi/state-fp/sync';
+import { createKernel }    from '@vialiq/state-fp/kernel';
+import { createSyncEngine} from '@vialiq/state-fp/sync';
 
 export const kernel = createKernel({ debug: isDevMode() });
 if (isDevMode()) kernel.use(devtools.plugin);
@@ -887,11 +887,11 @@ Shell              Cart Remote           Header Remote
 ### 6.3 Cross-MFE Domain Events
 
 When a remote needs to react to **domain events** from another remote (not just state
-snapshots), use the cross-MFE event bus (`@vi/state-fp/bus`):
+snapshots), use the cross-MFE event bus (`@vialiq/state-fp/bus`):
 
 ```ts
 // apps/notifications-remote/src/state/bus.ts
-import { createSharedBus } from '@vi/state-fp/bus';
+import { createSharedBus } from '@vialiq/state-fp/bus';
 
 const eventBus = createSharedBus({ channel: 'vi-events' });
 
@@ -914,9 +914,9 @@ remoteKernel.onEvent(event => {
 
 ---
 
-## 7. NgRx Bridge — Migrating an Angular MFE to @vi/state-fp
+## 7. NgRx Bridge — Migrating an Angular MFE to @vialiq/state-fp
 
-If your Angular MFE currently uses NgRx and you want to adopt `@vi/state-fp` for
+If your Angular MFE currently uses NgRx and you want to adopt `@vialiq/state-fp` for
 cross-MFE state without rewriting everything at once, use the bridge pattern.
 
 ### Phase A: Introducing the kernel alongside NgRx
@@ -926,7 +926,7 @@ cross-MFE state without rewriting everything at once, use the bridge pattern.
 providers: [
   provideStore(),
   provideEffects(),
-  // New — @vi/state-fp kernel for cross-MFE state
+  // New — @vialiq/state-fp kernel for cross-MFE state
   { provide: KERNEL_TOKEN, useValue: kernel },
 ]
 ```
@@ -956,9 +956,9 @@ For each NgRx feature slice you want to migrate:
 3. Update components to use `ngAdapter.toSignal()` instead of NgRx selectors
 4. Remove effects — replace with `AsyncCommandHandler` or `KernelPlugin.afterExecute`
 
-### What NgRx does well that @vi/state-fp replaces directly
+### What NgRx does well that @vialiq/state-fp replaces directly
 
-| NgRx concept | @vi/state-fp replacement |
+| NgRx concept | @vialiq/state-fp replacement |
 |---|---|
 | `Action` | `Command` |
 | `Reducer` | `EventApplier` + `CommandHandler` |
@@ -970,7 +970,7 @@ For each NgRx feature slice you want to migrate:
 
 ---
 
-## 8. Redux Bridge — Migrating a React MFE to @vi/state-fp
+## 8. Redux Bridge — Migrating a React MFE to @vialiq/state-fp
 
 For React MFEs with an existing Redux Toolkit store:
 
@@ -980,7 +980,7 @@ For React MFEs with an existing Redux Toolkit store:
 // main.tsx — wrap with both providers
 createRoot(document.getElementById('root')!).render(
   <Provider store={reduxStore}>          {/* existing Redux */}
-    <reactAdapter.Provider kernel={kernel}> {/* new @vi/state-fp */}
+    <reactAdapter.Provider kernel={kernel}> {/* new @vialiq/state-fp */}
       <App />
     </reactAdapter.Provider>
   </Provider>
@@ -1012,18 +1012,18 @@ For each Redux slice you want to migrate:
 2. Replace `useSelector` with `reactAdapter.useAtom` or `reactAdapter.useQuery`
 3. Replace `useDispatch` with `reactAdapter.useCommand`
 4. Remove the Redux slice from the store
-5. Keep RTK Query for server-state — it is orthogonal to @vi/state-fp
+5. Keep RTK Query for server-state — it is orthogonal to @vialiq/state-fp
 
-### What Redux Toolkit does well that @vi/state-fp replaces
+### What Redux Toolkit does well that @vialiq/state-fp replaces
 
-| RTK concept | @vi/state-fp replacement |
+| RTK concept | @vialiq/state-fp replacement |
 |---|---|
 | `createSlice` | `defineAtom` + `createCommandHandler` + `createEventApplier` |
 | `createAsyncThunk` | `AsyncCommandHandler` with `AbortSignal` |
 | `createSelector` | `QueryHandler` with `memo: true` |
 | `createEntityAdapter` | `defineAtom` + lensed `EventApplier` using `Lens<S, Record<id, Entity>>` |
 | `Redux DevTools Extension` | `createReduxDevToolsBridge()` |
-| `RTK Query` | Keep as-is — use it for server-state; use @vi/state-fp for client-state |
+| `RTK Query` | Keep as-is — use it for server-state; use @vialiq/state-fp for client-state |
 
 ---
 
@@ -1033,8 +1033,8 @@ For each Redux slice you want to migrate:
 
 ```ts
 // environment.development.ts
-import { createDevTools, attachBridge } from '@vi/state-fp/devtools';
-import { createReduxDevToolsBridge }     from '@vi/state-fp/devtools';
+import { createDevTools, attachBridge } from '@vialiq/state-fp/devtools';
+import { createReduxDevToolsBridge }     from '@vialiq/state-fp/devtools';
 
 export const devtools = createDevTools({ maxLogSize: 500 });
 
@@ -1049,7 +1049,7 @@ if ((window as any).__REDUX_DEVTOOLS_EXTENSION__) {
 
 ```ts
 // environment.production.ts
-import { noopDevTools } from '@vi/state-fp/devtools';
+import { noopDevTools } from '@vialiq/state-fp/devtools';
 
 export const devtools = noopDevTools;
 // window.__VI_STATE_FP__ is NEVER attached in production
@@ -1059,7 +1059,7 @@ export const devtools = noopDevTools;
 
 ```ts
 // state/kernel.ts
-import { createDevTools, noopDevTools, attachBridge } from '@vi/state-fp/devtools';
+import { createDevTools, noopDevTools, attachBridge } from '@vialiq/state-fp/devtools';
 
 const isDev = process.env.NODE_ENV !== 'production';
 export const devtools = isDev ? createDevTools() : noopDevTools;
@@ -1073,7 +1073,7 @@ if (isDev && typeof window !== 'undefined') {
 
 ```ts
 // state/kernel.ts
-import { createDevTools, noopDevTools, attachBridge } from '@vi/state-fp/devtools';
+import { createDevTools, noopDevTools, attachBridge } from '@vialiq/state-fp/devtools';
 
 // Lit is often used for web components deployed in multiple contexts.
 // Use a URL parameter or meta tag to toggle devtools safely:
@@ -1219,7 +1219,7 @@ remoteSync.share(myAtom, { channel: 'vi-my-atom', conflict: 'owner-wins' });
 ## 12. Tricky Implementations
 
 This section covers patterns that developers frequently get wrong or find non-obvious when
-using `@vi/state-fp` in real applications.
+using `@vialiq/state-fp` in real applications.
 
 ---
 
@@ -1235,9 +1235,9 @@ handlers in every unit test is verbose and slow.
 
 ```ts
 // test/helpers/fake-kernel.ts
-import { createKernel, defineAtom, createCommandHandler } from '@vi/state-fp/kernel';
-import type { Atom } from '@vi/state-fp/kernel';
-import { ok } from '@vi/state-fp/core';
+import { createKernel, defineAtom, createCommandHandler } from '@vialiq/state-fp/kernel';
+import type { Atom } from '@vialiq/state-fp/kernel';
+import { ok } from '@vialiq/state-fp/core';
 
 export function fakeKernelWith<S>(atom: Atom<S>, state: S) {
   const k = createKernel();
@@ -1256,7 +1256,7 @@ export function fakeKernelWith<S>(atom: Atom<S>, state: S) {
 ```ts
 // counter.component.spec.ts
 import { signal, DestroyRef } from '@angular/core';
-import { createAngularAdapter } from '@vi/state-fp/adapter';
+import { createAngularAdapter } from '@vialiq/state-fp/adapter';
 import { fakeKernelWith }       from '../test/helpers/fake-kernel';
 
 describe('CounterComponent', () => {
@@ -1281,7 +1281,7 @@ describe('CounterComponent', () => {
 ```tsx
 // counter.hook.spec.tsx
 import { renderHook, act }  from '@testing-library/react';
-import { createReactAdapter } from '@vi/state-fp/adapter';
+import { createReactAdapter } from '@vialiq/state-fp/adapter';
 import { makeTestKernel }     from '../test/helpers/make-test-kernel';
 
 const { useAtom } = createReactAdapter({ useState, useEffect, useRef, useMemo, useContext, createContext });

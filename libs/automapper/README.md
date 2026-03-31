@@ -1,4 +1,4 @@
-# @vi/automapper
+# @vialiq/automapper
 
 A lightweight, extensible, type-safe object-to-object mapper for TypeScript.
 Zero dependencies. Pluggable strategies. Full lifecycle hooks.
@@ -32,11 +32,13 @@ Zero dependencies. Pluggable strategies. Full lifecycle hooks.
 ## Installation
 
 ```bash
-npm install @vi/automapper
+npm install @vialiq/automapper
 ```
 
-The package ships as ESM + CJS with full TypeScript declarations. No peer
-dependencies are required.
+The package ships as **ESM only** with full TypeScript declarations. No peer
+dependencies are required. Ensure your bundler or runtime supports ESM
+(`"type": "module"` in the consuming project's `package.json`, or native
+ESM imports).
 
 ---
 
@@ -56,7 +58,7 @@ dependencies are required.
 ## Creating a Mapper
 
 ```ts
-import { createMapper, NamingConvention } from '@vi/automapper';
+import { createMapper, NamingConvention } from '@vialiq/automapper';
 
 // Default mapper — permissive, no naming convention
 const mapper = createMapper();
@@ -209,7 +211,7 @@ Apply `NamingConvention` globally on `createMapper` to auto-transform
 property keys before writing to the destination.
 
 ```ts
-import { createMapper, NamingConvention } from '@vi/automapper';
+import { createMapper, NamingConvention } from '@vialiq/automapper';
 
 class ApiResponse {
   user_first_name = 'Ada';
@@ -298,7 +300,7 @@ strategy activates automatically when a profile has at least one async rule;
 sync-only profiles continue to be handled synchronously.
 
 ```ts
-import { createMapper, AsyncStrategy } from '@vi/automapper';
+import { createMapper, AsyncStrategy } from '@vialiq/automapper';
 
 const mapper = createMapper();
 mapper.addStrategy(new AsyncStrategy()); // register once at startup
@@ -488,7 +490,7 @@ keeps rules reusable and composable across many profiles.
 
 ```ts
 // validator-strategy.ts
-import { MappingStrategy, MapperRegistry, MappingConfig, MapperOptions } from '@vi/automapper';
+import { MappingStrategy, MapperRegistry, MappingConfig, MapperOptions } from '@vialiq/automapper';
 
 export type ValidationRule<S> = (src: S) => void; // throw to reject
 
@@ -594,8 +596,8 @@ mapper.addProfile(Order, OrderDto, (mb) => {
 Logs every mapping invocation using any logger function.
 
 ```ts
-import { createMapper } from '@vi/automapper';
-import { LoggingPlugin } from '@vi/automapper';
+import { createMapper } from '@vialiq/automapper';
+import { LoggingPlugin } from '@vialiq/automapper';
 
 const mapper = createMapper();
 mapper.use(new LoggingPlugin(console.debug));
@@ -610,8 +612,8 @@ mapper.use(new LoggingPlugin(console.debug));
 Wraps any strategy and emits timing information.
 
 ```ts
-import { createMapper, DefaultStrategy } from '@vi/automapper';
-import { ProfilingStrategy } from '@vi/automapper';
+import { createMapper, DefaultStrategy } from '@vialiq/automapper';
+import { ProfilingStrategy } from '@vialiq/automapper';
 
 const timings: string[] = [];
 const mapper = createMapper();
@@ -664,7 +666,7 @@ import {
   MapperPlugin, MappingStrategy, MapperRegistry,
   MappingConfig, MapperOptions, PluginAwareRegistry,
   PLUGIN_API_VERSION,
-} from '@vi/automapper';
+} from '@vialiq/automapper';
 
 // ── Passthrough strategy ────────────────────────────────────────────────────
 // This plugin observes via lifecycle hooks only; it never handles mapping itself.
@@ -766,7 +768,7 @@ When a plugin's `apiVersion` does not match the library's `PLUGIN_API_VERSION`,
 the mapper reacts according to `pluginValidation`:
 
 ```ts
-import { PLUGIN_API_VERSION } from '@vi/automapper';
+import { PLUGIN_API_VERSION } from '@vialiq/automapper';
 
 // 'warn' (default) — logs console.warn and continues
 const lenient = createMapper({ pluginValidation: 'warn' });
@@ -803,7 +805,7 @@ Strips HTML tags from all string values before delegating to `DefaultStrategy`.
 
 ```ts
 // sanitise-strategy.ts
-import { MappingStrategy, MapperRegistry, MappingConfig, MapperOptions, DefaultStrategy } from '@vi/automapper';
+import { MappingStrategy, MapperRegistry, MappingConfig, MapperOptions, DefaultStrategy } from '@vialiq/automapper';
 
 function stripHtml(v: unknown): unknown {
   return typeof v === 'string' ? v.replace(/<[^>]*>/g, '') : v;
@@ -837,7 +839,7 @@ export class SanitiseStrategy implements MappingStrategy {
 ```
 
 ```ts
-import { createMapper } from '@vi/automapper';
+import { createMapper } from '@vialiq/automapper';
 import { SanitiseStrategy } from './sanitise-strategy';
 
 const mapper = createMapper();
@@ -872,7 +874,7 @@ mapper.addStrategy(new CacheStrategy());     // 1st priority — tried first
 mapping operation.
 
 ```ts
-import { createMapper, DefaultStrategy, ProfilingStrategy } from '@vi/automapper';
+import { createMapper, DefaultStrategy, ProfilingStrategy } from '@vialiq/automapper';
 
 const logs: string[] = [];
 const mapper = createMapper();
@@ -895,7 +897,7 @@ console.log(logs);
 You can wrap `AsyncStrategy` the same way:
 
 ```ts
-import { AsyncStrategy } from '@vi/automapper';
+import { AsyncStrategy } from '@vialiq/automapper';
 mapper.addStrategy(new ProfilingStrategy(new AsyncStrategy(), console.debug));
 ```
 
@@ -945,35 +947,35 @@ The published package exposes the following import paths:
 
 | Import path | Contents | Peer dependency |
 |---|---|---|
-| `@vi/automapper` | Core mapper, builder, strategies, plugins, naming, converters | none |
-| `@vi/automapper/angular` | `provideAutomapper()`, `AUTOMAPPER_TOKEN` | `@angular/core >=15` |
-| `@vi/automapper/zod` | `profileFromZod()`, `validateWithZod()`, `safeValidateWithZod()` | `zod >=3` |
-| `@vi/automapper/orm` | `profileFromColumns()`, `profileFromDescriptor()` | none |
-| `@vi/automapper/fetch-adapter` | `createMappedFetcher()`, `createMappedArrayFetcher()`, `createMappedQueryFn()`, `createMappedSWRFetcher()` | none |
-| `@vi/automapper/deep-clone` | `deepClone()`, `mapWithClone()`, `registerWasmClone()` | none |
+| `@vialiq/automapper` | Core mapper, builder, strategies, plugins, naming, converters | none |
+| `@vialiq/automapper/angular` | `provideAutomapper()`, `AUTOMAPPER_TOKEN` | `@angular/core >=15` |
+| `@vialiq/automapper/zod` | `profileFromZod()`, `validateWithZod()`, `safeValidateWithZod()` | `zod >=3` |
+| `@vialiq/automapper/orm` | `profileFromColumns()`, `profileFromDescriptor()` | none |
+| `@vialiq/automapper/fetch-adapter` | `createMappedFetcher()`, `createMappedArrayFetcher()`, `createMappedQueryFn()`, `createMappedSWRFetcher()` | none |
+| `@vialiq/automapper/deep-clone` | `deepClone()`, `mapWithClone()`, `registerWasmClone()` | none |
 
-Only the subpaths you import are included in your bundle — `@angular/core` and `zod` are never loaded unless you explicitly import from `@vi/automapper/angular` or `@vi/automapper/zod`.
+Only the subpaths you import are included in your bundle — `@angular/core` and `zod` are never loaded unless you explicitly import from `@vialiq/automapper/angular` or `@vialiq/automapper/zod`.
 
 ### Examples
 
 ```ts
 // Core only — zero peer deps
-import { createMapper } from '@vi/automapper';
+import { createMapper } from '@vialiq/automapper';
 
 // Angular DI (requires @angular/core)
-import { provideAutomapper, AUTOMAPPER_TOKEN } from '@vi/automapper/angular';
+import { provideAutomapper, AUTOMAPPER_TOKEN } from '@vialiq/automapper/angular';
 
 // Zod schema integration (requires zod)
-import { profileFromZod } from '@vi/automapper/zod';
+import { profileFromZod } from '@vialiq/automapper/zod';
 
 // ORM column-list profile — works with TypeORM, MikroORM, Prisma, etc.
-import { profileFromColumns } from '@vi/automapper/orm';
+import { profileFromColumns } from '@vialiq/automapper/orm';
 
 // Fetch adapter — React Query / SWR compatible, no UI-framework dep
-import { createMappedFetcher, createMappedQueryFn } from '@vi/automapper/fetch-adapter';
+import { createMappedFetcher, createMappedQueryFn } from '@vialiq/automapper/fetch-adapter';
 
 // Deep clone before mapping (uses structuredClone, WASM-upgradeable)
-import { deepClone, mapWithClone } from '@vi/automapper/deep-clone';
+import { deepClone, mapWithClone } from '@vialiq/automapper/deep-clone';
 ```
 
 ### Publish strategy

@@ -1,4 +1,4 @@
-import { css, html, unsafeCSS, type TemplateResult } from 'lit';
+import { css, html, unsafeCSS, type PropertyValues, type TemplateResult } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { ViElement, type ViVariant } from '../base/vi-element.js';
 import buttonStyles from './vi-button.scss?inline';
@@ -33,6 +33,23 @@ export class ViButton extends ViElement {
     if (this.disabled) {
       event.preventDefault();
       event.stopImmediatePropagation();
+    }
+  }
+
+  private syncA11y(): void {
+    this.setAttribute('aria-disabled', String(this.disabled));
+    this.setAttribute('tabindex', this.disabled ? '-1' : '0');
+  }
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    this.syncA11y();
+  }
+
+  override updated(changedProperties: PropertyValues): void {
+    super.updated(changedProperties);
+    if (changedProperties.has('disabled')) {
+      this.syncA11y();
     }
   }
 

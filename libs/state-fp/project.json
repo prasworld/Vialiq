@@ -38,11 +38,12 @@
       "executor": "nx:run-commands",
       "options": {
         "commands": [
-          "cp libs/state-fp/publish-package.json dist/libs/state-fp/package.json"
+          "cp libs/state-fp/publish-package.json dist/libs/state-fp/package.json",
+          "cp libs/state-fp/LICENSE dist/libs/state-fp/LICENSE"
         ],
         "parallel": false
       },
-      "outputs": ["dist/libs/state-fp/package.json"]
+      "outputs": ["{workspaceRoot}/dist/libs/state-fp/package.json", "{workspaceRoot}/dist/libs/state-fp/LICENSE"]
     },
     "test": {
       "executor": "nx:run-commands",

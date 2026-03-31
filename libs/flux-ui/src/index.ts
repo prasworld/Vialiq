@@ -4,7 +4,7 @@
  * Re-exports all design tokens and related types.
  *
  * Usage:
- *   import { tokens } from '@vi/flux-ui';
+ *   import { tokens } from '@vialiq/flux-ui';
  *   const color = tokens.colors.primary;  // "var(--vi-color-primary)"
  */
 
