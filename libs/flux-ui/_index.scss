@@ -1,0 +1,15 @@
+/**
+ * Complete flux-ui style import.
+ *
+ * Usage:  @use '@vialiq/flux-ui';
+ *
+ * Forwards all style modules in preferred order:
+ * 1. Root (cascade layers)
+ * 2. Reset (browser normalization)
+ * 3. Theme (design tokens)
+ * 4. Layout (structural helpers)
+ * 5. Utilities (low-level classes)
+ * 6. Components (vi-button, etc.)
+ */
+@forward 'styles';
+@forward 'components';

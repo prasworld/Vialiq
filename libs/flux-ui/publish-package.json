@@ -20,6 +20,8 @@
       "types": "./styles/index.d.ts"
     },
     "./styles/*": "./styles/*",
+    "./components": "./components/_index.scss",
+    "./components/*": "./components/*",
     "./flux-ui.css": "./flux-ui.css"
   },
   "files": [
@@ -27,9 +29,10 @@
     "index.d.ts",
     "index.js.map",
     "index.d.ts.map",
-    "tokens/",
+    "*.scss",
     "styles/",
-    "src/",
+    "components/",
+    "tokens/",
     "flux-ui.css",
     "flux-ui.css.map",
     "README.md"

@@ -8,8 +8,8 @@
  * :root custom properties, then reset → layout → utilities follow.
  */
 
-@use 'variables';
-@use 'root';
-@use 'reset';
-@use 'layout';
-@use 'utilities';
+@use 'styles/variables';
+@use 'styles/root';
+@use 'styles/reset';
+@use 'styles/layout';
+@use 'styles/utilities';
