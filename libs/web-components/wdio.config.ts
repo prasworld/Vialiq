@@ -1,12 +1,12 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { Options } from '@wdio/types';
+import type { Options, Capabilities } from '@wdio/types';
 import swc from 'unplugin-swc';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-export const config: Options.Testrunner = {
+export const config: Options.Testrunner & Capabilities.WithRequestedTestrunnerCapabilities = {
   runner: [
     'browser',
     {

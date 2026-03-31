@@ -19,7 +19,7 @@ export default [
     },
   },
   {
-    files: ['**/*.spec.ts', '**/*.test.ts', 'test-d/**/*.ts'],
+    files: ['**/*.spec.ts', '**/*.test.ts'],
     rules: {
       '@typescript-eslint/no-empty-function': 'off',
     },
