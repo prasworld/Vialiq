@@ -1,5 +1,5 @@
 import { $, expect } from '@wdio/globals';
-import './vi-icon.ts';
+import './vi-icon.js';
 import { registerIcons } from './registry.js';
 import { checkIcon } from '@vialiq/icons/check';
 import { xIcon } from '@vialiq/icons/x';

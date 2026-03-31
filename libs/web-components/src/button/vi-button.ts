@@ -37,8 +37,9 @@ export class ViButton extends ViElement {
   }
 
   private syncA11y(): void {
+    // Only set aria-disabled on the host — the inner <button> handles
+    // focus and keyboard semantics, so the host must not be a tab stop.
     this.setAttribute('aria-disabled', String(this.disabled));
-    this.setAttribute('tabindex', this.disabled ? '-1' : '0');
   }
 
   override connectedCallback(): void {

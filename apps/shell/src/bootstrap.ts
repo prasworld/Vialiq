@@ -4,7 +4,6 @@ import { App } from './app/app';
 import { checkIcon } from '@vialiq/icons/check';
 import { xIcon } from '@vialiq/icons/x';
 import { registerIcons } from '@vialiq/web-components';
-import '@vialiq/web-components';
 
 // Register icons from @vialiq/icons before app bootstrap
 registerIcons([checkIcon, xIcon]);

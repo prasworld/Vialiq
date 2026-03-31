@@ -31,6 +31,7 @@
     "@vialiq/icons": "^0.0.1",
     "@vialiq/web-components": "^0.0.3",
     "create-nx": "0.0.0",
+    "lit": "^3.3.2",
     "rxjs": "~7.8.0"
   },
   "devDependencies": {
@@ -81,7 +82,6 @@
     "eslint-plugin-wc": "^3.1.0",
     "jsdom": "^27.1.0",
     "jsonc-eslint-parser": "^2.1.0",
-    "lit": "^3.3.2",
     "nx": "22.5.1",
     "prettier": "~3.6.2",
     "rimraf": "^5.0.10",

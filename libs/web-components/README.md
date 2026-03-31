@@ -46,7 +46,7 @@ npx nx run web-components:test-wdio
 
 ## Storybook
 
-The project uses **Storybook 8** with the `@storybook/web-components-vite` framework.
+The project uses **Storybook 10** with the `@storybook/web-components-vite` framework.
 
 - `esbuild` is replaced by `unplugin-swc` in `viteFinal` so TC39 standard decorators
   (required by Lit v3) work inside Storybook. See `.storybook/main.ts`.
@@ -62,5 +62,5 @@ The project uses **Storybook 8** with the `@storybook/web-components-vite` frame
   };
   ```
 
-- The `docs: { autodocs: ... }` key was removed from `StorybookConfig` in Storybook 8.
+- The `docs: { autodocs: ... }` key was removed from `StorybookConfig` in Storybook 10.
   Do **not** add it back to `.storybook/main.ts`.

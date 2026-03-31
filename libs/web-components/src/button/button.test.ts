@@ -1,5 +1,5 @@
 import { $, expect } from '@wdio/globals';
-import './vi-button.ts';
+import './vi-button.js';
 
 describe('vi-button', () => {
   it('renders and applies primary variant style token', async () => {
@@ -45,22 +45,22 @@ describe('vi-button', () => {
     await expect(colorAfter).not.toEqual(colorBefore);
   });
 
-  it('sets aria-disabled and tabindex on host when disabled', async () => {
+  it('sets aria-disabled on host when disabled (host is not a tab stop)', async () => {
     await browser.execute(() => {
       document.body.innerHTML = '<vi-button id="a11y-test" variant="primary">Save</vi-button>';
     });
 
     const host = await $('#a11y-test');
 
-    // Enabled state
+    // Enabled state: host carries aria-disabled=false; inner <button> handles focus.
     await expect(host).toHaveAttribute('aria-disabled', 'false');
-    await expect(host).toHaveAttribute('tabindex', '0');
+    await expect(host).not.toHaveAttribute('tabindex');
 
     // Disabled state
     await browser.execute((el) => el.setAttribute('disabled', ''), host);
     await browser.pause(50);
     await expect(host).toHaveAttribute('aria-disabled', 'true');
-    await expect(host).toHaveAttribute('tabindex', '-1');
+    await expect(host).not.toHaveAttribute('tabindex');
   });
 
   it('does not call click handler when disabled', async () => {
