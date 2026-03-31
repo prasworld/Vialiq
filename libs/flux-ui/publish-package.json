@@ -16,6 +16,7 @@
       "types": "./tokens/index.d.ts"
     },
     "./styles": {
+      "sass": "./styles/_index.scss",
       "default": "./styles/index.js",
       "types": "./styles/index.d.ts"
     },

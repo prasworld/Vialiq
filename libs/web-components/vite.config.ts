@@ -1,12 +1,21 @@
 import { defineConfig } from 'vite';
 import path from 'path';
+import swc from 'unplugin-swc';
 
 const workspaceRoot = path.resolve(__dirname, '../..');
 
 export default defineConfig({
-  esbuild: {
-    target: 'ES2022', // Required for modern decorators
-  },
+  esbuild: false,
+  plugins: [
+    swc.vite({
+      jsc: {
+        target: 'es2022',
+        parser: { syntax: 'typescript', decorators: true },
+        transform: { decoratorVersion: '2022-03' },
+      },
+      module: { type: 'es6' },
+    }),
+  ],
   build: {
     outDir: path.resolve(workspaceRoot, 'dist/libs/web-components'),
     emptyOutDir: true,

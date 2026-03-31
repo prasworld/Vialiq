@@ -10,7 +10,7 @@
 |-----------------|------------------------------|----------------------------------------------|
 | **core**        | `@vialiq/state-fp/core`          | FP primitives: Maybe, Either, IO, Lens, utils |
 | **kernel**      | `@vialiq/state-fp/kernel`        | Atoms, commands, events, queries, kernel      |
-| **storage**     | `@vialiq/state-fp/storage`       | Pluggable adapters: memory, localStorage, IDB |
+| **storage**     | `@vialiq/state-fp/storage`       | Pluggable storage: MemoryAdapter (in-process Map; browser-persistent adapters intentionally omitted) |
 | **sync**        | `@vialiq/state-fp/sync`          | Cross-tab sync via BroadcastChannel           |
 | **devtools**    | `@vialiq/state-fp/devtools`      | Event log, snapshots, time-travel, bridge     |
 | **adapter**     | `@vialiq/state-fp/adapter`       | React hooks, Angular signals, Lit controllers, vanilla JS |

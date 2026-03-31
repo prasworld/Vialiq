@@ -34,7 +34,9 @@
       "@vialiq/state-fp/sync": ["libs/state-fp/src/sync/index.ts"],
       "@vialiq/state-fp/devtools": ["libs/state-fp/src/devtools/index.ts"],
       "@vialiq/state-fp/adapter": ["libs/state-fp/src/adapter/index.ts"],
-      "@vialiq/state-fp/bus": ["libs/state-fp/src/bus/index.ts"]
+      "@vialiq/state-fp/bus": ["libs/state-fp/src/bus/index.ts"],
+      "@vialiq/web-components": ["libs/web-components/src/index.ts"],
+      "@vialiq/web-components/*": ["libs/web-components/src/*.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]

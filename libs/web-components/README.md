@@ -50,7 +50,7 @@ The project uses **Storybook 10** with the `@storybook/web-components-vite` fram
 
 - `esbuild` is replaced by `unplugin-swc` in `viteFinal` so TC39 standard decorators
   (required by Lit v3) work inside Storybook. See `.storybook/main.ts`.
-- **`autodocs`** in Storybook 8 is tag-driven, not configured globally. Add
+- **`autodocs`** in Storybook 10 is tag-driven, not configured globally. Add
   `tags: ['autodocs']` to the `meta` export inside each story file to enable the
   auto-generated docs page for that component:
 

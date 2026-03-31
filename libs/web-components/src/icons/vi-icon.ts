@@ -8,8 +8,12 @@ import { type SvgIconDef, getIcon } from './registry.js';
  * vi-icon
  *
  * Renders a named SVG icon from the registry. Icons must be registered first
- * by importing their individual modules e.g.:
- *   import '@vialiq/web-components/icons/check';
+ * by importing their definition from @vialiq/icons and calling registerIcons():
+ *
+ *   import { checkIcon } from '@vialiq/icons/check';
+ *   import { registerIcons } from '@vialiq/web-components';
+ *   registerIcons([checkIcon]);
+ *   // <vi-icon name="check"></vi-icon>
  *
  * @element vi-icon
  * @attr name  - The icon name to render (must be registered)
@@ -64,11 +68,15 @@ export class ViIcon extends ViElement {
     if (changedProperties.has('name')) {
       this._icon = getIcon(this.name);
     }
-    // Only write the inline custom property when the consumer has explicitly
-    // provided a size attribute. Without this guard the inline style would
-    // override any stylesheet rule the consumer sets for --vi-icon-size.
-    if (changedProperties.has('size') && this.hasAttribute('size')) {
-      this.style.setProperty('--vi-icon-size', `${this.size}px`);
+    // Set or clear the inline custom property based on whether the consumer
+    // has explicitly provided a size attribute. Clearing on removal ensures
+    // a stale inline style does not keep overriding consumer CSS.
+    if (changedProperties.has('size')) {
+      if (this.hasAttribute('size')) {
+        this.style.setProperty('--vi-icon-size', `${this.size}px`);
+      } else {
+        this.style.removeProperty('--vi-icon-size');
+      }
     }
   }
 
