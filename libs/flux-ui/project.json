@@ -15,9 +15,19 @@
         "assets": [
           "libs/flux-ui/README.md",
           {
-            "input": "libs/flux-ui/src/styles",
+            "input": "libs/flux-ui",
+            "glob": "*.scss",
+            "output": "."
+          },
+          {
+            "input": "libs/flux-ui/styles",
             "glob": "*.scss",
             "output": "styles"
+          },
+          {
+            "input": "libs/flux-ui/components",
+            "glob": "*.scss",
+            "output": "components"
           }
         ],
         "format": ["esm"],
@@ -41,7 +51,7 @@
       "dependsOn": ["build"],
       "options": {
         "commands": [
-          "sass libs/flux-ui/src/styles/flux-ui.scss dist/libs/flux-ui/flux-ui.css --style=compressed --source-map"
+          "sass libs/flux-ui/flux-ui.scss dist/libs/flux-ui/flux-ui.css --style=compressed --source-map"
         ]
       },
       "outputs": ["{workspaceRoot}/dist/libs/flux-ui/flux-ui.css", "{workspaceRoot}/dist/libs/flux-ui/flux-ui.css.map"]

@@ -1,0 +1,27 @@
+/**
+ * Button component base styles.
+ *
+ * Shared foundation styles for all button-like components.
+ * Provides flexbox layout, spacing via tokens, and interaction states.
+ * Component-specific colors and sizing defined by consuming components.
+ */
+
+@use '../styles/variables' as tokens;
+
+@layer components {
+  .button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: #{tokens.$spacing-xs};
+    border: #{tokens.$border-width-thin} solid transparent;
+    border-radius: var(--vi-button-shape-border-radius, #{tokens.$border-radius-md});
+    padding: var(--vi-button-spacing-padding-block, #{tokens.$spacing-sm}) var(--vi-button-spacing-padding-inline, #{tokens.$spacing-md});
+    font-size: var(--vi-button-typography-font-size, #{tokens.$font-size-base});
+    font-weight: var(--vi-button-typography-font-weight, #{tokens.$font-weight-semibold});
+    line-height: #{tokens.$line-height-tight};
+    cursor: pointer;
+    user-select: none;
+    transition: opacity var(--vi-button-effect-transition-duration, 160ms) ease;
+  }
+}
