@@ -1,9 +1,9 @@
-# Developer Guide — @vi/state-fp
+# Developer Guide — @vialiq/state-fp
 
 > **This guide is written for you if:**
 > - You are joining the team and have not worked with CQRS before
 > - You understand TypeScript but have little functional programming (FP) exposure
-> - You have used React/Angular state (useState, NgRx, Redux) before but find `@vi/state-fp` unfamiliar
+> - You have used React/Angular state (useState, NgRx, Redux) before but find `@vialiq/state-fp` unfamiliar
 > - You want to understand every design decision, not just how to use the API
 
 If you are an experienced FP developer you may prefer to start with
@@ -94,7 +94,7 @@ loaded into the same browser at the same time. Suddenly:
 
 ### What this library adds
 
-`@vi/state-fp` gives you:
+`@vialiq/state-fp` gives you:
 
 | Feature | Why it matters |
 |---|---|
@@ -103,7 +103,7 @@ loaded into the same browser at the same time. Suddenly:
 | **Typed errors** | A command either succeeds or fails with a typed error. No `try/catch` spaghetti. |
 | **BroadcastChannel sync** | When shell auth changes, cart remote gets updated automatically via BroadcastChannel \u2014 no shared JS runtime needed. |
 | **In-process devtools** | Time-travel and event log without a browser extension. Essential in enterprise environments. |
-| **ESM sub-paths** | You can import just `@vi/state-fp/kernel` without pulling in Angular/React code. |
+| **ESM sub-paths** | You can import just `@vialiq/state-fp/kernel` without pulling in Angular/React code. |
 
 ---
 
@@ -116,7 +116,7 @@ the idea is simple:
 
 > Separate the code that **changes** state from the code that **reads** state.
 
-In Redux you have one `dispatch` function that handles both. In `@vi/state-fp` you have:
+In Redux you have one `dispatch` function that handles both. In `@vialiq/state-fp` you have:
 
 - **`kernel.execute(atom, command)`** — changes state (Command side)
 - **`kernel.query(atom, query)`** — reads state (Query side)
@@ -279,7 +279,7 @@ Each remote:
 - Runs in the same browser, same JavaScript context (not iframes)
 - Should NOT have to know what state the other remotes hold
 
-`@vi/state-fp` solves the cross-remote state sharing problem:
+`@vialiq/state-fp` solves the cross-remote state sharing problem:
 
 - Shell *owns* auth state — only shell's kernel can execute auth commands
 - Remotes *borrow* auth state — they receive updates via BroadcastChannel
@@ -325,12 +325,12 @@ Each folder is a **separate entry point** in `package.json#exports`. You can imp
 individual paths:
 
 ```ts
-import { pipe, Either }        from '@vi/state-fp/core';
-import { defineAtom, Kernel }  from '@vi/state-fp/kernel';
-import { MemoryAdapter }       from '@vi/state-fp/storage';
-import { createDevTools }      from '@vi/state-fp/devtools';
-import { createSyncEngine }    from '@vi/state-fp/sync';
-import { createAngularAdapter } from '@vi/state-fp/adapter';
+import { pipe, Either }        from '@vialiq/state-fp/core';
+import { defineAtom, Kernel }  from '@vialiq/state-fp/kernel';
+import { MemoryAdapter }       from '@vialiq/state-fp/storage';
+import { createDevTools }      from '@vialiq/state-fp/devtools';
+import { createSyncEngine }    from '@vialiq/state-fp/sync';
+import { createAngularAdapter } from '@vialiq/state-fp/adapter';
 ```
 
 The dependency direction is strictly upward — `core` never imports from `kernel`:
@@ -349,7 +349,7 @@ sync     → core  (uses kernel types as peer)
 ### 5.1 core module
 
 **Location:** `src/core/`  
-**Import path:** `@vi/state-fp/core`  
+**Import path:** `@vialiq/state-fp/core`  
 **Purpose:** Pure FP utilities. No knowledge of state management.
 
 #### `maybe.ts`
@@ -450,7 +450,7 @@ const result = pipe(
 ### 5.2 kernel module
 
 **Location:** `src/kernel/`  
-**Import path:** `@vi/state-fp/kernel`  
+**Import path:** `@vialiq/state-fp/kernel`  
 **Purpose:** The CQRS engine. Wires atoms, commands, events, and queries together.
 
 #### `types.ts`
@@ -532,7 +532,7 @@ The compute function is called only when a dependency changes; `Object.is` equal
 prevents spurious downstream notifications.
 
 ```ts
-import { defineComputedAtom } from '@vi/state-fp/kernel';
+import { defineComputedAtom } from '@vialiq/state-fp/kernel';
 
 // cartAtom and discountAtom are regular Atom<S> instances
 export const cartTotalAtom = defineComputedAtom({
@@ -651,8 +651,8 @@ never mutate state, and never cause side effects.
 Implements `createKernel(options?)` — the main runtime that wires everything together.
 
 ```ts
-import { createKernel } from '@vi/state-fp/kernel';
-import { createDevTools } from '@vi/state-fp/devtools';
+import { createKernel } from '@vialiq/state-fp/kernel';
+import { createDevTools } from '@vialiq/state-fp/devtools';
 
 // Minimal — no devtools (production default)
 const kernel = createKernel();
@@ -866,8 +866,8 @@ For commands that involve network calls, timers, or any async work, use `registe
 `executeAsync`. The async handler runs outside the synchronous CQRS pipeline:
 
 ```ts
-import { createAsyncCommandHandler } from '@vi/state-fp/kernel';
-import { ok, err }                   from '@vi/state-fp/kernel';
+import { createAsyncCommandHandler } from '@vialiq/state-fp/kernel';
+import { ok, err }                   from '@vialiq/state-fp/kernel';
 
 // 1. Define the async handler type
 type SyncCart = Command<'cart/syncWithServer', { userId: string }>;
@@ -937,7 +937,7 @@ adding new exports to any kernel file.
 ### 5.3 storage module
 
 **Location:** `src/storage/`  
-**Import path:** `@vi/state-fp/storage`  
+**Import path:** `@vialiq/state-fp/storage`  
 **Purpose:** Pluggable, TTL-aware persistence adapters.
 
 #### `types.ts`
@@ -1001,7 +1001,7 @@ the storage key before writing. Values are stored in plaintext; only the key is 
 Requires `SubtleCrypto` (Node 18+, all modern browsers).
 
 ```ts
-import { ObfuscatedAdapter, LocalAdapter } from '@vi/state-fp/storage';
+import { ObfuscatedAdapter, LocalAdapter } from '@vialiq/state-fp/storage';
 
 // localStorage key will show "3af29b1d..." instead of "vi:user"
 const adapter = new ObfuscatedAdapter(new LocalAdapter(), {
@@ -1021,7 +1021,7 @@ They sit at the intersection of CQRS (read model) and reactive primitives (auto-
 #### Defining a computed atom
 
 ```ts
-import { defineComputedAtom } from '@vi/state-fp/kernel';
+import { defineComputedAtom } from '@vialiq/state-fp/kernel';
 
 // Source atoms (regular mutable atoms)
 const cartAtom     = defineAtom<CartState>(/* ... */);
@@ -1082,7 +1082,7 @@ changes** (checked with `Object.is`). This means:
 #### Testing computed atoms
 
 ```ts
-import { createKernel, defineAtom, defineComputedAtom } from '@vi/state-fp/kernel';
+import { createKernel, defineAtom, defineComputedAtom } from '@vialiq/state-fp/kernel';
 
 const cartAtom  = defineAtom<CartState>({ key: 'vi/cart', initialState: { items: [] } });
 const totalAtom = defineComputedAtom({
@@ -1152,8 +1152,8 @@ restores the pre-optimistic state and calls your `onRollback` callback for side-
 #### Usage
 
 ```ts
-import { createKernel, defineAtom }  from '@vi/state-fp/kernel';
-import { ok, err, isErr }            from '@vi/state-fp/kernel';
+import { createKernel, defineAtom }  from '@vialiq/state-fp/kernel';
+import { ok, err, isErr }            from '@vialiq/state-fp/kernel';
 
 const result = await kernel.executeOptimistic(
   cartAtom,
@@ -1215,8 +1215,8 @@ if (isErr(result)) {
 #### Testing optimistic updates
 
 ```ts
-import { createKernel } from '@vi/state-fp/kernel';
-import { ok, err, isOk, isErr } from '@vi/state-fp/kernel';
+import { createKernel } from '@vialiq/state-fp/kernel';
+import { ok, err, isOk, isErr } from '@vialiq/state-fp/kernel';
 
 describe('optimistic cart update', () => {
   const testItem = { sku: 'WIDGET-1', name: 'Widget', price: 9.99, qty: 1 };
@@ -1311,8 +1311,8 @@ Redux DevTools Extension and NgRx `@ngrx/store-devtools`.
 Only the DevTools snapshot is replaced with the sanitized version.
 
 ```ts
-import { createKernel }   from '@vi/state-fp/kernel';
-import { createDevTools } from '@vi/state-fp/devtools';
+import { createKernel }   from '@vialiq/state-fp/kernel';
+import { createDevTools } from '@vialiq/state-fp/devtools';
 
 const devtools = createDevTools();
 const kernel   = createKernel({
@@ -1387,14 +1387,14 @@ const authAtom = defineAtom<AuthState>({
 ### 5.4 devtools module
 
 **Location:** `src/devtools/`  
-**Import path:** `@vi/state-fp/devtools`  
+**Import path:** `@vialiq/state-fp/devtools`  
 **Purpose:** Zero-cost debug infrastructure — event log, snapshots, time-travel, browser bridge.
 
 #### Integration pattern
 
 ```ts
-import { createKernel }   from '@vi/state-fp/kernel';
-import { createDevTools } from '@vi/state-fp/devtools';
+import { createKernel }   from '@vialiq/state-fp/kernel';
+import { createDevTools } from '@vialiq/state-fp/devtools';
 
 const devtools = createDevTools({
   maxLogSize:    500,   // circular buffer size (default 500)
@@ -1578,13 +1578,13 @@ debug layer via `debugLayer.record()`.
 ### 5.5 sync module
 
 **Location:** `src/sync/`  
-**Import path:** `@vi/state-fp/sync`  
+**Import path:** `@vialiq/state-fp/sync`  
 **Purpose:** Cross-MFE state synchronisation via BroadcastChannel.
 
 #### API overview
 
 ```ts
-import { createSyncEngine } from '@vi/state-fp/sync';
+import { createSyncEngine } from '@vialiq/state-fp/sync';
 
 // Create the engine — requires a KernelLike (subscribe method)
 const sync = createSyncEngine({ kernel });
@@ -1715,7 +1715,7 @@ knowledge required. The receiving MFE accesses auth state without knowing the au
 ### 5.6 adapter module
 
 **Location:** `src/adapter/`  
-**Import path:** `@vi/state-fp/adapter`  
+**Import path:** `@vialiq/state-fp/adapter`  
 **Purpose:** Framework-specific wrappers around the kernel CQRS API.
 
 All adapters use a **factory pattern** — you pass the framework's primitives in at setup time. The library has zero compile-time dependency on React, Angular, or Lit. The same principle makes every adapter fully testable with plain mock objects — no real framework runtime required.
@@ -1738,7 +1738,7 @@ All adapters use a **factory pattern** — you pass the framework's primitives i
 ```ts
 // src/app/adapter.ts
 import { useState, useEffect, useRef, useMemo, useContext, createContext, createElement } from 'react';
-import { createReactAdapter } from '@vi/state-fp/adapter';
+import { createReactAdapter } from '@vialiq/state-fp/adapter';
 
 export const reactAdapter = createReactAdapter({
   useState, useEffect, useRef, useMemo, useContext, createContext, createElement,
@@ -1891,8 +1891,8 @@ src/
 
 ```ts
 import { ApplicationConfig, InjectionToken } from '@angular/core';
-import { createKernel }                       from '@vi/state-fp/kernel';
-import type { Kernel }                        from '@vi/state-fp/kernel';
+import { createKernel }                       from '@vialiq/state-fp/kernel';
+import type { Kernel }                        from '@vialiq/state-fp/kernel';
 import { cartDomain }                         from '../features/cart/cart.domain';
 
 // Single kernel instance for the whole app.
@@ -1922,10 +1922,10 @@ export const appConfig: ApplicationConfig = {
 
 ```ts
 import { signal, inject, DestroyRef } from '@angular/core';
-import { createAngularAdapter }       from '@vi/state-fp/adapter';
+import { createAngularAdapter }       from '@vialiq/state-fp/adapter';
 
 // Created once. Import `ngAdapter` in every store that needs it.
-// No Angular runtime is imported by @vi/state-fp itself — this file
+// No Angular runtime is imported by @vialiq/state-fp itself — this file
 // is the only place where the framework meets the library.
 export const ngAdapter = createAngularAdapter({ signal, inject, DestroyRef });
 ```
@@ -1940,7 +1940,7 @@ import {
   command, domainEvent,
   createCommandHandler, createEventApplier,
   query, createQueryHandler,
-} from '@vi/state-fp/kernel';
+} from '@vialiq/state-fp/kernel';
 
 // ── State shape ───────────────────────────────────────────────────────────────
 export interface CartItem  { sku: string; name: string; qty: number; price: number }
@@ -2043,7 +2043,7 @@ export const cartDomain = {
 
 ```ts
 import { Injectable, inject }         from '@angular/core';
-import { isLeft }                      from '@vi/state-fp/core';
+import { isLeft }                      from '@vialiq/state-fp/core';
 import { KERNEL }                      from '../../app/app.config';
 import { ngAdapter }                   from '../../core/state/ng-adapter';
 import {
@@ -2257,7 +2257,7 @@ The store is a plain class with injected dependencies — you can test it withou
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CartStore }                             from './cart.store';
 import { cartAtom, AddItem, CartTotal }          from './cart.domain';
-import { createKernel }                          from '@vi/state-fp/kernel';
+import { createKernel }                          from '@vialiq/state-fp/kernel';
 import { cartDomain }                            from './cart.domain';
 
 // Minimal signal mock — same shape as Angular's WritableSignal
@@ -2279,7 +2279,7 @@ describe('CartStore', () => {
     kernel.register(cartDomain.atom, cartDomain.handler, cartDomain.applier);
     kernel.registerQuery(cartDomain.atom, cartDomain.queryHandler);
 
-    const { createAngularAdapter } = await import('@vi/state-fp/adapter');
+    const { createAngularAdapter } = await import('@vialiq/state-fp/adapter');
     const adapter = createAngularAdapter({
       signal:     mockSignal,
       inject:     (_token: unknown) => mockDestroyRef,
@@ -2341,7 +2341,7 @@ Lit controllers implement the `ReactiveController` interface structurally — no
 ```ts
 import { LitElement, html }    from 'lit';
 import { customElement }        from 'lit/decorators.js';
-import { createLitController } from '@vi/state-fp/adapter';
+import { createLitController } from '@vialiq/state-fp/adapter';
 
 @customElement('counter-button')
 class CounterButton extends LitElement {
@@ -2368,7 +2368,7 @@ class CounterButton extends LitElement {
 **`createLitStreamController(host, stream, animated?)`** — tracks an `EphemeralStream`:
 
 ```ts
-import { createLitStreamController } from '@vi/state-fp/adapter';
+import { createLitStreamController } from '@vialiq/state-fp/adapter';
 
 @customElement('mouse-tracker')
 class MouseTracker extends LitElement {
@@ -2412,7 +2412,7 @@ ctrl.hostConnected();
 `createAdapter(kernel)` — returns a `VanillaAdapter`. No framework required.
 
 ```ts
-import { createAdapter } from '@vi/state-fp/adapter';
+import { createAdapter } from '@vialiq/state-fp/adapter';
 
 const app = createAdapter(kernel);
 
@@ -2455,7 +2455,7 @@ export type CartState = { items: CartItem[]; coupon: string | null };
 
 ```ts
 // src/cart/atom.ts  
-import { defineAtom } from '@vi/state-fp/kernel';
+import { defineAtom } from '@vialiq/state-fp/kernel';
 import { CartState }  from './types';
 
 export const cartAtom = defineAtom<CartState>({
@@ -2473,7 +2473,7 @@ export const cartAtom = defineAtom<CartState>({
 
 ```ts
 // src/cart/commands.ts
-import { command, Command } from '@vi/state-fp/kernel';
+import { command, Command } from '@vialiq/state-fp/kernel';
 
 // Types
 export type AddItem    = Command<'cart/addItem',    { sku: string; name: string; price: number; qty: number }>;
@@ -2493,7 +2493,7 @@ export const applyCoupon = (code: string): ApplyCoupon =>
 
 ```ts
 // src/cart/handlers.ts
-import { createCommandHandler, ok, err } from '@vi/state-fp/kernel';
+import { createCommandHandler, ok, err } from '@vialiq/state-fp/kernel';
 import { CartState, AddItem, RemoveItem, ApplyCoupon } from './types';
 
 export const addItemHandler = createCommandHandler<CartState, AddItem>({
@@ -2527,7 +2527,7 @@ export const removeItemHandler = createCommandHandler<CartState, RemoveItem>({
 
 ```ts
 // src/cart/applier.ts
-import { createEventApplier } from '@vi/state-fp/kernel';
+import { createEventApplier } from '@vialiq/state-fp/kernel';
 import { CartState }          from './types';
 
 export const cartApplier = createEventApplier<CartState>({
@@ -2554,7 +2554,7 @@ export const cartApplier = createEventApplier<CartState>({
 
 ```ts
 // src/cart/queries.ts
-import { createQueryHandler, query, Query } from '@vi/state-fp/kernel';
+import { createQueryHandler, query, Query } from '@vialiq/state-fp/kernel';
 import { CartState }                        from './types';
 
 type GetTotal = Query<'cart/getTotal', {}>;
@@ -2733,7 +2733,7 @@ Tracing `kernel.query(cartAtom, getTotal())`:
 ```ts
 // cart/handlers.spec.ts
 import { addItemHandler } from './handlers';
-import { isErr, isOk } from '@vi/state-fp/kernel';
+import { isErr, isOk } from '@vialiq/state-fp/kernel';
 
 const emptyCart = { items: [], coupon: null };
 
@@ -2786,7 +2786,7 @@ describe('cartApplier', () => {
 
 ```ts
 // cart/cart.integration.spec.ts
-import { createKernel } from '@vi/state-fp/kernel';
+import { createKernel } from '@vialiq/state-fp/kernel';
 
 describe('Cart integration', () => {
   let kernel: Kernel;
@@ -2820,8 +2820,8 @@ The correct pattern is to create a `DevToolsInstance` and wire it in via `kernel
 The `eventLog.getAll()` method returns all `DebugEntry` objects (one per DomainEvent emitted):
 
 ```ts
-import { createKernel } from '@vi/state-fp/kernel';
-import { createDevTools } from '@vi/state-fp/devtools';
+import { createKernel } from '@vialiq/state-fp/kernel';
+import { createDevTools } from '@vialiq/state-fp/devtools';
 
 it('records DebugEntry on execute', () => {
   const devtools = createDevTools({ installBridge: false }); // no window bridge in tests
@@ -2860,8 +2860,8 @@ it('stateSanitizer redacts sensitive fields in DevTools', () => {
 ### Testing async commands
 
 ```ts
-import { createKernel, defineAtom } from '@vi/state-fp/kernel';
-import { isOk, isErr } from '@vi/state-fp/kernel';
+import { createKernel, defineAtom } from '@vialiq/state-fp/kernel';
+import { isOk, isErr } from '@vialiq/state-fp/kernel';
 
 it('executeAsync falls back to synchronous execute if no async handler registered', async () => {
   const kernel = createKernel();
@@ -2890,8 +2890,8 @@ it('executeAsync respects AbortSignal', async () => {
 ### Testing Storage Adapters
 
 ```ts
-import { MemoryAdapter } from '@vi/state-fp/storage';
-import { isOk, isJust } from '@vi/state-fp/core';
+import { MemoryAdapter } from '@vialiq/state-fp/storage';
+import { isOk, isJust } from '@vialiq/state-fp/core';
 
 it('stores and retrieves a value', async () => {
   const adapter = new MemoryAdapter();
@@ -2980,7 +2980,7 @@ design seems strange and you want to understand the reasoning.
 
 ### D5: Why sub-path exports (`/core`, `/kernel`, etc.)?
 
-**Rejected alternative:** Single entry point `@vi/state-fp` that exports everything.
+**Rejected alternative:** Single entry point `@vialiq/state-fp` that exports everything.
 
 **Reason:**
 
@@ -2991,7 +2991,7 @@ design seems strange and you want to understand the reasoning.
    affect `core` or `kernel` at runtime.
 
 3. Version negotiation across MFEs is simpler. A remote can declare
-   `"@vi/state-fp": "^1.0.0"` and only use `@vi/state-fp/kernel`.
+   `"@vialiq/state-fp": "^1.0.0"` and only use `@vialiq/state-fp/kernel`.
 
 ### D6: Why BroadcastChannel instead of shared kernel instance?
 
@@ -3000,7 +3000,7 @@ design seems strange and you want to understand the reasoning.
 **Reason:**
 
 1. A shared kernel instance creates a hard runtime coupling between shell and remotes.
-   If the shell is at `@vi/state-fp@1.1.0` and a remote is at `@1.2.0`, they cannot share
+   If the shell is at `@vialiq/state-fp@1.1.0` and a remote is at `@1.2.0`, they cannot share
    the singleton — this is the classic MFE version mismatch problem.
 
 2. BroadcastChannel is a browser native API. It works across independently bundled JavaScript
@@ -3019,7 +3019,7 @@ design seems strange and you want to understand the reasoning.
    block browser extension installation.
 
 2. The Redux DevTools protocol ties the library to Redux's action/reducer mental model.
-   `@vi/state-fp` uses Commands and DomainEvents — a different model.
+   `@vialiq/state-fp` uses Commands and DomainEvents — a different model.
 
 3. `window.__VI_STATE_FP__` gives every developer the full debug surface from the browser
    console with no tooling installation. The correlation query

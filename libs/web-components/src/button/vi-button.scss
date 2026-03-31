@@ -1,0 +1,85 @@
+/**
+ * vi-button component styles
+ *
+ * Extends flux-ui base button component with variant-specific
+ * colors and state handling. All typography, spacing, and shape tokens
+ * come from flux-ui's design system.
+ *
+ * Three-level cascade for component-scoped vars:
+ *   1. Consumer override  → --vi-button-surface-primary-background-color
+ *   2. Theme token        → --vi-color-primary
+ *   3. Compile-time fallback (from $color-primary) → #0066cc
+ */
+
+@use '@vialiq/flux-ui/styles/variables' as tokens;
+
+// ============================================================================
+// Host defaults — establishes component-scoped CSS custom properties.
+// These can all be overridden from outside the shadow root.
+// ============================================================================
+
+:host {
+  display: inline-block;
+
+  // Surface colours
+  --vi-button-surface-primary-background-color:   #{tokens.$color-primary};
+  --vi-button-surface-primary-text-color:          #{tokens.$color-grey-100};
+  --vi-button-surface-secondary-background-color:  #{tokens.$color-secondary};
+  --vi-button-surface-secondary-text-color:        #{tokens.$color-foreground};
+  --vi-button-surface-danger-background-color:     #{tokens.$color-error};
+  --vi-button-surface-danger-text-color:           #{tokens.$color-grey-100};
+
+  // Shape
+  --vi-button-shape-border-radius: #{tokens.$border-radius-md};
+
+  // Spacing
+  --vi-button-spacing-padding-inline: #{tokens.$spacing-md};
+  --vi-button-spacing-padding-block:  #{tokens.$spacing-sm};
+
+  // Typography
+  --vi-button-typography-font-size:   #{tokens.$font-size-base};
+  --vi-button-typography-font-weight: #{tokens.$font-weight-semibold};
+
+  // Motion
+  --vi-button-effect-transition-duration: 160ms;
+}
+
+// ============================================================================
+// Base button element — imported from flux-ui
+// ============================================================================
+// .button class is provided by @vialiq/flux-ui/components/button
+
+// ============================================================================
+// Variant rules — consume the component-scoped vars defined in :host.
+// Fallback chain keeps the button renderable even without the :host defaults.
+// ============================================================================
+
+:host([variant='primary']) .button {
+  background-color: var(--vi-button-surface-primary-background-color, #{tokens.$color-primary});
+  color: var(--vi-button-surface-primary-text-color, #{tokens.$color-grey-100});
+}
+
+:host([variant='secondary']) .button {
+  background-color: var(--vi-button-surface-secondary-background-color, #{tokens.$color-secondary});
+  color: var(--vi-button-surface-secondary-text-color, #{tokens.$color-foreground});
+  border-color: #{tokens.$color-border};
+}
+
+:host([variant='danger']) .button {
+  background-color: var(--vi-button-surface-danger-background-color, #{tokens.$color-error});
+  color: var(--vi-button-surface-danger-text-color, #{tokens.$color-grey-100});
+}
+
+// ============================================================================
+// State modifiers
+// ============================================================================
+
+:host([disabled]) .button,
+.button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.button:hover:not(:disabled) {
+  opacity: 0.92;
+}

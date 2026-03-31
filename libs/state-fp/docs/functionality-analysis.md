@@ -1,9 +1,9 @@
-# @vi/state-fp — Functionality Analysis
+# @vialiq/state-fp — Functionality Analysis
 
 > **Purpose:** Evidenced assessment of the library against the four core functional requirements.  
 > **Scope:** `libs/state-fp/` as of the `state-fp-refactor` branch.  
-> **Conclusion:** All four requirements are fully implemented across `@vi/state-fp/bus`,
-> `@vi/state-fp/kernel`, `@vi/state-fp/sync`, and `@vi/state-fp/adapter`.
+> **Conclusion:** All four requirements are fully implemented across `@vialiq/state-fp/bus`,
+> `@vialiq/state-fp/kernel`, `@vialiq/state-fp/sync`, and `@vialiq/state-fp/adapter`.
 
 ---
 
@@ -26,12 +26,12 @@ The library provides two distinct communication lanes, each suited to a differen
 
 | Lane | Module | Mechanism | Best for |
 |------|--------|-----------|----------|
-| **State sync** | `@vi/state-fp/sync` | BroadcastChannel + vector-clock | Shared persistent state (auth, theme, session) |
-| **Domain event bus** | `@vi/state-fp/bus` | BroadcastChannel (filtered) | Fire-and-forget cross-MFE events (analytics, toasts, telemetry) |
+| **State sync** | `@vialiq/state-fp/sync` | BroadcastChannel + vector-clock | Shared persistent state (auth, theme, session) |
+| **Domain event bus** | `@vialiq/state-fp/bus` | BroadcastChannel (filtered) | Fire-and-forget cross-MFE events (analytics, toasts, telemetry) |
 
 ---
 
-### Layer 1: State Sync (`@vi/state-fp/sync`)
+### Layer 1: State Sync (`@vialiq/state-fp/sync`)
 
 The owner MFE registers and executes commands against an atom. The `SyncEngine` broadcasts
 every state change via BroadcastChannel to all borrower MFEs that have called `sync.share()`
@@ -40,8 +40,8 @@ on the same channel. Conflict resolution is automatic (configurable strategies: 
 
 ```ts
 // ── Shell (owner) ──────────────────────────────────────────────────────────
-import { createKernel, defineAtom, command, domainEvent, ok, createCommandHandler, createEventApplier } from '@vi/state-fp/kernel';
-import { createSyncEngine }                                    from '@vi/state-fp/sync';
+import { createKernel, defineAtom, command, domainEvent, ok, createCommandHandler, createEventApplier } from '@vialiq/state-fp/kernel';
+import { createSyncEngine }                                    from '@vialiq/state-fp/sync';
 
 const kernel  = createKernel();
 const myAtom  = defineAtom({ key: 'vi/shared-data', initialState: { count: 0 } });
@@ -59,8 +59,8 @@ const sync = createSyncEngine({ kernel });
 sync.share(myAtom, { channel: 'vi-shared-data' });   // broadcasts changes
 
 // ── Remote (borrower) ──────────────────────────────────────────────────────
-import { createKernel, defineAtom } from '@vi/state-fp/kernel';
-import { createSyncEngine }         from '@vi/state-fp/sync';
+import { createKernel, defineAtom } from '@vialiq/state-fp/kernel';
+import { createSyncEngine }         from '@vialiq/state-fp/sync';
 
 const remoteKernel = createKernel();
 const remoteAtom   = defineAtom({ key: 'vi/shared-data', initialState: { count: 0 } });
@@ -85,7 +85,7 @@ const isConcurrent = (localVec: VersionVector, remoteVec: VersionVector) =>
 const sync = createSyncEngine({ kernel });         // auto-selects best transport
 
 // Explicit BroadcastChannel
-import { createBroadcastBridge } from '@vi/state-fp/sync';
+import { createBroadcastBridge } from '@vialiq/state-fp/sync';
 const sync = createSyncEngine({ kernel, transport: () => createBroadcastBridge('chan') });
 
 // Custom (e.g. PostMessage for cross-origin):
@@ -94,14 +94,14 @@ const sync = createSyncEngine({ kernel, transport: (ch) => myCustomTransport(ch)
 
 ---
 
-### Layer 2: Domain Event Bus (`@vi/state-fp/bus`)
+### Layer 2: Domain Event Bus (`@vialiq/state-fp/bus`)
 
 For cross-MFE events that are **not** about persisted state (toasts, analytics, navigation
 triggers), `createSharedBus` publishes and subscribes to `CrossMFEEvent` objects.
 
 ```ts
-import { createSharedBus }    from '@vi/state-fp/bus';
-import { domainEvent }        from '@vi/state-fp/kernel';
+import { createSharedBus }    from '@vialiq/state-fp/bus';
+import { domainEvent }        from '@vialiq/state-fp/kernel';
 
 // ── Publisher (any MFE) ────────────────────────────────────────────────────
 const bus = createSharedBus({ channel: 'vi-domain-events' });
@@ -292,7 +292,7 @@ For state that changes faster than the frame rate (mouse position, scroll, canva
 `EphemeralStream` with `subscribeAnimated()`:
 
 ```ts
-import { createEphemeralStream } from '@vi/state-fp/core';
+import { createEphemeralStream } from '@vialiq/state-fp/core';
 
 const mousePos = createEphemeralStream<{ x: number; y: number }>();
 

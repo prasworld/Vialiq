@@ -1,4 +1,4 @@
-# @vi/state-fp — Architecture Design (v2)
+# @vialiq/state-fp — Architecture Design (v2)
 
 > **Status:** Revised — Modular CQRS Architecture  
 > **Pattern:** CQRS (Command Query Responsibility Segregation)  
@@ -12,7 +12,7 @@
 1. [Why CQRS?](#1-why-cqrs)
 2. [Module Map](#2-module-map)
 3. [Dependency Graph](#3-dependency-graph)
-4. [CQRS Pattern in @vi/state-fp](#4-cqrs-pattern-in-vi-state-fp)
+4. [CQRS Pattern in @vialiq/state-fp](#4-cqrs-pattern-in-vi-state-fp)
 5. [Module — core](#5-module--core)
 6. [Module — kernel](#6-module--kernel)
 7. [Module — storage](#7-module--storage)
@@ -73,13 +73,13 @@ With CQRS:
 ## 2. Module Map
 
 ```
-@vi/state-fp/core      — FP primitives (Maybe, Either, IO, Task, Reader, StateM, Lens, pipe)
-@vi/state-fp/kernel    — CQRS engine: CommandBus, QueryBus, DomainEventBus, Atom, Kernel, KernelPlugin
-@vi/state-fp/storage   — StorageAdapter interface + Memory, LocalStorage, SessionStorage, IndexedDB,
+@vialiq/state-fp/core      — FP primitives (Maybe, Either, IO, Task, Reader, StateM, Lens, pipe)
+@vialiq/state-fp/kernel    — CQRS engine: CommandBus, QueryBus, DomainEventBus, Atom, Kernel, KernelPlugin
+@vialiq/state-fp/storage   — StorageAdapter interface + Memory, LocalStorage, SessionStorage, IndexedDB,
                           ObfuscatedAdapter
-@vi/state-fp/sync      — Cross-MFE sync: BroadcastChannel, conflict resolution, versioning
-@vi/state-fp/devtools  — EventLog, Snapshots, TimeTravelController, DevToolsBridge, DevExtension
-@vi/state-fp/adapter   — Framework wrappers: Angular (Signals), Vanilla (shipped); React hooks + Lit (Phase 5 — stubs only)
+@vialiq/state-fp/sync      — Cross-MFE sync: BroadcastChannel, conflict resolution, versioning
+@vialiq/state-fp/devtools  — EventLog, Snapshots, TimeTravelController, DevToolsBridge, DevExtension
+@vialiq/state-fp/adapter   — Framework wrappers: Angular (Signals), Vanilla (shipped); React hooks + Lit (Phase 5 — stubs only)
 ```
 
 Each module is a separate entry-point in `package.json#exports`. Modules compose upward — never downward.
@@ -90,25 +90,25 @@ Each module is a separate entry-point in `package.json#exports`. Modules compose
 
 ```
           ┌──────────────────────────────────────────────────────────┐
-          │                    @vi/state-fp/adapter                  │
+          │                    @vialiq/state-fp/adapter                  │
           │        Angular · React · Lit · Vanilla shells             │
           └────────────────┬──────────────────────────────────────────┘
                            │ depends on
           ┌────────────────▼──────────────────────────────────────────┐
-          │                 @vi/state-fp/kernel                       │
+          │                 @vialiq/state-fp/kernel                       │
           │   CommandBus · QueryBus · DomainEventBus · Atom · Kernel  │
           │   KernelPlugin (OCP extension point)                      │
           └──────┬───────────────────────┬───────────────────────────┘
                  │ depends on            │ peer-extends
     ┌────────────▼────────┐  ┌──────────▼──────────┐  ┌───────────────────┐
-    │ @vi/state-fp/storage│  │@vi/state-fp/devtools │  │ @vi/state-fp/sync │
+    │ @vialiq/state-fp/storage│  │@vialiq/state-fp/devtools │  │ @vialiq/state-fp/sync │
     │ Memory/Local/Session│  │ EventLog · Snapshots │  │ Broadcast·Conflict│
     │ IndexedDB adapters  │  │ TimeTravel · Bridge  │  │ Versioning        │
     │ Obfuscated          │  │ DevExtension proto.  │  │                   │
     └────────────┬────────┘  └──────────┬───────────┘  └─────────┬─────────┘
                  │                      │                         │
           ┌──────▼──────────────────────▼─────────────────────────▼──────────┐
-          │                      @vi/state-fp/core                            │
+          │                      @vialiq/state-fp/core                            │
           │    Maybe · Either · IO · Task · Reader · StateM · Lens · pipe     │
           └───────────────────────────────────────────────────────────────────┘
 ```
@@ -123,13 +123,13 @@ Each module is a separate entry-point in `package.json#exports`. Modules compose
 - No circular dependencies — ever
 
 > **Peer dependency** means the module declares types from `kernel` but does not import from
-> `@vi/state-fp/kernel` at runtime. The kernel passes its objects (atoms, events) into devtools
+> `@vialiq/state-fp/kernel` at runtime. The kernel passes its objects (atoms, events) into devtools
 > and sync — they receive them, not import them. This preserves the ability to deploy devtools and
 > sync without bundling the kernel twice.
 
 ---
 
-## 4. CQRS Pattern in @vi/state-fp
+## 4. CQRS Pattern in @vialiq/state-fp
 
 ### Vocabulary
 
@@ -170,7 +170,7 @@ Phase 3+: Command → Handler → DomainEvent[] → EventApplier → current sta
 
 ## 5. Module — core
 
-**Import path:** `@vi/state-fp/core`  
+**Import path:** `@vialiq/state-fp/core`  
 **Depends on:** nothing  
 **Tree-shakeable:** yes — each export is independent
 
@@ -199,7 +199,7 @@ Phase 3+: Command → Handler → DomainEvent[] → EventApplier → current sta
 
 ## 6. Module — kernel
 
-**Import path:** `@vi/state-fp/kernel`  
+**Import path:** `@vialiq/state-fp/kernel`  
 **Depends on:** `core` only  
 **Peer-optional:** `storage` (for persistence), `devtools` (for tracing)
 
@@ -399,7 +399,7 @@ kernel.execute(atom, command)
 
 ## 7. Module — storage
 
-**Import path:** `@vi/state-fp/storage`  
+**Import path:** `@vialiq/state-fp/storage`  
 **Depends on:** `core` only  
 **No kernel dependency** — storage is a plain adapter
 
@@ -464,7 +464,7 @@ IndexedDB → localStorage → sessionStorage → memory → initialState
 
 ## 8. Module — sync
 
-**Import path:** `@vi/state-fp/sync`  
+**Import path:** `@vialiq/state-fp/sync`  
 **Depends on:** `core` only (peer: `kernel`)  
 **Purpose:** Cross-MFE state synchronisation without tight coupling
 
@@ -541,7 +541,7 @@ Each shared atom maintains a monotonically increasing `version` counter. Message
 
 ## 9. Module — devtools
 
-**Import path:** `@vi/state-fp/devtools`  
+**Import path:** `@vialiq/state-fp/devtools`  
 **Depends on:** `core` only (peer: `kernel`)  
 **Zero-cost in production** — fully tree-shaken when not imported
 
@@ -596,8 +596,8 @@ window.__VI_STATE_FP__.importLog(json)
 ### Attaching devtools to the kernel
 
 ```ts
-import { createKernel }   from '@vi/state-fp/kernel';
-import { createDevTools } from '@vi/state-fp/devtools';
+import { createKernel }   from '@vialiq/state-fp/kernel';
+import { createDevTools } from '@vialiq/state-fp/devtools';
 
 // Development — full devtools
 const devtools = createDevTools({ maxLogSize: 500, snapshotEvery: 50 });
@@ -622,7 +622,7 @@ const kernel = createKernel();   // debug defaults to false; noopDebug object us
 
 ## 10. Module — adapter
 
-**Import path:** `@vi/state-fp/adapter`  
+**Import path:** `@vialiq/state-fp/adapter`  
 **Depends on:** `kernel`  
 **Purpose:** Thin wrappers exposing the kernel CQRS API to framework components
 
@@ -632,9 +632,9 @@ const kernel = createKernel();   // debug defaults to false; noopDebug object us
 > Angular APIs are passed in at call-time, making the adapter testable without `TestBed`.
 
 ```ts
-import { createAngularAdapter, type AngularAPIs } from '@vi/state-fp/adapter';
+import { createAngularAdapter, type AngularAPIs } from '@vialiq/state-fp/adapter';
 import { signal, DestroyRef, inject } from '@angular/core';
-import { createKernel } from '@vi/state-fp/kernel';
+import { createKernel } from '@vialiq/state-fp/kernel';
 
 // Create the adapter once (e.g. in a service or factory provider)
 const adapter = createAngularAdapter({ signal, inject, DestroyRef });
@@ -683,7 +683,7 @@ export declare function useCommandDispatcher<S>(
 ### Vanilla JS
 
 ```ts
-import { createAdapter } from '@vi/state-fp/adapter';
+import { createAdapter } from '@vialiq/state-fp/adapter';
 
 const adapter = createAdapter(kernel);
 
@@ -824,7 +824,7 @@ A single `DebugEntry` captures: the **command** (intent), one **domain event** (
 
 ## 17. Public API Surface
 
-### @vi/state-fp/core
+### @vialiq/state-fp/core
 ```ts
 just, nothing, fromNullableMaybe, isNothing, isJust, mapMaybe, chainMaybe, foldMaybe
 ok, err, isOk, isErr, match,
@@ -838,7 +838,7 @@ pipe, compose, identity
 uuid, now, deepClone, shallowDiff
 ```
 
-### @vi/state-fp/kernel
+### @vialiq/state-fp/kernel
 ```ts
 defineAtom
 defineComputedAtom              // Phase 2.5 — computed (read-only) projection from multiple atoms
@@ -869,21 +869,21 @@ createQueryHandler
 KernelPlugin                    // type — implement to extend kernel behaviour
 ```
 
-### @vi/state-fp/storage
+### @vialiq/state-fp/storage
 ```ts
 MemoryAdapter, LocalAdapter, SessionAdapter, IndexedDbAdapter
 ObfuscatedAdapter                      // wraps any adapter; SHA-256 hashes storage keys
 StorageSecurityPolicy                  // 'visible' | 'obfuscated' | 'memory-only'
 ```
 
-### @vi/state-fp/sync
+### @vialiq/state-fp/sync
 ```ts
 createSyncEngine    // factory: createSyncEngine({ kernel }) → SyncEngine
 // SyncEngine methods: .share(atom, opts), .getState(atomKey), .destroy()
 // ShareOptions: conflict, peerId, channel, propagate
 ```
 
-### @vi/state-fp/devtools
+### @vialiq/state-fp/devtools
 ```ts
 createDevTools      // factory: createDevTools(opts?) → DevToolsInstance
 // DevToolsInstance: { plugin, eventLog, snapshots, timeTravel, uninstall }
@@ -893,7 +893,7 @@ createDevTools      // factory: createDevTools(opts?) → DevToolsInstance
 // timeTravel: TimeTravelController — .goTo(entryId)
 ```
 
-### @vi/state-fp/adapter
+### @vialiq/state-fp/adapter
 ```ts
 // Angular (factory pattern — zero @angular/core compile dependency) — SHIPPED
 createAngularAdapter
@@ -914,7 +914,7 @@ VanillaAdapter
 ```ts
 import { defineAtom, createKernel, command, domainEvent,
          createCommandHandler, createEventApplier, createQueryHandler,
-         ok, err } from '@vi/state-fp/kernel';
+         ok, err } from '@vialiq/state-fp/kernel';
 
 // 1. Atom
 const counterAtom = defineAtom({ key: 'vi/counter', initialState: { count: 0 } });
@@ -952,7 +952,7 @@ kernel.query(counterAtom, { _kind: 'Query', type: 'counter/getCount' }); // 3
 ### With persistence (Phase 2)
 
 ```ts
-import { LocalAdapter } from '@vi/state-fp/storage';
+import { LocalAdapter } from '@vialiq/state-fp/storage';
 
 const counterAtom = defineAtom({
   key: 'vi/counter',
@@ -966,7 +966,7 @@ await kernel.hydrate(); // restore from localStorage
 ### With devtools (Phase 3)
 
 ```ts
-import { createDevTools } from '@vi/state-fp/devtools';
+import { createDevTools } from '@vialiq/state-fp/devtools';
 
 // createDevTools() returns DevToolsInstance — connect via kernel.use()
 const devtools = createDevTools({ maxLogSize: 500 });
@@ -978,7 +978,7 @@ kernel.use(devtools.plugin);
 ### With MFE sync (Phase 4)
 
 ```ts
-import { createSyncEngine } from '@vi/state-fp/sync';
+import { createSyncEngine } from '@vialiq/state-fp/sync';
 
 // channel is per-atom (in ShareOptions), not global
 const sync = createSyncEngine({ kernel });
@@ -1118,7 +1118,7 @@ type KernelPlugin = {
 
 | Plugin | Source | Purpose |
 |---|---|---|
-| `createDevTools().plugin` | `@vi/state-fp/devtools` | Records DebugEntry per event; manages EventLog, Snapshots, Bridge |
+| `createDevTools().plugin` | `@vialiq/state-fp/devtools` | Records DebugEntry per event; manages EventLog, Snapshots, Bridge |
 
 > **Planned for future phases:**
 > - `createLoggingPlugin()` (Phase 3+) — `console.log` every command + event
@@ -1128,8 +1128,8 @@ type KernelPlugin = {
 ### Plugin Registration
 
 ```ts
-import { createKernel }   from '@vi/state-fp/kernel';
-import { createDevTools } from '@vi/state-fp/devtools';
+import { createKernel }   from '@vialiq/state-fp/kernel';
+import { createDevTools } from '@vialiq/state-fp/devtools';
 
 const kernel   = createKernel({ debug: true });
 const devtools = createDevTools({ maxLogSize: 500 });
@@ -1248,7 +1248,7 @@ Wraps any `StorageAdapter`. Replaces the human-readable storage key with a
 deterministic SHA-256 hash. The value is still stored in plaintext.
 
 ```ts
-import { ObfuscatedAdapter, LocalAdapter } from '@vi/state-fp/storage';
+import { ObfuscatedAdapter, LocalAdapter } from '@vialiq/state-fp/storage';
 
 const adapter = new ObfuscatedAdapter(new LocalAdapter(), { salt: appVersion });
 // localStorage will show: "a3f29b..." instead of "vi:user"
@@ -1478,7 +1478,7 @@ At 60 fps, this fires 3 600 times per minute. `BroadcastChannel.postMessage` and
 
 ### EphemeralStream<T> — the planned solution (Phase 4.7)
 
-`EphemeralStream<T>` is designed as a lightweight reactive primitive from `@vi/state-fp/core`
+`EphemeralStream<T>` is designed as a lightweight reactive primitive from `@vialiq/state-fp/core`
 with **no CQRS overhead** — no command, no event, no applier, no storage, no sync.
 
 Proposed API:

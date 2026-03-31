@@ -1,5 +1,5 @@
 /**
- * @vi/state-fp/kernel — Query types, factory, and QueryBus.
+ * @vialiq/state-fp/kernel — Query types, factory, and QueryBus.
  *
  * Queries return derived data from current atom state.
  * They are pure, synchronous, and never mutate state.

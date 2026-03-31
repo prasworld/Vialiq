@@ -190,7 +190,7 @@ describe('automapper', () => {
   });
 
   it('example logging strategy records calls', () => {
-    let messages: string[] = [];
+    const messages: string[] = [];
     const logStrat = new LoggingStrategy((m: string) => messages.push(m));
     mapper.addStrategy(logStrat);
     mapper.addProfile<User, UserDto>('Object', 'LintDto', (mb) => {});

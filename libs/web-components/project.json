@@ -1,0 +1,78 @@
+{
+  "name": "web-components",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "libs/web-components/src",
+  "prefix": "vi",
+  "tags": ["scope:ui", "type:wc"],
+  "release": {
+    "version": {
+      "manifestRootsToUpdate": ["dist/{projectRoot}"],
+      "currentVersionResolver": "git-tag",
+      "fallbackCurrentVersionResolver": "disk"
+    }
+  },
+  "targets": {
+    "build": {
+      "executor": "@nx/vite:build",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/web-components",
+        "configFile": "libs/web-components/vite.config.ts",
+        "tsConfig": "libs/web-components/tsconfig.lib.json"
+      },
+      "configurations": {
+        "production": {
+          "mode": "production"
+        }
+      }
+    },
+
+    "postbuild-publish": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "npx vite build --config libs/web-components/vite.config.ts",
+          "npx tsc -p libs/web-components/tsconfig.lib.json --emitDeclarationOnly --noEmit false",
+          "cp libs/web-components/publish-package.json dist/libs/web-components/package.json",
+          "cp libs/web-components/README.md dist/libs/web-components/README.md"
+        ],
+        "parallel": false
+      }
+    },
+
+    "test-wdio": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["build"],
+      "options": {
+        "command": "npx wdio run wdio.config.ts",
+        "cwd": "libs/web-components"
+      }
+    },
+
+    "storybook": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx storybook dev --config-dir libs/web-components/.storybook --port 6006",
+        "cwd": "{workspaceRoot}"
+      }
+    },
+
+    "build-storybook": {
+      "executor": "nx:run-commands",
+      "outputs": ["{workspaceRoot}/dist/storybook/web-components"],
+      "options": {
+        "command": "npx storybook build --config-dir libs/web-components/.storybook --output-dir dist/storybook/web-components",
+        "cwd": "{workspaceRoot}"
+      }
+    },
+
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["libs/web-components/**/*.ts"]
+      }
+    }
+  }
+}

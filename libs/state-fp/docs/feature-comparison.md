@@ -1,4 +1,4 @@
-# @vi/state-fp — Feature Comparison & Coverage Analysis
+# @vialiq/state-fp — Feature Comparison & Coverage Analysis
 
 **Last Updated:** March 21, 2026 | **Test Suite:** 527 tests (36 files) | **Branch Coverage:** 85.88% (✅ exceeds 85% threshold)
 
@@ -110,7 +110,7 @@
 - ✅ ConflictResolver: 4 strategies (last-write-wins, first-write-wins, merge, custom) — tested
 - ✅ BroadcastBridge: sends/receives structured messages, ignores malformed messages
 - ⚠️ Branch coverage gaps: sync-engine error paths, transport fallback paths
-- ❌ Unimplemented: Cross-MFE event bus (`@vi/state-fp/bus`), universal transport guard
+- ❌ Unimplemented: Cross-MFE event bus (`@vialiq/state-fp/bus`), universal transport guard
 
 ---
 
@@ -311,7 +311,7 @@ sync.destroy();
 
 ```typescript
 // ⚠️ TYPES DEFINED — runtime NOT YET IMPLEMENTED
-const { useAtom } = await import('@vi/state-fp/adapter');
+const { useAtom } = await import('@vialiq/state-fp/adapter');
 useAtom(atom); // throws NOT_IMPLEMENTED — factory wiring needed
 ```
 
@@ -354,7 +354,7 @@ const controller = createLitController(host, atom, kernel);
 ❌ Command validation hook (`validate` in CommandHandler)
 ❌ Query memoization (`memo: true` in QueryHandler)
 ❌ SSR hydration protocol (Phase 3.7)
-❌ Cross-MFE event bus (`@vi/state-fp/bus`)
+❌ Cross-MFE event bus (`@vialiq/state-fp/bus`)
 ❌ Universal transport guard
 ❌ EphemeralStream for session-scoped state
 
@@ -425,7 +425,7 @@ const controller = createLitController(host, atom, kernel);
 
 ## Framework Comparison Matrix
 
-> For the full side-by-side comparison of `@vi/state-fp` against **Redux Toolkit, Zustand, Jotai, XState v5, NgRx, TanStack Query, and Effector** — including MFE architecture analysis, gap discussion, and architectural decision validation — see [mfe-comparison.md](./mfe-comparison.md).
+> For the full side-by-side comparison of `@vialiq/state-fp` against **Redux Toolkit, Zustand, Jotai, XState v5, NgRx, TanStack Query, and Effector** — including MFE architecture analysis, gap discussion, and architectural decision validation — see [mfe-comparison.md](./mfe-comparison.md).
 
 ### Quick Reference: Unique Differentiators
 
@@ -442,7 +442,7 @@ const controller = createLitController(host, atom, kernel);
 
 ### Summary Comparison Table
 
-| Capability | Redux Toolkit | Zustand | Jotai | XState v5 | NgRx | TanStack Q | Effector | **@vi/state-fp** |
+| Capability | Redux Toolkit | Zustand | Jotai | XState v5 | NgRx | TanStack Q | Effector | **@vialiq/state-fp** |
 |---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 | CQRS discipline (Command/Event) | ⚠️ | ❌ | ❌ | ⚠️ | ⚠️ | ❌ | ⚠️ | ✅ |
 | Typed domain events | ⚠️ | ❌ | ❌ | ✅ | ⚠️ | ❌ | ✅ | ✅ |
@@ -471,7 +471,7 @@ const controller = createLitController(host, atom, kernel);
 
 ## Conclusion
 
-**@vi/state-fp v1.0.0 is production-ready for CQRS + FP state management** in both SPA and MFE architectures. The 527-test suite with 85.88% branch coverage validates the core engine, async pipeline, DevTools, Sync, all framework adapters, and the security model.
+**@vialiq/state-fp v1.0.0 is production-ready for CQRS + FP state management** in both SPA and MFE architectures. The 527-test suite with 85.88% branch coverage validates the core engine, async pipeline, DevTools, Sync, all framework adapters, and the security model.
 
 The library's core differentiators — strict CQRS discipline, FP monads as first-class API types, native BroadcastChannel sync with conflict resolution, in-process DevTools, and security-first storage — are features not available together in any other state management library.
 

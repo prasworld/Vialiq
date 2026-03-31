@@ -1,8 +1,8 @@
 /**
- * @vi/state-fp/kernel
+ * @vialiq/state-fp/kernel
  *
  * CQRS engine — Command routing, Event application, Query resolution.
- * Depends only on `@vi/state-fp/core`. Zero external runtime dependencies.
+ * Depends only on `@vialiq/state-fp/core`. Zero external runtime dependencies.
  *
  * @example
  * import {
@@ -12,7 +12,7 @@
  *   createCommandHandler, createEventApplier, createQueryHandler,
  *   // Idiomatic result helpers (re-exported from core for convenience)
  *   ok, err, isOk, isErr, match,
- * } from '@vi/state-fp/kernel';
+ * } from '@vialiq/state-fp/kernel';
  */
 
 // ─── Types ────────────────────────────────────────────────────────────────────

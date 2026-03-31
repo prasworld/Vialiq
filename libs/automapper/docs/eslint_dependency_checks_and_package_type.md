@@ -2,36 +2,34 @@
 
 This library previously used the `generatePackageJson` build option. That option is deprecated for library projects in Nx and should only be used for applications. The `generatePackageJson` option has been removed from `project.json` to avoid producing package.json files with incorrect `type` metadata during the build.
 
-What I changed
+## What was changed
 
 - Removed `generatePackageJson` from `libs/automapper/project.json` build options.
 - Kept the build output `format` set to `esm`.
+- Added a project-level `libs/automapper/eslint.config.mjs` (flat ESLint config) that extends
+  the workspace root config (`../../eslint.config.mjs`) and adds a test-file override for
+  `@typescript-eslint/no-empty-function`.
 
-Why
+## Why
 
-- `generatePackageJson` can produce a `package.json` under `dist/` with a `type` value inherited from workspace or default behaviour. For libraries it's better to manage the published `package.json` explicitly to ensure `type` matches the publish format (CJS vs ESM).
+`generatePackageJson` can produce a `package.json` under `dist/` with a `type` value inherited
+from workspace defaults. For libraries it is better to maintain an explicit
+`publish-package.json` under `libs/automapper/` and copy it into `dist/` at publish time.
 
-Recommendations
+## Decided: ESM only
 
-1) ESLint: use Nx `dependency-checks` rule
+`@vi/automapper` publishes **ESM only** — no CommonJS fallback. This aligns with the
+workspace-wide ESM-only policy (`"type": "module"` in `package.json`).
 
-- Use the Nx-provided dependency-checks ESLint rules (see: https://nx.dev/nx-api/eslint-plugin/documents/dependency-checks) to enforce that this library only depends on allowed workspace packages and external deps.
-- Add the rule to the library's ESLint config (or the workspace root config) per the Nx docs. Example (adapt to exact rule names shown in the Nx docs):
+Implications:
+- The published `package.json` must include `"type": "module"`.
+- The `"exports"` map should use a `"default"` entry (no separate `"import"`/`"require"` pair).
+- No `.cjs` output files are generated or needed.
+- Consumers must use ESM (`import`) — `require()` is not supported.
 
-```json
-{
-  "plugins": ["@nx/dependency-checks"],
-  "rules": {
-    "@nx/dependency-checks/<rule-name>": "error"
-  }
-}
-```
+## package.json "type" requirement
 
-- If your workspace already uses a shared `.eslintrc.json`, add the dependency-checks rule there so it applies to other libs as needed.
-
-2) package.json `type` and ESM vs CJS
-
-- Your build is producing ESM output (`format: ["esm"]`). If you publish an npm package that is ESM-only, the package `package.json` must include:
+The published `package.json` must include:
 
 ```json
 {
@@ -39,35 +37,50 @@ Recommendations
 }
 ```
 
-- If you intend the package to be consumable as CommonJS (`require()`), either:
-  - Build and publish CJS artifacts (set `format` to `cjs` in `project.json` and publish with `type: "commonjs"`), or
-  - Publish dual packages with both ESM and CJS builds and set the appropriate `exports` map and `type` field.
+This is already set in `libs/automapper/package.json` and `libs/automapper/publish-package.json`.
 
-- Because `generatePackageJson` is removed, you must provide a correct `package.json` for publishing (either in your `dist` via a publishing pipeline step, or maintain a `package.json` template under `libs/automapper/publish-package.json` that CI copies into `dist` before publish). That package.json should explicitly set or omit `type` as appropriate.
+## ESLint: project-level flat config
 
-Quick examples
+`libs/automapper/eslint.config.mjs` extends the workspace root config and adds:
 
-- To publish ESM-only package: include `"type": "module"` in the published `package.json`.
-- To publish CJS-only package: include `"type": "commonjs"` or omit `type` (Node defaults to CommonJS for files ending with `.cjs`/`.js` when no `type` is present).
+```js
+import baseConfig from '../../eslint.config.mjs';
 
-CI suggestion
+export default [
+  ...baseConfig,
+  {
+    files: ['**/*.spec.ts', '**/*.test.ts'],
+    rules: { '@typescript-eslint/no-empty-function': 'off' },
+  },
+];
+```
 
-- Add a build step that copies a pre-crafted `package.json` into `dist/libs/automapper` before publishing. This avoids relying on auto-generated package.json contents.
+Run lint for this library:
 
-Example pipeline snippet (pseudo):
+```bash
+npx nx lint automapper
+```
+
+## ESLint: Nx dependency-checks rule (recommended for future)
+
+To enforce that this library only depends on allowed packages, add the Nx
+`dependency-checks` rule (see: https://nx.dev/nx-api/eslint-plugin/documents/dependency-checks):
+
+```js
+// In libs/automapper/eslint.config.mjs
+import { FlatCompat } from '@eslint/eslintrc';
+// ... extend with @nx/dependency-checks rule per Nx docs
+```
+
+## CI publish pipeline
+
+The publish pipeline copies `publish-package.json` into `dist/` before calling `npm publish`:
 
 ```bash
 # build
 npx nx build automapper
-# copy pre-made package.json for publish
+# copy the hand-crafted publish package.json into dist
 cp libs/automapper/publish-package.json dist/libs/automapper/package.json
-# publish from dist/libs/automapper
+# publish from dist
 cd dist/libs/automapper && npm publish --access public
 ```
-
-If you'd like, I can:
-
-- Add a `publish-package.json` template under `libs/automapper` and a small `postbuild` target in `project.json` to copy it into `dist`.
-- Update the workspace `.eslintrc.json` with the `@nx/dependency-checks` rule (I will follow the exact rule ids from the Nx docs).
-
-Tell me which you'd like me to do next.

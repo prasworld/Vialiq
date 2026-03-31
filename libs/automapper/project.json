@@ -48,7 +48,7 @@
         ],
         "parallel": false
       },
-      "outputs": ["dist/libs/automapper/package.json", "dist/libs/automapper/LICENSE"]
+      "outputs": ["{workspaceRoot}/dist/libs/automapper/package.json", "{workspaceRoot}/dist/libs/automapper/LICENSE"]
     },
     "test": {
       "executor": "@nx/vitest:test",

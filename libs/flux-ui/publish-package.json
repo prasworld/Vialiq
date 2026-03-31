@@ -8,14 +8,18 @@
   "types": "./index.d.ts",
   "exports": {
     ".": {
-      "import": "./index.js",
+      "default": "./index.js",
       "types": "./index.d.ts"
     },
     "./tokens": {
-      "import": "./tokens/index.js",
+      "default": "./tokens/index.js",
       "types": "./tokens/index.d.ts"
     },
-    "./styles": "./styles/_index.scss",
+    "./styles": {
+      "sass": "./styles/_index.scss",
+      "default": "./styles/index.js",
+      "types": "./styles/index.d.ts"
+    },
     "./styles/*": "./styles/*",
     "./components": "./components/_index.scss",
     "./components/*": "./components/*",

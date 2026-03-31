@@ -1,5 +1,5 @@
 /**
- * @vi/state-fp/kernel — DomainEvent types, factory, EventApplier, DomainEventBus.
+ * @vialiq/state-fp/kernel — DomainEvent types, factory, EventApplier, DomainEventBus.
  *
  * DomainEvents are immutable facts — they record what happened, not why.
  * Events are produced by CommandHandlers and cannot fail.

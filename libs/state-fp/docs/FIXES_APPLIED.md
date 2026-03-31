@@ -32,14 +32,14 @@
 - **Result:** Complete working example instead of pseudo-code
 
 #### ✅ Section 3.3 — Command Returns an Error (Steps 1-2)
-- **Issue 1.5:** Step 1: Added `import { match } from '@vi/state-fp/core'` + `AddItem` import
-- **Issue 1.9:** Step 2: Added `import { createCommandHandler, command } from '@vi/state-fp/kernel'`
+- **Issue 1.5:** Step 1: Added `import { match } from '@vialiq/state-fp/core'` + `AddItem` import
+- **Issue 1.9:** Step 2: Added `import { createCommandHandler, command } from '@vialiq/state-fp/kernel'`
 - **Result:** All imports visible; code is compilable
 
 #### ✅ Section 3.3 — Command Returns an Error (Step 4)
 - **Issue 1.8:** Added imports and full function signatures:
   ```ts
-  import { createCommandHandler, ok, err, domainEvent } from '@vi/state-fp/kernel';
+  import { createCommandHandler, ok, err, domainEvent } from '@vialiq/state-fp/kernel';
   ```
 - **Result:** Code no longer references undefined functions
 
@@ -47,12 +47,12 @@
 - **Issue 1.11:** Added test framework imports:
   ```ts
   import { beforeEach, afterEach, it, describe, expect } from 'vitest';
-  import { isOk } from '@vi/state-fp/core';
+  import { isOk } from '@vialiq/state-fp/core';
   »Added atom/handler imports from `@/atoms` and `@/configs`
 - **Result:** Test section now has proper dependencies
 
 #### ✅ Section 7 — Performance Debugging
-- **Issue 1.13:** Fixed `KernelPlugin` import: `import type { KernelPlugin } from '@vi/state-fp/kernel'`
+- **Issue 1.13:** Fixed `KernelPlugin` import: `import type { KernelPlugin } from '@vialiq/state-fp/kernel'`
 - **Issue 1.14:** Fixed `createEphemeralStream` import path from `kernel` → `core`
 - **Issue 1.12:** Added React setup note with link to §4.1
 - **Result:** All performance debugging code is now compilable
@@ -74,7 +74,7 @@
   ```ts
   // 📍 FRAMEWORK: Angular (remote MFE)
   import { authAtom, themeAtom }  from '@/atoms';
-  import { createSyncEngine } from '@vi/state-fp/sync';
+  import { createSyncEngine } from '@vialiq/state-fp/sync';
   ```
 - **Result:** Remote developers know where atoms come from
 
@@ -100,7 +100,7 @@
 #### ✅ Section 3.3 — Dispatching Commands
 - **Issue 2.7:** Added complete imports:
   ```ts
-  import { match } from '@vi/state-fp/core';
+  import { match } from '@vialiq/state-fp/core';
   import { AddItem } from '@/commands';
   ```
 - **Result:** Command dispatch example fully functional
@@ -115,7 +115,7 @@
 #### ✅ Section 4.2 — React Hooks
 - **Issue 2.12:** Added imports to three hooks example:
   ```ts
-  import { match } from '@vi/state-fp/core';
+  import { match } from '@vialiq/state-fp/core';
   import { cartAtom } from '@/atoms';
   import { AddItem, RemoveItem, ClearCart } from '@/commands';
   import { BuildTotal } from '@/queries';
@@ -135,14 +135,14 @@
 - **Issue 3.2:** Created new subsection 4.1 with imports organized by module
 - **Added:**
   ```ts
-  // @vi/state-fp/core — FP primitives
-  import { match, left, right } from '@vi/state-fp/core';
+  // @vialiq/state-fp/core — FP primitives
+  import { match, left, right } from '@vialiq/state-fp/core';
   
-  // @vi/state-fp/kernel — CQRS engine
-  import { createKernel, defineAtom, command, domainEvent } from '@vi/state-fp/kernel';
+  // @vialiq/state-fp/kernel — CQRS engine
+  import { createKernel, defineAtom, command, domainEvent } from '@vialiq/state-fp/kernel';
   
   // Framework adapters
-  import { createAngularAdapter, createReactAdapter } from '@vi/state-fp/adapter';
+  import { createAngularAdapter, createReactAdapter } from '@vialiq/state-fp/adapter';
   ```
 - **Result:** Developers have a quick reference for all standard imports
 

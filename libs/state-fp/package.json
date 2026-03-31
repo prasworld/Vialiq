@@ -1,5 +1,5 @@
 {
-  "name": "@vi/state-fp",
+  "name": "@vialiq/state-fp",
   "version": "0.5.0",
   "type": "module",
   "description": "Modular CQRS functional state management — composable, lightweight, zero-dependency",

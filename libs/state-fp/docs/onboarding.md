@@ -1,7 +1,7 @@
-# @vi/state-fp — Onboarding Guide
+# @vialiq/state-fp — Onboarding Guide
 
 > **Audience:** A developer joining the team who is about to write or review code that uses
-> or extends `@vi/state-fp`. Read this doc first, then use the links to go deeper on any
+> or extends `@vialiq/state-fp`. Read this doc first, then use the links to go deeper on any
 > topic.
 >
 > **Time to read:** ~15 minutes.  
@@ -41,8 +41,11 @@ npx nx test state-fp --watch
 # Typecheck only (no test runner)
 npx tsc --project libs/state-fp/tsconfig.json --noEmit
 
-# Lint
+# Lint (uses libs/state-fp/eslint.config.mjs which extends workspace root)
 npx nx lint state-fp
+
+# Run type-level tests only (test-d/ files run under Vitest)
+npx nx test state-fp --testFile=test-d/core.spec-d.ts
 
 # Build the library
 npx nx build state-fp
@@ -55,6 +58,20 @@ CI runs `test`, `typecheck`, and `lint` on every commit to the `state-fp-refacto
 `master` branches.
 
 **Coverage:** After `npx nx test state-fp`, open `coverage/state-fp/index.html` in a browser.
+
+### ESLint setup
+
+`libs/state-fp/eslint.config.mjs` is a project-level flat config that:
+- Extends the workspace root `eslint.config.mjs`
+- Points the TypeScript parser at the correct `tsconfig` files (`tsconfig.json`, `tsconfig.lib.json`, `tsconfig.spec.json`)
+- Ignores `test-d/**` from type-aware linting (those files are excluded from ESLint's project references to keep parse times low)
+- Disables `@typescript-eslint/no-empty-function` for spec and test-d files
+
+### Type-level tests (`test-d/`)
+
+`test-d/` contains type assertions using Vitest's `expectTypeOf` / `assertType` API.
+These files are included in `tsconfig.spec.json` so the TypeScript compiler can resolve
+their types. They are run together with the regular test suite by `npx nx test state-fp`.
 
 ---
 
@@ -93,8 +110,15 @@ libs/state-fp/
 │   ├── phases.md              ← Roadmap and implementation phases
 │   └── feature-comparison.md  ← Library vs. competitors comparison
 │
+├── test-d/                    ← Type-level tests (expectType / assertType)
+│   ├── core.spec-d.ts
+│   ├── kernel.spec-d.ts
+│   └── adapter.spec-d.ts
+│
 ├── package.json               ← "exports" map: sub-path entry points
 ├── tsconfig.json              ← TypeScript config (strict mode)
+├── tsconfig.spec.json         ← Includes src/**/*.spec.ts AND test-d/**/*.ts
+├── eslint.config.mjs          ← Project-level flat ESLint config (extends workspace root)
 ├── vitest.config.mts          ← Vitest configuration
 └── README.md                  ← NPM-facing README
 ```
@@ -116,7 +140,7 @@ Each file has one clear responsibility. When you're not sure where something liv
 | `stream.ts` | `EphemeralStream<T>` — high-frequency reactive values | nothing |
 | `utils.ts` | `pipe`, `compose`, `uuid`, `deepClone`, `shallowDiff` | nothing |
 | `types.ts` | Type aliases shared across core | nothing |
-| `index.ts` | Public re-exports for `@vi/state-fp/core` | all above |
+| `index.ts` | Public re-exports for `@vialiq/state-fp/core` | all above |
 
 ### `src/kernel/` — Think "CQRS engine"
 
@@ -129,7 +153,7 @@ Each file has one clear responsibility. When you're not sure where something liv
 | `query.ts` | `createQueryHandler()` — pure projections over state | `types.ts` |
 | `kernel.ts` | `createKernel()` — wires everything together; `execute`, `query`, `subscribe` | all above |
 | `storage-guard.ts` | Validates storage policies; prevents insecure configurations | `types.ts`, `storage` |
-| `index.ts` | Public re-exports for `@vi/state-fp/kernel` | all above |
+| `index.ts` | Public re-exports for `@vialiq/state-fp/kernel` | all above |
 
 ### `src/storage/` — Think "pluggable persistence"
 
@@ -137,7 +161,7 @@ Each file has one clear responsibility. When you're not sure where something liv
 |------|-------------|
 | `types.ts` | `StorageAdapter` interface, `StorageError`, `StorageOptions` |
 | `memory.ts` | `MemoryAdapter` — default in-process store; TTL-aware; thread-safe |
-| `index.ts` | Public re-exports for `@vi/state-fp/storage` |
+| `index.ts` | Public re-exports for `@vialiq/state-fp/storage` |
 
 > **Note:** Only `MemoryAdapter` is supplied. All other adapters (Redis, IndexedDB, etc.)
 > must be implemented by consumers using the `StorageAdapter` interface.
@@ -152,7 +176,7 @@ Each file has one clear responsibility. When you're not sure where something liv
 | `version.ts` | Lamport vector clock: `increment`, `dominates`, `merge` |
 | `conflict.ts` | `resolveConflict()` — owner-wins / last-write-wins strategies |
 | `sync-engine.ts` | `createSyncEngine()` + `sync.share()` — main entry point |
-| `index.ts` | Public re-exports for `@vi/state-fp/sync` |
+| `index.ts` | Public re-exports for `@vialiq/state-fp/sync` |
 
 ### `src/devtools/` — Think "debug infrastructure"
 
@@ -164,7 +188,7 @@ Each file has one clear responsibility. When you're not sure where something liv
 | `time-travel.ts` | `TimeTravelController` — `stepBackward()`, `stepForward()`, `jumpTo()` |
 | `bridge.ts` | `attachBridge()` — installs `window.__VI_STATE_FP__` console interface |
 | `devtools.ts` | `createDevTools()` — composes event-log + snapshot + time-travel + bridge |
-| `index.ts` | Public re-exports for `@vi/state-fp/devtools` |
+| `index.ts` | Public re-exports for `@vialiq/state-fp/devtools` |
 
 ### `src/adapter/` — Think "framework glue"
 
@@ -174,7 +198,7 @@ Each file has one clear responsibility. When you're not sure where something liv
 | `react.ts` | `createReactAdapter()` — `useAtom`, `useCommand`, `useQuery`, `useEphemeral` |
 | `lit.ts` | `createLitController()` + `createLitStreamController()` — Reactive Controllers |
 | `vanilla.ts` | `createVanillaAdapter()` — manual subscribe/unsubscribe helpers |
-| `index.ts` | Public re-exports for `@vi/state-fp/adapter` |
+| `index.ts` | Public re-exports for `@vialiq/state-fp/adapter` |
 
 ### `src/bus/` — Think "cross-MFE ephemeral events"
 
@@ -182,7 +206,7 @@ Each file has one clear responsibility. When you're not sure where something liv
 |------|-------------|
 | `types.ts` | `CrossMFEEvent`, `EventFilter`, `SharedEventBus` interface |
 | `shared-bus.ts` | `createSharedBus()` — BroadcastChannel-backed pub-sub bus |
-| `index.ts` | Public re-exports for `@vi/state-fp/bus` |
+| `index.ts` | Public re-exports for `@vialiq/state-fp/bus` |
 
 ---
 
@@ -249,28 +273,28 @@ kernel.query(cartAtom, BuildTotal());                       // read state
 When writing code, use these imports:
 
 ```ts
-// 📍 @vi/state-fp/core — FP primitives
-import { just, nothing, foldMaybe } from '@vi/state-fp/core';  // Maybe
-import { left, right, foldEither, match } from '@vi/state-fp/core';  // Either (Result)
-import { IO } from '@vi/state-fp/core';  // Lazy computation
+// 📍 @vialiq/state-fp/core — FP primitives
+import { just, nothing, foldMaybe } from '@vialiq/state-fp/core';  // Maybe
+import { left, right, foldEither, match } from '@vialiq/state-fp/core';  // Either (Result)
+import { IO } from '@vialiq/state-fp/core';  // Lazy computation
 
-// 📍 @vi/state-fp/kernel — CQRS engine
-import { createKernel, defineAtom } from '@vi/state-fp/kernel';
-import { command, createCommandHandler } from '@vi/state-fp/kernel';
-import { domainEvent, createEventApplier } from '@vi/state-fp/kernel';
-import { createQueryHandler } from '@vi/state-fp/kernel';
+// 📍 @vialiq/state-fp/kernel — CQRS engine
+import { createKernel, defineAtom } from '@vialiq/state-fp/kernel';
+import { command, createCommandHandler } from '@vialiq/state-fp/kernel';
+import { domainEvent, createEventApplier } from '@vialiq/state-fp/kernel';
+import { createQueryHandler } from '@vialiq/state-fp/kernel';
 
-// 📍 @vi/state-fp/sync — Cross-tab / cross-MFE sync
-import { createSyncEngine } from '@vi/state-fp/sync';
+// 📍 @vialiq/state-fp/sync — Cross-tab / cross-MFE sync
+import { createSyncEngine } from '@vialiq/state-fp/sync';
 
-// 📍 @vi/state-fp/devtools — Debug layer
-import { createDevTools, noopDevTools } from '@vi/state-fp/devtools';
-import type { KernelPlugin } from '@vi/state-fp/kernel';
+// 📍 @vialiq/state-fp/devtools — Debug layer
+import { createDevTools, noopDevTools } from '@vialiq/state-fp/devtools';
+import type { KernelPlugin } from '@vialiq/state-fp/kernel';
 
 // 📍 Framework adapters
-import { createAngularAdapter } from '@vi/state-fp/adapter';  // Angular
-import { createReactAdapter } from '@vi/state-fp/adapter';    // React
-import { createLitController } from '@vi/state-fp/adapter';   // Lit
+import { createAngularAdapter } from '@vialiq/state-fp/adapter';  // Angular
+import { createReactAdapter } from '@vialiq/state-fp/adapter';    // React
+import { createLitController } from '@vialiq/state-fp/adapter';   // Lit
 ```
 
 ---
@@ -418,10 +442,10 @@ kernel.registerQuery(cartAtom, buildTotalHandler);
 | Add a command that changes state | `createCommandHandler` in same file as atom |
 | Add a query (pure read) | `createQueryHandler` in same file as atom |
 | Persist atom state across reloads | `storage` option on `defineAtom`, use `MemoryAdapter` |
-| Sync atom state across browser tabs | `@vi/state-fp/sync` — `createSyncEngine().share()` |
-| Sync atom state across MFEs | `@vi/state-fp/sync` — same as above with a shared channel name |
-| Broadcast an event to other MFEs | `@vi/state-fp/bus` — `createSharedBus().publish()` |
-| Subscribe to events from other MFEs | `@vi/state-fp/bus` — `createSharedBus().subscribe()` |
+| Sync atom state across browser tabs | `@vialiq/state-fp/sync` — `createSyncEngine().share()` |
+| Sync atom state across MFEs | `@vialiq/state-fp/sync` — same as above with a shared channel name |
+| Broadcast an event to other MFEs | `@vialiq/state-fp/bus` — `createSharedBus().publish()` |
+| Subscribe to events from other MFEs | `@vialiq/state-fp/bus` — `createSharedBus().subscribe()` |
 | Add an Angular Signal for atom state | `createAngularAdapter().toSignal()` |
 | Add a React hook for atom state | `createReactAdapter().useAtom()` |
 | Add debug recording | `kernel.use(devtools.plugin)` |
@@ -467,7 +491,7 @@ kernel.registerQuery(cartAtom, buildTotalHandler);
 | Calling `kernel.execute()` on a borrowed atom | State appears to change locally but never syncs back; devtools show orphaned commands | Only execute commands on owned atoms. Borrowers call only `atom.get()` and `kernel.subscribe()`. |
 | Using `kernel.execute()` synchronously and expecting async result | `result.right` is `Promise<Either>` not a resolved value | Use `await kernel.executeAsync()` for `AsyncCommandHandler`s |
 | Forgetting to call `kernel.register()` before `kernel.execute()` | `execute()` returns `err({ code: 'NO_HANDLER', ... })` | Always `register()` all handlers before the first `execute()`, typically in `APP_INITIALIZER` or `main.ts` |
-| Importing `@vi/state-fp` (root) instead of a sub-path | Tree-shaking pulls in all modules | Import from the correct sub-path: `@vi/state-fp/kernel`, `@vi/state-fp/sync`, etc. |
+| Importing `@vialiq/state-fp` (root) instead of a sub-path | Tree-shaking pulls in all modules | Import from the correct sub-path: `@vialiq/state-fp/kernel`, `@vialiq/state-fp/sync`, etc. |
 | Mutating state directly in an applier | `atom.get()` returns stale data; subscribers not notified | Appliers must return a **new** object — never mutate `state`. Use spread: `{ ...state, items: [...state.items, newItem] }` |
 | Using `Either.left` / `Either.right` fields in component code | Fragile — implementation details; TypeScript union narrowing awkward | Use `match(result, { ok, err })` or `isOk(result)` / `isErr(result)` |
 | Calling `attachBridge()` unconditionally | `window.__VI_STATE_FP__` exposed in production | Guard: `if (isDevMode()) attachBridge(devtools)` |
