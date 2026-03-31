@@ -9,5 +9,7 @@
  * 3. Theme (design tokens)
  * 4. Layout (structural helpers)
  * 5. Utilities (low-level classes)
+ * 6. Components (vi-button, etc.)
  */
 @forward 'styles';
+@forward 'components';
