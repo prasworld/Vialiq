@@ -7,7 +7,7 @@ import config from './module-federation.config';
  * Learn more about the DTS Plugin here: https://module-federation.io/configure/dts.html
  */
 // Allow webpack to resolve .js imports to .ts source files (ESM interop for monorepo)
-export default (
+export default Promise.resolve(
   withModuleFederation(
     {
       ...config,
@@ -23,27 +23,22 @@ export default (
        */
     },
     { dts: false },
-  ) as unknown as Promise<Record<string, unknown>>
-).then((mfConfig) => {
-  const existingRules: unknown[] =
-    (mfConfig['module'] as { rules?: unknown[] } | undefined)?.rules ?? [];
-  return {
-    ...mfConfig,
-    resolve: {
-      ...(mfConfig['resolve'] as Record<string, unknown>),
-      extensionAlias: { '.js': ['.ts', '.js'], '.mjs': ['.mts', '.mjs'] },
-    },
-    module: {
-      ...((mfConfig['module'] as Record<string, unknown>) ?? {}),
-      rules: [
-        ...existingRules,
-        // Handle *.scss?inline imports from Lit web-components (Vite-style inline styles)
-        {
-          test: /\.scss$/,
-          resourceQuery: /inline/,
-          type: 'asset/source',
-        },
-      ],
-    },
-  };
-});
+  ),
+).then(() => ({
+  resolve: {
+    extensionAlias: { '.js': ['.ts', '.js'], '.mjs': ['.mts', '.mjs'] },
+  },
+  module: {
+    rules: [
+      // Handle *.scss?inline imports from Lit web-components (Vite-style inline styles).
+      // type:'asset/source' bypasses Angular's SCSS loader pipeline and exports a plain string;
+      // sass-loader pre-processes SCSS→CSS before the asset is captured.
+      {
+        test: /\.scss$/,
+        resourceQuery: /inline/,
+        type: 'asset/source',
+        use: [{ loader: 'sass-loader' }],
+      },
+    ],
+  },
+}));
