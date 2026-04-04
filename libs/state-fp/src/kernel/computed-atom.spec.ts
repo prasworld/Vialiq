@@ -5,8 +5,8 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { defineAtom, defineComputedAtom, createKernel, command, domainEvent } from './index.js';
-import type { Command, DomainEvent, CommandHandler, EventApplier } from './types.js';
+import { defineAtom, defineComputedAtom, createKernel, domainEvent } from './index.js';
+import type { CommandHandler, EventApplier } from './types.js';
 
 interface CounterState {
   readonly value: number;
@@ -16,7 +16,7 @@ const IncrementCmd = () => ({ _kind: 'Command' as const, type: 'counter/incremen
 
 const incrementHandler: CommandHandler<CounterState> = {
   commandType: 'counter/increment',
-  handle: (state) => ({
+  handle: (_state) => ({
     _tag: 'Right',
     right: [domainEvent('counter/incremented', { by: 1 })],
   }),

@@ -56,7 +56,6 @@ describe('application storage safety guard', () => {
     expect(() => defineAtom({
       key: 'vi/unnamed-adapter',
       initialState: 0,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       storage: { adapter: { get: () => void 0 } as any }, // valid-looking adapter, no name
     })).toThrow(/exposes no "name" property/i);
   });

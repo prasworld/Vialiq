@@ -83,7 +83,7 @@ export function createSharedBus({ channel }: SharedBusOptions): SharedEventBus {
 
     subscribe(filter: EventFilter | ((e: CrossMFEEvent) => void) = {}, cb?: (e: CrossMFEEvent) => void) {
       // Support both overloads: subscribe(cb) and subscribe(filter, cb)
-      const actualCb: (e: CrossMFEEvent) => void = typeof filter === 'function' ? filter : cb!;
+      const actualCb: (e: CrossMFEEvent) => void = typeof filter === 'function' ? filter : (cb as (e: CrossMFEEvent) => void);
       const actualFilter: EventFilter = typeof filter === 'function' ? {} : filter;
       
       const entry = { filter: actualFilter, cb: actualCb };

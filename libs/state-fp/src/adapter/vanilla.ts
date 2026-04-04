@@ -28,7 +28,6 @@
  */
 
 import type { Kernel, Atom, Command, Query, Unsubscribe } from '../kernel/types.js';
-import type { Either } from '../core/types.js';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

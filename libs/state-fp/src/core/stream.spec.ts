@@ -12,7 +12,7 @@ import { createEphemeralStream } from './stream.js';
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 /** Flush the RAF queue: run all pending setTimeout(0) callbacks once. */
-function flushRAF(): Promise<void> {
+function _flushRAF(): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, 0));
 }
 
@@ -116,7 +116,7 @@ describe('Phase 4.7 — EphemeralStream', () => {
         return id;
       });
 
-      vi.stubGlobal('cancelAnimationFrame', (id: number) => {
+      vi.stubGlobal('cancelAnimationFrame', (_id: number) => {
         // mark entry as invalid — simplest approach for test
         // (real impl just removes it from pending)
       });

@@ -69,10 +69,9 @@ export function profileFromZod<S extends object, T extends AnyZodObject>(
     const keys = Object.keys(schema.shape) as Array<keyof D & string>;
 
     for (const key of keys) {
-      // Use `as any` only at the forMember boundary to avoid fighting the
+      // Use `as unknown as` at the forMember boundary to avoid fighting the
       // complex conditional generic inference — the public profile type is
       // still fully typed.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (builder as unknown as MappingBuilder<S, Record<string, unknown>>).forMember(
         key,
         (o) => {

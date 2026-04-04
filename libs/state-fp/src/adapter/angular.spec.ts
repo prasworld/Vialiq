@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { Atom } from '../kernel/types.js';
 import { createAngularAdapter } from './angular.js';
+import type { AngularAPIs } from './angular.js';
 
 function createAtom<S>(key: string, initial: S): Atom<S> {
   let state = initial;
@@ -52,7 +53,7 @@ describe('createAngularAdapter', () => {
       query: vi.fn(),
     };
 
-    const adapter = createAngularAdapter(apis);
+    const adapter = createAngularAdapter(apis as unknown as AngularAPIs);
     const sig = adapter.toSignal(atom, kernel as any);
 
     expect(sig()).toBe(1);
@@ -87,7 +88,7 @@ describe('createAngularAdapter', () => {
       query: vi.fn(),
     };
 
-    const adapter = createAngularAdapter(apis);
+    const adapter = createAngularAdapter(apis as unknown as AngularAPIs);
     const qSig = adapter.toQuerySignal(atom, kernel as any, (v) => v * 10);
 
     expect(qSig()).toBe(20);
@@ -117,7 +118,7 @@ describe('createAngularAdapter', () => {
       query: vi.fn(),
     };
 
-    const adapter = createAngularAdapter(apis);
+    const adapter = createAngularAdapter(apis as unknown as AngularAPIs);
     const dispatch = adapter.commandDispatcher(atom, kernel as any);
     const result = dispatch({ _kind: 'Command', type: 'counter/inc', meta: { correlationId: 'c2', timestamp: 0 } });
     expect(result).toBe(expected);
@@ -144,7 +145,7 @@ describe('createAngularAdapter', () => {
       query: vi.fn(),
     };
 
-    const adapter = createAngularAdapter(apis);
+    const adapter = createAngularAdapter(apis as unknown as AngularAPIs);
     adapter.toSignal(atom, kernel as any);
 
     atom._setState(20);

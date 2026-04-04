@@ -177,7 +177,7 @@ describe('Phase 3.6 — Query Memoisation', () => {
   });
 
   it('memo: true — non-serializable payload (circular refs, BigInt, etc.) skips cache but executes query', () => {
-    const handleSpy = vi.fn((state: CounterState) => 'ok');
+    const handleSpy = vi.fn((_state: CounterState) => 'ok');
 
     type CircularQuery = ReturnType<typeof query<'counter/circular', { obj: unknown }>>;
     const handler = createQueryHandler<CounterState, CircularQuery, string>({

@@ -12,7 +12,7 @@
  *  - Phase 1.4: executeAsync with real AsyncCommandHandler + AbortSignal cancellation
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { createKernel } from './kernel.js';
 import { defineAtom, defineComputedAtom } from './atom.js';
 import { command, createCommandHandler } from './command.js';
@@ -21,12 +21,9 @@ import { query, createQueryHandler } from './query.js';
 import { right, left } from '../core/either.js';
 import { just, nothing } from '../core/maybe.js';
 import type {
-  Kernel,
   Command,
   DomainEvent,
-  KernelPlugin,
   AsyncCommandHandler,
-  AsyncHandlerContext,
 } from './types.js';
 
 // ─── Shared fixtures ──────────────────────────────────────────────────────────
@@ -37,7 +34,6 @@ const makeCounter = () =>
   defineAtom<CounterState>({ key: 'vi/counter', initialState: { count: 0 } });
 
 type IncrCmd = Command<'counter/increment', { by: number }>;
-type DecrCmd = Command<'counter/decrement', { by: number }>;
 type GetCount = ReturnType<typeof query<'counter/getCount'>>;
 
 const incrementHandler = createCommandHandler<CounterState, IncrCmd>({
@@ -914,7 +910,7 @@ describe('branch coverage — computed atoms are read-only (line 156)', () => {
     // Register computed atom first
     kernel.registerComputed(computed);
 
-    const handler = createCommandHandler<number, Command>({
+    const _handler = createCommandHandler<number, Command>({
       commandType: 'test/cmd',
       handle: () => right([domainEvent('test/event', {})]),
     });
@@ -922,7 +918,6 @@ describe('branch coverage — computed atoms are read-only (line 156)', () => {
     // Attempting to execute on computed atom should fail.
     // In TypeScript this is not allowed without a cast, since ComputedAtom is not structurally
     // compatible with Atom (it lacks `_setState` and `version`). The runtime guard still exists.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const result = kernel.execute(computed as any, command('test/cmd'));
     expect(result._tag).toBe('Left');
     expect((result as { left: { code: string } }).left.code).toBe('COMPUTED_ATOM');

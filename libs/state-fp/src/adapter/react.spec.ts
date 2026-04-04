@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createReactAdapter, StateFpProvider, useAtom, useCommand, useQuery } from './react.js';
 import type { ReactAPIs, ReactContextLike }                                    from './react.js';
-import type { Kernel, Atom, Unsubscribe }                                      from '../kernel/types.js';
+import type { Kernel, Atom }                                                       from '../kernel/types.js';
 import type { EphemeralStream }                                                from '../core/stream.js';
 import { right }                                                               from '../core/either.js';
 
@@ -66,9 +66,9 @@ function makeReactAPIs(): ReactAPIs & {
   const apis: ReactAPIs = {
     useState: <S>(initial: S | (() => S)) => {
       _state = typeof initial === 'function' ? (initial as () => S)() : initial;
-      _setState = (s: S | ((prev: S) => S)) => {
+      _setState = ((s: S | ((prev: S) => S)) => {
         _state = typeof s === 'function' ? (s as (prev: S) => S)(_state as S) : s;
-      };
+      }) as unknown as (s: unknown) => void;
       return [_state as S, _setState as (s: S | ((prev: S) => S)) => void];
     },
     useEffect: (effect, _deps) => {
@@ -173,10 +173,10 @@ describe('createReactAdapter', () => {
 
       // Override subscribe to capture listener directly
       let listener: ((s: { count: number }) => void) | undefined;
-      kernel.subscribe = (_a: Atom<unknown>, fn: (s: unknown) => void) => {
+      kernel.subscribe = ((_a: Atom<unknown>, fn: (s: unknown) => void) => {
         listener = fn as (s: { count: number }) => void;
         return () => { listener = undefined; };
-      };
+      }) as unknown as Kernel['subscribe'];
 
       const adapter = createReactAdapter(apis);
       adapter.useAtom(atom);

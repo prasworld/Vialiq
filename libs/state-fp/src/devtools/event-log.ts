@@ -113,7 +113,7 @@ export class EventLog implements EventLogInterface {
 
   #addToIndex(map: Map<string, string[]>, key: string, id: string): void {
     if (!map.has(key)) map.set(key, []);
-    map.get(key)!.push(id);
+    (map.get(key) as string[]).push(id);
   }
 
   #removeFromIndex(map: Map<string, string[]>, key: string, id: string): void {

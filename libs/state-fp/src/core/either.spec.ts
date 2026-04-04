@@ -234,13 +234,13 @@ describe('getOrElseL', () => {
   // Curried: getOrElseL(errMapper)(e) — errMapper receives the Left value
   it('calls thunk only for Left', () => {
     let called = 0;
-    expect(getOrElseL((err: string) => { called++; return 7; })(left('x'))).toBe(7);
+    expect(getOrElseL((_err: string) => { called++; return 7; })(left('x'))).toBe(7);
     expect(called).toBe(1);
   });
 
   it('does NOT call thunk for Right', () => {
     let called = 0;
-    getOrElseL((err: string) => { called++; return 0; })(right(5));
+    getOrElseL((_err: string) => { called++; return 0; })(right(5));
     expect(called).toBe(0);
   });
 });

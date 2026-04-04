@@ -19,7 +19,7 @@ describe('automapper', () => {
   });
 
   it('copies same-named properties by default', () => {
-    mapper.addProfile<User, UserDto>('Object', 'UserDto', (mb) => {});
+    mapper.addProfile<User, UserDto>('Object', 'UserDto', (_mb) => {});
     const input: User = { id: 1, name: 'Alice', age: 30 };
     const result = mapper.map<User, UserDto>(input, 'UserDto') as UserDto;
     expect(result).toEqual({ id: 1, name: 'Alice', age: 30 });
@@ -49,7 +49,7 @@ describe('automapper', () => {
     const snakeMapper = createMapper({ namingConvention: NamingConvention.SnakeCase });
     type S = { firstName: string };
     type D = { first_name: string };
-    snakeMapper.addProfile<S, D>('Object', 'Dest', (mb) => {});
+    snakeMapper.addProfile<S, D>('Object', 'Dest', (_mb) => {});
     const result = snakeMapper.map<S, D>({ firstName: 'x' }, 'Dest') as D;
     expect(result).toEqual({ first_name: 'x' });
   });
@@ -59,7 +59,7 @@ describe('automapper', () => {
     // compare against; the engine simply copies values and strict check
     // passes (auto-mapping is allowed).  This test documents that behaviour.
     const strictMapper = createMapper({ strict: true });
-    strictMapper.addProfile('Object', 'Dest', (mb) => {});
+    strictMapper.addProfile('Object', 'Dest', (_mb) => {});
     expect(() => strictMapper.map({ a: 1 }, 'Dest')).not.toThrow();
   });
 
@@ -68,16 +68,16 @@ describe('automapper', () => {
     obj['self'] = obj;
 
     const mapperThrow = createMapper({ circularRefBehavior: 'throw' });
-    mapperThrow.addProfile('Any', 'Any', (mb) => {});
+    mapperThrow.addProfile('Any', 'Any', (_mb) => {});
     expect(() => mapperThrow.map(obj, 'Any')).toThrow('Circular reference');
 
     const mapperIgnore = createMapper({ circularRefBehavior: 'ignore' });
-    mapperIgnore.addProfile('Any', 'Any', (mb) => {});
+    mapperIgnore.addProfile('Any', 'Any', (_mb) => {});
     const out1 = mapperIgnore.map(obj, 'Any') as Record<string, unknown>;
     expect(out1['self']).toBeUndefined();
 
     const mapperNull = createMapper({ circularRefBehavior: 'null' });
-    mapperNull.addProfile('Any', 'Any', (mb) => {});
+    mapperNull.addProfile('Any', 'Any', (_mb) => {});
     const out2 = mapperNull.map(obj, 'Any') as Record<string, unknown>;
     expect(out2['self']).toBeNull();
   });
@@ -135,7 +135,7 @@ describe('automapper', () => {
   });
 
   it('maps arrays correctly', () => {
-    mapper.addProfile<User, UserDto>('Object', 'UserDto', (mb) => {});
+    mapper.addProfile<User, UserDto>('Object', 'UserDto', (_mb) => {});
     const users = [{ id: 1, name: 'A' }, { id: 2, name: 'B' }];
     const results = mapper.mapArray<User, UserDto>(users, 'UserDto') as UserDto[];
     expect(results).toHaveLength(2);
@@ -177,14 +177,14 @@ describe('automapper', () => {
     const ps = new ProfilingStrategy(new DefaultStrategy(), (msg) => { logMsg = msg; });
     mapper.addStrategy(ps);
     
-    mapper.addProfile<User, UserDto>('Object', 'UserDto', (mb) => {});
+    mapper.addProfile<User, UserDto>('Object', 'UserDto', (_mb) => {});
     await mapper.map<User, UserDto>({ id: 1, name: 'A' }, 'UserDto');
     
     expect(logMsg).toMatch(/\[AutoMapper\] Object -> UserDto took \d+ms/);
   });
 
   it('returns null/undefined when mapping null/undefined', () => {
-    mapper.addProfile('Object', 'UserDto', (mb) => {});
+    mapper.addProfile('Object', 'UserDto', (_mb) => {});
     expect(mapper.map(null as unknown as User, 'UserDto') as any).toBeNull();
     expect(mapper.map(undefined as unknown as User, 'UserDto') as any).toBeUndefined();
   });
@@ -193,7 +193,7 @@ describe('automapper', () => {
     const messages: string[] = [];
     const logStrat = new LoggingStrategy((m: string) => messages.push(m));
     mapper.addStrategy(logStrat);
-    mapper.addProfile<User, UserDto>('Object', 'LintDto', (mb) => {});
+    mapper.addProfile<User, UserDto>('Object', 'LintDto', (_mb) => {});
     mapper.map<User, UserDto>({ id: 5, name: 'z' }, 'LintDto');
     expect(messages.some(m => m.includes('mapping'))).toBe(true);
   });
@@ -202,7 +202,7 @@ describe('automapper', () => {
     const strictMapper = createMapper({ strict: true });
     class Source { a = 1; }
     class Dest { b = 2; }
-    strictMapper.addProfile(Source, Dest, (mb) => {});
+    strictMapper.addProfile(Source, Dest, (_mb) => {});
     
     expect(() => strictMapper.map(new Source(), Dest)).toThrow(
       "Strict mapping failed: property 'a' was not mapped to destination Dest from source Source"

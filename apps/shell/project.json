@@ -42,7 +42,7 @@
           ],
           "outputHashing": "all",
           "customWebpackConfig": {
-            "path": "shell/webpack.prod.config.ts"
+            "path": "apps/shell/webpack.prod.config.ts"
           }
         },
         "development": {

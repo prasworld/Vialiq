@@ -105,7 +105,7 @@ export function createSyncEngine({ kernel, transport: transportFactory = createA
 
     if (shared.has(atomKey)) {
       console.warn(`[@vialiq/state-fp/sync] Atom "${atomKey}" is already shared. Call unsync before re-sharing.`);
-      return shared.get(atomKey)!.unsync;
+      return (shared.get(atomKey) as NonNullable<ReturnType<typeof shared.get>>).unsync;
     }
 
     const transport: SyncTransport<S> = transportFactory(channel) as SyncTransport<S>;

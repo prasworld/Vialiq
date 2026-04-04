@@ -6,7 +6,7 @@
  * unsubscribe cleanup, local echo (self-delivery), and cross-bus delivery.
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { createSharedBus }  from './shared-bus.js';
 import type { CrossMFEEvent } from './types.js';
 
@@ -44,7 +44,7 @@ class FakeBroadcastChannel {
 function makeEvent(type: string, source: string): CrossMFEEvent {
   return {
     source,
-    event: { _kind: 'DomainEvent', type, meta: { correlationId: 'c1', causationId: 'c1', timestamp: 0, atomKey: 'a', version: 1 } },
+    event: { _kind: 'DomainEvent', type, meta: { id:'www',  correlationId: 'c1', causationId: 'c1', timestamp: 0, atomKey: 'a', version: 1 } },
   };
 }
 

@@ -55,7 +55,7 @@ describe('createCommandHandler', () => {
     type C = Command<'inc'>;
     const handler = createCommandHandler<S, C>({
       commandType: 'inc',
-      handle: (state) => right([domainEvent('incremented')]),
+      handle: (_state) => right([domainEvent('incremented')]),
     });
     expect(handler.commandType).toBe('inc');
     expect(typeof handler.handle).toBe('function');
@@ -70,7 +70,7 @@ describe('CommandBus', () => {
   const makeHandler = () =>
     createCommandHandler<CounterState, Command>({
       commandType: 'inc',
-      handle: (state) => right([domainEvent('counter/incremented')]),
+      handle: (_state) => right([domainEvent('counter/incremented')]),
     });
 
   it('execute returns Left(NO_HANDLER) when no handler is registered', () => {

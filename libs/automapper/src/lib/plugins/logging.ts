@@ -17,8 +17,8 @@ export class LoggingStrategy implements MappingStrategy {
   constructor(private readonly logger: (msg: string) => void = console.log) {}
 
   canHandle(
-    source: unknown,
-    destType: unknown,
+    _source: unknown,
+    _destType: unknown,
     _config?: MappingConfig<unknown, unknown>
   ): boolean {
     // this strategy can handle anything; it's purely orthogonal

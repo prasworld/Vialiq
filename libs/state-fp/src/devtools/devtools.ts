@@ -14,7 +14,7 @@
  * ```
  */
 
-import type { KernelPlugin, Atom, DomainEvent } from '../kernel/types.js';
+import type { KernelPlugin, Atom } from '../kernel/types.js';
 import { uuid, now, deepClone }                 from '../core/utils.js';
 import type { DevToolsOptions, DebugEntry }      from './types.js';
 import { EventLog }                              from './event-log.js';

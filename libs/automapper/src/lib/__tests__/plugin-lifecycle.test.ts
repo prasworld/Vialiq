@@ -16,7 +16,7 @@ describe('plugin lifecycle', () => {
     m.use(plugin as any);
 
     const src = { a: 1 };
-    const res = m.map(src, 'Dest');
+    const _res = m.map(src, 'Dest');
 
     expect(plugin.onMapStart).toHaveBeenCalledWith(src, 'Dest');
     expect(plugin.onMapEnd).toHaveBeenCalled();

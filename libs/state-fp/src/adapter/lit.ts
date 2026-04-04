@@ -49,7 +49,6 @@
  */
 
 import type { Kernel, Atom, Command, Query, Unsubscribe } from '../kernel/types.js';
-import type { Either }                                     from '../core/types.js';
 import type { EphemeralStream }                            from '../core/stream.js';
 
 // ─── ReactiveHost shape ───────────────────────────────────────────────────────
