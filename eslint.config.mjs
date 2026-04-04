@@ -50,13 +50,6 @@ export default [
     },
   },
   {
-    // Type-level test files: variables are intentionally declared for type checking only.
-    files: ['**/test-d/**/*.ts'],
-    rules: {
-      '@typescript-eslint/no-unused-vars': 'off',
-    },
-  },
-  {
     files: ['**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx'],
     rules: {
       // Allow intentionally-unused parameters/variables when prefixed with `_`.
@@ -70,6 +63,15 @@ export default [
           caughtErrorsIgnorePattern: '^_',
         },
       ],
+    },
+  },
+  {
+    // Type-level test files: variables are intentionally declared for type checking only.
+    // This block must come after the global no-unused-vars rule above so that flat config's
+    // last-wins semantics cause this override to take precedence for **/test-d/**/*.ts files.
+    files: ['**/test-d/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': 'off',
     },
   },
 ];
