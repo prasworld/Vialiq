@@ -112,8 +112,12 @@ export class EventLog implements EventLogInterface {
   // ─── Private helpers ────────────────────────────────────────────────────────
 
   #addToIndex(map: Map<string, string[]>, key: string, id: string): void {
-    if (!map.has(key)) map.set(key, []);
-    (map.get(key) as string[]).push(id);
+    let ids = map.get(key);
+    if (ids === undefined) {
+      ids = [];
+      map.set(key, ids);
+    }
+    ids.push(id);
   }
 
   #removeFromIndex(map: Map<string, string[]>, key: string, id: string): void {

@@ -9,13 +9,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createEphemeralStream } from './stream.js';
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-/** Flush the RAF queue: run all pending setTimeout(0) callbacks once. */
-function _flushRAF(): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, 0));
-}
-
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
 describe('Phase 4.7 — EphemeralStream', () => {

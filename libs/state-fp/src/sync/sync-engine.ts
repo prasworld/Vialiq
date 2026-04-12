@@ -103,9 +103,10 @@ export function createSyncEngine({ kernel, transport: transportFactory = createA
     const conflict  = (options.conflict ?? 'last-write-wins') as Required<ShareOptions<S>>['conflict'];
     const propagate = options.propagate ?? true;
 
-    if (shared.has(atomKey)) {
+    const existing = shared.get(atomKey);
+    if (existing) {
       console.warn(`[@vialiq/state-fp/sync] Atom "${atomKey}" is already shared. Call unsync before re-sharing.`);
-      return (shared.get(atomKey) as NonNullable<ReturnType<typeof shared.get>>).unsync;
+      return existing.unsync;
     }
 
     const transport: SyncTransport<S> = transportFactory(channel) as SyncTransport<S>;
