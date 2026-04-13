@@ -38,11 +38,16 @@ export type SharedEventBus = {
   publish(event: CrossMFEEvent): void;
 
   /**
-   * Subscribe to events matching the optional `filter`.
-   * Omit `filter` or pass `{}` to subscribe to all events.
+   * Subscribe to all events on the bus.
    * Returns an unsubscribe function.
    */
-  subscribe(filter?: EventFilter, cb?: (e: CrossMFEEvent) => void): Unsubscribe;
+  subscribe(cb: (e: CrossMFEEvent) => void): Unsubscribe;
+  /**
+   * Subscribe to events matching `filter`.
+   * Pass `{}` or omit `filter` to subscribe to all events.
+   * Returns an unsubscribe function.
+   */
+  subscribe(filter: EventFilter, cb: (e: CrossMFEEvent) => void): Unsubscribe;
 
   /**
    * Close the underlying BroadcastChannel and release all listeners.

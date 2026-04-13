@@ -4,7 +4,7 @@
  * Tests TTL enforcement, synchronous API, and background sweep cleanup.
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { MemoryAdapter } from './memory';
 
 interface TestPayload {

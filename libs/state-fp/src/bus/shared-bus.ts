@@ -83,9 +83,15 @@ export function createSharedBus({ channel }: SharedBusOptions): SharedEventBus {
 
     subscribe(filter: EventFilter | ((e: CrossMFEEvent) => void) = {}, cb?: (e: CrossMFEEvent) => void) {
       // Support both overloads: subscribe(cb) and subscribe(filter, cb)
-      const actualCb: (e: CrossMFEEvent) => void = typeof filter === 'function' ? filter : cb!;
+      const actualCb: ((e: CrossMFEEvent) => void) | undefined =
+        typeof filter === 'function' ? filter : cb;
+
+      if (actualCb === undefined) {
+        // No callback provided — guard against silent undefined registration
+        return () => void 0;
+      }
+
       const actualFilter: EventFilter = typeof filter === 'function' ? {} : filter;
-      
       const entry = { filter: actualFilter, cb: actualCb };
       subscribers.add(entry);
       return () => subscribers.delete(entry);

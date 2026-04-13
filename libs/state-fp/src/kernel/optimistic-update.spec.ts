@@ -6,7 +6,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { defineAtom, defineComputedAtom, createKernel, command, domainEvent } from './index.js';
-import type { Command, CommandHandler, EventApplier, Either, CommandError } from './types.js';
+import type { Command, CommandHandler, EventApplier, CommandError } from './types.js';
 
 interface CartState {
   readonly items: readonly string[];
@@ -29,7 +29,7 @@ describe('Phase 2.6 — Optimistic Updates + Rollback', () => {
     // Register a basic handler that does nothing (we'll test optimistic applier instead)
     const handler: CommandHandler<CartState> = {
       commandType: 'cart/*',
-      handle: (state) => ({
+      handle: (_state) => ({
         _tag: 'Right' as const,
         right: [],
       }),
@@ -334,7 +334,7 @@ describe('Phase 2.6 — Optimistic Updates + Rollback', () => {
 
   describe('command metadata', () => {
     it('should stamp command with correlation ID', async () => {
-      let interceptedCmd: Command | undefined;
+      let _interceptedCmd: Command | undefined;
 
       await kernel.executeOptimistic(cartAtom, command('cart/add', { sku: 'ABC' }), {
         optimisticApplier: (state) => ({

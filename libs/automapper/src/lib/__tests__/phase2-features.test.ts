@@ -92,7 +92,7 @@ describe('condition()', () => {
     m.addProfile(S, 'D', (b: any) => {
       b.forMember('grade', (o: any) => {
         o.condition((s: any) => s.score >= 90);
-        o.mapFrom((s: any) => 'A');
+        o.mapFrom((_s: any) => 'A');
       });
     });
     const res = m.map(new S(), 'D') as any;

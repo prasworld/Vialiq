@@ -43,6 +43,35 @@ export default [
     files: ['**/*.spec.ts', '**/*.test.ts', '**/test-d/**/*.ts'],
     rules: {
       '@typescript-eslint/no-empty-function': 'off',
+      // Test code legitimately uses `any` for mocks/dynamic types and non-null
+      // assertions when checking optional lifecycle methods that are known to exist.
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-non-null-assertion': 'off',
+    },
+  },
+  {
+    files: ['**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx'],
+    rules: {
+      // Allow intentionally-unused parameters/variables when prefixed with `_`.
+      '@typescript-eslint/no-unused-vars': [
+        'warn',
+        {
+          vars: 'all',
+          args: 'after-used',
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+        },
+      ],
+    },
+  },
+  {
+    // Type-level test files: variables are intentionally declared for type checking only.
+    // This block must come after the global no-unused-vars rule above so that flat config's
+    // last-wins semantics cause this override to take precedence for **/test-d/**/*.ts files.
+    files: ['**/test-d/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': 'off',
     },
   },
 ];

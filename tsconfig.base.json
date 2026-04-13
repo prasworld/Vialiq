@@ -17,7 +17,7 @@
     "paths": {
       "remote1/Routes": ["apps/remote1/src/app/remote-entry/entry.routes.ts"],
       "@vialiq/icons": ["libs/icons/src/index.ts"],
-      "@vialiq/icons/*": ["libs/icons/src/*.ts"],
+      "@vialiq/icons/*": ["libs/icons/src/*"],
       "@vialiq/flux-ui": ["libs/flux-ui/src/index.ts"],
       "@vialiq/flux-ui/styles": ["libs/flux-ui/src/styles/index.ts"],
       "@vialiq/flux-ui/tokens": ["libs/flux-ui/src/tokens/index.ts"],
@@ -36,7 +36,7 @@
       "@vialiq/state-fp/adapter": ["libs/state-fp/src/adapter/index.ts"],
       "@vialiq/state-fp/bus": ["libs/state-fp/src/bus/index.ts"],
       "@vialiq/web-components": ["libs/web-components/src/index.ts"],
-      "@vialiq/web-components/*": ["libs/web-components/src/*.ts"]
+      "@vialiq/web-components/*": ["libs/web-components/src/*"]
     }
   },
   "exclude": ["node_modules", "tmp"]

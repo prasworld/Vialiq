@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { createMapper } from '../core';
-import { AsyncStrategy } from '../async';
 import { CIRCULAR_IGNORE } from '../utils';
 
 describe('DefaultStrategy (sync) behaviours', () => {
@@ -37,7 +36,6 @@ describe('DefaultStrategy (sync) behaviours', () => {
 
   it('nested circular objects respect circularRefBehavior ignore', () => {
     const m = createMapper({ circularRefBehavior: 'ignore' });
-    class Node { constructor(public name: string) {} }
     const a: any = { name: 'a' };
     const b: any = { name: 'b', next: a };
     a.next = b; // circular reference

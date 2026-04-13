@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createLitController, createLitStreamController } from './lit.js';
 import type { ReactiveHost, ReactiveControllerLike }       from './lit.js';
-import type { Kernel, Atom, Unsubscribe }                  from '../kernel/types.js';
+import type { Kernel, Atom }                              from '../kernel/types.js';
 import type { EphemeralStream }                            from '../core/stream.js';
 import { right }                                           from '../core/either.js';
 

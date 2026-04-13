@@ -33,7 +33,7 @@ describe('DefaultStrategy targeted coverage', () => {
   it('strict mode with string dest type throws when unmapped', () => {
     const m = createMapper({ strict: true, autoMap: false });
     class Src { a = 1 }
-    m.addProfile(Src, 'Dest', (bld: any) => {
+    m.addProfile(Src, 'Dest', (_bld: any) => {
       // intentionally do not map `a`
     });
     expect(() => m.map(new Src(), 'Dest')).toThrow();
@@ -42,7 +42,7 @@ describe('DefaultStrategy targeted coverage', () => {
   it('maxDepth prevents deep mapping (returns original nested value)', () => {
     const m = createMapper({ maxDepth: 0 });
     const src = { nested: { deep: { val: 1 } } };
-    m.addProfile(Object, 'Dest', (bld: any) => {});
+    m.addProfile(Object, 'Dest', (_bld: any) => {});
     const res = m.map(src, 'Dest') as any;
     // with maxDepth 0 the top-level nested object should be returned as-is
     expect(res.nested).toBe(src.nested);
@@ -53,7 +53,7 @@ describe('DefaultStrategy targeted coverage', () => {
     const a: any = {};
     a.self = a; // self-referential
     const src = { arr: [a] };
-    m.addProfile(Object, 'Dest', (bld: any) => {});
+    m.addProfile(Object, 'Dest', (_bld: any) => {});
     const res = m.map(src, 'Dest') as any;
     // array mapping should filter out the circular sentinel
     expect(Array.isArray(res.arr)).toBe(true);

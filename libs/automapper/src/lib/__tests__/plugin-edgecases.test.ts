@@ -29,7 +29,7 @@ describe('plugin edge cases', () => {
   it('swallows plugin onMapStart/onMapEnd errors during mapping', () => {
     const plugin = {
       metadata: { id: 'shout.plugin', name: 'shout', version: '1.0.0', apiVersion: PLUGIN_API_VERSION, description: '' },
-      strategy: { canHandle: () => true, map: (reg: any, s: any) => ({ ok: true }) },
+      strategy: { canHandle: () => true, map: (_reg: any, _s: any) => ({ ok: true }) },
       onMapStart: () => { throw new Error('boom start'); },
       onMapEnd: () => { throw new Error('boom end'); },
     } as any;
