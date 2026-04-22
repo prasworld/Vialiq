@@ -5,9 +5,8 @@
   "projectType": "library",
   "release": {
     "version": {
-      "manifestRootsToUpdate": ["dist/{projectRoot}"],
-      "currentVersionResolver": "git-tag",
-      "fallbackCurrentVersionResolver": "disk"
+      "manifestRootsToUpdate": ["libs/automapper/publish-package.json"],
+      "currentVersionResolver": "registry"
     }
   },
   "tags": [],
@@ -41,10 +40,12 @@
     },
     "postbuild-publish": {
       "executor": "nx:run-commands",
+      "dependsOn": ["build"],
       "options": {
         "commands": [
           "cp libs/automapper/publish-package.json dist/libs/automapper/package.json",
-          "cp libs/automapper/LICENSE dist/libs/automapper/LICENSE"
+          "cp libs/automapper/LICENSE dist/libs/automapper/LICENSE",
+          "cp -r dist/libs/automapper/src/. dist/libs/automapper/"
         ],
         "parallel": false
       },

@@ -4,6 +4,12 @@
   "projectType": "library",
   "sourceRoot": "libs/flux-ui/src",
   "prefix": "ui",
+  "release": {
+    "version": {
+      "manifestRootsToUpdate": ["libs/flux-ui/publish-package.json"],
+      "currentVersionResolver": "registry"
+    }
+  },
   "targets": {
     "build": {
       "executor": "@nx/esbuild:esbuild",
@@ -21,12 +27,12 @@
           },
           {
             "input": "libs/flux-ui/styles",
-            "glob": "*.scss",
+            "glob": "**/*.scss",
             "output": "styles"
           },
           {
             "input": "libs/flux-ui/components",
-            "glob": "*.scss",
+            "glob": "**/*.scss",
             "output": "components"
           }
         ],

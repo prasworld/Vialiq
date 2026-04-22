@@ -1,0 +1,65 @@
+name: Publish Packages
+
+on:
+  push:
+    branches: [master]
+    # Skip runs triggered by the bot's own version-bump commit to avoid
+    # an infinite loop where the version commit re-triggers publishing.
+    paths-ignore:
+      - 'libs/**/publish-package.json'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # required to push version-bump commits and git tags
+      id-token: write   # required for npm Trusted Publishing (OIDC token)
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history is required so nx release version can walk back to the
+          # last release git tag to determine which conventional commits have
+          # landed since then.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Configure git
+        run: |
+          git config --global user.email "action@github.com"
+          git config --global user.name "GitHub Action"
+
+      # Parses conventional commits since the last release tag and bumps versions
+      # in each library's publish-package.json:
+      #   feat:             → minor bump  (0.1.0 → 0.2.0)
+      #   fix/refactor/perf → patch bump  (0.1.0 → 0.1.1)
+      #   BREAKING CHANGE   → major bump  (0.1.0 → 1.0.0)
+      # Creates a version-bump commit and annotated git tags locally.
+      - name: Version packages
+        run: npx nx release version
+
+      # Push the version-bump commit and tags so the next run knows where the
+      # last release was (nx release version reads these tags).
+      - name: Push version commit and tags
+        run: git push --follow-tags
+
+      # Build all publishable libraries in production mode (minified, no source maps).
+      # postbuild-publish depends on build (and build-css for flux-ui), so the
+      # full dependency chain runs automatically.
+      - name: Build and prepare dist packages
+        run: npx nx run-many -t postbuild-publish -p flux-ui,state-fp,automapper,icons --configuration=production --parallel=false
+
+      # Publish each library whose publish-package.json version is not yet in the
+      # npm registry. npm Trusted Publishing handles auth automatically via OIDC —
+      # no npm token secret is needed. The --provenance flag in publish-changed.mjs
+      # triggers npm's OIDC exchange with the GitHub Actions OIDC endpoint.
+      - name: Publish changed packages
+        run: node .github/scripts/publish-changed.mjs

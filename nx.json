@@ -103,22 +103,24 @@
     }
   },
   "release": {
-    "projects": ["state-fp"],
+    "projects": ["flux-ui", "state-fp", "automapper", "icons"],
     "version": {
-      "preVersionCommand": "npx nx run-many -t build",
       "generatorOptions": {
-        "packageRoot": "libs/state-fp",
-        "currentVersionResolver": "registry"
+        "currentVersionResolver": "registry",
+        "specifierSource": "conventional-commits"
+      },
+      "conventionalCommits": {
+        "types": {
+          "feat": { "semver": "minor" },
+          "fix": { "semver": "patch" },
+          "refactor": { "semver": "patch" },
+          "perf": { "semver": "patch" }
+        }
       }
     },
     "changelog": {
-      "projectChangelogs": {
-        "file": "libs/state-fp/CHANGELOG.md",
-        "renderOptions": {
-          "authors": false
-        }
-      },
-      "workspaceChangelog": false
+      "workspaceChangelog": false,
+      "projectChangelogs": true
     }
   }
 }

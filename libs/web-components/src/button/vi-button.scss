@@ -12,6 +12,7 @@
  */
 
 @use '@vialiq/flux-ui/styles/variables' as tokens;
+@use '@vialiq/flux-ui/components/button';
 
 // ============================================================================
 // Host defaults — establishes component-scoped CSS custom properties.
@@ -45,9 +46,10 @@
 }
 
 // ============================================================================
-// Base button element — imported from flux-ui
+// Base button element — imported from @vialiq/flux-ui/components/button above.
+// Provides: display, flexbox layout, gap, border, border-radius, padding,
+// font-size, font-weight, line-height, cursor, user-select, transition.
 // ============================================================================
-// .button class is provided by @vialiq/flux-ui/components/button
 
 // ============================================================================
 // Variant rules — consume the component-scoped vars defined in :host.

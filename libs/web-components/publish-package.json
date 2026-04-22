@@ -1,6 +1,7 @@
 {
   "name": "@vialiq/web-components",
   "version": "0.0.3",
+  "private": false,
   "type": "module",
   "sideEffects": true,
   "description": "Lit web component library built on @vialiq/flux-ui design tokens",

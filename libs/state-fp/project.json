@@ -4,6 +4,12 @@
   "sourceRoot": "libs/state-fp/src",
   "projectType": "library",
   "tags": ["scope:state", "type:lib"],
+  "release": {
+    "version": {
+      "manifestRootsToUpdate": ["libs/state-fp/publish-package.json"],
+      "currentVersionResolver": "registry"
+    }
+  },
   "targets": {
     "build": {
       "executor": "@nx/esbuild:esbuild",
@@ -36,10 +42,12 @@
     },
     "postbuild-publish": {
       "executor": "nx:run-commands",
+      "dependsOn": ["build"],
       "options": {
         "commands": [
           "cp libs/state-fp/publish-package.json dist/libs/state-fp/package.json",
-          "cp libs/state-fp/LICENSE dist/libs/state-fp/LICENSE"
+          "cp libs/state-fp/LICENSE dist/libs/state-fp/LICENSE",
+          "cp -r dist/libs/state-fp/src/. dist/libs/state-fp/"
         ],
         "parallel": false
       },
