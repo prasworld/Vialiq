@@ -28,7 +28,7 @@
   },
   "peerDependencies": {
     "lit": "^3.0.0",
-    "@vialiq/flux-ui": "^0.0.1",
+    "@vialiq/flux-ui": "^0.0.2",
     "@vialiq/icons": "^0.0.1"
   },
   "keywords": [
