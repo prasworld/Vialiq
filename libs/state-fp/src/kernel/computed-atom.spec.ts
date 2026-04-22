@@ -6,13 +6,23 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { defineAtom, defineComputedAtom, createKernel, domainEvent } from './index.js';
-import type { CommandHandler, EventApplier } from './types.js';
+import type { Command, CommandHandler, EventApplier, Atom } from './types.js';
+
+// Helper to widen Atom types for deps arrays
+// Uses 'unknown as' (not 'any') to safely escape Atom<T> invariance without direct 'any' escape
+function depsArray(deps: readonly unknown[]): readonly Atom<unknown>[] {
+  return deps as unknown as readonly Atom<unknown>[];
+}
 
 interface CounterState {
   readonly value: number;
 }
 
-const IncrementCmd = () => ({ _kind: 'Command' as const, type: 'counter/increment' } as Command);
+const IncrementCmd = (): Command<'counter/increment'> => ({
+  _kind: 'Command' as const,
+  type: 'counter/increment',
+  meta: { correlationId: 'test', timestamp: Date.now() },
+});
 
 const incrementHandler: CommandHandler<CounterState> = {
   commandType: 'counter/increment',
@@ -24,7 +34,8 @@ const incrementHandler: CommandHandler<CounterState> = {
 
 const applier: EventApplier<CounterState> = (state, event) => {
   if (event.type === 'counter/incremented') {
-    return { value: state.value + (event.payload as { by: number }).by };
+    const incrementEvent = event as Extract<ReturnType<typeof domainEvent>, { type: 'counter/incremented' }>;
+    return { value: state.value + (incrementEvent.payload as { by: number }).by };
   }
   return state;
 };
@@ -47,8 +58,11 @@ describe('Phase 2.5 — Computed Atoms', () => {
     it('should throw when accessing before registration', () => {
       const doubledAtom = defineComputedAtom({
         key: 'vi/doubled',
-        deps: [counterAtom],
-        compute: ([counter]: readonly [CounterState]) => counter.value * 2,
+        deps: depsArray([counterAtom]),
+        compute: (depStates: readonly unknown[]) => {
+          const counter = depStates[0] as CounterState;
+          return counter.value * 2;
+        },
       });
 
       expect(() => doubledAtom.get()).toThrow('not initialized');
@@ -57,8 +71,11 @@ describe('Phase 2.5 — Computed Atoms', () => {
     it('should compute initial value on registration', () => {
       const doubledAtom = defineComputedAtom({
         key: 'vi/doubled',
-        deps: [counterAtom],
-        compute: ([counter]: readonly [CounterState]) => counter.value * 2,
+        deps: depsArray([counterAtom]),
+        compute: (depStates: readonly unknown[]) => {
+          const counter = depStates[0] as CounterState;
+          return counter.value * 2;
+        },
       });
 
       kernel.registerComputed(doubledAtom);
@@ -70,8 +87,11 @@ describe('Phase 2.5 — Computed Atoms', () => {
     it('should recompute when a dependency changes', () => {
       const doubledAtom = defineComputedAtom({
         key: 'vi/doubled',
-        deps: [counterAtom],
-        compute: ([counter]: readonly [CounterState]) => counter.value * 2,
+        deps: depsArray([counterAtom]),
+        compute: (depStates: readonly unknown[]) => {
+          const counter = depStates[0] as CounterState;
+          return counter.value * 2;
+        },
       });
 
       kernel.registerComputed(doubledAtom);
@@ -82,26 +102,31 @@ describe('Phase 2.5 — Computed Atoms', () => {
       expect(doubledAtom.get()).toBe(4);
     });
 
-    it('should notify subscribers on change', (done) => {
+    it('should notify subscribers on change', async () => {
       const doubledAtom = defineComputedAtom({
         key: 'vi/doubled',
-        deps: [counterAtom],
-        compute: ([counter]: readonly [CounterState]) => counter.value * 2,
+        deps: depsArray([counterAtom]),
+        compute: (depStates: readonly unknown[]) => {
+          const counter = depStates[0] as CounterState;
+          return counter.value * 2;
+        },
       });
 
       kernel.registerComputed(doubledAtom);
 
       let callCount = 0;
-      kernel.subscribeComputed(doubledAtom, (value) => {
-        callCount++;
-        if (callCount === 1) {
-          // subscribeComputed immediately notifies with current value
-          expect(value).toBe(0);
-          kernel.execute(counterAtom, IncrementCmd());
-        } else if (callCount === 2) {
-          expect(value).toBe(2);
-          done();
-        }
+      return new Promise<void>((resolve) => {
+        kernel.subscribeComputed(doubledAtom, (value) => {
+          callCount++;
+          if (callCount === 1) {
+            // subscribeComputed immediately notifies with current value
+            expect(value).toBe(0);
+            kernel.execute(counterAtom, IncrementCmd());
+          } else if (callCount === 2) {
+            expect(value).toBe(2);
+            resolve();
+          }
+        });
       });
     });
 
@@ -109,9 +134,10 @@ describe('Phase 2.5 — Computed Atoms', () => {
       let computeCount = 0;
       const evenAtom = defineComputedAtom({
         key: 'vi/is-even',
-        deps: [counterAtom],
-        compute: ([counter]: readonly [CounterState]) => {
+        deps: depsArray([counterAtom]),
+        compute: (depStates: readonly unknown[]) => {
           computeCount++;
+          const counter = depStates[0] as CounterState;
           return counter.value % 2 === 0;
         },
       });
@@ -150,7 +176,7 @@ describe('Phase 2.5 — Computed Atoms', () => {
       let computeCount = 0;
       const computed = defineComputedAtom({
         key: 'vi/stable-computed',
-        deps: [stableAtom],
+        deps: depsArray([stableAtom]),
         compute: () => {
           computeCount++;
           return 'ok';
@@ -169,7 +195,7 @@ describe('Phase 2.5 — Computed Atoms', () => {
     it('should throw during registerComputed if compute fails', () => {
       const errorAtom = defineComputedAtom({
         key: 'vi/error',
-        deps: [counterAtom],
+        deps: depsArray([counterAtom]),
         compute: () => {
           throw new Error('Compute failed');
         },
@@ -183,8 +209,11 @@ describe('Phase 2.5 — Computed Atoms', () => {
     it('should allow unsubscribing', () => {
       const doubledAtom = defineComputedAtom({
         key: 'vi/doubled',
-        deps: [counterAtom],
-        compute: ([counter]: readonly [CounterState]) => counter.value * 2,
+        deps: depsArray([counterAtom]),
+        compute: (depStates: readonly unknown[]) => {
+          const counter = depStates[0] as CounterState;
+          return counter.value * 2;
+        },
       });
 
       kernel.registerComputed(doubledAtom);
@@ -211,8 +240,11 @@ describe('Phase 2.5 — Computed Atoms', () => {
 
       const sumAtom = defineComputedAtom({
         key: 'vi/sum',
-        deps: [counterAtom],
-        compute: ([counter]: readonly [CounterState]) => counter.value + 10,
+        deps: depsArray([counterAtom]),
+        compute: (depStates: readonly unknown[]) => {
+          const counter = depStates[0] as CounterState;
+          return counter.value + 10;
+        },
       });
 
       kernel.registerComputed(sumAtom);
@@ -235,8 +267,11 @@ describe('Phase 2.5 — Computed Atoms', () => {
     it('should preserve values across updates', () => {
       const tripleAtom = defineComputedAtom({
         key: 'vi/triple',
-        deps: [counterAtom],
-        compute: ([counter]: readonly [CounterState]) => counter.value * 3,
+        deps: depsArray([counterAtom]),
+        compute: (depStates: readonly unknown[]) => {
+          const counter = depStates[0] as CounterState;
+          return counter.value * 3;
+        },
       });
 
       kernel.registerComputed(tripleAtom);
@@ -250,8 +285,11 @@ describe('Phase 2.5 — Computed Atoms', () => {
     it('should clean up on kernel destroy', async () => {
       const doubledAtom = defineComputedAtom({
         key: 'vi/doubled',
-        deps: [counterAtom],
-        compute: ([counter]: readonly [CounterState]) => counter.value * 2,
+        deps: depsArray([counterAtom]),
+        compute: (depStates: readonly unknown[]) => {
+          const counter = depStates[0] as CounterState;
+          return counter.value * 2;
+        },
       });
 
       kernel.registerComputed(doubledAtom);
