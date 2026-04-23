@@ -51,11 +51,18 @@ jobs:
       - name: Push version commit and tags
         run: git push --follow-tags
 
+      # Derive the publishable libs list from nx.json (release.projects) so this
+      # workflow stays in sync with the release config automatically.
+      - name: Derive publishable libs
+        run: |
+          LIBS=$(node -e "const nx=JSON.parse(require('fs').readFileSync('nx.json','utf8')); console.log(nx.release.projects.join(','))")
+          echo "PUBLISHABLE_LIBS=$LIBS" >> $GITHUB_ENV
+
       # Build all publishable libraries in production mode (minified, no source maps).
       # postbuild-publish depends on build (and build-css for flux-ui), so the
       # full dependency chain runs automatically.
       - name: Build and prepare dist packages
-        run: npx nx run-many -t postbuild-publish -p flux-ui,state-fp,automapper,icons --configuration=production --parallel=false
+        run: npx nx run-many -t postbuild-publish -p ${{ env.PUBLISHABLE_LIBS }} --configuration=production --parallel=false
 
       # Publish each library whose publish-package.json version is not yet in the
       # npm registry. npm Trusted Publishing handles auth automatically via OIDC —
