@@ -7,7 +7,7 @@
  * (for example, the CI environment's OIDC/Trusted Publishing setup) rather than
  * requiring a NODE_AUTH_TOKEN to be set explicitly.
  */
-import { execSync } from 'node:child_process';
+import { execFileSync, execSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -25,22 +25,25 @@ for (const lib of PUBLISHABLE_LIBS) {
   const localPkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
   const { name, version: localVersion } = localPkg;
 
-  // Check what version is currently published on npm
+  // Check what version is currently published on npm.
   // (Uses npm Trusted Publishing in CI; no explicit auth token required.)
+  // execFileSync avoids shell interpolation of the scoped package name.
   let registryVersion = null;
   try {
-    registryVersion = execSync(`npm view ${name} version`, {
+    registryVersion = execFileSync('npm', ['view', name, 'version'], {
       encoding: 'utf8',
       stdio: ['pipe', 'pipe', 'pipe'],
     }).trim();
   } catch (error) {
-    // npm view fails if the package doesn't exist (404) or if there's a network/auth error.
-    // Log the error so transient issues are visible; only silently assume "unpublished"
-    // if we can verify it's a 404. For now, we conservatively warn the user.
-    console.warn(
-      `⚠ Could not check ${name} on registry (treating as unpublished). ` +
-      `Error: ${error.message}. If this is a network issue, the publish step may also fail.`,
-    );
+    const stderr = error.stderr?.toString() ?? '';
+    if (stderr.includes('E404') || stderr.includes('code E404')) {
+      // Package has never been published — safe to proceed.
+      console.log(`${name} not found in registry — will publish for the first time.`);
+    } else {
+      // Network/auth/registry error — fail fast so the real problem surfaces.
+      console.error(`✖ Registry check failed for ${name}: ${error.message}`);
+      process.exit(1);
+    }
   }
 
   if (localVersion === registryVersion) {

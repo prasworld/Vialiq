@@ -756,8 +756,15 @@ export function createKernel(options: KernelOptions = {}): Kernel {
     subscribeComputed<R>(computed: ComputedAtom<R>, listener: (v: R) => void): Unsubscribe {
       // Subscribe first so synchronous commands fired inside the initial callback
       // are captured, then emit the current value as the initial notification.
+      // If the initial notification throws, unsubscribe immediately so the listener
+      // does not leak and receive unexpected future callbacks.
       const unsub = computed.subscribe(listener);
-      listener(computed.get());
+      try {
+        listener(computed.get());
+      } catch (error) {
+        unsub();
+        throw error;
+      }
       return unsub;
     },
 

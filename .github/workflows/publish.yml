@@ -46,11 +46,6 @@ jobs:
       - name: Version packages
         run: npx nx release version
 
-      # Push the version-bump commit and tags so the next run knows where the
-      # last release was (nx release version reads these tags).
-      - name: Push version commit and tags
-        run: git push --follow-tags
-
       # Derive the publishable libs list from nx.json (release.projects) so this
       # workflow stays in sync with the release config automatically.
       - name: Derive publishable libs
@@ -70,3 +65,9 @@ jobs:
       # triggers npm's OIDC exchange with the GitHub Actions OIDC endpoint.
       - name: Publish changed packages
         run: node .github/scripts/publish-changed.mjs
+
+      # Push the version-bump commit and tags only after packages are successfully
+      # published. This prevents orphaned tags in the repo if the build or publish
+      # step fails — on retry, nx release version will cleanly re-detect and re-bump.
+      - name: Push version commit and tags
+        run: git push --follow-tags
