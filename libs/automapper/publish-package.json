@@ -1,6 +1,11 @@
 {
   "name": "@vialiq/automapper",
   "version": "0.0.1",
+  "private": false,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/prasworld/Vialiq.git"
+  },
   "description": "Automapper library (publish package template)",
   "type": "module",
   "module": "./index.js",

@@ -7,9 +7,8 @@
   "tags": ["scope:ui", "type:wc"],
   "release": {
     "version": {
-      "manifestRootsToUpdate": ["dist/{projectRoot}"],
-      "currentVersionResolver": "git-tag",
-      "fallbackCurrentVersionResolver": "disk"
+      "manifestRootsToUpdate": ["libs/web-components/package.json", "libs/web-components/publish-package.json"],
+      "currentVersionResolver": "registry"
     }
   },
   "targets": {
@@ -30,14 +29,17 @@
 
     "postbuild-publish": {
       "executor": "nx:run-commands",
+      "dependsOn": ["build"],
       "options": {
         "commands": [
-          "npx vite build --config libs/web-components/vite.config.ts",
           "npx tsc -p libs/web-components/tsconfig.lib.json --emitDeclarationOnly --noEmit false",
           "cp libs/web-components/publish-package.json dist/libs/web-components/package.json",
           "cp libs/web-components/README.md dist/libs/web-components/README.md"
         ],
         "parallel": false
+      },
+      "configurations": {
+        "production": {}
       }
     },
 

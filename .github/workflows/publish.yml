@@ -1,0 +1,88 @@
+name: Publish Packages
+
+on:
+  push:
+    branches: [master]
+    # The bot's version-bump commit includes [skip ci] in its message so
+    # GitHub Actions natively skips this workflow for that push, preventing
+    # an infinite loop without needing paths-ignore (which would also block
+    # manual publish-package.json fixes from triggering a publish).
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # required to push version-bump commits and git tags
+      id-token: write   # required for npm Trusted Publishing (OIDC token)
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history is required so nx release version can walk back to the
+          # last release git tag to determine which conventional commits have
+          # landed since then.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          # Node 24 is required: it ships with npm ≥ 11.5.1, which is the minimum
+          # needed for npm Trusted Publishing (OIDC). Node 22 ships with npm 10.x
+          # and will fail to authenticate even with correct id-token: write permissions.
+          node-version: '24'
+          cache: 'npm'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Configure git
+        run: |
+          git config --global user.email "action@github.com"
+          git config --global user.name "GitHub Action"
+
+      # Parses conventional commits since the last release tag and bumps versions
+      # in each library's publish-package.json:
+      #   feat:             → minor bump  (0.1.0 → 0.2.0)
+      #   fix/refactor/perf → patch bump  (0.1.0 → 0.1.1)
+      #   BREAKING CHANGE   → major bump  (0.1.0 → 1.0.0)
+      # Creates a version-bump commit and annotated git tags locally.
+      - name: Version packages
+        run: npx nx release version
+
+      # Push the version-bump commit (without tags) before building so that a failed
+      # build/publish doesn't leave the repo in an ambiguous state. Tags are pushed
+      # only after a successful publish so that a tag always represents a version
+      # that genuinely made it to npm.
+      - name: Push version commit
+        run: git push
+
+      # Derive the publishable libs list from nx.json (release.projects) so this
+      # workflow stays in sync with the release config automatically.
+      - name: Derive publishable libs
+        run: |
+          LIBS=$(node -e "const nx=JSON.parse(require('fs').readFileSync('nx.json','utf8')); console.log(nx.release.projects.join(','))")
+          echo "PUBLISHABLE_LIBS=$LIBS" >> $GITHUB_ENV
+
+      # Build all publishable libraries in production mode (minified, no source maps).
+      # postbuild-publish depends on build (and build-css for flux-ui), so the
+      # full dependency chain runs automatically.
+      - name: Build and prepare dist packages
+        run: npx nx run-many -t postbuild-publish -p ${{ env.PUBLISHABLE_LIBS }} --configuration=production --parallel=false
+
+      # Publish each library whose publish-package.json version is not yet in the
+      # npm registry. npm Trusted Publishing handles auth automatically via OIDC —
+      # no npm token secret is needed. The --provenance flag in publish-changed.mjs
+      # triggers npm's OIDC exchange with the GitHub Actions OIDC endpoint.
+      - name: Publish changed packages
+        run: node .github/scripts/publish-changed.mjs
+
+      # Push tags only after a successful publish so every tag in the repo
+      # corresponds to a version that actually made it to npm.
+      # Uses --tags (not --follow-tags) because --follow-tags only follows tags
+      # attached to commits being pushed *in this call*, but the version-bump
+      # commit was already pushed above. --tags pushes all local annotated tags
+      # that are not yet on the remote.
+      # If this step is ever skipped due to a prior failure, re-run the workflow
+      # to publish any remaining packages and push the tags.
+      - name: Push release tags
+        run: git push origin --tags

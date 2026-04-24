@@ -1,6 +1,11 @@
 {
   "name": "@vialiq/icons",
   "version": "0.0.1",
+  "private": false,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/prasworld/Vialiq.git"
+  },
   "type": "module",
   "description": "SVG icon definitions for the @vi design system",
   "license": "MIT",
