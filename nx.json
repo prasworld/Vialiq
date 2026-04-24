@@ -103,7 +103,7 @@
     }
   },
   "release": {
-    "projects": ["flux-ui", "state-fp", "automapper", "icons"],
+    "projects": ["flux-ui", "state-fp", "automapper", "icons", "web-components"],
     "git": {
       "commitMessage": "chore(release): version bump [skip ci]"
     },
