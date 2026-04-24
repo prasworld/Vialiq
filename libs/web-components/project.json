@@ -8,7 +8,7 @@
   "release": {
     "version": {
       "manifestRootsToUpdate": ["libs/web-components/package.json", "libs/web-components/publish-package.json"],
-      "currentVersionResolver": "registry"
+      "currentVersionResolver": "git-tag"
     }
   },
   "targets": {

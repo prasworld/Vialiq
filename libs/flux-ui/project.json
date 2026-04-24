@@ -7,7 +7,7 @@
   "release": {
     "version": {
       "manifestRootsToUpdate": ["libs/flux-ui/package.json", "libs/flux-ui/publish-package.json"],
-      "currentVersionResolver": "registry"
+      "currentVersionResolver": "git-tag"
     }
   },
   "targets": {

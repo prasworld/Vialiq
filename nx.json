@@ -109,7 +109,7 @@
         "commitMessage": "chore(release): version bump [skip ci]"
       },
       "generatorOptions": {
-        "currentVersionResolver": "registry",
+        "currentVersionResolver": "git-tag",
         "specifierSource": "conventional-commits"
       },
       "conventionalCommits": {
