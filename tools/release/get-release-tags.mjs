@@ -23,6 +23,7 @@ if (!Array.isArray(projects) || projects.length === 0) {
 }
 
 const tags = [];
+let hasErrors = false;
 
 for (const lib of projects) {
   const publishPkgPath = `libs/${lib}/publish-package.json`;
@@ -30,11 +31,19 @@ for (const lib of projects) {
     const pkg = JSON.parse(readFileSync(publishPkgPath, 'utf8'));
     if (pkg.version && typeof pkg.version === 'string') {
       tags.push(`${lib}@${pkg.version}`);
+    } else {
+      console.error(`ERROR: ${publishPkgPath} has no valid "version" field`);
+      hasErrors = true;
     }
   } catch (err) {
-    // If we can't read a project's version, skip it rather than fail
-    console.warn(`WARN: Could not read version from ${publishPkgPath}`);
+    // Report errors so CI doesn't silently miss release tags
+    console.error(`ERROR: Could not read version from ${publishPkgPath}: ${err.message}`);
+    hasErrors = true;
   }
+}
+
+if (hasErrors) {
+  process.exit(1);
 }
 
 if (tags.length > 0) {

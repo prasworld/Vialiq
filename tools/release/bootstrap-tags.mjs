@@ -89,7 +89,7 @@ for (const lib of projects) {
 
   // Check whether the tag already exists locally (remote tags were fetched earlier
   // in the workflow with `git fetch --tags --force`).
-  // `git rev-parse --verify` exits with code 128 when the ref does not exist —
+  // With --quiet, `git rev-parse --verify` exits with code 1 when the ref does not exist —
   // that is the *expected* "not found" path. Any other non-zero exit code means
   // git itself had a problem (not a repo, disk error, permissions, etc.) and we
   // must not silently proceed to tag creation.
@@ -133,5 +133,5 @@ console.log(`\nBootstrap complete. Created ${createdTags.length} tag(s).`);
 const githubOutput = process.env.GITHUB_OUTPUT;
 if (githubOutput) {
   appendFileSync(githubOutput, `created_count=${createdTags.length}\n`);
-  appendFileSync(githubOutput, `created_tags=${createdTags.join(',')}\n`);
+  appendFileSync(githubOutput, `created_tags=${createdTags.join(' ')}\n`);
 }
