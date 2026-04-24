@@ -23,11 +23,13 @@ jobs:
           # landed since then.
           fetch-depth: 0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           # Node 24 is required: it ships with npm ≥ 11.5.1, which is the minimum
           # needed for npm Trusted Publishing (OIDC). Node 22 ships with npm 10.x
           # and will fail to authenticate even with correct id-token: write permissions.
+          # setup-node@v5+ is required: v4 writes always-auth=true to .npmrc, which
+          # npm 11 rejects as an unknown config option, aborting the publish step.
           node-version: '24'
           cache: 'npm'
           registry-url: 'https://registry.npmjs.org'
