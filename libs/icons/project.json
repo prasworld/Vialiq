@@ -43,6 +43,9 @@
           "cp libs/icons/publish-package.json dist/libs/icons/package.json"
         ],
         "parallel": false
+      },
+      "configurations": {
+        "production": {}
       }
     },
 

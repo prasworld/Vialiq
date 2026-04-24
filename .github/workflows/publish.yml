@@ -25,7 +25,10 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          # Node 24 is required: it ships with npm ≥ 11.5.1, which is the minimum
+          # needed for npm Trusted Publishing (OIDC). Node 22 ships with npm 10.x
+          # and will fail to authenticate even with correct id-token: write permissions.
+          node-version: '24'
           cache: 'npm'
           registry-url: 'https://registry.npmjs.org'
 
@@ -75,7 +78,11 @@ jobs:
 
       # Push tags only after a successful publish so every tag in the repo
       # corresponds to a version that actually made it to npm.
+      # Uses --tags (not --follow-tags) because --follow-tags only follows tags
+      # attached to commits being pushed *in this call*, but the version-bump
+      # commit was already pushed above. --tags pushes all local annotated tags
+      # that are not yet on the remote.
       # If this step is ever skipped due to a prior failure, re-run the workflow
       # to publish any remaining packages and push the tags.
       - name: Push release tags
-        run: git push --follow-tags
+        run: git push origin --tags

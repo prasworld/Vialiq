@@ -49,6 +49,9 @@
         ],
         "parallel": false
       },
+      "configurations": {
+        "production": {}
+      },
       "outputs": ["{workspaceRoot}/dist/libs/automapper/package.json", "{workspaceRoot}/dist/libs/automapper/LICENSE"]
     },
     "test": {

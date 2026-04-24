@@ -29,36 +29,37 @@ for (const lib of PUBLISHABLE_LIBS) {
   const localPkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
   const { name, version: localVersion } = localPkg;
 
-  // Check what version is currently published on npm.
+  // Check if this exact version is already published on npm.
   // (Uses npm Trusted Publishing in CI; no explicit auth token required.)
   // execFileSync avoids shell interpolation of the scoped package name.
-  let registryVersion = null;
+  // We check <name>@<localVersion> rather than the latest dist-tag so that
+  // re-running an old workflow run doesn't attempt to publish over an already-
+  // published (but no longer latest) version.
+  let alreadyPublished = false;
   try {
-    registryVersion = execFileSync('npm', ['view', name, 'version'], {
+    execFileSync('npm', ['view', `${name}@${localVersion}`, 'version'], {
       encoding: 'utf8',
       stdio: ['pipe', 'pipe', 'pipe'],
-    }).trim();
+    });
+    alreadyPublished = true;
   } catch (error) {
     const stderr = error.stderr?.toString() ?? '';
     if (stderr.includes('E404') || stderr.includes('code E404')) {
-      // Package has never been published — safe to proceed.
-      console.log(`${name} not found in registry — will publish for the first time.`);
+      // This specific version is not published yet — safe to proceed.
     } else {
       // Network/auth/registry error — fail fast so the real problem surfaces.
-      console.error(`✖ Registry check failed for ${name}: ${error.message}`);
+      console.error(`✖ Registry check failed for ${name}@${localVersion}: ${error.message}`);
       process.exit(1);
     }
   }
 
-  if (localVersion === registryVersion) {
-    console.log(`Skipping ${name}@${localVersion} — registry already at this version.`);
+  if (alreadyPublished) {
+    console.log(`Skipping ${name}@${localVersion} — already published to registry.`);
     skippedCount++;
     continue;
   }
 
-  console.log(
-    `Publishing ${name}@${localVersion} (registry: ${registryVersion ?? 'unpublished'})…`,
-  );
+  console.log(`Publishing ${name}@${localVersion}…`);
 
   execSync('npm publish --access public --provenance', {
     cwd: distPath,

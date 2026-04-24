@@ -51,6 +51,9 @@
         ],
         "parallel": false
       },
+      "configurations": {
+        "production": {}
+      },
       "outputs": ["{workspaceRoot}/dist/libs/state-fp/package.json", "{workspaceRoot}/dist/libs/state-fp/LICENSE"]
     },
     "test": {

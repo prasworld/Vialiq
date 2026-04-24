@@ -74,6 +74,9 @@
         ],
         "parallel": false
       },
+      "configurations": {
+        "production": {}
+      },
       "outputs": ["{workspaceRoot}/dist/libs/flux-ui/package.json"]
     },
     "lint": {

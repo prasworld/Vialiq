@@ -37,6 +37,9 @@
           "cp libs/web-components/README.md dist/libs/web-components/README.md"
         ],
         "parallel": false
+      },
+      "configurations": {
+        "production": {}
       }
     },
 
