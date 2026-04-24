@@ -59,7 +59,11 @@ jobs:
       # keep recreating them.
       - name: Push bootstrap tags
         if: steps.bootstrap_tags.outputs.created_count != '0'
-        run: git push origin --tags
+        run: |
+          TAGS="${{ steps.bootstrap_tags.outputs.created_tags }}"
+          if [ -n "$TAGS" ]; then
+            git push origin $TAGS
+          fi
 
       # Parses conventional commits since the last release tag and bumps versions
       # in each library's publish-package.json:
@@ -99,11 +103,12 @@ jobs:
 
       # Push tags only after a successful publish so every tag in the repo
       # corresponds to a version that actually made it to npm.
-      # Uses --tags (not --follow-tags) because --follow-tags only follows tags
-      # attached to commits being pushed *in this call*, but the version-bump
-      # commit was already pushed above. --tags pushes all local annotated tags
-      # that are not yet on the remote.
-      # If this step is ever skipped due to a prior failure, re-run the workflow
-      # to publish any remaining packages and push the tags.
+      # Derives release tag names from updated publish-package.json files
+      # to push only the tags created by this run (avoiding unintentional pushes
+      # of unrelated local tags).
       - name: Push release tags
-        run: git push origin --tags
+        run: |
+          RELEASE_TAGS=$(node tools/release/get-release-tags.mjs)
+          if [ -n "$RELEASE_TAGS" ]; then
+            git push origin $RELEASE_TAGS
+          fi

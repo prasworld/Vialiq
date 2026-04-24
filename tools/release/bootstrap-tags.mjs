@@ -30,7 +30,13 @@ if (!existsSync('nx.json')) {
 // ── 2. Working-tree clean check ───────────────────────────────────────────────
 // Bootstrap tags are created at HEAD. If there are uncommitted changes, the
 // tag would point to a commit that does not represent what's in the files.
-const dirty = execFileSync('git', ['status', '--porcelain'], { encoding: 'utf8' }).trim();
+let dirty;
+try {
+  dirty = execFileSync('git', ['status', '--porcelain'], { encoding: 'utf8' }).trim();
+} catch (err) {
+  console.error(`ERROR: Failed to run git status: ${err.message}`);
+  process.exit(1);
+}
 if (dirty) {
   console.error(
     'ERROR: Working tree is dirty. Commit or stash your changes before running bootstrap.\n' +
