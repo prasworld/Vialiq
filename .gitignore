@@ -51,3 +51,6 @@ vitest.config.*.timestamp*
 .vitest
 **/.vitest
 node_modules/.vitest
+
+# npm registry configuration (created by actions/setup-node in CI; may contain auth tokens locally)
+.npmrc

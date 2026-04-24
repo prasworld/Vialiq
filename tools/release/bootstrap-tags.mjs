@@ -96,15 +96,17 @@ for (const lib of projects) {
     tagExists = true;
   } catch (err) {
     const exitCode = err.status ?? err.code;
-    if (exitCode !== 128) {
+    if (exitCode !== 1) {
       // Unexpected git failure — surface it and abort rather than masking it.
+      // With --quiet, git rev-parse --verify exits 1 when the ref doesn't exist
+      // (the expected case). Any other non-zero code indicates a real problem.
       console.error(
         `ERROR: git rev-parse failed for tag "${tag}" (exit ${exitCode}).\n` +
         (err.stderr?.trim() || err.message)
       );
       process.exit(1);
     }
-    // exit code 128 → ref not found → safe to create the tag
+    // exit code 1 with --quiet → ref not found → safe to create the tag
   }
 
   if (tagExists) {
