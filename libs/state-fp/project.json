@@ -6,7 +6,7 @@
   "tags": ["scope:state", "type:lib"],
   "release": {
     "version": {
-      "manifestRootsToUpdate": ["libs/state-fp/publish-package.json"],
+      "manifestRootsToUpdate": ["libs/state-fp/package.json", "libs/state-fp/publish-package.json"],
       "currentVersionResolver": "registry"
     }
   },

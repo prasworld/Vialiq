@@ -104,6 +104,9 @@
   },
   "release": {
     "projects": ["flux-ui", "state-fp", "automapper", "icons"],
+    "git": {
+      "commitMessage": "chore(release): version bump [skip ci]"
+    },
     "version": {
       "generatorOptions": {
         "currentVersionResolver": "registry",

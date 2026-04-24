@@ -5,7 +5,7 @@
   "projectType": "library",
   "release": {
     "version": {
-      "manifestRootsToUpdate": ["libs/automapper/publish-package.json"],
+      "manifestRootsToUpdate": ["libs/automapper/package.json", "libs/automapper/publish-package.json"],
       "currentVersionResolver": "registry"
     }
   },

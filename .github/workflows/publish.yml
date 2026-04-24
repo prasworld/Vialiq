@@ -3,10 +3,10 @@ name: Publish Packages
 on:
   push:
     branches: [master]
-    # Skip runs triggered by the bot's own version-bump commit to avoid
-    # an infinite loop where the version commit re-triggers publishing.
-    paths-ignore:
-      - 'libs/**/publish-package.json'
+    # The bot's version-bump commit includes [skip ci] in its message so
+    # GitHub Actions natively skips this workflow for that push, preventing
+    # an infinite loop without needing paths-ignore (which would also block
+    # manual publish-package.json fixes from triggering a publish).
 
 jobs:
   publish:
@@ -46,6 +46,13 @@ jobs:
       - name: Version packages
         run: npx nx release version
 
+      # Push the version-bump commit and tags before building/publishing.
+      # This ensures the repo and npm registry stay in sync on partial failures:
+      # publish-changed.mjs is idempotent (skips already-published versions),
+      # so a retry will re-publish only what's missing without re-bumping versions.
+      - name: Push version commit and tags
+        run: git push --follow-tags
+
       # Derive the publishable libs list from nx.json (release.projects) so this
       # workflow stays in sync with the release config automatically.
       - name: Derive publishable libs
@@ -65,9 +72,3 @@ jobs:
       # triggers npm's OIDC exchange with the GitHub Actions OIDC endpoint.
       - name: Publish changed packages
         run: node .github/scripts/publish-changed.mjs
-
-      # Push the version-bump commit and tags only after packages are successfully
-      # published. This prevents orphaned tags in the repo if the build or publish
-      # step fails — on retry, nx release version will cleanly re-detect and re-bump.
-      - name: Push version commit and tags
-        run: git push --follow-tags

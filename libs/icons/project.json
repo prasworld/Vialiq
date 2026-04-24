@@ -6,7 +6,7 @@
   "tags": ["scope:ui", "type:icons"],
   "release": {
     "version": {
-      "manifestRootsToUpdate": ["libs/icons/publish-package.json"],
+      "manifestRootsToUpdate": ["libs/icons/package.json", "libs/icons/publish-package.json"],
       "currentVersionResolver": "registry"
     }
   },
