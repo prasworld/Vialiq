@@ -46,12 +46,12 @@ jobs:
       - name: Version packages
         run: npx nx release version
 
-      # Push the version-bump commit and tags before building/publishing.
-      # This ensures the repo and npm registry stay in sync on partial failures:
-      # publish-changed.mjs is idempotent (skips already-published versions),
-      # so a retry will re-publish only what's missing without re-bumping versions.
-      - name: Push version commit and tags
-        run: git push --follow-tags
+      # Push the version-bump commit (without tags) before building so that a failed
+      # build/publish doesn't leave the repo in an ambiguous state. Tags are pushed
+      # only after a successful publish so that a tag always represents a version
+      # that genuinely made it to npm.
+      - name: Push version commit
+        run: git push
 
       # Derive the publishable libs list from nx.json (release.projects) so this
       # workflow stays in sync with the release config automatically.
@@ -72,3 +72,10 @@ jobs:
       # triggers npm's OIDC exchange with the GitHub Actions OIDC endpoint.
       - name: Publish changed packages
         run: node .github/scripts/publish-changed.mjs
+
+      # Push tags only after a successful publish so every tag in the repo
+      # corresponds to a version that actually made it to npm.
+      # If this step is ever skipped due to a prior failure, re-run the workflow
+      # to publish any remaining packages and push the tags.
+      - name: Push release tags
+        run: git push --follow-tags

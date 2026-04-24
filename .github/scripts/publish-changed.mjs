@@ -13,6 +13,10 @@ import { join } from 'node:path';
 
 // Single source of truth: read publishable libs from nx.json release.projects
 const nxJson = JSON.parse(readFileSync('nx.json', 'utf8'));
+if (!Array.isArray(nxJson?.release?.projects) || nxJson.release.projects.length === 0) {
+  console.error('✖ nx.json is missing a non-empty release.projects array. Cannot determine which libraries to publish.');
+  process.exit(1);
+}
 const PUBLISHABLE_LIBS = nxJson.release.projects;
 
 let publishedCount = 0;

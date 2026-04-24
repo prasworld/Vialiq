@@ -206,6 +206,37 @@ describe('Phase 2.5 — Computed Atoms', () => {
   });
 
   describe('subscription management', () => {
+    it('should unsubscribe and not receive future updates if initial listener throws', () => {
+      const doubledAtom = defineComputedAtom({
+        key: 'vi/doubled',
+        deps: depsArray([counterAtom]),
+        compute: (depStates: readonly unknown[]) => {
+          const counter = depStates[0] as CounterState;
+          return counter.value * 2;
+        },
+      });
+
+      kernel.registerComputed(doubledAtom);
+
+      const laterCalls: number[] = [];
+      let callCount = 0;
+      const throwingListener = (v: number) => {
+        callCount++;
+        if (callCount === 1) {
+          // Simulate listener throwing on initial notification
+          throw new Error('listener error');
+        }
+        laterCalls.push(v);
+      };
+
+      // subscribeComputed should rethrow the error from the initial callback
+      expect(() => kernel.subscribeComputed(doubledAtom, throwingListener)).toThrow('listener error');
+
+      // After the throw the listener must be unsubscribed: future updates should not reach it
+      kernel.execute(counterAtom, IncrementCmd());
+      expect(laterCalls).toEqual([]);
+    });
+
     it('should allow unsubscribing', () => {
       const doubledAtom = defineComputedAtom({
         key: 'vi/doubled',
