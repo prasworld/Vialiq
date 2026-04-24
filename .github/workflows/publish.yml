@@ -42,31 +42,24 @@ jobs:
           git config --global user.email "action@github.com"
           git config --global user.name "GitHub Action"
 
-      # Bootstrap: create annotated git tags for any project that has no release tag yet.
-      # nx release version (git-tag resolver) requires an existing tag to anchor its
-      # conventional-commits comparison. On the very first pipeline run there are no
-      # tags, so we create them at HEAD for the versions already published on npm.
-      # nx release version then finds zero qualifying commits since HEAD → no version
-      # bump, no new commit, no new tags — effectively a no-op that primes the state.
-      # On subsequent pushes that include feat/fix/refactor/perf commits, the tags
-      # created here (or by earlier runs) anchor the diff and proper bumps happen.
+      # Ensure local tag refs are synchronized with origin before bootstrap.
+      # Without this fetch, a shallow/local-only view can recreate tags that
+      # already exist upstream.
+      - name: Fetch remote tags
+        run: git fetch --tags --force
+
+      # Bootstrap: create annotated git tags for projects that have no release tag yet.
+      # This logic lives in a checked-in script for testability and safer process
+      # execution (execFileSync argument arrays, no shell interpolation).
       - name: Bootstrap missing release tags
-        run: |
-          node -e "
-            const { execSync } = require('child_process');
-            const nx = JSON.parse(require('fs').readFileSync('nx.json', 'utf8'));
-            for (const lib of nx.release.projects) {
-              const pkg = JSON.parse(require('fs').readFileSync('libs/' + lib + '/publish-package.json', 'utf8'));
-              const tag = lib + '@' + pkg.version;
-              try {
-                execSync('git rev-parse refs/tags/' + tag, { stdio: 'pipe' });
-                console.log('Tag already exists: ' + tag);
-              } catch {
-                execSync('git tag -a \"' + tag + '\" -m \"chore: initial release tag for ' + tag + '\"');
-                console.log('Created tag: ' + tag);
-              }
-            }
-          "
+        id: bootstrap_tags
+        run: node tools/release/bootstrap-tags.mjs
+
+      # Persist any bootstrap tags immediately so subsequent workflow runs don't
+      # keep recreating them.
+      - name: Push bootstrap tags
+        if: steps.bootstrap_tags.outputs.created_count != '0'
+        run: git push origin --tags
 
       # Parses conventional commits since the last release tag and bumps versions
       # in each library's publish-package.json:
