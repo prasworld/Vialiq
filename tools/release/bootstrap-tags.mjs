@@ -61,6 +61,23 @@ if (!Array.isArray(projects) || projects.length === 0) {
 }
 
 // ── 4. Bootstrap tags ─────────────────────────────────────────────────────────
+// In CI (env CI=true) a misconfigured project is a hard error — warn-and-skip
+// would produce a partial/incorrect bootstrap state that is difficult to debug.
+// Outside CI the script warns and continues so local one-off runs stay ergonomic.
+const isCI = Boolean(process.env.CI);
+
+/**
+ * Emit a diagnostic and, in CI contexts, abort the process.
+ * @param {string} message
+ */
+function fatalInCI(message) {
+  if (isCI) {
+    console.error(`ERROR: ${message}`);
+    process.exit(1);
+  }
+  console.warn(`WARN: ${message}`);
+}
+
 const createdTags = [];
 
 for (const lib of projects) {
@@ -68,7 +85,7 @@ for (const lib of projects) {
 
   // Validate presence and parsability of publish-package.json before proceeding.
   if (!existsSync(publishPkgPath)) {
-    console.warn(`WARN: ${publishPkgPath} not found — skipping ${lib}`);
+    fatalInCI(`${publishPkgPath} not found — skipping ${lib}`);
     continue;
   }
 
@@ -76,12 +93,12 @@ for (const lib of projects) {
   try {
     pkg = JSON.parse(readFileSync(publishPkgPath, 'utf8'));
   } catch (err) {
-    console.warn(`WARN: Failed to parse ${publishPkgPath} (${err.message}) — skipping ${lib}`);
+    fatalInCI(`Failed to parse ${publishPkgPath} (${err.message}) — skipping ${lib}`);
     continue;
   }
 
   if (!pkg.version || typeof pkg.version !== 'string') {
-    console.warn(`WARN: ${publishPkgPath} has no valid "version" field — skipping ${lib}`);
+    fatalInCI(`${publishPkgPath} has no valid "version" field — skipping ${lib}`);
     continue;
   }
 
