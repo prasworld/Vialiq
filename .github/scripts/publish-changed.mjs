@@ -7,7 +7,7 @@
  * (for example, the CI environment's OIDC/Trusted Publishing setup) rather than
  * requiring a NODE_AUTH_TOKEN to be set explicitly.
  */
-import { execFileSync, execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -61,7 +61,7 @@ for (const lib of PUBLISHABLE_LIBS) {
 
   console.log(`Publishing ${name}@${localVersion}…`);
 
-  execSync('npm publish --access public --provenance', {
+  execFileSync('npm', ['publish', '--access', 'public', '--provenance'], {
     cwd: distPath,
     stdio: 'inherit',
   });

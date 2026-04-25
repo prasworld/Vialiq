@@ -42,6 +42,29 @@ jobs:
           git config --global user.email "action@github.com"
           git config --global user.name "GitHub Action"
 
+      # Ensure local tag refs are synchronized with origin before bootstrap.
+      # Without this fetch, a shallow/local-only view can recreate tags that
+      # already exist upstream.
+      - name: Fetch remote tags
+        run: git fetch --tags --force
+
+      # Bootstrap: create annotated git tags for projects that have no release tag yet.
+      # This logic lives in a checked-in script for testability and safer process
+      # execution (execFileSync argument arrays, no shell interpolation).
+      - name: Bootstrap missing release tags
+        id: bootstrap_tags
+        run: node tools/release/bootstrap-tags.mjs
+
+      # Persist any bootstrap tags immediately so subsequent workflow runs don't
+      # keep recreating them.
+      - name: Push bootstrap tags
+        if: steps.bootstrap_tags.outputs.created_count != '0'
+        run: |
+          TAGS="${{ steps.bootstrap_tags.outputs.created_tags }}"
+          if [ -n "$TAGS" ]; then
+            git push origin $TAGS
+          fi
+
       # Parses conventional commits since the last release tag and bumps versions
       # in each library's publish-package.json:
       #   feat:             → minor bump  (0.1.0 → 0.2.0)
@@ -80,11 +103,12 @@ jobs:
 
       # Push tags only after a successful publish so every tag in the repo
       # corresponds to a version that actually made it to npm.
-      # Uses --tags (not --follow-tags) because --follow-tags only follows tags
-      # attached to commits being pushed *in this call*, but the version-bump
-      # commit was already pushed above. --tags pushes all local annotated tags
-      # that are not yet on the remote.
-      # If this step is ever skipped due to a prior failure, re-run the workflow
-      # to publish any remaining packages and push the tags.
+      # Derives release tag names from updated publish-package.json files
+      # to push only the tags created by this run (avoiding unintentional pushes
+      # of unrelated local tags).
       - name: Push release tags
-        run: git push origin --tags
+        run: |
+          RELEASE_TAGS=$(node tools/release/get-release-tags.mjs)
+          if [ -n "$RELEASE_TAGS" ]; then
+            git push origin $RELEASE_TAGS
+          fi

@@ -7,7 +7,7 @@
   "release": {
     "version": {
       "manifestRootsToUpdate": ["libs/icons/package.json", "libs/icons/publish-package.json"],
-      "currentVersionResolver": "registry"
+      "currentVersionResolver": "git-tag"
     }
   },
   "targets": {
