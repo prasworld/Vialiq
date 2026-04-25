@@ -106,6 +106,7 @@
     "projects": ["flux-ui", "state-fp", "automapper", "icons", "web-components"],
     "projectsRelationship": "independent",
     "version": {
+      "versionActions": "tools/release/version-actions.js",
       "git": {
         "commitMessage": "chore(release): version bump [skip ci]"
       },

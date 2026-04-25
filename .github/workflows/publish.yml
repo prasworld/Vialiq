@@ -16,7 +16,7 @@ jobs:
       id-token: write   # required for npm Trusted Publishing (OIDC token)
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5.0.1
         with:
           # Full history is required so nx release version can walk back to the
           # last release git tag to determine which conventional commits have
