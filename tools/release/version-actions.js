@@ -20,6 +20,7 @@
  * package.json, and this override appends publish-package.json.
  */
 
+const { basename } = require('node:path/posix');
 const { joinPathFragments } = require('@nx/devkit');
 const { JsVersionActions, afterAllProjectsVersioned } = require('./version-actions-base');
 
@@ -46,7 +47,7 @@ class MonorepoVersionActions extends JsVersionActions {
     const publishManifestPath = joinPathFragments(projectRoot, 'publish-package.json');
     if (tree.exists(publishManifestPath)) {
       const packageJsonManifest = this.manifestsToUpdate.find(
-        (manifest) => manifest.manifestPath?.endsWith('package.json')
+        (manifest) => basename(manifest.manifestPath || '') === 'package.json'
       );
       const preserveLocalDependencyProtocols =
         packageJsonManifest?.preserveLocalDependencyProtocols ??
