@@ -20,14 +20,19 @@
  * package.json, and this override appends publish-package.json.
  */
 
-const { join } = require('node:path');
-const jsModule = require('@nx/js/src/release/version-actions');
+const { joinPathFragments } = require('@nx/devkit');
+const { JsVersionActions, afterAllProjectsVersioned } = require('./version-actions-base');
 
 /** Re-export so Nx still runs the lock-file update hook after versioning. */
-exports.afterAllProjectsVersioned = jsModule.afterAllProjectsVersioned;
+exports.afterAllProjectsVersioned = afterAllProjectsVersioned;
 
-class MonorepoVersionActions extends jsModule.default {
+class MonorepoVersionActions extends JsVersionActions {
   async init(tree) {
+    if (!this.projectGraphNode?.data?.root || typeof this.projectGraphNode.data.root !== 'string') {
+      throw new Error(
+        `Unable to initialize VersionActions for project "${this.projectGraphNode?.name ?? '<unknown>'}" because projectGraphNode.data.root is missing or invalid.`
+      );
+    }
     // Base JsVersionActions.init: when manifestRootsToUpdate is empty (the
     // default after removing the stale file-path entries from project.json),
     // Nx falls back to {projectRoot} and adds {projectRoot}/package.json to
@@ -37,14 +42,19 @@ class MonorepoVersionActions extends jsModule.default {
     // Also track publish-package.json so nx release version bumps it in the
     // same commit.  Without this, publish-changed.mjs would read the old
     // version from publish-package.json and either skip or mispublish.
-    const publishManifestPath = join(
-      this.projectGraphNode.data.root,
-      'publish-package.json'
-    );
+    const projectRoot = this.projectGraphNode.data.root;
+    const publishManifestPath = joinPathFragments(projectRoot, 'publish-package.json');
     if (tree.exists(publishManifestPath)) {
+      const packageJsonManifest = this.manifestsToUpdate.find(
+        (manifest) => manifest.manifestPath?.endsWith('package.json')
+      );
+      const preserveLocalDependencyProtocols =
+        packageJsonManifest?.preserveLocalDependencyProtocols ??
+        this.manifestsToUpdate[0]?.preserveLocalDependencyProtocols;
+
       this.manifestsToUpdate.push({
-        path: this.projectGraphNode.data.root,
-        preserveLocalDependencyProtocols: false,
+        path: projectRoot,
+        preserveLocalDependencyProtocols,
         manifestPath: publishManifestPath,
       });
     }
