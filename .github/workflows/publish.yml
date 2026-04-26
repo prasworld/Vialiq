@@ -103,12 +103,12 @@ jobs:
       - name: Clear token auth to enable OIDC Trusted Publishing
         run: sed -i '/_authToken/d' ~/.npmrc
 
-      # Publish each library whose publish-package.json version is not yet in the
-      # npm registry. npm Trusted Publishing handles auth automatically via OIDC —
-      # no npm token secret is needed. The --provenance flag in publish-changed.mjs
-      # triggers npm's OIDC exchange with the GitHub Actions OIDC endpoint.
-      - name: Publish changed packages
-        run: node .github/scripts/publish-changed.mjs
+      # Publish packages using native Nx release publish.
+      # This leverages the targetDefaults in nx.json to run in the dist/ folder,
+      # checks the registry to skip already published packages, and passes the 
+      # --provenance flag down to npm automatically.
+      - name: Publish packages
+        run: npx nx release publish
 
       # Push tags only after a successful publish so every tag in the repo
       # corresponds to a version that actually made it to npm.

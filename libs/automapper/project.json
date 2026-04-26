@@ -66,11 +66,6 @@
       "options": {
         "lintFilePatterns": ["libs/automapper/**/*.ts"]
       }
-    },
-    "nx-release-publish": {
-      "options": {
-        "packageRoot": "dist/{projectRoot}"
-      }
     }
   }
 }
