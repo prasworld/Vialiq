@@ -30,12 +30,13 @@ jobs:
           # and will fail to authenticate even with correct id-token: write permissions.
           # setup-node@v5+ is required: v4 writes always-auth=true to .npmrc, which
           # npm 11 rejects as an unknown config option, aborting the publish step.
-          # registry-url is intentionally omitted: providing it causes setup-node to
-          # write _authToken and always-auth into .npmrc, which blocks npm 11's native
-          # OIDC Trusted Publishing exchange. Without it, no .npmrc is written and
-          # npm's OIDC handshake fires cleanly.
           node-version: '24'
           cache: 'npm'
+
+      - name: Enable Corepack
+        run: |
+          corepack enable npm
+          corepack install
 
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
@@ -98,11 +99,10 @@ jobs:
         run: npx nx run-many -t postbuild-publish -p ${{ env.PUBLISHABLE_LIBS }} --configuration=production --parallel=false
 
       # Publish packages using native Nx release publish.
-      # registry-url is omitted from setup-node above so that setup-node never
-      # writes _authToken or always-auth into .npmrc — those entries would block
-      # npm 11's native OIDC Trusted Publishing exchange. With a clean .npmrc,
-      # npm performs the OIDC handshake automatically. NPM_CONFIG_PROVENANCE
-      # injects provenance metadata without requiring a token.
+      # This leverages the targetDefaults in nx.json to run in the dist/ folder,
+      # and checks the registry to skip already published packages.
+      # We intentionally set NPM_CONFIG_PROVENANCE alongside Nx's native --provenance
+      # flag to provide a bulletproof guarantee that npm requests the OIDC token.
       - name: Publish packages
         env:
           NPM_CONFIG_PROVENANCE: true

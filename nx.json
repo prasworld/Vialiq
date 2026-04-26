@@ -92,7 +92,7 @@
       "options": {
         "testTargetName": "vitest:test",
         "ciTargetName": "test-ci",
-        "testMode": "watch"
+        "testMode": "run"
       }
     }
   ],
