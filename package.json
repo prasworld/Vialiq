@@ -2,7 +2,7 @@
   "name": "@vialiq/workspace",
   "version": "0.0.0",
   "license": "MIT",
-  "packageManager": "npm@11.1.0",
+  "packageManager": "npm@11.5.1",
   "scripts": {
     "start": "nx serve shell",
     "serve": "nx serve shell",
