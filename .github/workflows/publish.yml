@@ -33,8 +33,8 @@ jobs:
           node-version: '24'
           cache: 'npm'
 
-      - name: Pin npm version
-        run: npm i -g npm@11
+      - name: Enable Corepack
+        run: corepack enable npm
 
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
@@ -98,8 +98,9 @@ jobs:
 
       # Publish packages using native Nx release publish.
       # This leverages the targetDefaults in nx.json to run in the dist/ folder,
-      # checks the registry to skip already published packages, and passes the 
-      # --provenance flag down to npm automatically.
+      # and checks the registry to skip already published packages.
+      # We intentionally set NPM_CONFIG_PROVENANCE alongside Nx's native --provenance
+      # flag to provide a bulletproof guarantee that npm requests the OIDC token.
       - name: Publish packages
         env:
           NPM_CONFIG_PROVENANCE: true
