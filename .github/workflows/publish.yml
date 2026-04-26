@@ -94,13 +94,6 @@ jobs:
       - name: Build and prepare dist packages
         run: npx nx run-many -t postbuild-publish -p ${{ env.PUBLISHABLE_LIBS }} --configuration=production --parallel=false
 
-      # setup-node writes `_authToken=${NODE_AUTH_TOKEN}` into .npmrc. When
-      # NODE_AUTH_TOKEN is not set, npm expands it to an empty string and sends
-      # that as Bearer auth, causing a 404. Removing it forces npm to fall back
-      # to OIDC Trusted Publishing for registry auth.
-      - name: Clear legacy token auth
-        run: npm config delete //registry.npmjs.org/:_authToken || true
-
       # Publish each library whose publish-package.json version is not yet in the
       # npm registry. npm Trusted Publishing handles auth automatically via OIDC —
       # no npm token secret is needed. The --provenance flag in publish-changed.mjs
