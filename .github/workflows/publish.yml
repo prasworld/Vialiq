@@ -118,17 +118,17 @@ jobs:
           RELEASE_TAGS=$(node tools/release/get-release-tags.mjs)
           
           # keep only tags that exist locally
-          EXISTING_TAGS=""
+          EXISTING_TAGS=()
           for t in $RELEASE_TAGS; do
             if git show-ref --tags --verify --quiet "refs/tags/$t"; then
-              EXISTING_TAGS="$EXISTING_TAGS $t"
+              EXISTING_TAGS+=("$t")
             else
               echo "Skipping missing local tag: $t"
             fi
           done
 
-          if [ -n "$(echo "$EXISTING_TAGS" | xargs)" ]; then
-            git push origin $EXISTING_TAGS
+          if [ ${#EXISTING_TAGS[@]} -gt 0 ]; then
+            git push origin "${EXISTING_TAGS[@]}"
           else
             echo "No release tags to push."
           fi
