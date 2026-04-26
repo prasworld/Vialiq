@@ -116,6 +116,19 @@ jobs:
       - name: Push release tags
         run: |
           RELEASE_TAGS=$(node tools/release/get-release-tags.mjs)
-          if [ -n "$RELEASE_TAGS" ]; then
-            git push origin $RELEASE_TAGS
+          
+          # keep only tags that exist locally
+          EXISTING_TAGS=()
+          for t in $RELEASE_TAGS; do
+            if git show-ref --tags --verify --quiet "refs/tags/$t"; then
+              EXISTING_TAGS+=("$t")
+            else
+              echo "Skipping missing local tag: $t"
+            fi
+          done
+
+          if [ ${#EXISTING_TAGS[@]} -gt 0 ]; then
+            git push origin "${EXISTING_TAGS[@]}"
+          else
+            echo "No release tags to push."
           fi
