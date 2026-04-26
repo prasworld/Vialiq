@@ -30,14 +30,9 @@ jobs:
           # and will fail to authenticate even with correct id-token: write permissions.
           # setup-node@v5+ is required: v4 writes always-auth=true to .npmrc, which
           # npm 11 rejects as an unknown config option, aborting the publish step.
-          #
-          # registry-url is intentionally omitted: setting it causes setup-node to
-          # write `_authToken=${NODE_AUTH_TOKEN}` into .npmrc. When NODE_AUTH_TOKEN
-          # is unset, npm expands it to an empty string, which npm 11 treats as a
-          # configured (but invalid) token — bypassing the OIDC Trusted Publishing
-          # exchange entirely and causing E404 on the registry PUT.
           node-version: '24'
           cache: 'npm'
+          registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
@@ -99,12 +94,21 @@ jobs:
       - name: Build and prepare dist packages
         run: npx nx run-many -t postbuild-publish -p ${{ env.PUBLISHABLE_LIBS }} --configuration=production --parallel=false
 
-      # Publish each library whose publish-package.json version is not yet in the
-      # npm registry. npm Trusted Publishing handles auth automatically via OIDC —
-      # no npm token secret is needed. The --provenance flag in publish-changed.mjs
-      # triggers npm's OIDC exchange with the GitHub Actions OIDC endpoint.
-      - name: Publish changed packages
-        run: node .github/scripts/publish-changed.mjs
+      # setup-node writes `_authToken=${NODE_AUTH_TOKEN}` into ~/.npmrc.
+      # When NODE_AUTH_TOKEN is unset, npm expands it to an empty string — which
+      # npm 11 treats as a configured (but invalid) token, bypassing the OIDC
+      # Trusted Publishing exchange entirely (causing E404 or ENEEDAUTH).
+      # We remove the line directly with sed to avoid npm config delete having
+      # issues parsing the special characters (// and :) in the key name.
+      - name: Clear token auth to enable OIDC Trusted Publishing
+        run: sed -i '/_authToken/d' ~/.npmrc
+
+      # Publish packages using native Nx release publish.
+      # This leverages the targetDefaults in nx.json to run in the dist/ folder,
+      # checks the registry to skip already published packages, and passes the 
+      # --provenance flag down to npm automatically.
+      - name: Publish packages
+        run: npx nx release publish
 
       # Push tags only after a successful publish so every tag in the repo
       # corresponds to a version that actually made it to npm.

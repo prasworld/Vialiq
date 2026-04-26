@@ -4,7 +4,10 @@
   "private": false,
   "repository": {
     "type": "git",
-    "url": "https://github.com/prasworld/Vialiq.git"
+    "url": "https://github.com/prasworld/vialiq.git"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "description": "Automapper library (publish package template)",
   "type": "module",
