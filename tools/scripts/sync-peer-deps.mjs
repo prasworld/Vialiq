@@ -50,7 +50,11 @@ if (distPkg.peerDependencies) {
     const localPath = join(workspaceRoot, 'libs', libName, 'package.json');
     
     try {
-      const { version } = JSON.parse(readFileSync(localPath, 'utf8'));
+      const localPkg = JSON.parse(readFileSync(localPath, 'utf8'));
+      const { version } = localPkg;
+      if (typeof version !== 'string' || version.trim() === '') {
+        throw new Error(`Invalid or missing version in ${localPath}`);
+      }
       const range = `^${version}`;
       if (distPkg.peerDependencies[dep] !== range) {
         console.log(`  ${dep}: ${distPkg.peerDependencies[dep]} → ${range}`);
