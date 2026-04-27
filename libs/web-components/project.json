@@ -55,7 +55,7 @@
     "storybook": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "npm run storybook",
+        "command": "npx storybook dev --config-dir .storybook --port 6006",
         "cwd": "libs/web-components"
       }
     },
@@ -64,7 +64,7 @@
       "executor": "nx:run-commands",
       "outputs": ["{workspaceRoot}/dist/storybook/web-components"],
       "options": {
-        "command": "npm run build-storybook",
+        "command": "npx storybook build --config-dir .storybook --output-dir ../../dist/storybook/web-components",
         "cwd": "libs/web-components"
       }
     },

@@ -3,17 +3,8 @@
   "version": "0.0.4",
   "type": "module",
   "private": true,
-  "scripts": {
-    "storybook": "storybook dev --config-dir .storybook --port 6006",
-    "build-storybook": "storybook build --config-dir .storybook --output-dir dist/storybook"
-  },
   "dependencies": {
     "@vialiq/icons": "*",
     "lit": "^3.0.0"
-  },
-  "devDependencies": {
-    "@storybook/web-components-vite": "^10.3.3",
-    "@wdio/cli": "^9.27.0",
-    "storybook": "^10.3.3"
   }
 }

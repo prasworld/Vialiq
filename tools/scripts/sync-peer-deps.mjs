@@ -24,26 +24,29 @@ if (!distPkgPath) {
   process.exit(1);
 }
 
-/** Map of package name → local package.json (source of truth for version). */
-const localPackages = {
-  '@vialiq/flux-ui': 'libs/flux-ui/package.json',
-  '@vialiq/icons': 'libs/icons/package.json',
-  '@vialiq/web-components': 'libs/web-components/package.json',
-  '@vialiq/automapper': 'libs/automapper/package.json',
-  '@vialiq/state-fp': 'libs/state-fp/package.json',
-};
-
 const distPkg = JSON.parse(readFileSync(distPkgPath, 'utf8'));
 let changed = false;
 
-for (const [dep, localPath] of Object.entries(localPackages)) {
-  if (!distPkg.peerDependencies?.[dep]) continue;
-  const { version } = JSON.parse(readFileSync(localPath, 'utf8'));
-  const range = `^${version}`;
-  if (distPkg.peerDependencies[dep] !== range) {
-    console.log(`  ${dep}: ${distPkg.peerDependencies[dep]} → ${range}`);
-    distPkg.peerDependencies[dep] = range;
-    changed = true;
+if (distPkg.peerDependencies) {
+  for (const dep of Object.keys(distPkg.peerDependencies)) {
+    if (!dep.startsWith('@vialiq/')) continue;
+    
+    const libName = dep.replace('@vialiq/', '');
+    const localPath = `libs/${libName}/package.json`;
+    
+    try {
+      const { version } = JSON.parse(readFileSync(localPath, 'utf8'));
+      const range = `^${version}`;
+      if (distPkg.peerDependencies[dep] !== range) {
+        console.log(`  ${dep}: ${distPkg.peerDependencies[dep]} → ${range}`);
+        distPkg.peerDependencies[dep] = range;
+        changed = true;
+      }
+    } catch (err) {
+      console.error(`  Error: Failed to resolve peer dependency ${dep}.`);
+      console.error(`  Could not read or parse ${localPath}: ${err.message}`);
+      process.exit(1);
+    }
   }
 }
 
