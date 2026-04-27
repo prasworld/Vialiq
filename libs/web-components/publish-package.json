@@ -1,6 +1,6 @@
 {
   "name": "@vialiq/web-components",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "private": false,
   "repository": {
     "type": "git",
@@ -35,8 +35,8 @@
   },
   "peerDependencies": {
     "lit": "^3.0.0",
-    "@vialiq/flux-ui": "^0.0.2",
-    "@vialiq/icons": "^0.0.1"
+    "@vialiq/flux-ui": "*",
+    "@vialiq/icons": "*"
   },
   "keywords": [
     "web-components",

@@ -33,6 +33,7 @@
         "commands": [
           "npx tsc -p libs/web-components/tsconfig.lib.json --emitDeclarationOnly --noEmit false",
           "cp libs/web-components/publish-package.json dist/libs/web-components/package.json",
+          "node tools/scripts/sync-peer-deps.mjs dist/libs/web-components/package.json",
           "cp libs/web-components/README.md dist/libs/web-components/README.md"
         ],
         "parallel": false
@@ -54,8 +55,8 @@
     "storybook": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "npx storybook dev --config-dir libs/web-components/.storybook --port 6006",
-        "cwd": "{workspaceRoot}"
+        "command": "npm run storybook",
+        "cwd": "libs/web-components"
       }
     },
 
@@ -63,8 +64,8 @@
       "executor": "nx:run-commands",
       "outputs": ["{workspaceRoot}/dist/storybook/web-components"],
       "options": {
-        "command": "npx storybook build --config-dir libs/web-components/.storybook --output-dir dist/storybook/web-components",
-        "cwd": "{workspaceRoot}"
+        "command": "npm run build-storybook",
+        "cwd": "libs/web-components"
       }
     },
 

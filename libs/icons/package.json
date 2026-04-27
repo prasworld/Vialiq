@@ -1,6 +1,6 @@
 {
   "name": "@vialiq/icons",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "type": "module",
   "description": "SVG icon definitions for the @vi design system",
   "license": "MIT"
