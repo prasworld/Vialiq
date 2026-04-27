@@ -7,6 +7,7 @@ const config: StorybookConfig = {
     name: '@storybook/web-components-vite',
     options: {},
   },
+  addons: ['@storybook/addon-essentials'],
   stories: ['../src/**/*.stories.ts'],
   async viteFinal(config) {
     return mergeConfig(config, {
