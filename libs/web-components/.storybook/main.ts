@@ -7,8 +7,8 @@ const config: StorybookConfig = {
     name: '@storybook/web-components-vite',
     options: {},
   },
-  stories: ['../src/**/*.stories.ts'],
   addons: ['@storybook/addon-essentials'],
+  stories: ['../src/**/*.stories.ts'],
   async viteFinal(config) {
     return mergeConfig(config, {
       // Replace esbuild (which doesn't support TC39 standard decorators) with
