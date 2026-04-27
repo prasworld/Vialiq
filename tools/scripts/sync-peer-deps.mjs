@@ -17,6 +17,13 @@
  */
 
 import { readFileSync, writeFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join, resolve } from 'node:path';
+
+// Resolve workspace root relative to this script's location
+// (tools/scripts/sync-peer-deps.mjs → ../../ = workspace root)
+// This makes the script work regardless of the caller's cwd.
+const workspaceRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../');
 
 const [, , distPkgPath] = process.argv;
 if (!distPkgPath) {
@@ -32,7 +39,7 @@ if (distPkg.peerDependencies) {
     if (!dep.startsWith('@vialiq/')) continue;
     
     const libName = dep.replace('@vialiq/', '');
-    const localPath = `libs/${libName}/package.json`;
+    const localPath = join(workspaceRoot, 'libs', libName, 'package.json');
     
     try {
       const { version } = JSON.parse(readFileSync(localPath, 'utf8'));
@@ -43,8 +50,9 @@ if (distPkg.peerDependencies) {
         changed = true;
       }
     } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
       console.error(`  Error: Failed to resolve peer dependency ${dep}.`);
-      console.error(`  Could not read or parse ${localPath}: ${err.message}`);
+      console.error(`  Could not read or parse ${localPath}: ${message}`);
       process.exit(1);
     }
   }
