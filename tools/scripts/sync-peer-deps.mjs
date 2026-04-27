@@ -21,8 +21,9 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join, resolve } from 'node:path';
 
 // Resolve workspace root relative to this script's location
-// (tools/scripts/sync-peer-deps.mjs → ../../ = workspace root)
-// This makes the script work regardless of the caller's cwd.
+// (tools/scripts/sync-peer-deps.mjs → ../../ = workspace root).
+// Note: distPkgPath is used as-provided by the caller. If passed as a
+// relative path it must be relative to the caller's cwd, not this script.
 const workspaceRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../');
 
 const [, , distPkgPath] = process.argv;
@@ -31,7 +32,14 @@ if (!distPkgPath) {
   process.exit(1);
 }
 
-const distPkg = JSON.parse(readFileSync(distPkgPath, 'utf8'));
+let distPkg;
+try {
+  distPkg = JSON.parse(readFileSync(distPkgPath, 'utf8'));
+} catch (err) {
+  const message = err instanceof Error ? err.message : String(err);
+  console.error(`  Error: Could not read or parse dist package.json at '${distPkgPath}': ${message}`);
+  process.exit(1);
+}
 let changed = false;
 
 if (distPkg.peerDependencies) {
