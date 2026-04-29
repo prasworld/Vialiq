@@ -63,7 +63,6 @@ export function FocusableMixin<T extends Constructor<LitElement>>(
       // The inner native control (e.g. <button>, <input>) is the real tab stop;
       // allowing the host into the tab sequence would double-tab every component.
       if (this.hasAttribute('tabindex') && this.tabIndex !== -1) {
-        // @ts-expect-error process may not be typed or available in browser scope
         if (typeof process !== 'undefined' && process.env.NODE_ENV !== 'production') {
           // eslint-disable-next-line no-console
           console.warn(
