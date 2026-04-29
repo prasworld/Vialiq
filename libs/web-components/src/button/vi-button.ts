@@ -1,4 +1,4 @@
-import { css, html, unsafeCSS, type TemplateResult } from 'lit';
+import { css, html, unsafeCSS, type PropertyValues, type TemplateResult } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { FocusableMixin } from '../base/focusable-mixin.js';
 import { ViElement } from '../base/vi-element.js';
@@ -70,6 +70,16 @@ export class ViButton extends FocusableMixin(ViElement) {
   /** Disables the button. */
   @property({ type: Boolean, reflect: true }) accessor disabled = false;
 
+  override updated(changed: PropertyValues): void {
+    super.updated(changed);
+    // Sync host tabIndex with disabled state.
+    // When disabled, remove host from tab order so Tab skips the button entirely.
+    // When re-enabled, restore to 0 (delegatesFocus will route to inner button).
+    if (changed.has('disabled')) {
+      this.tabIndex = this.disabled ? -1 : 0;
+    }
+  }
+
   private onClick(event: Event): void {
     if (this.disabled) {
       event.preventDefault();
@@ -79,12 +89,13 @@ export class ViButton extends FocusableMixin(ViElement) {
 
   override render(): TemplateResult {
     const {disabled,onClick}=this;
-    
+
     return html`
       <button
         class="button"
         part="button"
         type="button"
+        tabindex="-1"
         ?disabled=${disabled}
         @click=${onClick}
       >

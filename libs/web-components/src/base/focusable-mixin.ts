@@ -21,12 +21,42 @@ export declare class FocusableInterface {
  *
  * Applies to all interactive Vi components. Provides:
  *
- *  1. `delegatesFocus: true` on the shadow root — clicking anywhere in the
- *     shadow that is not itself focusable routes focus to the first focusable
- *     inner element automatically. Also makes `:focus-within` work on the host.
+ *  1. `delegatesFocus: true` on the shadow root — when the host is Tab-focused
+ *     or `.focus()` is called on it, the browser routes focus to the inner
+ *     native control. Also activates `:focus` and `:focus-within` on the host.
  *
  *  2. A `focus()` override that delegates to `_focusableElement` so callers
  *     can do `myInput.focus()` and it Just Works without knowing shadow internals.
+ *
+ * ─────────────────────────────────────────────────────────────────────────
+ * ARCHITECTURE: host is the tab stop
+ * ─────────────────────────────────────────────────────────────────────────
+ *
+ *   Host:          tabIndex = 0   ← consumer-visible tab stop
+ *   Inner element: tabindex="-1" ← NOT directly in tab order; only reachable
+ *                                   via host delegation
+ *   delegatesFocus: true          ← routes host focus → inner element
+ *
+ * This means:
+ *   - Tab → lands on host → delegatesFocus → inner element gets visual focus
+ *   - `:host(:focus)` and `:host(:focus-within)` both work correctly
+ *   - `element.focus()` calls our override → inner element focused explicitly
+ *   - Consumer sets tabindex="-1" on host to remove from tab order entirely
+ *   - Consumer sets tabindex="2" for explicit positioning — just works
+ *
+ * CRITICAL: Every component using this mixin MUST set tabindex="-1" on its
+ * inner native element in render() to prevent double-tab. Failing to do so
+ * creates two tab stops for a single logical control.
+ *
+ * DISABLED: When the `disabled` prop changes, the component MUST sync the
+ * host's tabIndex:
+ *
+ *   override updated(changed: PropertyValues) {
+ *     super.updated(changed);
+ *     if (changed.has('disabled')) {
+ *       this.tabIndex = this.disabled ? -1 : (previous tabIndex value or 0);
+ *     }
+ *   }
  *
  * Usage:
  *   class ViInput extends FocusableMixin(ViElement) {
@@ -34,9 +64,6 @@ export declare class FocusableInterface {
  *       return this.shadowRoot?.querySelector('input') ?? null;
  *     }
  *   }
- *
- * The inner native control (`<input>`, `<button>`, `<a>`) is the real tab stop.
- * `delegatesFocus: true` ensures the host is not itself in the tab sequence.
  */
 export function FocusableMixin<T extends Constructor<LitElement>>(
   Base: T
@@ -57,21 +84,17 @@ export function FocusableMixin<T extends Constructor<LitElement>>(
 
     override connectedCallback() {
       super.connectedCallback();
-      // Enforce the architecture rule: host must not be a sequential tab stop.
-      // Done in connectedCallback to avoid "DOMException: The result must not have attributes" during construction.
-      // Always force tabIndex = -1, even if the author set tabindex="0" externally.
-      // The inner native control (e.g. <button>, <input>) is the real tab stop;
-      // allowing the host into the tab sequence would double-tab every component.
-      if (this.hasAttribute('tabindex') && this.tabIndex !== -1) {
-        if (typeof process !== 'undefined' && process.env.NODE_ENV !== 'production') {
-          // eslint-disable-next-line no-console
-          console.warn(
-            `<vi-*> host tabindex overridden by FocusableMixin; hosts must not be focusable. ` +
-              `Received tabindex="${this.getAttribute('tabindex')}", forcing tabindex="-1".`,
-          );
-        }
+      // The host is the user-visible tab stop. Custom elements are NOT in the
+      // tab order by default (tabIndex = -1), so we must explicitly opt in.
+      // Only set the default if the consumer hasn't already specified a value:
+      //   tabindex="-1"  → remove from tab order entirely (e.g. inside a focus trap)
+      //   tabindex="0"   → participate (same as our default)
+      //   tabindex="2"   → explicit ordering position
+      // Note: connectedCallback is used (not constructor) to avoid the
+      // "DOMException: The result must not have attributes" error during upgrade.
+      if (!this.hasAttribute('tabindex')) {
+        this.tabIndex = 0;
       }
-      this.tabIndex = -1;
     }
 
     /**
