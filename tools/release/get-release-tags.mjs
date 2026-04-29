@@ -21,6 +21,17 @@
 
 import { readFileSync } from 'node:fs';
 
+// `fetch` is a stable global in Node 18+. The publish workflow pins Node 24,
+// but guard here so a misconfigured environment fails fast with a clear message
+// rather than a cryptic "fetch is not defined" later in the loop.
+if (typeof fetch !== 'function') {
+  console.error(
+    'ERROR: global fetch is not available. This script requires Node 18 or later.\n' +
+    `Current version: ${process.version}`
+  );
+  process.exit(1);
+}
+
 const nx = JSON.parse(readFileSync('nx.json', 'utf8'));
 const projects = nx?.release?.projects;
 
@@ -31,18 +42,33 @@ if (!Array.isArray(projects) || projects.length === 0) {
 
 /**
  * Verify a specific package version exists on the public npm registry.
- * Uses the unscoped registry endpoint — no auth required for public packages.
- * Returns true if the registry responds with 200 for that exact version.
+ *
+ * Return values:
+ *   'published'    — registry returned 200: the version is live.
+ *   'not-found'    — registry returned 404: the version was never published.
+ *   'error'        — any other status or network failure: treat as a transient
+ *                    problem and abort so CI fails loudly instead of silently
+ *                    skipping a tag push.
  */
-async function isPublishedOnNpm(packageName, version) {
+async function checkNpmPublished(packageName, version) {
   const url = `https://registry.npmjs.org/${encodeURIComponent(packageName)}/${encodeURIComponent(version)}`;
+  let response;
   try {
-    const response = await fetch(url, { method: 'HEAD' });
-    return response.status === 200;
+    response = await fetch(url, { method: 'HEAD' });
   } catch (err) {
-    console.error(`ERROR: Could not reach npm registry for ${packageName}@${version}: ${err.message}`);
-    return false;
+    // Network-level failure (DNS, timeout, TLS, …) — not a 404.
+    throw new Error(
+      `Network error reaching npm registry for ${packageName}@${version}: ${err.message}`
+    );
   }
+
+  if (response.status === 200) return 'published';
+  if (response.status === 404) return 'not-found';
+
+  // Any other status (429, 5xx, …) is unexpected — surface it so CI stops.
+  throw new Error(
+    `Unexpected HTTP ${response.status} from npm registry for ${packageName}@${version}`
+  );
 }
 
 const tags = [];
@@ -74,13 +100,26 @@ for (const lib of projects) {
   // Verify the version is actually live on npm before pushing the tag.
   // A tag pushed without a corresponding npm publish creates an orphaned
   // release that consumers cannot install — worse than no tag at all.
-  const published = await isPublishedOnNpm(pkg.name, pkg.version);
-  if (published) {
+  let status;
+  try {
+    status = await checkNpmPublished(pkg.name, pkg.version);
+  } catch (err) {
+    // Transient registry/network error — fail the script so CI surfaces it.
+    // The tag will be pushed on the next successful run once the registry
+    // is reachable and the version is confirmed live.
+    console.error(`ERROR: ${err.message}`);
+    process.exit(1);
+  }
+
+  if (status === 'published') {
     tags.push(`${lib}@${pkg.version}`);
   } else {
+    // status === 'not-found': the publish step failed or the version was
+    // never sent to npm. Warn but continue so other projects can still get
+    // their tags pushed.
     console.error(
       `WARNING: ${pkg.name}@${pkg.version} not found on npm registry — ` +
-      `skipping tag push. The publish step may have failed or is still propagating.`
+      `skipping tag push. The publish step may have failed for this package.`
     );
   }
 }
