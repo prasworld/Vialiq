@@ -72,11 +72,16 @@ export class ViButton extends FocusableMixin(ViElement) {
 
   override updated(changed: PropertyValues): void {
     super.updated(changed);
-    // Sync host tabIndex with disabled state.
-    // When disabled, remove host from tab order so Tab skips the button entirely.
-    // When re-enabled, restore to 0 (delegatesFocus will route to inner button).
     if (changed.has('disabled')) {
-      this.tabIndex = this.disabled ? -1 : 0;
+      if (this.disabled) {
+        // Becoming disabled — always remove from tab order.
+        this._setHostFocusable(false);
+      } else if (changed.get('disabled') !== undefined) {
+        // Transitioning from a real disabled state back to enabled.
+        // Skip when old value is `undefined` (first render) — connectedCallback
+        // already set the correct tabIndex, respecting any consumer tabindex attr.
+        this._setHostFocusable(true);
+      }
     }
   }
 

@@ -14,6 +14,18 @@ type Constructor<T = object> = new (...args: any[]) => T;
 export declare class FocusableInterface {
   protected get _focusableElement(): HTMLElement | null;
   focus(options?: FocusOptions): void;
+  /**
+   * Enables or disables host focus participation.
+   * Call this whenever the component's `disabled` state changes so the
+   * tabIndex policy stays centralized in the mixin rather than scattered
+   * across component `updated()` hooks.
+   *
+   *   override updated(changed: PropertyValues): void {
+   *     super.updated(changed);
+   *     if (changed.has('disabled')) this._setHostFocusable(!this.disabled);
+   *   }
+   */
+  protected _setHostFocusable(enabled: boolean): void;
 }
 
 /**
@@ -95,6 +107,20 @@ export function FocusableMixin<T extends Constructor<LitElement>>(
       if (!this.hasAttribute('tabindex')) {
         this.tabIndex = 0;
       }
+    }
+
+    /**
+     * Centralizes the tabIndex policy for enabled/disabled state.
+     * enabled=true  → tabIndex = 0  (host in tab order, delegatesFocus routes to inner element)
+     * enabled=false → tabIndex = -1 (host skipped by Tab; whole component unreachable)
+     *
+     * All components with a `disabled` prop MUST call this in `updated()`
+     * instead of setting `this.tabIndex` directly:
+     *
+     *   if (changed.has('disabled')) this._setHostFocusable(!this.disabled);
+     */
+    protected _setHostFocusable(enabled: boolean): void {
+      this.tabIndex = enabled ? 0 : -1;
     }
 
     /**

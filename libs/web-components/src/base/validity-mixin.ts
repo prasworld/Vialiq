@@ -86,6 +86,10 @@ export declare class ValidityInterface {
    *   customError    — setCustomValidity() was called with a non-empty string
    *   stepMismatch   — value doesn't conform to step
    */
+  // ValidityStateFlags is a standard DOM lib interface (lib.dom.d.ts) — the
+  // parameter type for ElementInternals.setValidity(). All its fields are
+  // already optional, so Partial<> is redundant but kept for explicitness.
+  // Do NOT confuse with ValidityState (the read-only input.validity object).
   protected _testValidity(): Partial<ValidityStateFlags>;
 }
 
