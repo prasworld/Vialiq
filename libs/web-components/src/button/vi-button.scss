@@ -147,11 +147,6 @@
   color: var(--vi-button-surface-ghost-text-color, #{tokens.$color-primary});
 }
 
-:host([variant='ghost']) .button:hover:not(:disabled) {
-  background-color: rgba(0, 0, 0, 0.04);
-  text-decoration: underline;
-}
-
 // ============================================================================
 // State modifiers
 // ============================================================================
@@ -166,8 +161,12 @@
   opacity: 0.92;
 }
 
+// Ghost hover: background tint + underline provide the affordance instead of
+// opacity dimming. All ghost hover properties are kept in one place.
 :host([variant='ghost']) .button:hover:not(:disabled) {
-  opacity: 1; /* Rely on background-color and underline for hover instead of opacity */
+  background-color: rgba(0, 0, 0, 0.04);
+  text-decoration: underline;
+  opacity: 1;
 }
 
 // ============================================================================

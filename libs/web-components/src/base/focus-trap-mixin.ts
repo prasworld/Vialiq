@@ -239,12 +239,11 @@ export function FocusTrapMixin<T extends Constructor<LitElement>>(
         this._preTrapFocus = new WeakRef(document.activeElement);
       }
 
-      // Attach keydown on shadowRoot so the listener is scoped to this component.
-      // Using shadowRoot (not `this`) means the listener only fires when focus
-      // is within this shadow tree — no global document listener needed.
-      // NOTE: shadowRoot does not support `keydown` event listeners directly
-      // in all browsers in all modes; attaching to `this` (the host) is safer
-      // and still works because keydown bubbles up from inner elements.
+      // Attach keydown to the host element (`this`), not `shadowRoot`.
+      // keydown bubbles from inner shadow/slotted elements up through the host,
+      // so the listener fires for any key pressed while focus is within the trap.
+      // Attaching to the host (rather than a global document listener) means the
+      // handler is automatically inactive when focus leaves the component entirely.
       this.addEventListener('keydown', this._boundHandleKeydown);
 
       // Focus the initial element after the current call stack clears.

@@ -59,9 +59,17 @@ export function FocusableMixin<T extends Constructor<LitElement>>(
       super.connectedCallback();
       // Enforce the architecture rule: host must not be a sequential tab stop.
       // Done in connectedCallback to avoid "DOMException: The result must not have attributes" during construction.
-      if (!this.hasAttribute('tabindex')) {
-        this.tabIndex = -1;
+      // Always force tabIndex = -1, even if the author set tabindex="0" externally.
+      // The inner native control (e.g. <button>, <input>) is the real tab stop;
+      // allowing the host into the tab sequence would double-tab every component.
+      if (this.hasAttribute('tabindex') && this.tabIndex !== -1) {
+        // eslint-disable-next-line no-console
+        console.warn(
+          `<vi-*> host tabindex overridden by FocusableMixin; hosts must not be focusable. ` +
+            `Received tabindex="${this.getAttribute('tabindex')}", forcing tabindex="-1".`,
+        );
       }
+      this.tabIndex = -1;
     }
 
     /**
