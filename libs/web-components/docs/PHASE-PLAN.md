@@ -24,8 +24,7 @@ Each component folder: `vi-{name}.ts` · `vi-{name}.scss` · `vi-{name}.stories.
 - Native control is always the **tab stop** — host has `tabindex="-1"` or none
 - Use `shadowRootOptions: { delegatesFocus: true }` in Lit to seamlessly route clicks to the inner tab stop
 - Focus ring uses `outline` (not `box-shadow`) — respects `prefers-reduced-motion`
-- All form inputs expose `name`, `value`, `required` via `ElementInternals` (basic Phase 1; full form association Phase 2)
-- All form inputs expose `name`, `value`, `required` via `ElementInternals` (requires `static formAssociated = true` and implementing `formResetCallback()`)
+- All form inputs expose `name`, `value`, `required` via `ElementInternals` (basic in Phase 1; full form association in Phase 2 requires `static formAssociated = true` and implementing `formResetCallback()`)
 - Full keyboard navigation on every component
 
 ### Focus Management (all components)
@@ -680,4 +679,3 @@ override disconnectedCallback(): void {
 | Roving tabindex | Use `RadioGroupManager` pattern for any mutually exclusive selection group (radio, tab panels, menu items) |
 | Global listeners | Attach on open only, detach on close + always detach in disconnectedCallback; use `{ capture: true }` for outside-click |
 | FOCUSABLE_SELECTOR | Update `libs/web-components/src/base/focusable-selector.ts` whenever a new focusable `vi-*` component ships |
-

@@ -63,11 +63,14 @@ export function FocusableMixin<T extends Constructor<LitElement>>(
       // The inner native control (e.g. <button>, <input>) is the real tab stop;
       // allowing the host into the tab sequence would double-tab every component.
       if (this.hasAttribute('tabindex') && this.tabIndex !== -1) {
-        // eslint-disable-next-line no-console
-        console.warn(
-          `<vi-*> host tabindex overridden by FocusableMixin; hosts must not be focusable. ` +
-            `Received tabindex="${this.getAttribute('tabindex')}", forcing tabindex="-1".`,
-        );
+        // @ts-expect-error process may not be typed or available in browser scope
+        if (typeof process !== 'undefined' && process.env.NODE_ENV !== 'production') {
+          // eslint-disable-next-line no-console
+          console.warn(
+            `<vi-*> host tabindex overridden by FocusableMixin; hosts must not be focusable. ` +
+              `Received tabindex="${this.getAttribute('tabindex')}", forcing tabindex="-1".`,
+          );
+        }
       }
       this.tabIndex = -1;
     }

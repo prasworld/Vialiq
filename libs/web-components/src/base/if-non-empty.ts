@@ -10,7 +10,7 @@ import { ifDefined } from 'lit/directives/if-defined.js';
  *
  * Problem with raw `ifDefined`:
  *   - `ifDefined(undefined)` → removes the attribute          ✅
- *   - `ifDefined(null)`      → sets attribute to "null"        ❌
+ *   - `ifDefined(null)`      → removes the attribute          ✅
  *   - `ifDefined('')`        → sets attribute to ""            ❌
  *
  * With `ifNonEmpty`:

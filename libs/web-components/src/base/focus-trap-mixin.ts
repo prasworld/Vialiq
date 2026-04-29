@@ -141,6 +141,23 @@ export function FocusTrapMixin<T extends Constructor<LitElement>>(
     private readonly _boundHandleKeydown = (e: KeyboardEvent) =>
       this._handleTrapKeydown(e);
 
+    private _isActuallyFocusable(element: HTMLElement): boolean {
+      // Exclude elements that are hidden via the `hidden` attribute
+      if (element.hasAttribute('hidden')) return false;
+
+      // Exclude elements or ancestors that are aria-hidden
+      if (element.getAttribute('aria-hidden') === 'true') return false;
+      if (element.closest('[aria-hidden="true"]')) return false;
+
+      // Exclude elements inside an inert subtree
+      if (element.hasAttribute('inert') || element.closest('[inert]')) return false;
+
+      // Exclude elements with no rendered box (covers display:none, visibility:hidden, etc.)
+      if (element.getClientRects().length === 0) return false;
+
+      return true;
+    }
+
     /**
      * Returns all focusable elements within this component in DOM order.
      *
@@ -158,7 +175,7 @@ export function FocusTrapMixin<T extends Constructor<LitElement>>(
       // 1. Shadow DOM: native elements + vi-* hosts
       const shadowFocusable = Array.from(
         this.shadowRoot.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)
-      );
+      ).filter((el) => this._isActuallyFocusable(el));
 
       // 2. Slotted light-DOM content
       const slottedFocusable: HTMLElement[] = [];
@@ -166,7 +183,7 @@ export function FocusTrapMixin<T extends Constructor<LitElement>>(
         (slotEl as HTMLSlotElement)
           .assignedElements({ flatten: true })
           .forEach((el) => {
-            if (el.matches(FOCUSABLE_SELECTOR)) {
+            if (el.matches(FOCUSABLE_SELECTOR) && this._isActuallyFocusable(el as HTMLElement)) {
               slottedFocusable.push(el as HTMLElement);
             }
           });
@@ -175,7 +192,7 @@ export function FocusTrapMixin<T extends Constructor<LitElement>>(
       // Merge: shadow first (DOM order), then slotted.
       // De-dupe via Set in case an element appears in both (shouldn't happen,
       // but be defensive).
-      return [...new Set([...shadowFocusable, ...slottedFocusable])];
+      return [...new Set([...shadowFocusable, ...slottedFocusable])].filter((el) => this._isActuallyFocusable(el));
     }
 
     /**
