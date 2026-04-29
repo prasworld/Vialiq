@@ -1,59 +1,119 @@
 /**
  * vi-button component styles
  *
- * Extends flux-ui base button component with variant-specific
- * colors and state handling. All typography, spacing, and shape tokens
- * come from flux-ui's design system.
- *
- * Three-level cascade for component-scoped vars:
+ * Extends flux-ui base button with host-scoped CSS custom properties.
+ * Three-level cascade for every var:
  *   1. Consumer override  → --vi-button-surface-primary-background-color
  *   2. Theme token        → --vi-color-primary
- *   3. Compile-time fallback (from $color-primary) → #0066cc
+ *   3. Compile-time fallback → #0066cc
+ *
+ * Size is controlled by overriding the padding/font-size custom properties
+ * on :host([size='…']) — no extra classes needed in the template.
  */
 
 @use '@vialiq/flux-ui/styles/variables' as tokens;
 @use '@vialiq/flux-ui/components/button';
 
 // ============================================================================
-// Host defaults — establishes component-scoped CSS custom properties.
-// These can all be overridden from outside the shadow root.
+// Host defaults (md size baseline)
 // ============================================================================
 
 :host {
   display: inline-block;
 
-  // Surface colours
-  --vi-button-surface-primary-background-color:   #{tokens.$color-primary};
-  --vi-button-surface-primary-text-color:          #{tokens.$color-grey-100};
-  --vi-button-surface-secondary-background-color:  #{tokens.$color-secondary};
-  --vi-button-surface-secondary-text-color:        #{tokens.$color-foreground};
-  --vi-button-surface-danger-background-color:     #{tokens.$color-error};
-  --vi-button-surface-danger-text-color:           #{tokens.$color-grey-100};
+  // --- Variant surface colours ---
+  --vi-button-surface-primary-background-color:    #{tokens.$color-primary};
+  --vi-button-surface-primary-text-color:           #{tokens.$color-grey-100};
+  --vi-button-surface-secondary-background-color:   #{tokens.$color-secondary};
+  --vi-button-surface-secondary-text-color:         #{tokens.$color-foreground};
+  --vi-button-surface-danger-background-color:      #{tokens.$color-error};
+  --vi-button-surface-danger-text-color:            #{tokens.$color-grey-100};
+  --vi-button-surface-success-background-color:     #{tokens.$color-success};
+  --vi-button-surface-success-text-color:           #{tokens.$color-grey-100};
+  --vi-button-surface-info-background-color:        #{tokens.$color-info};
+  --vi-button-surface-info-text-color:              #{tokens.$color-grey-100};
+  --vi-button-surface-ghost-background-color:       transparent;
+  --vi-button-surface-ghost-text-color:             #{tokens.$color-primary};
 
-  // Shape
+  // --- Shape ---
   --vi-button-shape-border-radius: #{tokens.$border-radius-md};
 
-  // Spacing
-  --vi-button-spacing-padding-inline: #{tokens.$spacing-md};
-  --vi-button-spacing-padding-block:  #{tokens.$spacing-sm};
+  // --- Spacing (md baseline) ---
+  --vi-button-spacing-padding-inline: 16px;
+  --vi-button-spacing-padding-block:  8px;
 
-  // Typography
+  // --- Typography (md baseline) ---
   --vi-button-typography-font-size:   #{tokens.$font-size-base};
   --vi-button-typography-font-weight: #{tokens.$font-weight-semibold};
 
-  // Motion
+  // --- Motion ---
   --vi-button-effect-transition-duration: 160ms;
 }
 
 // ============================================================================
-// Base button element — imported from @vialiq/flux-ui/components/button above.
-// Provides: display, flexbox layout, gap, border, border-radius, padding,
-// font-size, font-weight, line-height, cursor, user-select, transition.
+// Size overrides — adjust padding and font-size per size attribute
 // ============================================================================
 
+:host([size='xs']) {
+  --vi-button-spacing-padding-block:  2px;
+  --vi-button-spacing-padding-inline: 8px;
+  --vi-button-typography-font-size:   #{tokens.$font-size-xs};
+}
+
+:host([size='sm']) {
+  --vi-button-spacing-padding-block:  4px;
+  --vi-button-spacing-padding-inline: 12px;
+  --vi-button-typography-font-size:   #{tokens.$font-size-sm};
+}
+
+// md is the default — no override needed
+:host([size='md']) {
+  --vi-button-spacing-padding-block:  8px;
+  --vi-button-spacing-padding-inline: 16px;
+  --vi-button-typography-font-size:   #{tokens.$font-size-base};
+}
+
+:host([size='lg']) {
+  --vi-button-spacing-padding-block:  12px;
+  --vi-button-spacing-padding-inline: 24px;
+  --vi-button-typography-font-size:   #{tokens.$font-size-lg};
+}
+
 // ============================================================================
-// Variant rules — consume the component-scoped vars defined in :host.
-// Fallback chain keeps the button renderable even without the :host defaults.
+// Full-width
+// ============================================================================
+
+:host([full-width]) {
+  display: block;
+
+  .button {
+    width: 100%;
+  }
+}
+
+:host([icon-only]) .button {
+  /* Set aspect ratio or fixed padding to make it a square */
+  aspect-ratio: 1 / 1;
+  padding: var(--vi-button-spacing-padding-block);
+  justify-content: center;
+}
+
+/* Visually hide the label, but keep it accessible for screen readers */
+:host([icon-only]) .label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+
+// ============================================================================
+// Variant rules
 // ============================================================================
 
 :host([variant='primary']) .button {
@@ -72,6 +132,26 @@
   color: var(--vi-button-surface-danger-text-color, #{tokens.$color-grey-100});
 }
 
+:host([variant='success']) .button {
+  background-color: var(--vi-button-surface-success-background-color, #{tokens.$color-success});
+  color: var(--vi-button-surface-success-text-color, #{tokens.$color-grey-100});
+}
+
+:host([variant='info']) .button {
+  background-color: var(--vi-button-surface-info-background-color, #{tokens.$color-info});
+  color: var(--vi-button-surface-info-text-color, #{tokens.$color-grey-100});
+}
+
+:host([variant='ghost']) .button {
+  background-color: var(--vi-button-surface-ghost-background-color, transparent);
+  color: var(--vi-button-surface-ghost-text-color, #{tokens.$color-primary});
+}
+
+:host([variant='ghost']) .button:hover:not(:disabled) {
+  background-color: rgba(0, 0, 0, 0.04);
+  text-decoration: underline;
+}
+
 // ============================================================================
 // State modifiers
 // ============================================================================
@@ -84,4 +164,40 @@
 
 .button:hover:not(:disabled) {
   opacity: 0.92;
+}
+
+:host([variant='ghost']) .button:hover:not(:disabled) {
+  opacity: 1; /* Rely on background-color and underline for hover instead of opacity */
+}
+
+// ============================================================================
+// Icon + label layout
+// ============================================================================
+
+// Icon slot: start (default) — flex order -1 keeps it before the label
+// without duplicating the slot in the template.
+.icon {
+  order: -1;
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+// End placement — flip order to after the label.
+:host([icon-placement='end']) .icon {
+  order: 1;
+}
+
+// Scale icons to match the button's current font-size automatically
+// across xs/sm/md/lg without any per-size overrides.
+::slotted(vi-icon),
+::slotted(svg) {
+  --vi-icon-size: 1em;
+  width: 1em;
+  height: 1em;
+}
+
+// Label span takes remaining space so icons don't compress the text.
+.label {
+  flex: 1 1 auto;
+  min-width: 0;
 }
