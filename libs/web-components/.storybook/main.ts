@@ -7,7 +7,8 @@ const config: StorybookConfig = {
     name: '@storybook/web-components-vite',
     options: {},
   },
-  addons: ['@storybook/addon-essentials'],
+  // addons: no separate addon packages needed — Storybook v10 bundles
+  // addon-essentials (controls, actions, docs) into core.
   stories: ['../src/**/*.stories.ts'],
   async viteFinal(config) {
     return mergeConfig(config, {
