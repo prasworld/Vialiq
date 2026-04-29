@@ -9,10 +9,12 @@ on:
     # manual publish-package.json fixes from triggering a publish).
   workflow_dispatch:
     # Allows manual trigger from GitHub Actions UI.
-    # Use this when a tag exists but the corresponding npm version was never
-    # published (e.g. a previous CI run created the tag but publish failed).
-    # The workflow will re-detect current versions, build, and publish any
-    # versions that are missing from the npm registry.
+    # Use this when a version was bumped (publish-package.json updated, prior
+    # release tag exists) but was never published to npm — e.g. a previous CI
+    # run failed during the publish step, or a release tag was prematurely
+    # deleted. In this scenario bootstrap-tags will skip all projects (prior
+    # tags exist), nx release version will detect no new commits and no-op,
+    # and nx release publish will push only the missing npm versions.
 
 jobs:
   publish:

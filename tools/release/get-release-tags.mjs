@@ -41,34 +41,66 @@ if (!Array.isArray(projects) || projects.length === 0) {
 }
 
 /**
- * Verify a specific package version exists on the public npm registry.
+ * Check whether a specific package version exists on the public npm registry,
+ * with bounded retries and exponential backoff.
+ *
+ * npm publish propagation can take a few seconds, and transient 5xx / network
+ * errors should not permanently orphan a release tag. Retrying distinguishes
+ * "not yet live" from "genuinely not published".
  *
  * Return values:
- *   'published'    — registry returned 200: the version is live.
- *   'not-found'    — registry returned 404: the version was never published.
- *   'error'        — any other status or network failure: treat as a transient
- *                    problem and abort so CI fails loudly instead of silently
- *                    skipping a tag push.
+ *   'published'   — registry confirmed 200 within the retry window.
+ *   'not-found'   — all attempts returned 404: the version was never published.
+ *
+ * Throws on:
+ *   - Non-404/200 HTTP responses (5xx, 429, …) after all retries exhausted.
+ *   - Network-level failures (DNS, TLS, …) after all retries exhausted.
+ *
+ * @param {string} packageName
+ * @param {string} version
+ * @param {{ maxAttempts?: number, initialDelayMs?: number }} [opts]
  */
-async function checkNpmPublished(packageName, version) {
+async function checkNpmPublished(packageName, version, { maxAttempts = 5, initialDelayMs = 2000 } = {}) {
   const url = `https://registry.npmjs.org/${encodeURIComponent(packageName)}/${encodeURIComponent(version)}`;
-  let response;
-  try {
-    response = await fetch(url, { method: 'HEAD' });
-  } catch (err) {
-    // Network-level failure (DNS, timeout, TLS, …) — not a 404.
-    throw new Error(
-      `Network error reaching npm registry for ${packageName}@${version}: ${err.message}`
-    );
+
+  let lastError;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    let response;
+    try {
+      response = await fetch(url, { method: 'HEAD' });
+    } catch (err) {
+      // Network-level failure (DNS, timeout, TLS, …) — retry.
+      lastError = new Error(
+        `Network error reaching npm registry for ${packageName}@${version} ` +
+        `(attempt ${attempt}/${maxAttempts}): ${err.message}`
+      );
+      console.error(lastError.message);
+    }
+
+    if (response) {
+      if (response.status === 200) return 'published';
+      if (response.status === 404) {
+        // Definitive "not published" — 404 means the registry knows the
+        // package but not this version. No retry needed.
+        return 'not-found';
+      }
+      // Unexpected status (5xx, 429, …) — retry after backoff.
+      lastError = new Error(
+        `Unexpected HTTP ${response.status} from npm registry for ` +
+        `${packageName}@${version} (attempt ${attempt}/${maxAttempts})`
+      );
+      console.error(lastError.message);
+    }
+
+    if (attempt < maxAttempts) {
+      const delayMs = initialDelayMs * Math.pow(2, attempt - 1);
+      console.error(`Retrying in ${delayMs}ms\u2026`);
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
   }
 
-  if (response.status === 200) return 'published';
-  if (response.status === 404) return 'not-found';
-
-  // Any other status (429, 5xx, …) is unexpected — surface it so CI stops.
-  throw new Error(
-    `Unexpected HTTP ${response.status} from npm registry for ${packageName}@${version}`
-  );
+  // All attempts exhausted — surface the last error so CI fails loudly.
+  throw lastError;
 }
 
 const tags = [];
