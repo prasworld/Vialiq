@@ -7,6 +7,12 @@ on:
     # GitHub Actions natively skips this workflow for that push, preventing
     # an infinite loop without needing paths-ignore (which would also block
     # manual publish-package.json fixes from triggering a publish).
+  workflow_dispatch:
+    # Allows manual trigger from GitHub Actions UI.
+    # Use this when a tag exists but the corresponding npm version was never
+    # published (e.g. a previous CI run created the tag but publish failed).
+    # The workflow will re-detect current versions, build, and publish any
+    # versions that are missing from the npm registry.
 
 jobs:
   publish:
@@ -83,7 +89,12 @@ jobs:
       # only after a successful publish so that a tag always represents a version
       # that genuinely made it to npm.
       - name: Push version commit
-        run: git push
+        # Use --porcelain to detect if there's actually a new commit to push.
+        # When nx release version finds no changes (all projects already at the
+        # current version), there is nothing to push and `git push` would be a
+        # no-op. `|| true` prevents a non-zero exit from a "nothing to push"
+        # situation from aborting the workflow (publish can still proceed).
+        run: git push || true
 
       # Derive the publishable libs list from nx.json (release.projects) so this
       # workflow stays in sync with the release config automatically.
