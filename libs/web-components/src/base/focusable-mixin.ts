@@ -94,11 +94,22 @@ export function FocusableMixin<T extends Constructor<LitElement>>(
       delegatesFocus: true,
     };
 
+    /**
+     * The tabIndex to restore when transitioning from disabled → enabled.
+     * Snapshotted in connectedCallback and updated whenever we save before
+     * disabling, so we can honour custom consumer tabindex values (e.g. 2)
+     * rather than blindly restoring to 0.
+     */
+    private _savedTabIndex = 0;
+
     override connectedCallback() {
       super.connectedCallback();
       // The host is the user-visible tab stop. Custom elements are NOT in the
       // tab order by default (tabIndex = -1), so we must explicitly opt in.
-      // Only set the default if the consumer hasn't already specified a value:
+      // Only set the default if the consumer hasn't already specified a value.
+      // `tabIndex` is a reflected IDL attribute — both attribute sets and
+      // programmatic sets (`element.tabIndex = 2`) always reflect to the
+      // `tabindex` attribute, so `hasAttribute` is a complete guard for both.
       //   tabindex="-1"  → remove from tab order entirely (e.g. inside a focus trap)
       //   tabindex="0"   → participate (same as our default)
       //   tabindex="2"   → explicit ordering position
@@ -107,20 +118,37 @@ export function FocusableMixin<T extends Constructor<LitElement>>(
       if (!this.hasAttribute('tabindex')) {
         this.tabIndex = 0;
       }
+      // Snapshot the current effective tabIndex so _setHostFocusable(true)
+      // can restore it rather than blindly resetting to 0.
+      this._savedTabIndex = this.tabIndex;
     }
 
     /**
      * Centralizes the tabIndex policy for enabled/disabled state.
-     * enabled=true  → tabIndex = 0  (host in tab order, delegatesFocus routes to inner element)
+     *
+     * enabled=true  → restore the tabIndex that was in effect before disabling
+     *                  (respects consumer tabindex="2", tabindex="-1", etc.)
      * enabled=false → tabIndex = -1 (host skipped by Tab; whole component unreachable)
      *
-     * All components with a `disabled` prop MUST call this in `updated()`
-     * instead of setting `this.tabIndex` directly:
+     * The pre-disable tabIndex is saved so that a consumer who set tabindex="2"
+     * gets back tabindex="2" after re-enabling, not a hardcoded 0.
+     *
+     * All components with a `disabled` prop MUST call this in `updated()`:
      *
      *   if (changed.has('disabled')) this._setHostFocusable(!this.disabled);
      */
     protected _setHostFocusable(enabled: boolean): void {
-      this.tabIndex = enabled ? 0 : -1;
+      if (enabled) {
+        this.tabIndex = this._savedTabIndex;
+      } else {
+        // Only snapshot when we are actually in an enabled state; if this is
+        // called repeatedly while disabled (tabIndex already -1) we must not
+        // overwrite the real saved value with -1.
+        if (this.tabIndex !== -1) {
+          this._savedTabIndex = this.tabIndex;
+        }
+        this.tabIndex = -1;
+      }
     }
 
     /**

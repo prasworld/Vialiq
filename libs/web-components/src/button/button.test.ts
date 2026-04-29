@@ -6,7 +6,11 @@ import './vi-button.js';
 /** Render HTML into body and wait for Lit's first update cycle. */
 async function render(html: string): Promise<void> {
   await browser.execute((markup) => {
-    document.body.innerHTML = markup;
+    // Use DOMParser to avoid innerHTML on document.body.
+    // DOMParser creates a sandboxed document (scripts are not executed),
+    // then we move the parsed nodes into the live document.
+    const parsed = new DOMParser().parseFromString(markup, 'text/html');
+    document.body.replaceChildren(...Array.from(parsed.body.childNodes));
   }, html);
   // Let Lit's microtask queue flush
   await browser.executeAsync((done: () => void) => {
