@@ -104,43 +104,53 @@ for (const lib of projects) {
 
   const tag = `${lib}@${pkg.version}`;
 
-  // Check whether the tag already exists locally (remote tags were fetched earlier
-  // in the workflow with `git fetch --tags --force`).
-  // With --quiet, `git rev-parse --verify` exits with code 1 when the ref does not exist —
-  // that is the *expected* "not found" path. Any other non-zero exit code means
-  // git itself had a problem (not a repo, disk error, permissions, etc.) and we
-  // must not silently proceed to tag creation.
-  let tagExists = false;
+  // Bootstrap purpose: create an INITIAL release tag for a project that has
+  // never been released (no `${lib}@*` tags exist at all).
+  //
+  // We intentionally check for ANY existing tag matching the project pattern
+  // (not just the exact version tag). This prevents a critical invariant
+  // violation:
+  //
+  //   If we only checked for the exact version tag, a deleted or missing
+  //   `web-components@0.0.4` tag would cause bootstrap to recreate and PUSH
+  //   it before `nx release publish` runs — meaning the tag would exist on
+  //   the remote before the version is live on npm.
+  //
+  // With this pattern check:
+  //   - New project (no tags): bootstrap creates the initial tag.
+  //   - Existing project (has any prior tag): skip bootstrap entirely.
+  //     `nx release version` will compute the next version from the most
+  //     recent tag and create/push the new tag only after publish.
+  //   - Deleted version tag (e.g. 0.0.4 deleted but 0.0.3 exists): bootstrap
+  //     skips, `nx release version` re-derives and recreates 0.0.4 correctly.
+  //
+  // Remote tags were fetched with `git fetch --tags --force` earlier in the
+  // workflow, so this local list reflects the authoritative remote state.
+  let anyTagOutput;
   try {
-    execFileSync('git', ['rev-parse', '--verify', '--quiet', `refs/tags/${tag}`], {
-      stdio: 'pipe', // capture output; errors surfaced via thrown Error object
+    anyTagOutput = execFileSync('git', ['tag', '--list', `${lib}@*`], {
+      stdio: 'pipe',
       encoding: 'utf8',
     });
-    tagExists = true;
   } catch (err) {
-    const exitCode = err.status ?? err.code;
-    if (exitCode !== 1) {
-      // Unexpected git failure — surface it and abort rather than masking it.
-      // With --quiet, git rev-parse --verify exits 1 when the ref doesn't exist
-      // (the expected case). Any other non-zero code indicates a real problem.
-      console.error(
-        `ERROR: git rev-parse failed for tag "${tag}" (exit ${exitCode}).\n` +
-        (err.stderr?.trim() || err.message)
-      );
-      process.exit(1);
-    }
-    // exit code 1 with --quiet → ref not found → safe to create the tag
+    console.error(
+      `ERROR: git tag --list failed for ${lib}@* (exit ${err.status ?? err.code}).\n` +
+      (err.stderr?.trim() || err.message)
+    );
+    process.exit(1);
   }
 
-  if (tagExists) {
-    console.log(`Tag already exists: ${tag}`);
+  const priorTagExists = anyTagOutput.trim().length > 0;
+
+  if (priorTagExists) {
+    console.log(`Skipping bootstrap for ${lib}: prior release tag(s) exist — nx release version will handle versioning.`);
   } else {
     const message = `chore: initial release tag for ${tag}`;
-    // stdio: 'inherit' so any git error (e.g. tag already exists on remote,
-    // permission denied) prints directly to the terminal and is debuggable.
+    // stdio: 'inherit' so any git error (e.g. permission denied) prints
+    // directly to the terminal and is debuggable.
     execFileSync('git', ['tag', '-a', tag, '-m', message], { stdio: 'inherit' });
     createdTags.push(tag);
-    console.log(`Created tag: ${tag}`);
+    console.log(`Created initial tag: ${tag}`);
   }
 }
 
