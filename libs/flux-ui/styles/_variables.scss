@@ -22,67 +22,68 @@
 // SCSS BRIDGE VARIABLES
 // ============================================================================
 
-// -- Palette: Grey  (Tailwind gray — UI chrome, text, borders) ---------------
+// -- Palette: Grey  (text, borders, disabled) ---------------
+$color-grey-50: var(--vi-color-grey-50, #fafafa);
+$color-grey-100: var(--vi-color-grey-100, #f5f5f5);
+$color-grey-200: var(--vi-color-grey-200, #eeeeee);
+$color-grey-300: var(--vi-color-grey-300, #e0e0e0);
+$color-grey-400: var(--vi-color-grey-400, #bdbdbd);
+$color-grey-500: var(--vi-color-grey-500, #9e9e9e);
+$color-grey-600: var(--vi-color-grey-600, #757575);
+$color-grey-700: var(--vi-color-grey-700, #616161);
+$color-grey-800: var(--vi-color-grey-800, #424242);
+$color-grey-900: var(--vi-color-grey-900, #212121);
 
-$color-grey-100: var(--vi-color-grey-100, #f3f4f6);
-$color-grey-200: var(--vi-color-grey-200, #e5e7eb);
-$color-grey-300: var(--vi-color-grey-300, #d1d5db);
-$color-grey-400: var(--vi-color-grey-400, #9ca3af);
-$color-grey-500: var(--vi-color-grey-500, #6b7280);
-$color-grey-600: var(--vi-color-grey-600, #4b5563);
-$color-grey-700: var(--vi-color-grey-700, #374151);
-$color-grey-800: var(--vi-color-grey-800, #1f2937);
-$color-grey-900: var(--vi-color-grey-900, #111827);
+// -- Palette: Red   --------------------------------------------
 
-// -- Palette: Red  (Tailwind red) --------------------------------------------
+$color-red-100: var(--vi-color-red-100, #ffccce);
+$color-red-200: var(--vi-color-red-200, #f69892);
+$color-red-300: var(--vi-color-red-300, #ee6f68);
+$color-red-400: var(--vi-color-red-400, #f74d40);
+$color-red-500: var(--vi-color-red-500, #fb3c1e);
+$color-red-600: var(--vi-color-red-600, #ed3020);
+$color-red-700: var(--vi-color-red-700, #db231b);
+$color-red-800: var(--vi-color-red-800, #ce1a12);
+$color-red-900: var(--vi-color-red-900, #c00000);
 
-$color-red-100: var(--vi-color-red-100, #fee2e2);
-$color-red-200: var(--vi-color-red-200, #fecaca);
-$color-red-300: var(--vi-color-red-300, #fca5a5);
-$color-red-400: var(--vi-color-red-400, #f87171);
-$color-red-500: var(--vi-color-red-500, #ef4444);
-$color-red-600: var(--vi-color-red-600, #dc2626);
-$color-red-700: var(--vi-color-red-700, #b91c1c);
-$color-red-800: var(--vi-color-red-800, #991b1b);
-$color-red-900: var(--vi-color-red-900, #7f1d1d);
+// -- Palette: Yellow   --------------------------------------
 
-// -- Palette: Yellow  (Tailwind yellow) --------------------------------------
+$color-yellow-100: var(--vi-color-yellow-100, #ffeab1); // Soft pastel amber
+$color-yellow-200: var(--vi-color-yellow-200, #ffde85);
+$color-yellow-300: var(--vi-color-yellow-300, #ffd359);
+$color-yellow-400: var(--vi-color-yellow-400, #ffc72e);
+$color-yellow-500: var(--vi-color-yellow-500, #ffba00); // Vibrant amber (target)
+$color-yellow-600: var(--vi-color-yellow-600, #ffa900);
+$color-yellow-700: var(--vi-color-yellow-700, #ff9900); // Deep amber (target)
+$color-yellow-800: var(--vi-color-yellow-800, #e68300); // Vibrant burnt orange
+$color-yellow-900: var(--vi-color-yellow-900, #cc6d00); // Saturated dark orange
 
-$color-yellow-100: var(--vi-color-yellow-100, #fef9c3);
-$color-yellow-200: var(--vi-color-yellow-200, #fef08a);
-$color-yellow-300: var(--vi-color-yellow-300, #fde047);
-$color-yellow-400: var(--vi-color-yellow-400, #facc15);
-$color-yellow-500: var(--vi-color-yellow-500, #eab308);
-$color-yellow-600: var(--vi-color-yellow-600, #ca8a04);
-$color-yellow-700: var(--vi-color-yellow-700, #a16207);
-$color-yellow-800: var(--vi-color-yellow-800, #854d0e);
-$color-yellow-900: var(--vi-color-yellow-900, #713f12);
+// -- Palette: Green  (Subtle Forest / Moss) ----------------------------------
 
-// -- Palette: Green  (Tailwind green) ----------------------------------------
+$color-green-100: var(--vi-color-green-100, #e6f0eb);
+$color-green-200: var(--vi-color-green-200, #c0dbcd);
+$color-green-300: var(--vi-color-green-300, #96c4ab);
+$color-green-400: var(--vi-color-green-400, #6eab88);
+$color-green-500: var(--vi-color-green-500, #489167); // Subdued, professional forest green
+$color-green-600: var(--vi-color-green-600, #367551);
+$color-green-700: var(--vi-color-green-700, #265a3d);
+$color-green-800: var(--vi-color-green-800, #17402a);
+$color-green-900: var(--vi-color-green-900, #0a2618); // Solid, deeply dark, non-muddy
 
-$color-green-100: var(--vi-color-green-100, #dcfce7);
-$color-green-200: var(--vi-color-green-200, #bbf7d0);
-$color-green-300: var(--vi-color-green-300, #86efac);
-$color-green-400: var(--vi-color-green-400, #4ade80);
-$color-green-500: var(--vi-color-green-500, #22c55e);
-$color-green-600: var(--vi-color-green-600, #16a34a);
-$color-green-700: var(--vi-color-green-700, #15803d);
-$color-green-800: var(--vi-color-green-800, #166534);
-$color-green-900: var(--vi-color-green-900, #14532d);
+// -- Palette: Blue  (Vibrant Azure) ------------------------------------------
 
-// -- Palette: Blue  (Tailwind blue) ------------------------------------------
 
-$color-blue-100: var(--vi-color-blue-100, #dbeafe);
-$color-blue-200: var(--vi-color-blue-200, #bfdbfe);
-$color-blue-300: var(--vi-color-blue-300, #93c5fd);
-$color-blue-400: var(--vi-color-blue-400, #60a5fa);
-$color-blue-500: var(--vi-color-blue-500, #3b82f6);
-$color-blue-600: var(--vi-color-blue-600, #2563eb);
-$color-blue-700: var(--vi-color-blue-700, #1d4ed8);
-$color-blue-800: var(--vi-color-blue-800, #1e40af);
-$color-blue-900: var(--vi-color-blue-900, #1e3a8a);
+$color-blue-100: var(--vi-color-blue-100, #ebf5ff); // Clear, pale azure
+$color-blue-200: var(--vi-color-blue-200, #cee6ff);
+$color-blue-300: var(--vi-color-blue-300, #a3d1fa);
+$color-blue-400: var(--vi-color-blue-400, #74b6f4);
+$color-blue-500: var(--vi-color-blue-500, #3f96f1); // Vibrant azure (target)
+$color-blue-600: var(--vi-color-blue-600, #3b86de);
+$color-blue-700: var(--vi-color-blue-700, #3676d0); // Deep azure (target)
+$color-blue-800: var(--vi-color-blue-800, #2d5fa8);
+$color-blue-900: var(--vi-color-blue-900, #254882); // Deep rich navy
 
-// -- Palette: Purple  (Tailwind purple) --------------------------------------
+// -- Palette: Purple  (Vibrant Violet) ---------------------------------------
 
 $color-purple-100: var(--vi-color-purple-100, #f3e8ff);
 $color-purple-200: var(--vi-color-purple-200, #e9d5ff);
@@ -93,22 +94,62 @@ $color-purple-600: var(--vi-color-purple-600, #9333ea);
 $color-purple-700: var(--vi-color-purple-700, #7e22ce);
 $color-purple-800: var(--vi-color-purple-800, #6b21a8);
 $color-purple-900: var(--vi-color-purple-900, #581c87);
+$color-purple-100: var(--vi-color-purple-100, #f0e5f9); // Soft pastel purple (target)
+$color-purple-200: var(--vi-color-purple-200, #dbbdf2);
+$color-purple-300: var(--vi-color-purple-300, #c18eeb);
+$color-purple-400: var(--vi-color-purple-400, #a454e2);
+$color-purple-500: var(--vi-color-purple-500, #7609d0); // Vibrant purple (target)
+$color-purple-600: var(--vi-color-purple-600, #6507c9);
+$color-purple-700: var(--vi-color-purple-700, #5505c2);
+$color-purple-800: var(--vi-color-purple-800, #4403bb);
+$color-purple-900: var(--vi-color-purple-900, #3400b4); // Deep violet/navy (target)
 
 // -- Semantic colors (brand + status) ----------------------------------------
 // These map named design intents onto palette values.
 
-$color-primary:   var(--vi-color-primary,   #0066cc);
+$color-primary:   var(--vi-color-primary,   #3676d0);   // blue-700
 $color-secondary: var(--vi-color-secondary, #f0f4f8);
-$color-success:   var(--vi-color-success,   #22c55e);   // green-500
-$color-warning:   var(--vi-color-warning,   #eab308);   // yellow-500
+$color-success:   var(--vi-color-success,   #489167);   // green-500
+$color-warning:   var(--vi-color-warning,   #ffba00);   // yellow-500
 $color-error:     var(--vi-color-error,     #ef4444);   // red-500
-$color-info:      var(--vi-color-info,      #3b82f6);   // blue-500
+$color-info:      var(--vi-color-info,      #3676d0);   // blue-700
 
 // -- Functional colors -------------------------------------------------------
 
 $color-background: var(--vi-color-background, #ffffff);
 $color-foreground: var(--vi-color-foreground, #111827);  // grey-900
 $color-border:     var(--vi-color-border,     #e5e7eb);  // grey-200
+
+// -- Layers (Backgrounds & Surfaces) -----------------------------------------
+
+$layer-01:            var(--vi-layer-01,            #ffffff); // Pure white base
+$layer-02:            var(--vi-layer-02,            #f3f4f6); // grey-100
+$layer-03:            var(--vi-layer-03,            #e5e7eb); // grey-200
+$layer-04:            var(--vi-layer-04,            #d1d5db); // grey-300
+
+$layer-hover-01:      var(--vi-layer-hover-01,      #f3f4f6); // grey-100
+$layer-hover-02:      var(--vi-layer-hover-02,      #e5e7eb); // grey-200
+$layer-hover-03:      var(--vi-layer-hover-03,      #d1d5db); // grey-300
+$layer-hover-04:      var(--vi-layer-hover-04,      #9ca3af); // grey-400
+
+$layer-disabled:      var(--vi-layer-disabled,      #f3f4f6); // grey-100
+$layer-inverse:       var(--vi-layer-inverse,       #111827); // grey-900
+$layer-inverse-hover: var(--vi-layer-inverse-hover, #1f2937); // grey-800
+
+$text-inverse:        var(--vi-text-inverse,        #ffffff);
+$text-disabled:       var(--vi-text-disabled,       #9e9e9e); // grey-500
+
+// -- Borders -----------------------------------------------------------------
+
+$border-01:           var(--vi-border-01,           #f5f5f5); // grey-100
+$border-02:           var(--vi-border-02,           #eeeeee); // grey-200
+$border-03:           var(--vi-border-03,           #e0e0e0); // grey-300
+$border-04:           var(--vi-border-04,           #bdbdbd); // grey-400
+
+$border-inverse-01:   var(--vi-border-inverse-01,   #424242); // grey-800
+$border-inverse-02:   var(--vi-border-inverse-02,   #616161); // grey-700
+$border-inverse-03:   var(--vi-border-inverse-03,   #757575); // grey-600
+$border-inverse-04:   var(--vi-border-inverse-04,   #9e9e9e); // grey-500
 
 // -- Primitive: Spacing ------------------------------------------------------
 

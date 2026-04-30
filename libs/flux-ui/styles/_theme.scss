@@ -32,7 +32,8 @@ $vi-theme--light: (
   'text-primary':           $color-grey-900,
   'text-secondary':         $color-grey-700,
   'text-tertiary':          $color-grey-600,
-  'text-inverse':           $color-grey-100,
+  'text-inverse':           #ffffff,
+  'text-disabled':          $color-grey-500,
   'text-success':           $color-green-700,
   'text-warning':           $color-yellow-800,
   'text-error':             $color-red-700,
@@ -54,11 +55,28 @@ $vi-theme--light: (
   'layer-03':               $color-grey-300,      // Elevated
   'layer-hover':            $color-grey-200,
   'layer-active':           $color-grey-300,
+  // Layer/depth backgrounds (Light to Dark)
+  'layer-01':               #ffffff,
+  'layer-02':               $color-grey-100,
+  'layer-03':               $color-grey-200,
+  'layer-04':               $color-grey-300,
+  'layer-hover-01':         $color-grey-100,
+  'layer-hover-02':         $color-grey-200,
+  'layer-hover-03':         $color-grey-300,
+  'layer-hover-04':         $color-grey-400,
+  'layer-disabled':         $color-grey-100,
+  'layer-inverse':          $color-grey-900,
+  'layer-inverse-hover':    $color-grey-800,
 
-  // Border colors
-  'border-default':         $color-grey-200,
-  'border-strong':          $color-grey-300,
-  'border-subtle':          $color-grey-100,
+  // Border colors (Light to Dark)
+  'border-01':              $color-grey-100,
+  'border-02':              $color-grey-200,
+  'border-03':              $color-grey-300,
+  'border-04':              $color-grey-400,
+  'border-inverse-01':      $color-grey-800,
+  'border-inverse-02':      $color-grey-700,
+  'border-inverse-03':      $color-grey-600,
+  'border-inverse-04':      $color-grey-500,
 
   // Focus/interaction
   'focus-ring':             $color-blue-500,
