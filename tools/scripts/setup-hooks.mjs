@@ -47,8 +47,13 @@ try {
   execFileSync('git', ['config', 'core.hooksPath', TARGET]);
   console.log(`✅ Git hooks configured → ${TARGET}`);
 } catch (err) {
-  // Not inside a git repo (e.g. CI checks out without .git) — safe to skip.
-  if (String(err.message).includes('not in a git directory') || String(err.stderr).includes('not a git')) {
+  // Not inside a git repo, or git is not installed — safe to skip.
+  const msg = String(err.message) + String(err.stderr ?? '');
+  if (
+    msg.includes('not in a git directory') ||
+    msg.includes('not a git') ||
+    err.code === 'ENOENT' // git executable not found on PATH
+  ) {
     process.exit(0);
   }
   console.error('❌ Failed to set core.hooksPath:', err.message);

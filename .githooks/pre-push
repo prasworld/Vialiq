@@ -14,6 +14,12 @@
 # developer machines.
 # =============================================================================
 
+# In CI environments the workflow pushes directly to master via a PAT that
+# bypasses server-side branch protection.  This hook must not block that push.
+if [ -n "${CI}" ] || [ -n "${GITHUB_ACTIONS}" ]; then
+  exit 0
+fi
+
 PROTECTED_BRANCH="master"
 
 while read local_ref local_sha remote_ref remote_sha; do

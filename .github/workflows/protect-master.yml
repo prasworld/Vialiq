@@ -49,7 +49,8 @@ jobs:
         run: |
           echo "Applying branch protection — required status check: '$CI_JOB_NAME'"
 
-          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+          TMPFILE=$(mktemp)
+          HTTP_STATUS=$(curl -s -o "$TMPFILE" -w "%{http_code}" \
             -X PUT \
             -H "Authorization: Bearer $GH_PAT" \
             -H "Accept: application/vnd.github+json" \
@@ -76,6 +77,10 @@ jobs:
 
           if [ "$HTTP_STATUS" != "200" ]; then
             echo "::error::GitHub API returned HTTP $HTTP_STATUS. Check your GH_PAT permissions."
+            echo "Response body:"
+            cat "$TMPFILE"
+            rm -f "$TMPFILE"
             exit 1
           fi
+          rm -f "$TMPFILE"
           echo "✅ Branch protection applied to master (HTTP $HTTP_STATUS, check: '$CI_JOB_NAME')"

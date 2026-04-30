@@ -32,11 +32,37 @@ jobs:
           #      because the built-in token cannot bypass required-PR rules.
           #   2. The PAT must have the "Contents: write" and
           #      "Administration: write" (or "bypass branch restrictions") scope.
+          #
+          # ⚠️  SECURITY NOTICE — please read before rotating or expanding this token:
+          #
+          #   Minimal required permissions (fine-grained token, this repo only):
+          #     • Contents:       Read & Write  — push version-bump commit and tags
+          #     • Administration: Read & Write  — bypass branch-protection on master
+          #   Do NOT grant any other permissions (e.g. Secrets, Webhooks, Actions).
+          #   Scope the token to THIS repository only, not "All repositories".
+          #
+          #   Impact of compromise: any workflow that can read GH_PAT can push
+          #   commits to master and administer this repository. Treat it with the
+          #   same care as a deploy key.
+          #
+          #   Rotation policy:
+          #     • Set an expiry of ≤ 90 days when creating the token.
+          #     • Rotate before expiry: create the new token first, update the
+          #       secret in Repo → Settings → Secrets and variables → Actions,
+          #       then revoke the old token.
+          #     • After rotation, trigger this workflow manually (workflow_dispatch)
+          #       to confirm the new token has the correct permissions.
+          #     • Record the expiry date in the team's credential log / runbook.
+          #
           # How to create:
-          #   GitHub → Settings → Developer settings → Fine-grained tokens
-          #   Permissions: Contents (Read & Write), Administration (Read & Write)
+          #   GitHub → Settings → Developer settings → Fine-grained personal access tokens
+          #   → Generate new token → Resource owner: this org/user
+          #   → Repository access: Only select repositories → pick this repo
+          #   → Permissions: Contents (Read & Write), Administration (Read & Write)
+          #   → Expiration: 90 days (maximum recommended)
+          #
           # How to store:
-          #   Repo → Settings → Secrets and variables → Actions → New secret
+          #   Repo → Settings → Secrets and variables → Actions → New repository secret
           #   Name: GH_PAT
           token: ${{ secrets.GH_PAT }}
           # Full history is required so nx release version can walk back to the
