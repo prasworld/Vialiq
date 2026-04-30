@@ -191,6 +191,8 @@
 @media (prefers-reduced-motion: reduce) {
   .button {
     transform: none !important;
+    // Overrides the base transition to exclude 'transform'
+    transition-property: color, background-color, border-color, box-shadow, opacity !important;
   }
 }
 

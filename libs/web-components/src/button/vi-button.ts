@@ -61,7 +61,7 @@ export class ViButton extends FocusableMixin(ViElement) {
   /** Icon placement: 'start' (before label) or 'end' (after label). CSS order handles it — no DOM changes on toggle. */
   @property({ type: String, reflect: true, attribute: 'icon-placement' }) accessor iconPlacement: ButtonIconPlacement = 'start';
 
-  /** When true, stretches the button to fill the width with its container. */
+  /** When true, stretches the button to fill the width of its container. */
   @property({ type: Boolean, reflect: true, attribute: 'full-width' }) accessor fullWidth = false;
 
   /** When true, styles the button for an icon-only layout (typically square with equal padding). */
@@ -79,7 +79,7 @@ export class ViButton extends FocusableMixin(ViElement) {
         // Becoming disabled — always remove from tab order.
         this._setHostFocusable(false);
       } else if (changed.get('disabled') !== undefined) {
-        // Transitioning from a real disabled state back to enable.
+        // Transitioning from a real disabled state back to enabled.
         // Skip when old value is `undefined` (first render) — connectedCallback
         // already set the correct tabIndex, respecting any consumer tabindex attr.
         this._setHostFocusable(true);
