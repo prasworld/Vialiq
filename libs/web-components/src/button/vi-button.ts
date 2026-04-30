@@ -1,5 +1,5 @@
 import { css, html, unsafeCSS, type PropertyValues, type TemplateResult } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
+import { customElement, property, state } from 'lit/decorators.js';
 import { FocusableMixin } from '../base/focusable-mixin.js';
 import { ViElement } from '../base/vi-element.js';
 import buttonStyles from './vi-button.scss?inline';
@@ -61,7 +61,7 @@ export class ViButton extends FocusableMixin(ViElement) {
   /** Icon placement: 'start' (before label) or 'end' (after label). CSS order handles it — no DOM changes on toggle. */
   @property({ type: String, reflect: true, attribute: 'icon-placement' }) accessor iconPlacement: ButtonIconPlacement = 'start';
 
-  /** When true, stretches the button to fill the width of its container. */
+  /** When true, stretches the button to fill the width with its container. */
   @property({ type: Boolean, reflect: true, attribute: 'full-width' }) accessor fullWidth = false;
 
   /** When true, styles the button for an icon-only layout (typically square with equal padding). */
@@ -70,6 +70,8 @@ export class ViButton extends FocusableMixin(ViElement) {
   /** Disables the button. */
   @property({ type: Boolean, reflect: true }) accessor disabled = false;
 
+  @state() private accessor _hasIcon = false;
+
   override updated(changed: PropertyValues): void {
     super.updated(changed);
     if (changed.has('disabled')) {
@@ -77,12 +79,17 @@ export class ViButton extends FocusableMixin(ViElement) {
         // Becoming disabled — always remove from tab order.
         this._setHostFocusable(false);
       } else if (changed.get('disabled') !== undefined) {
-        // Transitioning from a real disabled state back to enabled.
+        // Transitioning from a real disabled state back to enable.
         // Skip when old value is `undefined` (first render) — connectedCallback
         // already set the correct tabIndex, respecting any consumer tabindex attr.
         this._setHostFocusable(true);
       }
     }
+  }
+
+  private onIconSlotChange(e: Event): void {
+    const slot = e.target as HTMLSlotElement;
+    this._hasIcon = slot.assignedElements({ flatten: true }).length > 0;
   }
 
   private onClick(event: Event): void {
@@ -93,7 +100,7 @@ export class ViButton extends FocusableMixin(ViElement) {
   }
 
   override render(): TemplateResult {
-    const {disabled,onClick}=this;
+    const { _hasIcon, disabled, onClick, onIconSlotChange } = this;
 
     return html`
       <button
@@ -104,7 +111,13 @@ export class ViButton extends FocusableMixin(ViElement) {
         ?disabled=${disabled}
         @click=${onClick}
       >
-        <slot name="icon" part="icon"></slot>
+        <slot
+          name="icon"
+          class="icon"
+          part="icon"
+          ?hidden=${!_hasIcon}
+          @slotchange=${onIconSlotChange}
+        ></slot>
         <span part="label" class="label"><slot></slot></span>
       </button>
     `;
