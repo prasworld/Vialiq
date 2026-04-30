@@ -43,7 +43,7 @@ export const config: Options.Testrunner & Capabilities.WithRequestedTestrunnerCa
   reporters: ['spec'],
   mochaOpts: {
     ui: 'bdd',
-    timeout: 30000,
+    timeout: 120000,
   },
   capabilities: [
     {

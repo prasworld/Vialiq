@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# =============================================================================
+# pre-push hook — blocks direct pushes to the `master` branch.
+#
+# Installed automatically by the `prepare` npm script via:
+#   git config core.hooksPath .githooks
+#
+# Rules enforced locally (GitHub branch protection enforces the same server-side):
+#   • Direct pushes to master are rejected.
+#   • You must open a PR from a feature branch instead.
+#
+# The GitHub Actions publish bot is exempt because it authenticates with a PAT
+# that has the "bypass branch restrictions" permission — this hook only runs on
+# developer machines.
+# =============================================================================
+
+# In CI environments the workflow pushes directly to master via a PAT that
+# bypasses server-side branch protection.  This hook must not block that push.
+if [ -n "${CI}" ] || [ -n "${GITHUB_ACTIONS}" ]; then
+  exit 0
+fi
+
+PROTECTED_BRANCH="master"
+
+while read local_ref local_sha remote_ref remote_sha; do
+  # remote_ref is the full refs/heads/<branch> on the remote
+  BRANCH="${remote_ref##refs/heads/}"
+
+  if [ "$BRANCH" = "$PROTECTED_BRANCH" ]; then
+    echo ""
+    echo "❌  Direct push to '$PROTECTED_BRANCH' is not allowed."
+    echo ""
+    echo "    Please work on a feature branch and open a Pull Request:"
+    echo "      git checkout -b feat/your-feature"
+    echo "      git push origin feat/your-feature"
+    echo ""
+    echo "    If you are intentionally bypassing this hook in CI, the hook"
+    echo "    does not run in GitHub Actions — this is local-developer only."
+    echo ""
+    exit 1
+  fi
+done
+
+exit 0
+

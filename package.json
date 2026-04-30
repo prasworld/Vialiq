@@ -4,6 +4,7 @@
   "license": "MIT",
   "packageManager": "npm@11.5.1",
   "scripts": {
+    "prepare": "node tools/scripts/setup-hooks.mjs",
     "start": "nx serve shell",
     "serve": "nx serve shell",
     "serve:prod": "nx run shell:serve-static",
@@ -30,7 +31,7 @@
     "@angular/router": "~21.1.0",
     "@nx/angular": "^22.5.1",
     "@vialiq/icons": "^0.0.2",
-    "@vialiq/web-components": "^0.0.3",
+    "@vialiq/web-components": "^0.1.0",
     "create-nx": "0.0.0",
     "lit": "^3.3.2",
     "rxjs": "~7.8.0"
@@ -68,7 +69,7 @@
     "@swc/helpers": "~0.5.18",
     "@types/node": "20.19.9",
     "@typescript-eslint/utils": "^8.40.0",
-    "@vialiq/flux-ui": "^0.0.3",
+    "@vialiq/flux-ui": "^0.0.4",
     "@vitest/coverage-v8": "^4.0.0",
     "@vitest/ui": "^4.0.8",
     "@wdio/browser-runner": "^9.27.0",

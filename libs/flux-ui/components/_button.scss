@@ -22,6 +22,9 @@
     line-height: #{tokens.$line-height-tight};
     cursor: pointer;
     user-select: none;
-    transition: opacity var(--vi-button-effect-transition-duration, 160ms) ease;
+    transition:
+      opacity     var(--vi-button-effect-transition-duration, 160ms) ease,
+      box-shadow  var(--vi-button-effect-transition-duration, 160ms) ease,
+      transform   var(--vi-button-effect-transition-duration, 160ms) ease;
   }
 }
