@@ -64,7 +64,13 @@ jobs:
           # How to store:
           #   Repo → Settings → Secrets and variables → Actions → New repository secret
           #   Name: GH_PAT
+          #
+          # persist-credentials: false — the PAT is used only for this clone/fetch
+          # and is NOT stored in git's credential helper for the remainder of the job.
+          # The PAT is injected explicitly only in the steps that need to push
+          # ("Authenticate git for push" below), minimising the window of exposure.
           token: ${{ secrets.GH_PAT }}
+          persist-credentials: false
           # Full history is required so nx release version can walk back to the
           # last release git tag to determine which conventional commits have
           # landed since then.
@@ -92,6 +98,18 @@ jobs:
         run: |
           git config --global user.email "action@github.com"
           git config --global user.name "GitHub Action"
+
+      # Inject the PAT into the remote URL so subsequent git push commands can
+      # bypass master branch protection.  This is done here rather than in the
+      # checkout step (persist-credentials: false) so the credential is scoped
+      # only to the steps that actually push — not to npm ci, builds, or other
+      # steps that have no need to authenticate to GitHub.
+      # GitHub Actions automatically masks ${{ secrets.GH_PAT }} in logs.
+      - name: Authenticate git for push
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
+        run: |
+          git remote set-url origin "https://x-access-token:${GH_PAT}@github.com/${{ github.repository }}.git"
 
       # Ensure local tag refs are synchronized with origin before bootstrap.
       # Without this fetch, a shallow/local-only view can recreate tags that

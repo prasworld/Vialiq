@@ -12,13 +12,24 @@ name: Apply Master Branch Protection
 #   • Branch cannot be deleted.
 #   • Rules apply to admins too (dismisses the "I'm an admin" bypass loophole).
 #
-# IMPORTANT — keeping the CI job name in sync:
-#   The `ci_job_name` input must exactly match the `jobs.<id>` key in ci.yml.
-#   Current value: "check"  (see .github/workflows/ci.yml → jobs: check:)
-#   If you rename that job, re-run this workflow with the updated input value.
+# HOW THE CHECK NAME WORKS:
+#   This workflow uses the modern `checks` API (not the deprecated `contexts` API).
+#   The `checks` API accepts an optional `app_id` alongside the check name, which
+#   pins the rule to a specific GitHub App — eliminating the fragile exact-string
+#   matching problem of the legacy approach.
 #
-# The GH_PAT secret must have:
-#   • Fine-grained token: Contents (Read & Write) + Administration (Read & Write).
+#   app_id 15368 = GitHub Actions (fixed, permanent ID assigned by GitHub).
+#   See: https://api.github.com/apps/github-actions
+#
+#   The check name GitHub records for Actions jobs is:
+#     "<workflow name:> / <job-id>"
+#   For this repo: ci.yml has `name: CI` and `jobs: check:` → "CI / check"
+#
+#   If you rename the CI workflow or job, update the default below and re-run.
+#
+# The GH_PAT secret must be a fine-grained personal access token with:
+#   • Repository permission: Administration → Read & Write
+#   (that's the only permission needed — Contents is NOT required for branch protection)
 # ─────────────────────────────────────────────────────────────────────────────
 
 on:
@@ -26,10 +37,14 @@ on:
     inputs:
       ci_job_name:
         description: >
-          Exact job ID from ci.yml whose status must pass before a PR can merge.
-          Must match `jobs.<id>` in .github/workflows/ci.yml.
+          The check name GitHub Actions records for the required CI job.
+          Format: "<workflow name:> / <job-id>" — e.g. if ci.yml has `name: CI`
+          and `jobs: check:`, the value is "CI / check".
+          The check is pinned to app_id 15368 (GitHub Actions) so only Actions
+          results count, regardless of other apps using the same name.
+          To verify: Settings → Branches → Edit master → Require status checks.
         required: true
-        default: check   # <── keep in sync with ci.yml → jobs: check:
+        default: "CI / check"   # <── "<ci.yml name:> / <ci.yml jobs key>"
 
 jobs:
   protect:
@@ -38,8 +53,10 @@ jobs:
       contents: read  # only needs to read; Administration API uses the PAT
 
     env:
-      # Single source of truth for the required check name inside this job.
       CI_JOB_NAME: ${{ github.event.inputs.ci_job_name }}
+      # GitHub Actions app ID — fixed, permanent value assigned by GitHub.
+      # Verified via: curl https://api.github.com/apps/github-actions | jq .id
+      GITHUB_ACTIONS_APP_ID: 15368
 
     steps:
       - name: Apply branch protection to master
@@ -47,7 +64,7 @@ jobs:
           GH_PAT: ${{ secrets.GH_PAT }}
           REPO: ${{ github.repository }}
         run: |
-          echo "Applying branch protection — required status check: '$CI_JOB_NAME'"
+          echo "Applying branch protection — required status check: '$CI_JOB_NAME' (app_id: $GITHUB_ACTIONS_APP_ID)"
 
           TMPFILE=$(mktemp)
           HTTP_STATUS=$(curl -s -o "$TMPFILE" -w "%{http_code}" \
@@ -59,7 +76,12 @@ jobs:
             -d "{
               \"required_status_checks\": {
                 \"strict\": true,
-                \"contexts\": [\"$CI_JOB_NAME\"]
+                \"checks\": [
+                  {
+                    \"context\": \"$CI_JOB_NAME\",
+                    \"app_id\": $GITHUB_ACTIONS_APP_ID
+                  }
+                ]
               },
               \"enforce_admins\": true,
               \"required_pull_request_reviews\": {
