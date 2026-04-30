@@ -104,7 +104,7 @@ export class ViButton extends FocusableMixin(ViElement) {
         ?disabled=${disabled}
         @click=${onClick}
       >
-        <slot name="icon" part="icon" class="icon"></slot>
+        <slot name="icon" part="icon"></slot>
         <span part="label" class="label"><slot></slot></span>
       </button>
     `;

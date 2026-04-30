@@ -26,6 +26,19 @@ jobs:
     steps:
       - uses: actions/checkout@v5.0.1
         with:
+          # A Personal Access Token (PAT) stored as the GH_PAT repository secret
+          # is required here for two reasons:
+          #   1. Branch protection on `master` blocks pushes from GITHUB_TOKEN
+          #      because the built-in token cannot bypass required-PR rules.
+          #   2. The PAT must have the "Contents: write" and
+          #      "Administration: write" (or "bypass branch restrictions") scope.
+          # How to create:
+          #   GitHub → Settings → Developer settings → Fine-grained tokens
+          #   Permissions: Contents (Read & Write), Administration (Read & Write)
+          # How to store:
+          #   Repo → Settings → Secrets and variables → Actions → New secret
+          #   Name: GH_PAT
+          token: ${{ secrets.GH_PAT }}
           # Full history is required so nx release version can walk back to the
           # last release git tag to determine which conventional commits have
           # landed since then.
@@ -128,7 +141,7 @@ jobs:
       - name: Push release tags
         run: |
           RELEASE_TAGS=$(node tools/release/get-release-tags.mjs)
-          
+
           # keep only tags that exist locally
           EXISTING_TAGS=()
           for t in $RELEASE_TAGS; do

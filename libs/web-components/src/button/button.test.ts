@@ -82,10 +82,27 @@ describe('vi-button', () => {
       await expect(btn).toHaveAttribute('tabindex', '-1');
     });
 
-    it('shadow DOM contains a named icon slot and a label slot', async () => {
+    it('icon slot exists for projection but creates no layout box when empty', async () => {
       await render('<vi-button id="r8">Btn</vi-button>');
       const host = await waitForShadow('#r8');
-      await expect(await host.shadow$('slot[name="icon"]')).toExist();
+      const slot = await host.shadow$('slot[name="icon"]');
+      await expect(slot).toExist();
+      
+      const assigned = await browser.execute((el) => (el as HTMLSlotElement).assignedElements().length, slot);
+      expect(assigned).toBe(0);
+    });
+
+    it('icon slot assigns content when icon is provided', async () => {
+      await render('<vi-button id="r8b"><span slot="icon">★</span>Btn</vi-button>');
+      const host = await waitForShadow('#r8b');
+      const slot = await host.shadow$('slot[name="icon"]');
+      const assigned = await browser.execute((el) => (el as HTMLSlotElement).assignedElements().length, slot);
+      expect(assigned).toBe(1);
+    });
+
+    it('shadow DOM contains a label slot', async () => {
+      await render('<vi-button id="r8c">Btn</vi-button>');
+      const host = await waitForShadow('#r8c');
       await expect(await host.shadow$('span.label slot')).toExist();
     });
   });

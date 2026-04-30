@@ -20,34 +20,6 @@
 
 :host {
   display: inline-block;
-
-  // --- Variant surface colours ---
-  --vi-button-surface-primary-background-color:    #{tokens.$color-primary};
-  --vi-button-surface-primary-text-color:           #{tokens.$color-grey-100};
-  --vi-button-surface-secondary-background-color:   #{tokens.$color-secondary};
-  --vi-button-surface-secondary-text-color:         #{tokens.$color-foreground};
-  --vi-button-surface-danger-background-color:      #{tokens.$color-error};
-  --vi-button-surface-danger-text-color:            #{tokens.$color-grey-100};
-  --vi-button-surface-success-background-color:     #{tokens.$color-success};
-  --vi-button-surface-success-text-color:           #{tokens.$color-grey-100};
-  --vi-button-surface-info-background-color:        #{tokens.$color-info};
-  --vi-button-surface-info-text-color:              #{tokens.$color-grey-100};
-  --vi-button-surface-ghost-background-color:       transparent;
-  --vi-button-surface-ghost-text-color:             #{tokens.$color-primary};
-
-  // --- Shape ---
-  --vi-button-shape-border-radius: #{tokens.$border-radius-md};
-
-  // --- Spacing (md baseline) ---
-  --vi-button-spacing-padding-inline: 16px;
-  --vi-button-spacing-padding-block:  8px;
-
-  // --- Typography (md baseline) ---
-  --vi-button-typography-font-size:   #{tokens.$font-size-base};
-  --vi-button-typography-font-weight: #{tokens.$font-weight-semibold};
-
-  // --- Motion ---
-  --vi-button-effect-transition-duration: 160ms;
 }
 
 // ============================================================================
@@ -64,13 +36,6 @@
   --vi-button-spacing-padding-block:  4px;
   --vi-button-spacing-padding-inline: 12px;
   --vi-button-typography-font-size:   #{tokens.$font-size-sm};
-}
-
-// md is the default — no override needed
-:host([size='md']) {
-  --vi-button-spacing-padding-block:  8px;
-  --vi-button-spacing-padding-inline: 16px;
-  --vi-button-typography-font-size:   #{tokens.$font-size-base};
 }
 
 :host([size='lg']) {
@@ -94,7 +59,7 @@
 :host([icon-only]) .button {
   /* Set aspect ratio or fixed padding to make it a square */
   aspect-ratio: 1 / 1;
-  padding: var(--vi-button-spacing-padding-block);
+  padding: var(--vi-button-spacing-padding-block, #{tokens.$spacing-sm});
   justify-content: center;
 }
 
@@ -157,8 +122,49 @@
   cursor: not-allowed;
 }
 
+// ============================================================================
+// Raised / pressed visual depth
+//
+// Three CSS custom properties let consumers override per-token:
+//   --vi-button-effect-shadow-raised   resting elevation
+//   --vi-button-effect-shadow-hover    hover elevation (lifts further)
+//   --vi-button-effect-shadow-pressed  active / pressed (sinks in)
+// ============================================================================
+
+// Resting raised appearance — three shadow layers:
+//   1. inset top highlight  → simulates a lit top edge
+//   2. drop shadow          → primary depth cue
+//   3. ambient shadow       → soft glow at the base
+.button:not(:disabled) {
+  box-shadow: var(
+    --vi-button-effect-shadow-raised,
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 2px 4px rgba(0, 0, 0, 0.18),
+    0 1px 2px rgba(0, 0, 0, 0.08)
+  );
+}
+
+// Hover: lift the button upward and deepen the shadow
 .button:hover:not(:disabled) {
   opacity: 0.92;
+  box-shadow: var(
+    --vi-button-effect-shadow-hover,
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 4px 8px rgba(0, 0, 0, 0.22),
+    0 2px 4px rgba(0, 0, 0, 0.10)
+  );
+  transform: translateY(-1px);
+}
+
+// Active / pressed: shadow flips inward + sinks down 1 px
+.button:active:not(:disabled) {
+  box-shadow: var(
+    --vi-button-effect-shadow-pressed,
+    inset 0 2px 4px rgba(0, 0, 0, 0.22),
+    0 1px 1px rgba(0, 0, 0, 0.06)
+  );
+  transform: translateY(1px);
+  opacity: 1;
 }
 
 // Ghost hover: background tint + underline provide the affordance instead of
@@ -167,6 +173,25 @@
   background-color: rgba(0, 0, 0, 0.04);
   text-decoration: underline;
   opacity: 1;
+}
+
+// Ghost: no raised shadow — the variant is intentionally flat.
+:host([variant='ghost']) .button:not(:disabled) {
+  box-shadow: none;
+}
+
+// Ghost pressed: subtle inset tint only (no drop shadow)
+:host([variant='ghost']) .button:active:not(:disabled) {
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.14);
+  transform: translateY(0);
+}
+
+// Honour user's reduced-motion preference — keep colour/opacity feedback
+// but suppress layout shifts from transform.
+@media (prefers-reduced-motion: reduce) {
+  .button {
+    transform: none !important;
+  }
 }
 
 // ============================================================================
@@ -179,6 +204,10 @@
   order: -1;
   display: inline-flex;
   flex-shrink: 0;
+}
+
+.icon[hidden] {
+  display: none;
 }
 
 // End placement — flip order to after the label.
