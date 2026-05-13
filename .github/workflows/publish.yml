@@ -3,18 +3,17 @@ name: Publish Packages
 on:
   push:
     branches: [master]
-    # The bot's version-bump commit includes [skip ci] in its message so
-    # GitHub Actions natively skips this workflow for that push, preventing
-    # an infinite loop without needing paths-ignore (which would also block
-    # manual publish-package.json fixes from triggering a publish).
+    # This workflow runs once per PR merge to master.
+    # There is no version-bump commit pushed back to master (git.commit: false
+    # in nx.json), so there is no infinite-loop risk and no need for [skip ci].
   workflow_dispatch:
     # Allows manual trigger from GitHub Actions UI.
-    # Use this when a version was bumped (publish-package.json updated, prior
-    # release tag exists) but was never published to npm — e.g. a previous CI
-    # run failed during the publish step, or a release tag was prematurely
-    # deleted. In this scenario bootstrap-tags will skip all projects (prior
-    # tags exist), nx release version will detect no new commits and no-op,
-    # and nx release publish will push only the missing npm versions.
+    # Use this when a package was published to npm but its release tag was
+    # never pushed (e.g. a previous run failed after publish but before the
+    # 'Push release tags' step). In that scenario:
+    #   • bootstrap-tags skips all projects (prior tags already exist)
+    #   • nx release version detects no new commits → no-op
+    #   • get-release-tags.mjs confirms versions are on npm → pushes the tags
 
 jobs:
   publish:
@@ -36,9 +35,13 @@ jobs:
           # ⚠️  SECURITY NOTICE — please read before rotating or expanding this token:
           #
           #   Minimal required permissions (fine-grained token, this repo only):
-          #     • Contents:       Read & Write  — push version-bump commit and tags
-          #     • Administration: Read & Write  — bypass branch-protection on master
-          #   Do NOT grant any other permissions (e.g. Secrets, Webhooks, Actions).
+          #     • Contents:       Read & Write  — push annotated git tags
+          #     • Administration: Read & Write  — required by protect-master.yml
+          #                                       to set branch protection rules;
+          #                                       NOT needed by this workflow alone
+          #                                       (tags bypass branch protection).
+          #   Both workflows share the same GH_PAT secret, so the token must
+          #   have both permissions. Do NOT grant anything else.
           #   Scope the token to THIS repository only, not "All repositories".
           #
           #   Impact of compromise: any workflow that can read GH_PAT can push
@@ -109,7 +112,7 @@ jobs:
         env:
           GH_PAT: ${{ secrets.GH_PAT }}
         run: |
-          git remote set-url origin "https://x-access-token:${GH_PAT}@github.com/${{ github.repository }}.git"
+          git remote set-url origin "https://${GH_PAT}@github.com/${{ github.repository }}.git"
 
       # Ensure local tag refs are synchronized with origin before bootstrap.
       # Without this fetch, a shallow/local-only view can recreate tags that
@@ -139,20 +142,33 @@ jobs:
       #   feat:             → minor bump  (0.1.0 → 0.2.0)
       #   fix/refactor/perf → patch bump  (0.1.0 → 0.1.1)
       #   BREAKING CHANGE   → major bump  (0.1.0 → 1.0.0)
-      # Creates a version-bump commit and annotated git tags locally.
+      #
+      # git.commit: false  — we do NOT push a version-bump commit to master.
+      #   Pushing a commit directly to a branch-protected master requires the
+      #   PAT to be in the branch protection bypass list, which is fragile.
+      #   Instead we rely solely on git TAGS as the source of truth:
+      #   currentVersionResolver: git-tag reads the most recent tag, so future
+      #   runs always compute the correct next version from the tag, not from
+      #   the file content.
+      #
+      # git.tag: true  — nx release version creates annotated git tags locally
+      #   (e.g. flux-ui@0.0.4) pointing to the current HEAD (the PR merge commit).
+      #   These local tags are pushed to origin in the 'Push release tags' step
+      #   AFTER a successful npm publish — so every remote tag always has a
+      #   corresponding live npm package.
+      #
+      # ⚠️  IMPORTANT — commit message discipline:
+      #   nx release version uses filterAffected to decide which projects need
+      #   a version bump.  ANY file under a project root counts as a change for
+      #   that project.  This means commits that only touch CI or config files
+      #   inside a library directory (project.json, publish-package.json, etc.)
+      #   will spuriously trigger a version bump for that library if the commit
+      #   type is fix: / feat: / refactor: / perf:.
+      #   → Use  chore:  for commits whose only changes are CI/workflow/config
+      #     files, even when those files live inside a library directory.
+      #     chore: is not mapped to any semver type and will be safely ignored.
       - name: Version packages
         run: npx nx release version
-
-      # Push the version-bump commit (without tags) before building so that a failed
-      # build/publish doesn't leave the repo in an ambiguous state. Tags are pushed
-      # only after a successful publish so that a tag always represents a version
-      # that genuinely made it to npm.
-      - name: Push version commit
-        # `git push` already exits 0 when there is nothing to push (the remote
-        # is already up-to-date). No special handling is needed.
-        # Do NOT use `|| true` — that would swallow real failures such as auth
-        # errors, branch-protection rejections, or non-fast-forward conflicts.
-        run: git push
 
       # Derive the publishable libs list from nx.json (release.projects) so this
       # workflow stays in sync with the release config automatically.

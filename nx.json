@@ -34,6 +34,11 @@
       "cache": true,
       "inputs": ["default", "^production"]
     },
+    "postbuild-publish": {
+      "cache": true,
+      "dependsOn": ["build", "^build"],
+      "command": "echo postbuild-publish complete for {projectRoot}"
+    },
     "@angular-devkit/build-angular:browser": {
       "cache": true,
       "dependsOn": ["^build"],
@@ -115,8 +120,11 @@
       "versionActions": "tools/release/version-actions.js",
       "preserveMatchingDependencyRanges": false,
       "git": {
+        "commit": false,
+        "tag": true,
         "commitMessage": "chore(release): version bump [skip ci]"
       },
+      "preVersionCommand": "git fetch --tags --force",
       "generatorOptions": {
         "currentVersionResolver": "git-tag",
         "specifierSource": "conventional-commits"

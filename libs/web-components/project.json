@@ -40,7 +40,10 @@
       },
       "configurations": {
         "production": {}
-      }
+      },
+      "outputs": [
+        "{workspaceRoot}/dist/libs/web-components/package.json"
+      ]
     },
 
     "test-wdio": {
