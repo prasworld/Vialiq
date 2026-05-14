@@ -36,8 +36,7 @@
     },
     "postbuild-publish": {
       "cache": true,
-      "dependsOn": ["build", "^build"],
-      "command": "echo postbuild-publish complete for {projectRoot}"
+      "dependsOn": ["build", "^build"]
     },
     "@angular-devkit/build-angular:browser": {
       "cache": true,

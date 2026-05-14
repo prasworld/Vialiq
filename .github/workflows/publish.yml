@@ -112,7 +112,7 @@ jobs:
         env:
           GH_PAT: ${{ secrets.GH_PAT }}
         run: |
-          git remote set-url origin "https://${GH_PAT}@github.com/${{ github.repository }}.git"
+          git remote set-url origin "https://x-access-token:${GH_PAT}@github.com/${{ github.repository }}.git"
 
       # Ensure local tag refs are synchronized with origin before bootstrap.
       # Without this fetch, a shallow/local-only view can recreate tags that
