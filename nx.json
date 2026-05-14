@@ -35,8 +35,9 @@
       "inputs": ["default", "^production"]
     },
     "postbuild-publish": {
+      "$comment": "dependsOn omits ^build intentionally — each publishable lib defines its own dependsOn on this target, which fully replaces this default per Nx merge rules. Adding ^build here would be silently ignored for all current libs.",
       "cache": true,
-      "dependsOn": ["build", "^build"]
+      "dependsOn": ["build"]
     },
     "@angular-devkit/build-angular:browser": {
       "cache": true,
@@ -119,9 +120,9 @@
       "versionActions": "tools/release/version-actions.js",
       "preserveMatchingDependencyRanges": false,
       "git": {
+        "$comment": "commit: false — no version-bump commit is pushed to master (avoids branch-protection bypass). Tags are the sole source of truth for currentVersionResolver: git-tag. commitMessage is omitted because no commit is ever created.",
         "commit": false,
-        "tag": true,
-        "commitMessage": "chore(release): version bump [skip ci]"
+        "tag": true
       },
       "preVersionCommand": "git fetch --tags --force",
       "generatorOptions": {
