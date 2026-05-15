@@ -68,8 +68,11 @@
         "commands": [
           "cp libs/flux-ui/publish-package.json dist/libs/flux-ui/package.json",
           "[ -f dist/libs/flux-ui/src/index.d.ts ] && cp dist/libs/flux-ui/src/index.d.ts dist/libs/flux-ui/index.d.ts || true",
+          "[ -f dist/libs/flux-ui/src/index.d.ts.map ] && cp dist/libs/flux-ui/src/index.d.ts.map dist/libs/flux-ui/index.d.ts.map || true",
           "[ -f dist/libs/flux-ui/src/tokens/index.d.ts ] && cp dist/libs/flux-ui/src/tokens/index.d.ts dist/libs/flux-ui/tokens/index.d.ts || true",
-          "[ -f dist/libs/flux-ui/src/styles/index.d.ts ] && cp dist/libs/flux-ui/src/styles/index.d.ts dist/libs/flux-ui/styles/index.d.ts || true"
+          "[ -f dist/libs/flux-ui/src/tokens/index.d.ts.map ] && cp dist/libs/flux-ui/src/tokens/index.d.ts.map dist/libs/flux-ui/tokens/index.d.ts.map || true",
+          "[ -f dist/libs/flux-ui/src/styles/index.d.ts ] && cp dist/libs/flux-ui/src/styles/index.d.ts dist/libs/flux-ui/styles/index.d.ts || true",
+          "[ -f dist/libs/flux-ui/src/styles/index.d.ts.map ] && cp dist/libs/flux-ui/src/styles/index.d.ts.map dist/libs/flux-ui/styles/index.d.ts.map || true"
         ],
         "parallel": false
       },
