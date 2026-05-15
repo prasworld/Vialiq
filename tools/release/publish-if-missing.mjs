@@ -3,7 +3,14 @@ import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
 
 const dryRun = process.argv.includes('--dry-run');
-const nxJson = JSON.parse(readFileSync('nx.json', 'utf8'));
+const nxJsonPath = join(process.cwd(), 'nx.json');
+if (!existsSync(nxJsonPath)) {
+  throw new Error(
+    `Could not find nx.json in the current working directory (${process.cwd()}). ` +
+      'Run this script from the repository root.'
+  );
+}
+const nxJson = JSON.parse(readFileSync(nxJsonPath, 'utf8'));
 const workspaceLayout = nxJson.workspaceLayout ?? { appsDir: 'apps', libsDir: 'libs' };
 const packageRootTemplate =
   process.env.PUBLISH_ROOT ||
