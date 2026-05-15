@@ -90,11 +90,15 @@ jobs:
 
       - uses: actions/setup-node@v5
         with:
-          # Node 24 is required: it ships with npm ≥ 11.5.1, which is the minimum
+          # Node 24 is required: it ships with npm ≥ 11.11.0, which is the minimum
           # needed for npm Trusted Publishing (OIDC). Node 22 ships with npm 10.x
           # and will fail to authenticate even with correct id-token: write permissions.
           # setup-node@v5+ is required: v4 writes always-auth=true to .npmrc, which
           # npm 11 rejects as an unknown config option, aborting the publish step.
+          # packageManager in package.json pins npm@11.11.0 via corepack — do not
+          # downgrade below 11.11.0: earlier 11.x builds have a bug where directory
+          # entries (e.g. "button/") in the files field are silently dropped when
+          # running npm publish <path>, producing an empty tarball.
           node-version: '24'
           cache: 'npm'
 
