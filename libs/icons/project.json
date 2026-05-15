@@ -45,7 +45,12 @@
       },
       "configurations": {
         "production": {}
-      }
+      },
+      "outputs": [
+        "{workspaceRoot}/dist/libs/icons/package.json",
+        "{workspaceRoot}/dist/libs/icons/**/*.d.ts",
+        "{workspaceRoot}/dist/libs/icons/**/*.d.ts.map"
+      ]
     },
 
     "lint": {

@@ -1,6 +1,6 @@
 {
   "name": "@vialiq/flux-ui",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "type": "module",
   "description": "Custom minimal CSS/SASS framework for microfrontend product",
   "license": "MIT"
