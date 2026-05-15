@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
 
@@ -134,10 +134,17 @@ function npmPublish(dir) {
   }
 
   try {
-    execFileSync('npm', args, { stdio: 'inherit' });
+    // Use ['inherit', 'inherit', 'pipe'] so stdout/stdin are inherited (CI sees
+    // real-time output) but stderr is captured into err.stderr on failure, which
+    // lets isAlreadyPublishedError() reliably match EPUBLISHCONFLICT messages.
+    execFileSync('npm', args, { stdio: ['inherit', 'inherit', 'pipe'] });
   } catch (err) {
     const stderr = String(err.stderr ?? '').trim();
-    if (isAlreadyPublishedError(stderr)) {
+    // Echo the captured stderr so CI logs still show the full npm error output.
+    if (stderr) {
+      process.stderr.write(stderr + '\n');
+    }
+    if (isAlreadyPublishedError(stderr) || isAlreadyPublishedError(err.message ?? '')) {
       console.log(
         `Skipping publish for ${dir}: package appears to already exist in npm.`
       );
