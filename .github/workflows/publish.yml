@@ -12,8 +12,17 @@ on:
     # never pushed (e.g. a previous run failed after publish but before the
     # 'Push release tags' step). In that scenario:
     #   • bootstrap-tags skips all projects (prior tags already exist)
-    #   • nx release version detects no new commits → no-op
-    #   • get-release-tags.mjs confirms versions are on npm → pushes the tags
+    #   • nx release version detects no new commits → no-op (does NOT call
+    #     git tag, so existing local tags fetched by preVersionCommand are
+    #     never duplicated or moved to the current HEAD)
+    #   • get-release-tags.mjs confirms the version is on npm → pushes the
+    #     already-existing remote tag (idempotent — not an error)
+    #
+    # NOTE: bootstrap-tags creates initial tags only for projects with no
+    # prior release tags at all. It does not cover the missing-tag-after-
+    # publish scenario for existing projects; get-release-tags.mjs handles
+    # that. If a release tag must point to a different SHA, repair manually
+    # (delete + recreate); this workflow has no --force path.
 
 jobs:
   publish:

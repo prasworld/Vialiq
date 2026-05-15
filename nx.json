@@ -120,7 +120,7 @@
       "versionActions": "tools/release/version-actions.js",
       "preserveMatchingDependencyRanges": false,
       "git": {
-        "$comment": "commit: false — no version-bump commit is pushed to master (avoids branch-protection bypass). Tags are the sole source of truth for currentVersionResolver: git-tag. commitMessage is omitted because no commit is ever created.",
+        "$comment": "commit: false — no version-bump commit is pushed to master (avoids branch-protection bypass). Tags are the sole source of truth for currentVersionResolver: git-tag. tag: true — nx release version creates annotated local tags only when it actually bumps a version (no-op runs do not call git tag, so existing tags are never duplicated or moved). If a remote tag of the same name already exists at a different SHA it must be repaired manually; this workflow has no --force path.",
         "commit": false,
         "tag": true
       },
