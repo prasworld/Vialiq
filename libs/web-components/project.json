@@ -44,7 +44,8 @@
       "outputs": [
         "{workspaceRoot}/dist/libs/web-components/package.json",
         "{workspaceRoot}/dist/libs/web-components/README.md",
-        "{workspaceRoot}/dist/libs/web-components/**/*.d.ts"
+        "{workspaceRoot}/dist/libs/web-components/**/*.d.ts",
+        "{workspaceRoot}/dist/libs/web-components/**/*.d.ts.map"
       ]
     },
 
