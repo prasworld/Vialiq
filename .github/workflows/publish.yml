@@ -196,15 +196,18 @@ jobs:
       - name: Build and prepare dist packages
         run: npx nx run-many -t postbuild-publish -p ${{ env.PUBLISHABLE_LIBS }} --configuration=production --parallel=false
 
-      # Publish packages using native Nx release publish.
-      # This leverages the targetDefaults in nx.json to run in the dist/ folder,
-      # and checks the registry to skip already published packages.
-      # We intentionally set NPM_CONFIG_PROVENANCE alongside Nx's native --provenance
-      # flag to provide a bulletproof guarantee that npm requests the OIDC token.
+      - name: Show npm identity
+        run: |
+          npm --version
+          npm whoami || true
+
+      # Publish packages only when the exact version is missing from npm.
+      # This avoids Nx/npm dist-tag reconciliation for already-published packages,
+      # which can fail in CI when the version is present on the registry.
       - name: Publish packages
         env:
           NPM_CONFIG_PROVENANCE: true
-        run: npx nx release publish
+        run: node tools/release/publish-if-missing.mjs
 
       # Push tags only after a successful publish so every tag in the repo
       # corresponds to a version that actually made it to npm.
