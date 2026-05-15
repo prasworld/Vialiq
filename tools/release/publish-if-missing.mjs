@@ -104,32 +104,103 @@ function runCommand(command, args) {
   });
 }
 
+let cachedNpmRegistry;
+
+function getNpmRegistry() {
+  if (cachedNpmRegistry) {
+    return cachedNpmRegistry;
+  }
+
+  const configuredRegistry =
+    process.env.npm_config_registry ||
+    process.env.NPM_CONFIG_REGISTRY ||
+    runCommand('npm', ['config', 'get', 'registry']).trim();
+
+  cachedNpmRegistry = configuredRegistry.endsWith('/')
+    ? configuredRegistry
+    : `${configuredRegistry}/`;
+
+  return cachedNpmRegistry;
+}
+
+function parsePackageSpec(spec) {
+  const versionSeparatorIndex = spec.lastIndexOf('@');
+  if (versionSeparatorIndex <= 0) {
+    return { packageName: spec, version: null };
+  }
+
+  return {
+    packageName: spec.slice(0, versionSeparatorIndex),
+    version: spec.slice(versionSeparatorIndex + 1),
+  };
+}
+
+function getPackageTarballUrl(packageName, version) {
+  const registry = getNpmRegistry();
+  const encodedPackageName = encodeURIComponent(packageName);
+  const tarballBaseName = packageName.includes('/')
+    ? packageName.slice(packageName.lastIndexOf('/') + 1)
+    : packageName;
+  return `${registry}${encodedPackageName}/-/${tarballBaseName}-${version}.tgz`;
+}
+
+function getPackageMetadataUrl(packageName) {
+  return `${getNpmRegistry()}${encodeURIComponent(packageName)}`;
+}
+
 async function npmViewVersion(spec, { maxAttempts = 5, initialDelayMs = 2000 } = {}) {
+  const { packageName, version } = parsePackageSpec(spec);
   let lastError;
+
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     try {
-      return runCommand('npm', ['view', spec, 'version']).trim();
-    } catch (err) {
-      const stderr = String(err.stderr ?? '').trim();
-      if (isNotFoundError(stderr)) {
+      if (version) {
+        const response = await fetch(getPackageTarballUrl(packageName, version), {
+          method: 'HEAD',
+        });
+
+        if (response.status === 404) {
+          return null;
+        }
+
+        if (!response.ok) {
+          throw new Error(`Unexpected npm registry response: ${response.status} ${response.statusText}`);
+        }
+
+        return version;
+      }
+
+      const response = await fetch(getPackageMetadataUrl(packageName), {
+        method: 'GET',
+        headers: { accept: 'application/json' },
+      });
+
+      if (response.status === 404) {
         return null;
       }
 
+      if (!response.ok) {
+        throw new Error(`Unexpected npm registry response: ${response.status} ${response.statusText}`);
+      }
+
+      const metadata = await response.json();
+      return metadata['dist-tags']?.latest ?? metadata.version ?? null;
+    } catch (err) {
       lastError = err;
-      const message = stderr || String(err.stdout ?? '').trim() || err.message;
-      console.error(`npm view ${spec} failed (attempt ${attempt}/${maxAttempts}): ${message}`);
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(`npm registry check ${spec} failed (attempt ${attempt}/${maxAttempts}): ${message}`);
 
       if (attempt < maxAttempts) {
         const delayMs = initialDelayMs * 2 ** (attempt - 1);
-        console.error(`Retrying npm view ${spec} in ${delayMs}ms...`);
+        console.error(`Retrying npm registry check ${spec} in ${delayMs}ms...`);
         await new Promise((resolve) => setTimeout(resolve, delayMs));
       }
     }
   }
 
   throw new Error(
-    `npm view ${spec} failed after ${maxAttempts} attempts: ${String(
-      lastError.stderr ?? lastError.stdout ?? lastError.message
+    `npm registry check ${spec} failed after ${maxAttempts} attempts: ${String(
+      lastError instanceof Error ? lastError.message : lastError
     )}`
   );
 }
