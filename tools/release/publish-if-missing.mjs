@@ -5,14 +5,26 @@ import { execFileSync } from 'node:child_process';
 const distRoot = join(process.cwd(), 'dist', 'libs');
 const dryRun = process.argv.includes('--dry-run');
 
+function isNpmViewNotFoundError(error) {
+  const stderr = typeof error?.stderr === 'string' ? error.stderr : error?.stderr?.toString?.('utf8') ?? '';
+  const stdout = typeof error?.stdout === 'string' ? error.stdout : error?.stdout?.toString?.('utf8') ?? '';
+  const output = `${stdout}\n${stderr}`;
+
+  return error?.status === 1 && /\bE404\b|404\s+Not\s+Found|not found/i.test(output);
+}
+
 function npmView(spec) {
   try {
     return execFileSync('npm', ['view', spec, 'version'], {
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe'],
     }).trim();
-  } catch {
-    return null;
+  } catch (error) {
+    if (isNpmViewNotFoundError(error)) {
+      return null;
+    }
+
+    throw new Error(`Failed to query npm for ${spec}`, { cause: error });
   }
 }
 
