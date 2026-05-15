@@ -1,31 +1,130 @@
-import { readdirSync, existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
 
-const distRoot = join(process.cwd(), 'dist', 'libs');
 const dryRun = process.argv.includes('--dry-run');
+const nxJson = JSON.parse(readFileSync('nx.json', 'utf8'));
+const workspaceLayout = nxJson.workspaceLayout ?? { appsDir: 'apps', libsDir: 'libs' };
+const packageRootTemplate =
+  process.env.PUBLISH_ROOT ||
+  nxJson.targetDefaults?.['nx-release-publish']?.options?.packageRoot ||
+  'dist/{projectRoot}';
 
-function isNpmViewNotFoundError(error) {
-  const stderr = typeof error?.stderr === 'string' ? error.stderr : error?.stderr?.toString?.('utf8') ?? '';
-  const stdout = typeof error?.stdout === 'string' ? error.stdout : error?.stdout?.toString?.('utf8') ?? '';
-  const output = `${stdout}\n${stderr}`;
-
-  return error?.status === 1 && /\bE404\b|404\s+Not\s+Found|not found/i.test(output);
+function getPublishableProjects() {
+  const envList = process.env.PUBLISHABLE_LIBS;
+  if (typeof envList === 'string' && envList.trim().length > 0) {
+    return envList.split(',').map((item) => item.trim()).filter(Boolean);
+  }
+  const releaseProjects = nxJson.release?.projects;
+  if (Array.isArray(releaseProjects) && releaseProjects.length > 0) {
+    return releaseProjects;
+  }
+  throw new Error(
+    'Missing publishable project list: set PUBLISHABLE_LIBS or configure nx.json.release.projects'
+  );
 }
 
-function npmView(spec) {
-  try {
-    return execFileSync('npm', ['view', spec, 'version'], {
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'pipe'],
-    }).trim();
-  } catch (error) {
-    if (isNpmViewNotFoundError(error)) {
-      return null;
-    }
+function resolveProjectRoot(projectName) {
+  const candidates = [
+    join(workspaceLayout.libsDir, projectName),
+    join(workspaceLayout.appsDir, projectName),
+  ];
 
-    throw new Error(`Failed to query npm for ${spec}`, { cause: error });
+  for (const candidate of candidates) {
+    if (existsSync(join(candidate, 'project.json'))) {
+      return candidate;
+    }
   }
+
+  for (const candidate of candidates) {
+    if (existsSync(candidate)) {
+      return candidate;
+    }
+  }
+
+  throw new Error(
+    `Unable to resolve project root for ${projectName}. ` +
+      `Expected project.json in ${candidates.join(' or ')}.`
+  );
+}
+
+function renderPackageDir(projectName) {
+  const projectRoot = resolveProjectRoot(projectName);
+
+  if (packageRootTemplate.includes('{projectRoot}')) {
+    const packageRoot = packageRootTemplate.replace('{projectRoot}', projectRoot);
+    return join(process.cwd(), packageRoot);
+  }
+
+  const packageRoot = join(process.cwd(), packageRootTemplate);
+  const candidate = join(packageRoot, projectName);
+  if (existsSync(candidate)) {
+    return candidate;
+  }
+  if (existsSync(packageRoot)) {
+    return packageRoot;
+  }
+
+  throw new Error(
+    `Unable to resolve published package directory for ${projectName}. ` +
+      `Tried ${candidate} and ${packageRoot}.`
+  );
+}
+
+function isNotFoundError(stderr) {
+  const normalized = stderr.toLowerCase();
+  return (
+    normalized.includes('e404') ||
+    normalized.includes('not found') ||
+    normalized.includes('is not in this registry')
+  );
+}
+
+function isAlreadyPublishedError(stderr) {
+  const normalized = stderr.toLowerCase();
+  return (
+    normalized.includes('cannot publish over') ||
+    normalized.includes('previously published version') ||
+    normalized.includes('epublishconflict') ||
+    normalized.includes('already published')
+  );
+}
+
+function runCommand(command, args) {
+  return execFileSync(command, args, {
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+}
+
+async function npmViewVersion(spec, { maxAttempts = 5, initialDelayMs = 2000 } = {}) {
+  let lastError;
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      return runCommand('npm', ['view', spec, 'version']).trim();
+    } catch (err) {
+      const stderr = String(err.stderr ?? '').trim();
+      if (isNotFoundError(stderr)) {
+        return null;
+      }
+
+      lastError = err;
+      const message = stderr || String(err.stdout ?? '').trim() || err.message;
+      console.error(`npm view ${spec} failed (attempt ${attempt}/${maxAttempts}): ${message}`);
+
+      if (attempt < maxAttempts) {
+        const delayMs = initialDelayMs * 2 ** (attempt - 1);
+        console.error(`Retrying npm view ${spec} in ${delayMs}ms...`);
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+      }
+    }
+  }
+
+  throw new Error(
+    `npm view ${spec} failed after ${maxAttempts} attempts: ${String(
+      lastError.stderr ?? lastError.stdout ?? lastError.message
+    )}`
+  );
 }
 
 function npmPublish(dir) {
@@ -33,39 +132,60 @@ function npmPublish(dir) {
   if (dryRun) {
     args.push('--dry-run');
   }
-  execFileSync('npm', args, { stdio: 'inherit' });
+
+  try {
+    execFileSync('npm', args, { stdio: 'inherit' });
+  } catch (err) {
+    const stderr = String(err.stderr ?? '').trim();
+    if (isAlreadyPublishedError(stderr)) {
+      console.log(
+        `Skipping publish for ${dir}: package appears to already exist in npm.`
+      );
+      return;
+    }
+    throw err;
+  }
 }
 
-if (!existsSync(distRoot)) {
-  console.error(`Error: dist root not found: ${distRoot}`);
+async function main() {
+  const publishableProjects = getPublishableProjects();
+  const packageDirs = publishableProjects.map((projectName) => {
+    const packageDir = renderPackageDir(projectName);
+    if (!existsSync(packageDir)) {
+      throw new Error(
+        `Expected dist package directory missing: ${packageDir}. ` +
+          'Ensure the project was built and postbuild-publish ran successfully.'
+      );
+    }
+    return packageDir;
+  });
+
+  if (packageDirs.length === 0) {
+    console.log('No publishable packages were resolved.');
+    return;
+  }
+
+  for (const pkgDir of packageDirs) {
+    const pkgJsonPath = join(pkgDir, 'package.json');
+    if (!existsSync(pkgJsonPath)) {
+      throw new Error(`Missing package.json in ${pkgDir}.`);
+    }
+
+    const pkg = JSON.parse(readFileSync(pkgJsonPath, 'utf8'));
+    const spec = `${pkg.name}@${pkg.version}`;
+    const existingVersion = await npmViewVersion(spec);
+
+    if (existingVersion === pkg.version) {
+      console.log(`Skipping ${spec} because it already exists on npm`);
+      continue;
+    }
+
+    console.log(`Publishing ${spec}`);
+    npmPublish(pkgDir);
+  }
+}
+
+main().catch((err) => {
+  console.error(err.message || err);
   process.exit(1);
-}
-
-const entries = readdirSync(distRoot, { withFileTypes: true })
-  .filter((dirent) => dirent.isDirectory())
-  .map((dirent) => join(distRoot, dirent.name));
-
-if (entries.length === 0) {
-  console.log('No dist packages found under', distRoot);
-  process.exit(0);
-}
-
-for (const pkgDir of entries) {
-  const pkgJsonPath = join(pkgDir, 'package.json');
-  if (!existsSync(pkgJsonPath)) {
-    console.log(`Skipping ${pkgDir}: no package.json found`);
-    continue;
-  }
-
-  const pkg = JSON.parse(readFileSync(pkgJsonPath, 'utf8'));
-  const spec = `${pkg.name}@${pkg.version}`;
-  const existing = npmView(spec);
-
-  if (existing === pkg.version) {
-    console.log(`Skipping ${spec} because it already exists on npm`);
-    continue;
-  }
-
-  console.log(`Publishing ${spec}`);
-  npmPublish(pkgDir);
-}
+});
