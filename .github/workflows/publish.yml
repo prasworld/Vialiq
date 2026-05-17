@@ -32,8 +32,9 @@ jobs:
         with:
           # Node 24 ships with npm >= 11.11.0, required for OIDC provenance.
           # setup-node@v5+ required: v4 writes always-auth=true which npm 11 rejects.
+          # Do NOT set registry-url here: setup-node would write an _authToken
+          # placeholder to .npmrc that npm 11 treats as token auth, breaking OIDC.
           node-version: '24'
-          registry-url: 'https://registry.npmjs.org/'
           cache: 'npm'
 
       - name: Enable Corepack
@@ -116,6 +117,8 @@ jobs:
 
       # Push the annotated tags created by 'nx release version' to the remote.
       # Done after a successful publish so every remote tag has a live npm package.
+      # Note: git push --follow-tags would NOT work here because git.commit: false
+      # means no new commit is created, so --follow-tags has nothing to push.
       - name: Push release tags
         if: steps.bumped.outputs.has_bumps == 'true'
-        run: git push --follow-tags
+        run: git push origin --tags

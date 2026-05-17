@@ -37,10 +37,12 @@
       "types": "./input/vi-input.d.ts"
     }
   },
+  "dependencies": {
+    "@vialiq/flux-ui": "^0.0.4",
+    "@vialiq/icons": "^0.0.3"
+  },
   "peerDependencies": {
-    "lit": "^3.0.0",
-    "@vialiq/flux-ui": "*",
-    "@vialiq/icons": "*"
+    "lit": "^3.0.0"
   },
   "keywords": [
     "web-components",
