@@ -1,0 +1,383 @@
+/**
+ * Semantic Typography System
+ * ==========================
+ * Two layers:
+ *
+ * 1. @layer components — element defaults
+ *    Native HTML elements (h1–h6, p, label, small, code…) receive the correct
+ *    type role automatically. No class names needed in markup.
+ *
+ * 2. @layer utilities — explicit role classes
+ *    .vi-display-lg, .vi-heading-xl … give access to any role on any element,
+ *    and override the element defaults (utilities > components in cascade).
+ *
+ * All axes are CSS-custom-property–backed, so any consumer can override at
+ * :root (theme), a scoped selector, or an individual element.
+ *
+ * Type scale (inspired by M3, Carbon and Atlassian):
+ *   Display  lg / md      — hero, marketing (3xl → 2xl)
+ *   Heading  xl→sm        — page / section / widget / sidebar (xl → sm)
+ *   Body     lg / md / sm — long-form / UI / secondary
+ *   Label    md / sm      — form labels, chips, nav
+ *   Caption               — timestamps, fine print
+ *   Overline              — all-caps category markers
+ *   Code                  — monospace snippets
+ */
+
+@use 'variables' as tokens;
+
+// ---------------------------------------------------------------------------
+// Shared placeholder — pulled in by both layers via @extend.
+// Must live outside any layer so @extend can reach it from both.
+// ---------------------------------------------------------------------------
+
+%type-base {
+  font-family: var(--vi-font-family-base, #{tokens.$font-family-base});
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  margin: 0;
+}
+
+// ===========================================================================
+// LAYER 1 — element defaults (components layer, lowest priority)
+// Native HTML → type role binding. Zero class names required.
+// ===========================================================================
+
+@layer components {
+
+  // ── Body defaults ─────────────────────────────────────────────────────────
+  // body already set in _reset.scss but we re-affirm with token vars here.
+  body {
+    font-family: var(--vi-font-family-base, #{tokens.$font-family-base});
+    font-size: var(--vi-body-md-size, #{tokens.$font-size-base});
+    font-weight: var(--vi-body-md-weight, #{tokens.$font-weight-normal});
+    line-height: var(--vi-body-md-leading, #{tokens.$line-height-normal});
+    letter-spacing: var(--vi-body-md-tracking, #{tokens.$letter-spacing-normal});
+    color: var(--vi-body-md-color, #{tokens.$color-foreground});
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  // ── Headings ──────────────────────────────────────────────────────────────
+
+  h1 {
+    font-size: var(--vi-heading-h1-size, #{tokens.$font-size-3xl});
+    font-weight: var(--vi-heading-h1-weight, #{tokens.$font-weight-bold});
+    line-height: var(--vi-heading-h1-leading, #{tokens.$line-height-tight});
+    letter-spacing: var(--vi-heading-h1-tracking, #{tokens.$letter-spacing-tight});
+    color: var(--vi-heading-h1-color, #{tokens.$color-foreground});
+  }
+
+  h2 {
+    font-size: var(--vi-heading-h2-size, #{tokens.$font-size-2xl});
+    font-weight: var(--vi-heading-h2-weight, #{tokens.$font-weight-bold});
+    line-height: var(--vi-heading-h2-leading, #{tokens.$line-height-tight});
+    letter-spacing: var(--vi-heading-h2-tracking, #{tokens.$letter-spacing-tight});
+    color: var(--vi-heading-h2-color, #{tokens.$color-foreground});
+  }
+
+  h3 {
+    font-size: var(--vi-heading-h3-size, #{tokens.$font-size-xl});
+    font-weight: var(--vi-heading-h3-weight, #{tokens.$font-weight-semibold});
+    line-height: var(--vi-heading-h3-leading, #{tokens.$line-height-tight});
+    letter-spacing: var(--vi-heading-h3-tracking, #{tokens.$letter-spacing-normal});
+    color: var(--vi-heading-h3-color, #{tokens.$color-foreground});
+  }
+
+  h4 {
+    font-size: var(--vi-heading-h4-size, #{tokens.$font-size-lg});
+    font-weight: var(--vi-heading-h4-weight, #{tokens.$font-weight-semibold});
+    line-height: var(--vi-heading-h4-leading, #{tokens.$line-height-tight});
+    letter-spacing: var(--vi-heading-h4-tracking, #{tokens.$letter-spacing-normal});
+    color: var(--vi-heading-h4-color, #{tokens.$color-foreground});
+  }
+
+  h5 {
+    font-size: var(--vi-heading-h5-size, #{tokens.$font-size-base});
+    font-weight: var(--vi-heading-h5-weight, #{tokens.$font-weight-semibold});
+    line-height: var(--vi-heading-h5-leading, #{tokens.$line-height-normal});
+    letter-spacing: var(--vi-heading-h5-tracking, #{tokens.$letter-spacing-wide});
+    color: var(--vi-heading-h5-color, #{tokens.$color-foreground});
+  }
+
+  h6 {
+    font-size: var(--vi-heading-h6-size, #{tokens.$font-size-sm});
+    font-weight: var(--vi-heading-h6-weight, #{tokens.$font-weight-semibold});
+    line-height: var(--vi-heading-h6-leading, #{tokens.$line-height-normal});
+    letter-spacing: var(--vi-heading-h6-tracking, #{tokens.$letter-spacing-wide});
+    color: var(--vi-heading-h6-color, #{tokens.$color-grey-700});
+  }
+
+  // ── Paragraph ─────────────────────────────────────────────────────────────
+
+  p {
+    font-size: var(--vi-body-md-size, #{tokens.$font-size-base});
+    font-weight: var(--vi-body-md-weight, #{tokens.$font-weight-normal});
+    line-height: var(--vi-body-md-leading, #{tokens.$line-height-normal});
+    letter-spacing: var(--vi-body-md-tracking, #{tokens.$letter-spacing-normal});
+    color: var(--vi-body-md-color, #{tokens.$color-foreground});
+  }
+
+  // ── Labels & form elements ────────────────────────────────────────────────
+  // <label> gets the label-md role by default — medium weight, slightly tracked.
+
+  label {
+    font-size: var(--vi-label-md-size, #{tokens.$font-size-sm});
+    font-weight: var(--vi-label-md-weight, #{tokens.$font-weight-medium});
+    line-height: var(--vi-label-md-leading, #{tokens.$line-height-tight});
+    letter-spacing: var(--vi-label-md-tracking, #{tokens.$letter-spacing-wide});
+    color: var(--vi-label-md-color, #{tokens.$color-foreground});
+  }
+
+  // ── Inline semantics ──────────────────────────────────────────────────────
+
+  small {
+    font-size: var(--vi-caption-size, #{tokens.$font-size-xs});
+    font-weight: var(--vi-caption-weight, #{tokens.$font-weight-normal});
+    line-height: var(--vi-caption-leading, #{tokens.$line-height-normal});
+    letter-spacing: var(--vi-caption-tracking, #{tokens.$letter-spacing-wider});
+    color: var(--vi-caption-color, #{tokens.$color-grey-500});
+  }
+
+  strong,
+  b {
+    font-weight: #{tokens.$font-weight-semibold};
+  }
+
+  em,
+  i {
+    font-style: italic;
+  }
+
+  // ── Figure caption ────────────────────────────────────────────────────────
+
+  figcaption {
+    font-size: var(--vi-caption-size, #{tokens.$font-size-xs});
+    font-weight: var(--vi-caption-weight, #{tokens.$font-weight-normal});
+    line-height: var(--vi-caption-leading, #{tokens.$line-height-normal});
+    letter-spacing: var(--vi-caption-tracking, #{tokens.$letter-spacing-wider});
+    color: var(--vi-caption-color, #{tokens.$color-grey-500});
+  }
+
+  // ── Code ──────────────────────────────────────────────────────────────────
+
+  code,
+  kbd,
+  samp {
+    font-family: var(--vi-font-family-mono, #{tokens.$font-family-mono});
+    font-size: var(--vi-code-size, #{tokens.$font-size-sm});
+    font-weight: var(--vi-code-weight, #{tokens.$font-weight-normal});
+    line-height: var(--vi-code-leading, #{tokens.$line-height-normal});
+    letter-spacing: var(--vi-code-tracking, #{tokens.$letter-spacing-normal});
+    color: var(--vi-code-color, #{tokens.$color-foreground});
+    -webkit-font-smoothing: auto;
+  }
+
+  pre {
+    font-family: var(--vi-font-family-mono, #{tokens.$font-family-mono});
+    font-size: var(--vi-code-size, #{tokens.$font-size-sm});
+    line-height: var(--vi-code-leading, #{tokens.$line-height-relaxed});
+    color: var(--vi-code-color, #{tokens.$color-foreground});
+    -webkit-font-smoothing: auto;
+  }
+
+  // ── Blockquote ────────────────────────────────────────────────────────────
+
+  blockquote {
+    font-size: var(--vi-body-lg-size, #{tokens.$font-size-lg});
+    font-weight: var(--vi-body-lg-weight, #{tokens.$font-weight-light});
+    line-height: var(--vi-body-lg-leading, #{tokens.$line-height-relaxed});
+    letter-spacing: var(--vi-body-lg-tracking, #{tokens.$letter-spacing-normal});
+    color: var(--vi-body-lg-color, #{tokens.$color-grey-700});
+    font-style: italic;
+    margin: 0;
+    padding: 0;
+  }
+
+  // ── Table cells ───────────────────────────────────────────────────────────
+
+  th {
+    font-size: var(--vi-label-md-size, #{tokens.$font-size-sm});
+    font-weight: var(--vi-label-md-weight, #{tokens.$font-weight-semibold});
+    line-height: var(--vi-label-md-leading, #{tokens.$line-height-tight});
+    letter-spacing: var(--vi-label-md-tracking, #{tokens.$letter-spacing-wide});
+    color: var(--vi-label-md-color, #{tokens.$color-foreground});
+  }
+
+  td {
+    font-size: var(--vi-body-sm-size, #{tokens.$font-size-sm});
+    font-weight: var(--vi-body-sm-weight, #{tokens.$font-weight-normal});
+    line-height: var(--vi-body-sm-leading, #{tokens.$line-height-normal});
+    color: var(--vi-body-sm-color, #{tokens.$color-grey-600});
+  }
+}
+
+// ===========================================================================
+// LAYER 2 — explicit role classes (utilities layer, wins over element defaults)
+// Use these when: element semantic doesn't match desired visual; or for
+// non-semantic elements like <div>, <span>, shadow-DOM parts.
+// ===========================================================================
+
+@layer utilities {
+
+  // ── Display ───────────────────────────────────────────────────────────────
+
+  .vi-display-lg {
+    @extend %type-base;
+    font-size: var(--vi-display-lg-size, #{tokens.$font-size-3xl});
+    font-weight: var(--vi-display-lg-weight, #{tokens.$font-weight-bold});
+    line-height: var(--vi-display-lg-leading, #{tokens.$line-height-tight});
+    letter-spacing: var(--vi-display-lg-tracking, #{tokens.$letter-spacing-tight});
+    color: var(--vi-display-lg-color, #{tokens.$color-foreground});
+  }
+
+  .vi-display-md {
+    @extend %type-base;
+    font-size: var(--vi-display-md-size, #{tokens.$font-size-2xl});
+    font-weight: var(--vi-display-md-weight, #{tokens.$font-weight-semibold});
+    line-height: var(--vi-display-md-leading, #{tokens.$line-height-tight});
+    letter-spacing: var(--vi-display-md-tracking, #{tokens.$letter-spacing-tight});
+    color: var(--vi-display-md-color, #{tokens.$color-foreground});
+  }
+
+  // ── Headings ──────────────────────────────────────────────────────────────
+
+  .vi-heading-xl {
+    @extend %type-base;
+    font-size: var(--vi-heading-h2-size, #{tokens.$font-size-2xl});
+    font-weight: var(--vi-heading-h2-weight, #{tokens.$font-weight-bold});
+    line-height: var(--vi-heading-h2-leading, #{tokens.$line-height-tight});
+    letter-spacing: var(--vi-heading-h2-tracking, #{tokens.$letter-spacing-tight});
+    color: var(--vi-heading-h2-color, #{tokens.$color-foreground});
+  }
+
+  .vi-heading-lg {
+    @extend %type-base;
+    font-size: var(--vi-heading-h3-size, #{tokens.$font-size-xl});
+    font-weight: var(--vi-heading-h3-weight, #{tokens.$font-weight-semibold});
+    line-height: var(--vi-heading-h3-leading, #{tokens.$line-height-tight});
+    letter-spacing: var(--vi-heading-h3-tracking, #{tokens.$letter-spacing-normal});
+    color: var(--vi-heading-h3-color, #{tokens.$color-foreground});
+  }
+
+  .vi-heading-md {
+    @extend %type-base;
+    font-size: var(--vi-heading-h5-size, #{tokens.$font-size-base});
+    font-weight: var(--vi-heading-h5-weight, #{tokens.$font-weight-semibold});
+    line-height: var(--vi-heading-h5-leading, #{tokens.$line-height-normal});
+    letter-spacing: var(--vi-heading-h5-tracking, #{tokens.$letter-spacing-wide});
+    color: var(--vi-heading-h5-color, #{tokens.$color-foreground});
+  }
+
+  .vi-heading-sm {
+    @extend %type-base;
+    font-size: var(--vi-heading-h6-size, #{tokens.$font-size-sm});
+    font-weight: var(--vi-heading-h6-weight, #{tokens.$font-weight-semibold});
+    line-height: var(--vi-heading-h6-leading, #{tokens.$line-height-normal});
+    letter-spacing: var(--vi-heading-h6-tracking, #{tokens.$letter-spacing-wide});
+    color: var(--vi-heading-h6-color, #{tokens.$color-grey-700});
+  }
+
+  // ── Body ──────────────────────────────────────────────────────────────────
+
+  .vi-body-lg {
+    @extend %type-base;
+    font-size: var(--vi-body-lg-size, #{tokens.$font-size-lg});
+    font-weight: var(--vi-body-lg-weight, #{tokens.$font-weight-normal});
+    line-height: var(--vi-body-lg-leading, #{tokens.$line-height-relaxed});
+    letter-spacing: var(--vi-body-lg-tracking, #{tokens.$letter-spacing-normal});
+    color: var(--vi-body-lg-color, #{tokens.$color-foreground});
+  }
+
+  .vi-body-md {
+    @extend %type-base;
+    font-size: var(--vi-body-md-size, #{tokens.$font-size-base});
+    font-weight: var(--vi-body-md-weight, #{tokens.$font-weight-normal});
+    line-height: var(--vi-body-md-leading, #{tokens.$line-height-normal});
+    letter-spacing: var(--vi-body-md-tracking, #{tokens.$letter-spacing-normal});
+    color: var(--vi-body-md-color, #{tokens.$color-foreground});
+  }
+
+  .vi-body-sm {
+    @extend %type-base;
+    font-size: var(--vi-body-sm-size, #{tokens.$font-size-sm});
+    font-weight: var(--vi-body-sm-weight, #{tokens.$font-weight-normal});
+    line-height: var(--vi-body-sm-leading, #{tokens.$line-height-normal});
+    letter-spacing: var(--vi-body-sm-tracking, #{tokens.$letter-spacing-normal});
+    color: var(--vi-body-sm-color, #{tokens.$color-grey-600});
+  }
+
+  // ── Labels ────────────────────────────────────────────────────────────────
+
+  .vi-label-md {
+    @extend %type-base;
+    font-size: var(--vi-label-md-size, #{tokens.$font-size-sm});
+    font-weight: var(--vi-label-md-weight, #{tokens.$font-weight-medium});
+    line-height: var(--vi-label-md-leading, #{tokens.$line-height-tight});
+    letter-spacing: var(--vi-label-md-tracking, #{tokens.$letter-spacing-wide});
+    color: var(--vi-label-md-color, #{tokens.$color-foreground});
+  }
+
+  .vi-label-sm {
+    @extend %type-base;
+    font-size: var(--vi-label-sm-size, #{tokens.$font-size-xs});
+    font-weight: var(--vi-label-sm-weight, #{tokens.$font-weight-medium});
+    line-height: var(--vi-label-sm-leading, #{tokens.$line-height-tight});
+    letter-spacing: var(--vi-label-sm-tracking, #{tokens.$letter-spacing-wide});
+    color: var(--vi-label-sm-color, #{tokens.$color-foreground});
+  }
+
+  // ── Caption / Overline / Code ──────────────────────────────────────────────
+
+  .vi-caption {
+    @extend %type-base;
+    font-size: var(--vi-caption-size, #{tokens.$font-size-xs});
+    font-weight: var(--vi-caption-weight, #{tokens.$font-weight-normal});
+    line-height: var(--vi-caption-leading, #{tokens.$line-height-normal});
+    letter-spacing: var(--vi-caption-tracking, #{tokens.$letter-spacing-wider});
+    color: var(--vi-caption-color, #{tokens.$color-grey-500});
+  }
+
+  .vi-overline {
+    @extend %type-base;
+    font-size: var(--vi-overline-size, #{tokens.$font-size-xs});
+    font-weight: var(--vi-overline-weight, #{tokens.$font-weight-semibold});
+    line-height: var(--vi-overline-leading, #{tokens.$line-height-tight});
+    letter-spacing: var(--vi-overline-tracking, #{tokens.$letter-spacing-widest});
+    text-transform: uppercase;
+    color: var(--vi-overline-color, #{tokens.$color-grey-600});
+  }
+
+  .vi-code {
+    font-family: var(--vi-font-family-mono, #{tokens.$font-family-mono});
+    font-size: var(--vi-code-size, #{tokens.$font-size-sm});
+    font-weight: var(--vi-code-weight, #{tokens.$font-weight-normal});
+    line-height: var(--vi-code-leading, #{tokens.$line-height-normal});
+    letter-spacing: var(--vi-code-tracking, #{tokens.$letter-spacing-normal});
+    color: var(--vi-code-color, #{tokens.$color-foreground});
+    -webkit-font-smoothing: auto;
+  }
+
+  // ── Text modifier utilities ────────────────────────────────────────────────
+
+  .vi-text-muted   { color: #{tokens.$color-grey-500}; }
+  .vi-text-subtle  { color: #{tokens.$color-grey-600}; }
+  .vi-text-strong  { font-weight: #{tokens.$font-weight-semibold}; }
+  .vi-text-bold    { font-weight: #{tokens.$font-weight-bold}; }
+  .vi-text-italic  { font-style: italic; }
+  .vi-text-truncate {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .vi-text-balance { text-wrap: balance; }
+
+  // ── Letter-spacing modifiers ───────────────────────────────────────────────
+
+  .vi-tracking-tight   { letter-spacing: #{tokens.$letter-spacing-tight}; }
+  .vi-tracking-normal  { letter-spacing: #{tokens.$letter-spacing-normal}; }
+  .vi-tracking-wide    { letter-spacing: #{tokens.$letter-spacing-wide}; }
+  .vi-tracking-wider   { letter-spacing: #{tokens.$letter-spacing-wider}; }
+  .vi-tracking-widest  { letter-spacing: #{tokens.$letter-spacing-widest}; }
+}
+

@@ -75,6 +75,15 @@
   --vi-line-height-relaxed: #{strip-units($line-height-relaxed)};
 
   // ========================================================================
+  // Typography — Letter Spacing
+  // ========================================================================
+  --vi-letter-spacing-tight:  #{strip-units($letter-spacing-tight)};
+  --vi-letter-spacing-normal: #{strip-units($letter-spacing-normal)};
+  --vi-letter-spacing-wide:   #{strip-units($letter-spacing-wide)};
+  --vi-letter-spacing-wider:  #{strip-units($letter-spacing-wider)};
+  --vi-letter-spacing-widest: #{strip-units($letter-spacing-widest)};
+
+  // ========================================================================
   // Shadows
   // ========================================================================
   @each $shadow-name, $shadow-value in $shadow-map {

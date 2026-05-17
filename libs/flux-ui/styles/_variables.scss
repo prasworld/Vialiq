@@ -185,6 +185,16 @@ $line-height-tight:   var(--vi-line-height-tight,   1.2);
 $line-height-normal:  var(--vi-line-height-normal,  1.5);
 $line-height-relaxed: var(--vi-line-height-relaxed, 1.75);
 
+// -- Primitive: Letter Spacing -----------------------------------------------
+// Values follow the em-based convention used by M3/Carbon.
+// tight = dense data; normal = body text; wide = caps/labels; widest = overlines
+
+$letter-spacing-tight:   var(--vi-letter-spacing-tight,   -0.01em);
+$letter-spacing-normal:  var(--vi-letter-spacing-normal,   0em);
+$letter-spacing-wide:    var(--vi-letter-spacing-wide,     0.025em);
+$letter-spacing-wider:   var(--vi-letter-spacing-wider,    0.05em);
+$letter-spacing-widest:  var(--vi-letter-spacing-widest,   0.1em);
+
 // -- Primitive: Shadows ------------------------------------------------------
 
 $shadow-sm: var(--vi-shadow-sm, 0 1px 2px 0 rgba(0, 0, 0, 0.05));

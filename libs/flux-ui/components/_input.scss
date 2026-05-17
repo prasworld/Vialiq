@@ -1,0 +1,93 @@
+/**
+ * Input component base styles.
+ *
+ * Provides the host-agnostic foundation for text-input-like controls:
+ * layout, border, padding, typography, focus ring, and state modifiers.
+ * Component-specific colours and label positioning are in the consuming
+ * web-component's SCSS (vi-input.scss etc.).
+ */
+
+@use '../styles/variables' as tokens;
+
+@layer components {
+  // -------------------------------------------------------------------------
+  // Field wrapper — stacks label / input / helper vertically
+  // -------------------------------------------------------------------------
+  .input-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+  }
+
+  // -------------------------------------------------------------------------
+  // Native <input> element — full reset then design-system styles
+  // -------------------------------------------------------------------------
+  .input-control {
+    appearance: none;
+    -webkit-appearance: none;
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 40px;
+    border: #{tokens.$border-width-thin} solid var(--vi-input-border-color, #{tokens.$color-grey-300});
+    border-radius: var(--vi-input-shape-border-radius, #{tokens.$border-radius-lg});
+    padding: var(--vi-input-spacing-padding-block, 10px)
+             var(--vi-input-spacing-padding-inline, #{tokens.$spacing-sm});
+    font-family: #{tokens.$font-family-base};
+    font-size: var(--vi-input-typography-font-size, #{tokens.$font-size-base});
+    font-weight: #{tokens.$font-weight-normal};
+    line-height: #{tokens.$line-height-normal};
+    color: var(--vi-input-text-color, #{tokens.$color-foreground});
+    background-color: var(--vi-input-background-color, #{tokens.$color-background});
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+
+    &:hover:not(:focus-visible) {
+      border-color: var(--vi-input-border-color-hover, #{tokens.$color-grey-500});
+    }
+
+    // Focus ring — outline + subtle shadow for depth.
+    // :focus is included alongside :focus-visible because with delegatesFocus: true
+    // some browsers set :focus but not :focus-visible on the delegated inner element.
+    // For <input> elements, showing the ring on all focus (keyboard + mouse) is correct.
+    &:focus-visible,
+    &:focus {
+      outline: #{tokens.$border-width-base} solid var(--vi-input-focus-ring-color, #{tokens.$color-primary});
+      outline-offset: 0;
+      box-shadow: 0 0 0 3px var(--vi-input-focus-ring-glow, #{tokens.$color-blue-200});
+    }
+
+    &::placeholder {
+      color: var(--vi-input-placeholder-color, #{tokens.$color-grey-500});
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Helper / error text
+  // -------------------------------------------------------------------------
+  .input-helper {
+    font-size: #{tokens.$font-size-xs};
+    line-height: #{tokens.$line-height-normal};
+    color: var(--vi-input-helper-color, #{tokens.$color-grey-500});
+
+    // No space when there is no helper text.
+    &:empty {
+      display: none;
+    }
+  }
+
+  .input-error {
+    font-size: #{tokens.$font-size-xs};
+    line-height: #{tokens.$line-height-normal};
+    color: var(--vi-input-error-color, #{tokens.$color-error});
+  }
+
+  // -------------------------------------------------------------------------
+  // Reduced-motion override
+  // -------------------------------------------------------------------------
+  @media (prefers-reduced-motion: reduce) {
+    .input-control {
+      transition: none;
+    }
+  }
+}
