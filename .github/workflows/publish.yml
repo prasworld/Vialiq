@@ -73,6 +73,13 @@ jobs:
             console.log('Pre-version snapshot:', JSON.stringify(v));
           "
 
+      # Purge any local tags that no longer exist on the remote (can be left
+      # behind if a previous run created tags but failed before pushing them).
+      # This prevents nx release version from seeing a stale local tag as the
+      # current version and accidentally skipping a version number.
+      - name: Prune orphan local tags
+        run: git fetch origin --prune '+refs/tags/*:refs/tags/*'
+
       # Parse conventional commits since each project's last git tag and bump
       # package.json + create a local annotated git tag for each changed project.
       # Commit types: feat -> minor, fix/refactor/perf -> patch, chore/docs -> no-op.
@@ -115,10 +122,26 @@ jobs:
         env:
           NPM_CONFIG_PROVENANCE: true
 
-      # Push the annotated tags created by 'nx release version' to the remote.
-      # Done after a successful publish so every remote tag has a live npm package.
-      # Note: git push --follow-tags would NOT work here because git.commit: false
-      # means no new commit is created, so --follow-tags has nothing to push.
+      # Push ONLY the annotated tags created in this run (one per bumped project).
+      # Pushing 'git push origin --tags' would push every local tag, which could
+      # include orphan tags left by an earlier run on a reused runner.
+      # Tags follow the nx release pattern: <projectName>@<version>
+      # (e.g. flux-ui@0.0.5 — the Nx project name, not the npm package name).
+      #
+      # Manual recovery if this step fails after a successful npm publish:
+      #   git push origin <projectName>@<version>  # for each affected project
+      # e.g.: git push origin flux-ui@0.0.5
       - name: Push release tags
         if: steps.bumped.outputs.has_bumps == 'true'
-        run: git push origin --tags
+        run: |
+          node -e "
+            const { execSync } = require('child_process');
+            const fs = require('fs');
+            const bumped = process.env.BUMPED_LIBS.split(',').filter(Boolean);
+            for (const lib of bumped) {
+              const pkg = JSON.parse(fs.readFileSync('libs/' + lib + '/package.json', 'utf8'));
+              const tag = lib + '@' + pkg.version;
+              console.log('Pushing tag: ' + tag);
+              execSync('git push origin refs/tags/' + tag, { stdio: 'inherit' });
+            }
+          "

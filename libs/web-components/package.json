@@ -38,8 +38,8 @@
     }
   },
   "dependencies": {
-    "@vialiq/flux-ui": "^0.0.4",
-    "@vialiq/icons": "^0.0.3"
+    "@vialiq/flux-ui": ">=0.0.4",
+    "@vialiq/icons": ">=0.0.3"
   },
   "peerDependencies": {
     "lit": "^3.0.0"
