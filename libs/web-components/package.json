@@ -31,17 +31,11 @@
     "./icons/registry": {
       "types": "./icons/registry.d.ts",
       "default": "./icons/registry.js"
-    },
-    "./input": {
-      "types": "./input/vi-input.d.ts",
-      "default": "./input/vi-input.js"
     }
   },
-  "dependencies": {
-    "@vialiq/flux-ui": ">=0.0.4",
-    "@vialiq/icons": ">=0.0.3"
-  },
   "peerDependencies": {
+    "@vialiq/flux-ui": ">=0.0.4",
+    "@vialiq/icons": ">=0.0.3",
     "lit": "^3.0.0"
   },
   "keywords": [
@@ -57,7 +51,6 @@
     "*.d.ts",
     "base/",
     "button/",
-    "input/",
     "icons/",
     "README.md"
   ]
