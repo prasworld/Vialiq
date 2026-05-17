@@ -3,11 +3,6 @@
   "$schema": "../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/src",
   "projectType": "library",
-  "release": {
-    "version": {
-      "currentVersionResolver": "git-tag"
-    }
-  },
   "tags": [],
   "targets": {
     "build": {
@@ -42,7 +37,7 @@
       "dependsOn": ["build"],
       "options": {
         "commands": [
-          "cp libs/automapper/publish-package.json dist/libs/automapper/package.json",
+          "cp libs/automapper/package.json dist/libs/automapper/package.json",
           "cp libs/automapper/LICENSE dist/libs/automapper/LICENSE",
           "cp -r dist/libs/automapper/src/. dist/libs/automapper/"
         ],

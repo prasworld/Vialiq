@@ -1,7 +1,48 @@
 {
   "name": "@vialiq/flux-ui",
   "version": "0.0.4",
+  "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/prasworld/Vialiq.git"
+  },
   "type": "module",
   "description": "Custom minimal CSS/SASS framework for microfrontend product",
-  "license": "MIT"
+  "license": "MIT",
+  "module": "./index.js",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "default": "./index.js",
+      "types": "./index.d.ts"
+    },
+    "./tokens": {
+      "default": "./tokens/index.js",
+      "types": "./tokens/index.d.ts"
+    },
+    "./styles": {
+      "sass": "./styles/_index.scss",
+      "default": "./styles/index.js",
+      "types": "./styles/index.d.ts"
+    },
+    "./styles/*": "./styles/*",
+    "./components": "./components/_index.scss",
+    "./components/*": "./components/*",
+    "./flux-ui.css": "./flux-ui.css"
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "index.d.ts.map",
+    "*.scss",
+    "styles/",
+    "components/",
+    "tokens/",
+    "flux-ui.css",
+    "flux-ui.css.map",
+    "README.md"
+  ]
 }

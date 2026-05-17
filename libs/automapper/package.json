@@ -1,7 +1,49 @@
 {
   "name": "@vialiq/automapper",
-  "version": "0.0.2",
+  "version": "0.0.3",
+  "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/prasworld/Vialiq.git"
+  },
   "type": "module",
   "description": "Lightweight object mapping and transformation library",
-  "license": "MIT"
+  "license": "MIT",
+  "module": "./index.js",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": { "default": "./index.js", "types": "./index.d.ts" },
+    "./angular": { "default": "./angular.js", "types": "./angular.d.ts" },
+    "./zod": { "default": "./zod.js", "types": "./zod.d.ts" },
+    "./orm": { "default": "./orm.js", "types": "./orm.d.ts" },
+    "./fetch-adapter": { "default": "./fetch-adapter.js", "types": "./fetch-adapter.d.ts" },
+    "./deep-clone": { "default": "./deep-clone.js", "types": "./deep-clone.d.ts" }
+  },
+  "peerDependencies": {
+    "@angular/core": ">=15.0.0",
+    "zod": ">=3.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@angular/core": { "optional": true },
+    "zod": { "optional": true }
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "angular.js",
+    "angular.d.ts",
+    "zod.js",
+    "zod.d.ts",
+    "orm.js",
+    "orm.d.ts",
+    "fetch-adapter.js",
+    "fetch-adapter.d.ts",
+    "deep-clone.js",
+    "deep-clone.d.ts",
+    "README.md",
+    "LICENSE"
+  ]
 }
