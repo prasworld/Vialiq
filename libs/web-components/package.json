@@ -17,24 +17,24 @@
   "types": "./index.d.ts",
   "exports": {
     ".": {
-      "default": "./index.js",
-      "types": "./index.d.ts"
+      "types": "./index.d.ts",
+      "default": "./index.js"
     },
     "./button": {
-      "default": "./button/vi-button.js",
-      "types": "./button/vi-button.d.ts"
+      "types": "./button/vi-button.d.ts",
+      "default": "./button/vi-button.js"
     },
     "./icons/vi-icon": {
-      "default": "./icons/vi-icon.js",
-      "types": "./icons/vi-icon.d.ts"
+      "types": "./icons/vi-icon.d.ts",
+      "default": "./icons/vi-icon.js"
     },
     "./icons/registry": {
-      "default": "./icons/registry.js",
-      "types": "./icons/registry.d.ts"
+      "types": "./icons/registry.d.ts",
+      "default": "./icons/registry.js"
     },
     "./input": {
-      "default": "./input/vi-input.js",
-      "types": "./input/vi-input.d.ts"
+      "types": "./input/vi-input.d.ts",
+      "default": "./input/vi-input.js"
     }
   },
   "dependencies": {
