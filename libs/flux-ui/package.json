@@ -16,17 +16,17 @@
   "types": "./index.d.ts",
   "exports": {
     ".": {
-      "default": "./index.js",
-      "types": "./index.d.ts"
+      "types": "./index.d.ts",
+      "default": "./index.js"
     },
     "./tokens": {
-      "default": "./tokens/index.js",
-      "types": "./tokens/index.d.ts"
+      "types": "./tokens/index.d.ts",
+      "default": "./tokens/index.js"
     },
     "./styles": {
       "sass": "./styles/_index.scss",
-      "default": "./styles/index.js",
-      "types": "./styles/index.d.ts"
+      "types": "./styles/index.d.ts",
+      "default": "./styles/index.js"
     },
     "./styles/*": "./styles/*",
     "./components": "./components/_index.scss",

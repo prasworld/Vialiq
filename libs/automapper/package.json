@@ -15,12 +15,12 @@
   "module": "./index.js",
   "types": "./index.d.ts",
   "exports": {
-    ".": { "default": "./index.js", "types": "./index.d.ts" },
-    "./angular": { "default": "./angular.js", "types": "./angular.d.ts" },
-    "./zod": { "default": "./zod.js", "types": "./zod.d.ts" },
-    "./orm": { "default": "./orm.js", "types": "./orm.d.ts" },
-    "./fetch-adapter": { "default": "./fetch-adapter.js", "types": "./fetch-adapter.d.ts" },
-    "./deep-clone": { "default": "./deep-clone.js", "types": "./deep-clone.d.ts" }
+    ".": { "types": "./index.d.ts", "default": "./index.js" },
+    "./angular": { "types": "./angular.d.ts", "default": "./angular.js" },
+    "./zod": { "types": "./zod.d.ts", "default": "./zod.js" },
+    "./orm": { "types": "./orm.d.ts", "default": "./orm.js" },
+    "./fetch-adapter": { "types": "./fetch-adapter.d.ts", "default": "./fetch-adapter.js" },
+    "./deep-clone": { "types": "./deep-clone.d.ts", "default": "./deep-clone.js" }
   },
   "peerDependencies": {
     "@angular/core": ">=15.0.0",

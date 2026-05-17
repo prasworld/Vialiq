@@ -16,12 +16,12 @@
   "types": "./index.d.ts",
   "exports": {
     ".": {
-      "default": "./index.js",
-      "types": "./index.d.ts"
+      "types": "./index.d.ts",
+      "default": "./index.js"
     },
     "./*": {
-      "default": "./*.js",
-      "types": "./*.d.ts"
+      "types": "./*.d.ts",
+      "default": "./*.js"
     }
   },
   "keywords": [

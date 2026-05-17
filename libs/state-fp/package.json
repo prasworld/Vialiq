@@ -30,14 +30,14 @@
   "module": "./index.js",
   "types": "./index.d.ts",
   "exports": {
-    ".": { "default": "./index.js", "types": "./index.d.ts" },
-    "./core":     { "default": "./core/index.js",     "types": "./core/index.d.ts" },
-    "./kernel":   { "default": "./kernel/index.js",   "types": "./kernel/index.d.ts" },
-    "./storage":  { "default": "./storage/index.js",  "types": "./storage/index.d.ts" },
-    "./sync":     { "default": "./sync/index.js",     "types": "./sync/index.d.ts" },
-    "./devtools": { "default": "./devtools/index.js", "types": "./devtools/index.d.ts" },
-    "./adapter":  { "default": "./adapter/index.js",  "types": "./adapter/index.d.ts" },
-    "./bus":      { "default": "./bus/index.js",      "types": "./bus/index.d.ts" }
+    ".": { "types": "./index.d.ts", "default": "./index.js" },
+    "./core":     { "types": "./core/index.d.ts",     "default": "./core/index.js" },
+    "./kernel":   { "types": "./kernel/index.d.ts",   "default": "./kernel/index.js" },
+    "./storage":  { "types": "./storage/index.d.ts",  "default": "./storage/index.js" },
+    "./sync":     { "types": "./sync/index.d.ts",     "default": "./sync/index.js" },
+    "./devtools": { "types": "./devtools/index.d.ts", "default": "./devtools/index.js" },
+    "./adapter":  { "types": "./adapter/index.d.ts",  "default": "./adapter/index.js" },
+    "./bus":      { "types": "./bus/index.d.ts",      "default": "./bus/index.js" }
   },
   "files": [
     "index.js",
