@@ -49,12 +49,6 @@ $vi-theme--light: (
   'bg-error':               #ffebee,
   'bg-info':                #e3f2fd,
 
-  // Layer/depth
-  'layer-01':               $color-grey-100,      // Surface
-  'layer-02':               $color-grey-200,      // Raised
-  'layer-03':               $color-grey-300,      // Elevated
-  'layer-hover':            $color-grey-200,
-  'layer-active':           $color-grey-300,
   // Layer/depth backgrounds (Light to Dark)
   'layer-01':               #ffffff,
   'layer-02':               $color-grey-100,
