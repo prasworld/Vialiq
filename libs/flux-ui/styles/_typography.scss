@@ -32,7 +32,7 @@
 // ---------------------------------------------------------------------------
 
 %type-base {
-  font-family: var(--vi-font-family-base, #{tokens.$font-family-base});
+  font-family: #{tokens.$font-family-base};
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   margin: 0;
