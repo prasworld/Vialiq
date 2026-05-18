@@ -66,19 +66,14 @@
   // Helper / error text
   // -------------------------------------------------------------------------
   .input-helper {
-    font-size: #{tokens.$font-size-xs};
-    line-height: #{tokens.$line-height-normal};
+    font-size: var(--vi-input-helper-size, #{tokens.$font-size-xs});
+    line-height: var(--vi-input-helper-leading, #{tokens.$line-height-normal});
     color: var(--vi-input-helper-color, #{tokens.$color-grey-500});
-
-    // No space when there is no helper text.
-    &:empty {
-      display: none;
-    }
   }
 
   .input-error {
-    font-size: #{tokens.$font-size-xs};
-    line-height: #{tokens.$line-height-normal};
+    font-size: var(--vi-input-error-size, #{tokens.$font-size-xs});
+    line-height: var(--vi-input-error-leading, #{tokens.$line-height-normal});
     color: var(--vi-input-error-color, #{tokens.$color-error});
   }
 

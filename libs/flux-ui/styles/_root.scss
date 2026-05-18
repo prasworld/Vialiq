@@ -77,13 +77,15 @@
   // ========================================================================
   // Typography — Letter Spacing
   // ========================================================================
-  // Note: letter-spacing requires units; do NOT call strip-units() as it
-  // would produce unitless values that are invalid for this property.
-  --vi-letter-spacing-tight:  #{$letter-spacing-tight};
-  --vi-letter-spacing-normal: #{$letter-spacing-normal};
-  --vi-letter-spacing-wide:   #{$letter-spacing-wide};
-  --vi-letter-spacing-wider:  #{$letter-spacing-wider};
-  --vi-letter-spacing-widest: #{$letter-spacing-widest};
+  // Use strip-units() to extract the fallback from var() wrapper.
+  // Since SCSS tokens are defined as var(--vi-letter-spacing-*, fallback),
+  // emitting them directly would create self-referential CSS. strip-units()
+  // extracts just the fallback (e.g., -0.01em), avoiding the circular reference.
+  --vi-letter-spacing-tight:  #{strip-units($letter-spacing-tight)};
+  --vi-letter-spacing-normal: #{strip-units($letter-spacing-normal)};
+  --vi-letter-spacing-wide:   #{strip-units($letter-spacing-wide)};
+  --vi-letter-spacing-wider:  #{strip-units($letter-spacing-wider)};
+  --vi-letter-spacing-widest: #{strip-units($letter-spacing-widest)};
 
   // ========================================================================
   // Shadows

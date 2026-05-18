@@ -61,6 +61,7 @@
   // ── Headings ──────────────────────────────────────────────────────────────
 
   h1 {
+    @extend %type-base;
     font-size: var(--vi-heading-h1-size, #{tokens.$font-size-3xl});
     font-weight: var(--vi-heading-h1-weight, #{tokens.$font-weight-bold});
     line-height: var(--vi-heading-h1-leading, #{tokens.$line-height-tight});
@@ -69,6 +70,7 @@
   }
 
   h2 {
+    @extend %type-base;
     font-size: var(--vi-heading-h2-size, #{tokens.$font-size-2xl});
     font-weight: var(--vi-heading-h2-weight, #{tokens.$font-weight-bold});
     line-height: var(--vi-heading-h2-leading, #{tokens.$line-height-tight});
@@ -77,6 +79,7 @@
   }
 
   h3 {
+    @extend %type-base;
     font-size: var(--vi-heading-h3-size, #{tokens.$font-size-xl});
     font-weight: var(--vi-heading-h3-weight, #{tokens.$font-weight-semibold});
     line-height: var(--vi-heading-h3-leading, #{tokens.$line-height-tight});
@@ -85,6 +88,7 @@
   }
 
   h4 {
+    @extend %type-base;
     font-size: var(--vi-heading-h4-size, #{tokens.$font-size-lg});
     font-weight: var(--vi-heading-h4-weight, #{tokens.$font-weight-semibold});
     line-height: var(--vi-heading-h4-leading, #{tokens.$line-height-tight});
@@ -93,6 +97,7 @@
   }
 
   h5 {
+    @extend %type-base;
     font-size: var(--vi-heading-h5-size, #{tokens.$font-size-base});
     font-weight: var(--vi-heading-h5-weight, #{tokens.$font-weight-semibold});
     line-height: var(--vi-heading-h5-leading, #{tokens.$line-height-normal});
@@ -101,6 +106,7 @@
   }
 
   h6 {
+    @extend %type-base;
     font-size: var(--vi-heading-h6-size, #{tokens.$font-size-sm});
     font-weight: var(--vi-heading-h6-weight, #{tokens.$font-weight-semibold});
     line-height: var(--vi-heading-h6-leading, #{tokens.$line-height-normal});
@@ -111,6 +117,7 @@
   // ── Paragraph ─────────────────────────────────────────────────────────────
 
   p {
+    @extend %type-base;
     font-size: var(--vi-body-md-size, #{tokens.$font-size-base});
     font-weight: var(--vi-body-md-weight, #{tokens.$font-weight-normal});
     line-height: var(--vi-body-md-leading, #{tokens.$line-height-normal});
@@ -122,6 +129,7 @@
   // <label> gets the label-md role by default — medium weight, slightly tracked.
 
   label {
+    @extend %type-base;
     font-size: var(--vi-label-md-size, #{tokens.$font-size-sm});
     font-weight: var(--vi-label-md-weight, #{tokens.$font-weight-medium});
     line-height: var(--vi-label-md-leading, #{tokens.$line-height-tight});
@@ -132,6 +140,7 @@
   // ── Inline semantics ──────────────────────────────────────────────────────
 
   small {
+    @extend %type-base;
     font-size: var(--vi-caption-size, #{tokens.$font-size-xs});
     font-weight: var(--vi-caption-weight, #{tokens.$font-weight-normal});
     line-height: var(--vi-caption-leading, #{tokens.$line-height-normal});
@@ -152,6 +161,7 @@
   // ── Figure caption ────────────────────────────────────────────────────────
 
   figcaption {
+    @extend %type-base;
     font-size: var(--vi-caption-size, #{tokens.$font-size-xs});
     font-weight: var(--vi-caption-weight, #{tokens.$font-weight-normal});
     line-height: var(--vi-caption-leading, #{tokens.$line-height-normal});
@@ -164,6 +174,7 @@
   code,
   kbd,
   samp {
+    @extend %type-base;
     font-family: var(--vi-font-family-mono, #{tokens.$font-family-mono});
     font-size: var(--vi-code-size, #{tokens.$font-size-sm});
     font-weight: var(--vi-code-weight, #{tokens.$font-weight-normal});
@@ -174,6 +185,7 @@
   }
 
   pre {
+    @extend %type-base;
     font-family: var(--vi-font-family-mono, #{tokens.$font-family-mono});
     font-size: var(--vi-code-size, #{tokens.$font-size-sm});
     line-height: var(--vi-code-leading, #{tokens.$line-height-relaxed});
@@ -184,19 +196,20 @@
   // ── Blockquote ────────────────────────────────────────────────────────────
 
   blockquote {
+    @extend %type-base;
     font-size: var(--vi-body-lg-size, #{tokens.$font-size-lg});
     font-weight: var(--vi-body-lg-weight, #{tokens.$font-weight-light});
     line-height: var(--vi-body-lg-leading, #{tokens.$line-height-relaxed});
     letter-spacing: var(--vi-body-lg-tracking, #{tokens.$letter-spacing-normal});
     color: var(--vi-body-lg-color, #{tokens.$color-grey-700});
     font-style: italic;
-    margin: 0;
     padding: 0;
   }
 
   // ── Table cells ───────────────────────────────────────────────────────────
 
   th {
+    @extend %type-base;
     font-size: var(--vi-label-md-size, #{tokens.$font-size-sm});
     font-weight: var(--vi-label-md-weight, #{tokens.$font-weight-semibold});
     line-height: var(--vi-label-md-leading, #{tokens.$line-height-tight});
@@ -205,6 +218,7 @@
   }
 
   td {
+    @extend %type-base;
     font-size: var(--vi-body-sm-size, #{tokens.$font-size-sm});
     font-weight: var(--vi-body-sm-weight, #{tokens.$font-weight-normal});
     line-height: var(--vi-body-sm-leading, #{tokens.$line-height-normal});
