@@ -4,11 +4,6 @@
   "projectType": "library",
   "sourceRoot": "libs/icons/src",
   "tags": ["scope:ui", "type:icons"],
-  "release": {
-    "version": {
-      "currentVersionResolver": "git-tag"
-    }
-  },
   "targets": {
     "build": {
       "executor": "@nx/vite:build",
@@ -39,7 +34,7 @@
       "options": {
         "commands": [
           "npx tsc -p libs/icons/tsconfig.lib.json --emitDeclarationOnly --noEmit false",
-          "cp libs/icons/publish-package.json dist/libs/icons/package.json"
+          "cp libs/icons/package.json dist/libs/icons/package.json"
         ],
         "parallel": false
       },

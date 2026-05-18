@@ -1,9 +1,7 @@
 import { Component } from '@angular/core';
-import { NxWelcome } from './nx-welcome';
 
 @Component({
-  imports: [NxWelcome],
   selector: 'app-remote1-entry',
-  template: `<app-nx-welcome></app-nx-welcome>`,
+  template: `<p>Remote 1</p>`,
 })
 export class RemoteEntry {}

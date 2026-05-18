@@ -1,6 +1,14 @@
 {
   "name": "@vialiq/state-fp",
-  "version": "0.5.1",
+  "version": "0.5.2",
+  "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/prasworld/Vialiq.git"
+  },
   "type": "module",
   "description": "Modular CQRS functional state management — composable, lightweight, zero-dependency",
   "keywords": [
@@ -18,5 +26,37 @@
     "angular",
     "react"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "module": "./index.js",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": { "types": "./index.d.ts", "default": "./index.js" },
+    "./core":     { "types": "./core/index.d.ts",     "default": "./core/index.js" },
+    "./kernel":   { "types": "./kernel/index.d.ts",   "default": "./kernel/index.js" },
+    "./storage":  { "types": "./storage/index.d.ts",  "default": "./storage/index.js" },
+    "./sync":     { "types": "./sync/index.d.ts",     "default": "./sync/index.js" },
+    "./devtools": { "types": "./devtools/index.d.ts", "default": "./devtools/index.js" },
+    "./adapter":  { "types": "./adapter/index.d.ts",  "default": "./adapter/index.js" },
+    "./bus":      { "types": "./bus/index.d.ts",      "default": "./bus/index.js" }
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "core/index.js",
+    "core/index.d.ts",
+    "kernel/index.js",
+    "kernel/index.d.ts",
+    "storage/index.js",
+    "storage/index.d.ts",
+    "sync/index.js",
+    "sync/index.d.ts",
+    "devtools/index.js",
+    "devtools/index.d.ts",
+    "adapter/index.js",
+    "adapter/index.d.ts",
+    "bus/index.js",
+    "bus/index.d.ts",
+    "README.md",
+    "LICENSE"
+  ]
 }

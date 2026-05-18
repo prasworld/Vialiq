@@ -3,102 +3,37 @@ name: Publish Packages
 on:
   push:
     branches: [master]
-    # This workflow runs once per PR merge to master.
-    # There is no version-bump commit pushed back to master (git.commit: false
-    # in nx.json), so there is no infinite-loop risk and no need for [skip ci].
+    # Runs once per PR merge to master.
+    # git.commit: false means no version-bump commit is pushed back, so there
+    # is no infinite-loop risk and no need for [skip ci].
   workflow_dispatch:
-    # Allows manual trigger from GitHub Actions UI.
-    # Use this when a package was published to npm but its release tag was
-    # never pushed (e.g. a previous run failed after publish but before the
-    # 'Push release tags' step). In that scenario:
-    #   • bootstrap-tags skips all projects (prior tags already exist)
-    #   • nx release version detects no new commits → no-op (does NOT call
-    #     git tag, so existing local tags fetched by preVersionCommand are
-    #     never duplicated or moved to the current HEAD)
-    #   • get-release-tags.mjs confirms the version is on npm → pushes the
-    #     already-existing remote tag (idempotent — not an error)
-    #
-    # NOTE: bootstrap-tags creates initial tags only for projects with no
-    # prior release tags at all. It does not cover the missing-tag-after-
-    # publish scenario for existing projects; get-release-tags.mjs handles
-    # that. If a release tag must point to a different SHA, repair manually
-    # (delete + recreate); this workflow has no --force path.
+    # Manual trigger for recovery (e.g. tags pushed but npm publish failed,
+    # or vice-versa). nx release version is a no-op when there are no new
+    # bumping commits since the last tag.
 
 jobs:
   publish:
     runs-on: ubuntu-latest
     permissions:
-      contents: write   # required to push version-bump commits and git tags
-      id-token: write   # required for npm Trusted Publishing (OIDC token)
+      contents: write   # push annotated git tags
+      id-token: write   # npm Trusted Publishing (OIDC provenance)
 
     steps:
       - uses: actions/checkout@v5.0.1
         with:
-          # A Personal Access Token (PAT) stored as the GH_PAT repository secret
-          # is required here for two reasons:
-          #   1. Branch protection on `master` blocks pushes from GITHUB_TOKEN
-          #      because the built-in token cannot bypass required-PR rules.
-          #   2. The PAT must have the "Contents: write" and
-          #      "Administration: write" (or "bypass branch restrictions") scope.
-          #
-          # ⚠️  SECURITY NOTICE — please read before rotating or expanding this token:
-          #
-          #   Minimal required permissions (fine-grained token, this repo only):
-          #     • Contents:       Read & Write  — push annotated git tags
-          #     • Administration: Read & Write  — required by protect-master.yml
-          #                                       to set branch protection rules;
-          #                                       NOT needed by this workflow alone
-          #                                       (tags bypass branch protection).
-          #   Both workflows share the same GH_PAT secret, so the token must
-          #   have both permissions. Do NOT grant anything else.
-          #   Scope the token to THIS repository only, not "All repositories".
-          #
-          #   Impact of compromise: any workflow that can read GH_PAT can push
-          #   commits to master and administer this repository. Treat it with the
-          #   same care as a deploy key.
-          #
-          #   Rotation policy:
-          #     • Set an expiry of ≤ 90 days when creating the token.
-          #     • Rotate before expiry: create the new token first, update the
-          #       secret in Repo → Settings → Secrets and variables → Actions,
-          #       then revoke the old token.
-          #     • After rotation, trigger this workflow manually (workflow_dispatch)
-          #       to confirm the new token has the correct permissions.
-          #     • Record the expiry date in the team's credential log / runbook.
-          #
-          # How to create:
-          #   GitHub → Settings → Developer settings → Fine-grained personal access tokens
-          #   → Generate new token → Resource owner: this org/user
-          #   → Repository access: Only select repositories → pick this repo
-          #   → Permissions: Contents (Read & Write), Administration (Read & Write)
-          #   → Expiration: 90 days (maximum recommended)
-          #
-          # How to store:
-          #   Repo → Settings → Secrets and variables → Actions → New repository secret
-          #   Name: GH_PAT
-          #
-          # persist-credentials: false — the PAT is used only for this clone/fetch
-          # and is NOT stored in git's credential helper for the remainder of the job.
-          # The PAT is injected explicitly only in the steps that need to push
-          # ("Authenticate git for push" below), minimising the window of exposure.
+          # PAT required to push git tags past branch-protection rules.
+          # Fine-grained token scope: Contents (Read & Write), this repo only.
+          # Rotate every 90 days. See repo secrets: GH_PAT.
           token: ${{ secrets.GH_PAT }}
           persist-credentials: false
-          # Full history is required so nx release version can walk back to the
-          # last release git tag to determine which conventional commits have
-          # landed since then.
-          fetch-depth: 0
+          fetch-depth: 0   # full history so nx can walk back to the last release tag
 
       - uses: actions/setup-node@v5
         with:
-          # Node 24 is required: it ships with npm ≥ 11.11.0, which is the minimum
-          # needed for npm Trusted Publishing (OIDC). Node 22 ships with npm 10.x
-          # and will fail to authenticate even with correct id-token: write permissions.
-          # setup-node@v5+ is required: v4 writes always-auth=true to .npmrc, which
-          # npm 11 rejects as an unknown config option, aborting the publish step.
-          # packageManager in package.json pins npm@11.11.0 via corepack — do not
-          # downgrade below 11.11.0: earlier 11.x builds have a bug where directory
-          # entries (e.g. "button/") in the files field are silently dropped when
-          # running npm publish <path>, producing an empty tarball.
+          # Node 24 ships with npm >= 11.11.0, required for OIDC provenance.
+          # setup-node@v5+ required: v4 writes always-auth=true which npm 11 rejects.
+          # Do NOT set registry-url here: setup-node would write an _authToken
+          # placeholder to .npmrc that npm 11 treats as token auth, breaking OIDC.
           node-version: '24'
           cache: 'npm'
 
@@ -115,121 +50,98 @@ jobs:
           git config --global user.email "action@github.com"
           git config --global user.name "GitHub Action"
 
-      # Inject the PAT into the remote URL so subsequent git push commands can
-      # bypass master branch protection.  This is done here rather than in the
-      # checkout step (persist-credentials: false) so the credential is scoped
-      # only to the steps that actually push — not to npm ci, builds, or other
-      # steps that have no need to authenticate to GitHub.
-      # GitHub Actions automatically masks ${{ secrets.GH_PAT }} in logs.
       - name: Authenticate git for push
         env:
           GH_PAT: ${{ secrets.GH_PAT }}
         run: |
           git remote set-url origin "https://x-access-token:${GH_PAT}@github.com/${{ github.repository }}.git"
 
-      # Ensure local tag refs are synchronized with origin before bootstrap.
-      # Without this fetch, a shallow/local-only view can recreate tags that
-      # already exist upstream.
-      - name: Fetch remote tags
-        run: git fetch --tags --force
-
-      # Bootstrap: create annotated git tags for projects that have no release tag yet.
-      # This logic lives in a checked-in script for testability and safer process
-      # execution (execFileSync argument arrays, no shell interpolation).
-      - name: Bootstrap missing release tags
-        id: bootstrap_tags
-        run: node tools/release/bootstrap-tags.mjs
-
-      # Persist any bootstrap tags immediately so subsequent workflow runs don't
-      # keep recreating them.
-      - name: Push bootstrap tags
-        if: steps.bootstrap_tags.outputs.created_count != '0'
+      # Snapshot on-disk versions before versioning so we can detect which
+      # projects were actually bumped (avoids publishing already-live versions).
+      - name: Snapshot pre-version state
         run: |
-          TAGS="${{ steps.bootstrap_tags.outputs.created_tags }}"
-          if [ -n "$TAGS" ]; then
-            git push origin $TAGS
-          fi
+          node -e "
+            const fs = require('fs');
+            const nx = JSON.parse(fs.readFileSync('nx.json', 'utf8'));
+            const libs = nx.release.projects;
+            const v = {};
+            for (const l of libs) {
+              try { v[l] = JSON.parse(fs.readFileSync('libs/' + l + '/package.json', 'utf8')).version; }
+              catch (e) { v[l] = ''; }
+            }
+            fs.writeFileSync('/tmp/pre-versions.json', JSON.stringify(v));
+            console.log('Pre-version snapshot:', JSON.stringify(v));
+          "
 
-      # Parses conventional commits since the last release tag and bumps versions
-      # in each library's publish-package.json:
-      #   feat:             → minor bump  (0.1.0 → 0.2.0)
-      #   fix/refactor/perf → patch bump  (0.1.0 → 0.1.1)
-      #   BREAKING CHANGE   → major bump  (0.1.0 → 1.0.0)
-      #
-      # git.commit: false  — we do NOT push a version-bump commit to master.
-      #   Pushing a commit directly to a branch-protected master requires the
-      #   PAT to be in the branch protection bypass list, which is fragile.
-      #   Instead we rely solely on git TAGS as the source of truth:
-      #   currentVersionResolver: git-tag reads the most recent tag, so future
-      #   runs always compute the correct next version from the tag, not from
-      #   the file content.
-      #
-      # git.tag: true  — nx release version creates annotated git tags locally
-      #   (e.g. flux-ui@0.0.4) pointing to the current HEAD (the PR merge commit).
-      #   These local tags are pushed to origin in the 'Push release tags' step
-      #   AFTER a successful npm publish — so every remote tag always has a
-      #   corresponding live npm package.
-      #
-      # ⚠️  IMPORTANT — commit message discipline:
-      #   nx release version uses filterAffected to decide which projects need
-      #   a version bump.  ANY file under a project root counts as a change for
-      #   that project.  This means commits that only touch CI or config files
-      #   inside a library directory (project.json, publish-package.json, etc.)
-      #   will spuriously trigger a version bump for that library if the commit
-      #   type is fix: / feat: / refactor: / perf:.
-      #   → Use  chore:  for commits whose only changes are CI/workflow/config
-      #     files, even when those files live inside a library directory.
-      #     chore: is not mapped to any semver type and will be safely ignored.
+      # Purge any local tags that no longer exist on the remote (can be left
+      # behind if a previous run created tags but failed before pushing them).
+      # This prevents nx release version from seeing a stale local tag as the
+      # current version and accidentally skipping a version number.
+      - name: Prune orphan local tags
+        run: git fetch origin --prune '+refs/tags/*:refs/tags/*'
+
+      # Parse conventional commits since each project's last git tag and bump
+      # package.json + create a local annotated git tag for each changed project.
+      # Commit types: feat -> minor, fix/refactor/perf -> patch, chore/docs -> no-op.
+      # Projects with no new bumping commits are skipped automatically.
       - name: Version packages
         run: npx nx release version
 
-      # Derive the publishable libs list from nx.json (release.projects) so this
-      # workflow stays in sync with the release config automatically.
-      - name: Derive publishable libs
+      # Compare on-disk versions to determine which projects were bumped.
+      # Only those projects need to be built and published.
+      - name: Find bumped projects
+        id: bumped
         run: |
-          LIBS=$(node -e "const nx=JSON.parse(require('fs').readFileSync('nx.json','utf8')); console.log(nx.release.projects.join(','))")
-          echo "PUBLISHABLE_LIBS=$LIBS" >> $GITHUB_ENV
+          node -e "
+            const fs = require('fs');
+            const pre = JSON.parse(fs.readFileSync('/tmp/pre-versions.json', 'utf8'));
+            const nx = JSON.parse(fs.readFileSync('nx.json', 'utf8'));
+            const libs = nx.release.projects;
+            const bumped = [];
+            for (const l of libs) {
+              const cur = JSON.parse(fs.readFileSync('libs/' + l + '/package.json', 'utf8')).version;
+              if (cur !== pre[l]) bumped.push(l);
+            }
+            const out = bumped.join(',');
+            console.log('Bumped projects: ' + (out || '(none)'));
+            fs.appendFileSync(process.env.GITHUB_ENV, 'BUMPED_LIBS=' + out + '\n');
+            fs.appendFileSync(process.env.GITHUB_OUTPUT, 'has_bumps=' + (bumped.length > 0 ? 'true' : 'false') + '\n');
+          "
 
-      # Build all publishable libraries in production mode (minified, no source maps).
-      # postbuild-publish depends on build (and build-css for flux-ui), so the
-      # full dependency chain runs automatically.
-      - name: Build and prepare dist packages
-        run: npx nx run-many -t postbuild-publish -p ${{ env.PUBLISHABLE_LIBS }} --configuration=production --parallel=false
+      # Build only the bumped libraries (minified, no source maps).
+      # Each postbuild-publish target depends on build automatically.
+      - name: Build bumped packages
+        if: steps.bumped.outputs.has_bumps == 'true'
+        run: npx nx run-many -t postbuild-publish -p ${{ env.BUMPED_LIBS }} --configuration=production --parallel=false
 
-      - name: Show npm identity
-        run: |
-          npm --version
-          npm whoami || true
-
-      # Publish packages only when the exact version is missing from npm.
-      # This avoids Nx/npm dist-tag reconciliation for already-published packages,
-      # which can fail in CI when the version is present on the registry.
+      # Publish each bumped library's dist folder to the npm registry with
+      # provenance attestation via OIDC (requires id-token: write above).
       - name: Publish packages
+        if: steps.bumped.outputs.has_bumps == 'true'
+        run: npx nx release publish -p ${{ env.BUMPED_LIBS }}
         env:
           NPM_CONFIG_PROVENANCE: true
-        run: node tools/release/publish-if-missing.mjs
 
-      # Push tags only after a successful publish so every tag in the repo
-      # corresponds to a version that actually made it to npm.
-      # Derives release tag names from updated publish-package.json files
-      # to push only the tags created by this run (avoiding unintentional pushes
-      # of unrelated local tags).
+      # Push ONLY the annotated tags created in this run (one per bumped project).
+      # Pushing 'git push origin --tags' would push every local tag, which could
+      # include orphan tags left by an earlier run on a reused runner.
+      # Tags follow the nx release pattern: <projectName>@<version>
+      # (e.g. flux-ui@0.0.5 — the Nx project name, not the npm package name).
+      #
+      # Manual recovery if this step fails after a successful npm publish:
+      #   git push origin <projectName>@<version>  # for each affected project
+      # e.g.: git push origin flux-ui@0.0.5
       - name: Push release tags
+        if: steps.bumped.outputs.has_bumps == 'true'
         run: |
-          RELEASE_TAGS=$(node tools/release/get-release-tags.mjs)
-
-          # keep only tags that exist locally
-          EXISTING_TAGS=()
-          for t in $RELEASE_TAGS; do
-            if git show-ref --tags --verify --quiet "refs/tags/$t"; then
-              EXISTING_TAGS+=("$t")
-            else
-              echo "Skipping missing local tag: $t"
-            fi
-          done
-
-          if [ ${#EXISTING_TAGS[@]} -gt 0 ]; then
-            git push origin "${EXISTING_TAGS[@]}"
-          else
-            echo "No release tags to push."
-          fi
+          node -e "
+            const { execSync } = require('child_process');
+            const fs = require('fs');
+            const bumped = process.env.BUMPED_LIBS.split(',').filter(Boolean);
+            for (const lib of bumped) {
+              const pkg = JSON.parse(fs.readFileSync('libs/' + lib + '/package.json', 'utf8'));
+              const tag = lib + '@' + pkg.version;
+              console.log('Pushing tag: ' + tag);
+              execSync('git push origin refs/tags/' + tag, { stdio: 'inherit' });
+            }
+          "

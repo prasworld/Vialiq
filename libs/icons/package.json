@@ -1,7 +1,37 @@
 {
   "name": "@vialiq/icons",
-  "version": "0.0.2",
+  "version": "0.0.3",
+  "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/prasworld/Vialiq.git"
+  },
   "type": "module",
   "description": "SVG icon definitions for the @vi design system",
-  "license": "MIT"
+  "license": "MIT",
+  "module": "./index.js",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./*": {
+      "types": "./*.d.ts",
+      "default": "./*.js"
+    }
+  },
+  "keywords": [
+    "icons",
+    "svg",
+    "design-system"
+  ],
+  "files": [
+    "*.js",
+    "*.d.ts",
+    "*.d.ts.map"
+  ]
 }

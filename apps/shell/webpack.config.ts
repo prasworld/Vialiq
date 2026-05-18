@@ -31,7 +31,16 @@ export default withModuleFederation(config, { dts: false }).then(
               test: /\.scss$/,
               resourceQuery: /inline/,
               type: 'asset/source',
-              use: [{ loader: 'sass-loader' }],
+              use: [
+                {
+                  loader: 'sass-loader',
+                  options: {
+                    // Allow bare @use 'package/path' to resolve from node_modules
+                    // without the deprecated ~ prefix (modern Sass resolution).
+                    sassOptions: { loadPaths: ['node_modules'] },
+                  },
+                },
+              ],
             },
           ],
         },

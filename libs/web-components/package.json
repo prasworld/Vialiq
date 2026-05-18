@@ -1,14 +1,57 @@
 {
   "name": "@vialiq/web-components",
-  "version": "0.1.0",
+  "version": "0.1.1",
+  "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/prasworld/Vialiq.git"
+  },
   "type": "module",
-  "dependencies": {
-    "@vialiq/icons": "*",
+  "sideEffects": true,
+  "description": "Lit web component library built on @vialiq/flux-ui design tokens",
+  "license": "MIT",
+  "module": "./index.js",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./button": {
+      "types": "./button/vi-button.d.ts",
+      "default": "./button/vi-button.js"
+    },
+    "./icons/vi-icon": {
+      "types": "./icons/vi-icon.d.ts",
+      "default": "./icons/vi-icon.js"
+    },
+    "./icons/registry": {
+      "types": "./icons/registry.d.ts",
+      "default": "./icons/registry.js"
+    }
+  },
+  "peerDependencies": {
+    "@vialiq/flux-ui": ">=0.0.4",
+    "@vialiq/icons": ">=0.0.3",
     "lit": "^3.0.0"
   },
-  "devDependencies": {
-    "@storybook/web-components-vite": "^10.3.3",
-    "@wdio/cli": "^9.27.0",
-    "storybook": "^10.3.3"
-  }
+  "keywords": [
+    "web-components",
+    "custom-elements",
+    "lit",
+    "design-system",
+    "microfrontend",
+    "flux-ui"
+  ],
+  "files": [
+    "*.js",
+    "*.d.ts",
+    "base/",
+    "button/",
+    "icons/",
+    "README.md"
+  ]
 }

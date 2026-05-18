@@ -5,11 +5,6 @@
   "sourceRoot": "libs/web-components/src",
   "prefix": "vi",
   "tags": ["scope:ui", "type:wc"],
-  "release": {
-    "version": {
-      "currentVersionResolver": "git-tag"
-    }
-  },
   "targets": {
     "build": {
       "executor": "@nx/vite:build",
@@ -32,7 +27,7 @@
       "options": {
         "commands": [
           "npx tsc -p libs/web-components/tsconfig.lib.json --emitDeclarationOnly --noEmit false",
-          "cp libs/web-components/publish-package.json dist/libs/web-components/package.json",
+          "cp libs/web-components/package.json dist/libs/web-components/package.json",
           "node tools/scripts/sync-peer-deps.mjs dist/libs/web-components/package.json",
           "cp libs/web-components/README.md dist/libs/web-components/README.md"
         ],

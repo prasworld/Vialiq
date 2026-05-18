@@ -20,6 +20,11 @@ const iconEntries = Object.fromEntries(
 );
 
 export default defineConfig({
+  // root must be set explicitly so the @nx/vite:build executor resolves the
+  // relative outDir it computes (../../dist/libs/icons) from this project dir
+  // rather than from process.cwd() (workspace root), which would place output
+  // two levels above the workspace root.
+  root: __dirname,
   build: {
     emptyOutDir: true,
     lib: {
