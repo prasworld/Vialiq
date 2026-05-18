@@ -4,11 +4,6 @@
   "sourceRoot": "libs/state-fp/src",
   "projectType": "library",
   "tags": ["scope:state", "type:lib"],
-  "release": {
-    "version": {
-      "currentVersionResolver": "git-tag"
-    }
-  },
   "targets": {
     "build": {
       "executor": "@nx/esbuild:esbuild",
@@ -44,7 +39,7 @@
       "dependsOn": ["build"],
       "options": {
         "commands": [
-          "cp libs/state-fp/publish-package.json dist/libs/state-fp/package.json",
+          "cp libs/state-fp/package.json dist/libs/state-fp/package.json",
           "cp libs/state-fp/LICENSE dist/libs/state-fp/LICENSE",
           "cp -r dist/libs/state-fp/src/. dist/libs/state-fp/"
         ],

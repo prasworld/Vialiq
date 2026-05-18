@@ -4,11 +4,6 @@
   "projectType": "library",
   "sourceRoot": "libs/flux-ui/src",
   "prefix": "ui",
-  "release": {
-    "version": {
-      "currentVersionResolver": "git-tag"
-    }
-  },
   "targets": {
     "build": {
       "executor": "@nx/esbuild:esbuild",
@@ -66,7 +61,7 @@
       "dependsOn": ["build", "build-css"],
       "options": {
         "commands": [
-          "cp libs/flux-ui/publish-package.json dist/libs/flux-ui/package.json",
+          "cp libs/flux-ui/package.json dist/libs/flux-ui/package.json",
           "[ -f dist/libs/flux-ui/src/index.d.ts ] && cp dist/libs/flux-ui/src/index.d.ts dist/libs/flux-ui/index.d.ts || true",
           "[ -f dist/libs/flux-ui/src/index.d.ts.map ] && cp dist/libs/flux-ui/src/index.d.ts.map dist/libs/flux-ui/index.d.ts.map || true",
           "[ -f dist/libs/flux-ui/src/tokens/index.d.ts ] && cp dist/libs/flux-ui/src/tokens/index.d.ts dist/libs/flux-ui/tokens/index.d.ts || true",

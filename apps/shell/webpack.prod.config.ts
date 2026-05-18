@@ -46,7 +46,14 @@ export default withModuleFederation(
               test: /\.scss$/,
               resourceQuery: /inline/,
               type: 'asset/source',
-              use: [{ loader: 'sass-loader' }],
+              use: [
+                {
+                  loader: 'sass-loader',
+                  options: {
+                    sassOptions: { loadPaths: ['node_modules'] },
+                  },
+                },
+              ],
             },
           ],
         },
