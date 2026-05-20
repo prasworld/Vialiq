@@ -136,7 +136,7 @@
     },
     "version": {
       "conventionalCommits": true,
-      "currentVersionResolver": "disk",
+      "currentVersionResolver": "git-tag",
       "fallbackCurrentVersionResolver": "disk",
       "git": {
         "commit": false,
