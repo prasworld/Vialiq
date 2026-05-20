@@ -117,6 +117,15 @@
     "projects": ["flux-ui", "state-fp", "automapper", "icons"],
     "projectsRelationship": "independent",
     "conventionalCommits": {
+      "ignoreFilePatternsForConventionalCommits": [
+        "nx.json",
+        "package.json",
+        "package-lock.json",
+        "pnpm-lock.yaml",
+        "yarn.lock",
+        ".github/**/*",
+        "tools/**/*"
+      ],
       "types": {
         "feat":     { "semverBump": "minor" },
         "fix":      { "semverBump": "patch" },
@@ -127,15 +136,13 @@
     },
     "version": {
       "conventionalCommits": true,
+      "currentVersionResolver": "disk",
+      "fallbackCurrentVersionResolver": "disk",
       "git": {
         "commit": false,
         "tag": true
       },
-      "preVersionCommand": "git fetch --tags --force",
-      "generatorOptions": {
-        "currentVersionResolver": "git-tag",
-        "fallbackCurrentVersionResolver": "disk"
-      }
+      "preVersionCommand": "git fetch --tags --force"
     },
     "changelog": {
       "workspaceChangelog": false,
