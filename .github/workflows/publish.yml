@@ -131,6 +131,7 @@ jobs:
         env:
           GH_PAT: ${{ secrets.GH_PAT }}
         run: |
+          trap 'git remote set-url origin https://github.com/${{ github.repository }}.git' EXIT
           git remote set-url origin https://x-access-token:${GH_PAT}@github.com/${{ github.repository }}.git
           node -e "
             const { execSync } = require('child_process');
@@ -143,4 +144,3 @@ jobs:
               execSync('git push origin refs/tags/' + tag, { stdio: 'inherit' });
             }
           "
-          git remote set-url origin https://github.com/${{ github.repository }}.git

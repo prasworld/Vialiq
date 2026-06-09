@@ -68,13 +68,14 @@ if (distPkg.peerDependencies) {
 
       // For 0.0.x packages, ^ locks to an exact patch (^0.0.2 = >=0.0.2 <0.0.3),
       // which breaks as soon as the peer publishes its next patch.
-      // To allow all patches in the same family, we explicitly use >=basePatch <0.1.0
+      // To allow all patches in the same family, we explicitly use >=version <0.1.0
       // For 0.y.z (y>0) and x.y.z (x>0), ^ behaves correctly already.
-      // We use basePatch (major.minor.patch) to avoid locking peers to a specific pre-release.
-      const basePatch = `${parsed.major}.${parsed.minor}.${parsed.patch}`;
+      // Note: We use the exact `version` string (including prerelease metadata). NPM's semver 
+      // resolver explicitly rejects prereleases from satisfying a range unless the prerelease 
+      // string is present in the bounds.
       
       const range = (parsed.major === 0 && parsed.minor === 0) 
-        ? `>=${basePatch} <0.1.0` 
+        ? `>=${version} <0.1.0` 
         : `^${version}`;
 
       if (distPkg.peerDependencies[dep] !== range) {
