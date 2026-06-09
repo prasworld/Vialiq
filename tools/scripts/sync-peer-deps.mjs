@@ -51,14 +51,23 @@ if (distPkg.peerDependencies) {
     
     try {
       const localPkg = JSON.parse(readFileSync(localPath, 'utf8'));
-      const { version } = localPkg;
-      if (typeof version !== 'string' || version.trim() === '') {
+      const { version: rawVersion } = localPkg;
+      if (typeof rawVersion !== 'string') {
+        throw new Error(`Invalid or missing version in ${localPath}`);
+      }
+      const version = rawVersion.trim();
+      if (version === '') {
         throw new Error(`Invalid or missing version in ${localPath}`);
       }
 
       // Parse version robustly, ignoring pre-release/build metadata (e.g. 0.0.2-beta.1)
       const cleanVersion = version.split(/[+-]/)[0];
-      const [major, minor] = cleanVersion.split('.').map(n => parseInt(n, 10));
+      const parts = cleanVersion.split('.').map(n => parseInt(n, 10));
+      const [major, minor] = parts;
+
+      if (parts.length < 2 || isNaN(major) || isNaN(minor)) {
+        throw new Error(`Could not parse major/minor version from "${version}" in ${localPath}`);
+      }
 
       // For 0.0.x packages, ^ locks to an exact patch (^0.0.2 = >=0.0.2 <0.0.3),
       // which breaks as soon as the peer publishes its next patch.
