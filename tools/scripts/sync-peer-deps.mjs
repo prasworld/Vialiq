@@ -55,7 +55,17 @@ if (distPkg.peerDependencies) {
       if (typeof version !== 'string' || version.trim() === '') {
         throw new Error(`Invalid or missing version in ${localPath}`);
       }
-      const range = `^${version}`;
+
+      // Parse version robustly, ignoring pre-release/build metadata (e.g. 0.0.2-beta.1)
+      const cleanVersion = version.split(/[+-]/)[0];
+      const [major, minor] = cleanVersion.split('.').map(n => parseInt(n, 10));
+
+      // For 0.0.x packages, ^ locks to an exact patch (^0.0.2 = >=0.0.2 <0.0.3),
+      // which breaks as soon as the peer publishes its next patch.
+      // To allow all patches in the same family, we explicitly use >=version <0.1.0
+      // For 0.y.z (y>0) and x.y.z (x>0), ^ behaves correctly already.
+      const range = (major === 0 && minor === 0) ? `>=${version} <0.1.0` : `^${version}`;
+
       if (distPkg.peerDependencies[dep] !== range) {
         console.log(`  ${dep}: ${distPkg.peerDependencies[dep]} → ${range}`);
         distPkg.peerDependencies[dep] = range;

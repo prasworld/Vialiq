@@ -21,11 +21,10 @@ jobs:
     steps:
       - uses: actions/checkout@v5.0.1
         with:
-          # PAT required to push git tags past branch-protection rules.
-          # Fine-grained token scope: Contents (Read & Write), this repo only.
-          # Rotate every 90 days. See repo secrets: GH_PAT.
+          # Using a PAT allows pushing version commits and tags past branch protection 
+          # and ensures downstream workflows are triggered.
           token: ${{ secrets.GH_PAT }}
-          persist-credentials: false
+          persist-credentials: true
           fetch-depth: 0   # full history so nx can walk back to the last release tag
 
       - uses: actions/setup-node@v5
@@ -51,10 +50,8 @@ jobs:
           git config --global user.name "GitHub Action"
 
       - name: Authenticate git for push
-        env:
-          GH_PAT: ${{ secrets.GH_PAT }}
         run: |
-          git remote set-url origin "https://x-access-token:${GH_PAT}@github.com/${{ github.repository }}.git"
+          git remote set-url origin "https://x-access-token:${{ secrets.GH_PAT }}@github.com/${{ github.repository }}.git"
 
       # Snapshot on-disk versions before versioning so we can detect which
       # projects were actually bumped (avoids publishing already-live versions).
