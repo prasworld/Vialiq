@@ -45,4 +45,4 @@ Certain commit types are configured to skip the release process entirely because
 **Examples:**
 * `chore(flux-ui): update testing dependencies`
 * `chore(flux-ui): fix typo in README`
-* `chore(workspace): configure github actions pipeline`
+* `chore(workspace): configure GitHub Actions pipeline`
