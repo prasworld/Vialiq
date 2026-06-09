@@ -21,12 +21,9 @@ jobs:
     steps:
       - uses: actions/checkout@v5.0.1
         with:
-          # Using a PAT allows pushing version commits and tags past branch protection 
-          # and ensures downstream workflows are triggered.
-          # We keep persist-credentials=false so the PAT is not left in git config
-          # for subsequent steps or third-party actions.
-          token: ${{ secrets.GH_PAT }}
-          persist-credentials: false
+          # GITHUB_TOKEN with contents: write (set above) is sufficient to push
+          # annotated tags. persist-credentials defaults to true so that later
+          # git push commands inherit the token automatically.
           fetch-depth: 0   # full history so nx can walk back to the last release tag
 
       - uses: actions/setup-node@v5
@@ -128,11 +125,7 @@ jobs:
       # e.g.: git push origin flux-ui@0.0.5
       - name: Push release tags
         if: steps.bumped.outputs.has_bumps == 'true'
-        env:
-          GH_PAT: ${{ secrets.GH_PAT }}
         run: |
-          trap 'git remote set-url origin https://github.com/${{ github.repository }}.git' EXIT
-          git remote set-url origin https://x-access-token:${GH_PAT}@github.com/${{ github.repository }}.git
           node -e "
             const { execSync } = require('child_process');
             const fs = require('fs');
