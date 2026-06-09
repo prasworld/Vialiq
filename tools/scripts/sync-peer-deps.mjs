@@ -19,6 +19,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, resolve } from 'node:path';
+import semver from 'semver';
 
 // Resolve workspace root relative to this script's location
 // (tools/scripts/sync-peer-deps.mjs → ../../ = workspace root).
@@ -51,11 +52,32 @@ if (distPkg.peerDependencies) {
     
     try {
       const localPkg = JSON.parse(readFileSync(localPath, 'utf8'));
-      const { version } = localPkg;
-      if (typeof version !== 'string' || version.trim() === '') {
+      const { version: rawVersion } = localPkg;
+      if (typeof rawVersion !== 'string') {
         throw new Error(`Invalid or missing version in ${localPath}`);
       }
-      const range = `^${version}`;
+      const version = rawVersion.trim();
+      if (version === '') {
+        throw new Error(`Invalid or missing version in ${localPath}`);
+      }
+
+      const parsed = semver.parse(version);
+      if (!parsed) {
+        throw new Error(`Could not parse valid semver from "${version}" in ${localPath}`);
+      }
+
+      // For 0.0.x packages, ^ locks to an exact patch (^0.0.2 = >=0.0.2 <0.0.3),
+      // which breaks as soon as the peer publishes its next patch.
+      // To allow all patches in the same family, we explicitly use >=version <0.1.0
+      // For 0.y.z (y>0) and x.y.z (x>0), ^ behaves correctly already.
+      // Note: We use the exact `version` string (including prerelease metadata). NPM's semver 
+      // resolver explicitly rejects prereleases from satisfying a range unless the prerelease 
+      // string is present in the bounds.
+      
+      const range = (parsed.major === 0 && parsed.minor === 0) 
+        ? `>=${version} <0.1.0` 
+        : `^${version}`;
+
       if (distPkg.peerDependencies[dep] !== range) {
         console.log(`  ${dep}: ${distPkg.peerDependencies[dep]} → ${range}`);
         distPkg.peerDependencies[dep] = range;
