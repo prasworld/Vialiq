@@ -1,0 +1,98 @@
+/**
+ * vi-input component styles.
+ *
+ * Imports the host-agnostic Flux UI input layer (layout, border, typography,
+ * focus ring) and adds host-level display, disabled opacity, and invalid-state
+ * colour overrides via CSS custom properties.
+ *
+ * Three-level cascade for every var:
+ *   1. Consumer override  → e.g. --vi-input-border-color: hotpink
+ *   2. Theme token        → --vi-color-primary
+ *   3. Compile-time fallback → the value from $color-* in _variables.scss
+ */
+
+@use '@vialiq/flux-ui/styles/variables' as tokens;
+@use '@vialiq/flux-ui/components/input';
+
+// ============================================================================
+// Host defaults
+// ============================================================================
+
+:host {
+  display: block;
+  // Prevent the browser drawing its own default outline on the host element
+  // when it receives :focus via delegatesFocus. The visible focus ring is
+  // rendered on the inner .input-control by _input.scss (see below).
+  outline: none;
+}
+
+// ============================================================================
+// Disabled state
+// ============================================================================
+
+:host([disabled]) {
+  opacity: 0.6;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+// ============================================================================
+// Invalid state — colour overrides propagate into the shared input layer
+// ============================================================================
+
+:host([status="invalid"]) {
+  --vi-input-border-color: #{tokens.$color-error};
+  --vi-input-border-color-hover: #{tokens.$color-red-700};
+  --vi-input-focus-ring-color: #{tokens.$color-error};
+  --vi-input-focus-ring-glow: #{tokens.$color-red-100};
+  --vi-input-label-color: #{tokens.$color-error};
+}
+
+// ============================================================================
+// Valid/success state — colour overrides propagate into the shared input layer
+// ============================================================================
+
+:host([status="valid"]) {
+  --vi-input-border-color: #{tokens.$color-success};
+  --vi-input-border-color-hover: #{tokens.$color-green-700};
+  --vi-input-focus-ring-color: #{tokens.$color-success};
+  --vi-input-focus-ring-glow: #{tokens.$color-green-100};
+}
+
+// ============================================================================
+// Validation message — shown when validityMessage is set; separate from
+// the persistent helper slot so both can be visible simultaneously.
+// ============================================================================
+
+.input-validation {
+  font-family: #{tokens.$font-family-base};
+  font-size: #{tokens.$font-size-xs};
+  line-height: #{tokens.$line-height-normal};
+  letter-spacing: #{tokens.$letter-spacing-wider};
+  color: var(--vi-input-helper-color, #{tokens.$color-grey-500});
+
+  &--invalid {
+    color: var(--vi-input-error-color, #{tokens.$color-error});
+  }
+
+  &--valid {
+    color: var(--vi-input-success-color, #{tokens.$color-success});
+  }
+}
+
+// ============================================================================
+// Slotted helper text — light DOM content needs explicit shadow-DOM styling
+// via ::slotted() since it doesn't inherit the .input-helper class rules.
+// ============================================================================
+
+::slotted([slot='helper']) {
+  font-family: #{tokens.$font-family-base};
+  font-size: #{tokens.$font-size-xs};
+  line-height: #{tokens.$line-height-normal};
+  letter-spacing: #{tokens.$letter-spacing-wider};
+  color: var(--vi-input-helper-color, #{tokens.$color-grey-500});
+}
+
+
+
+

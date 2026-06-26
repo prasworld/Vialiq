@@ -133,12 +133,12 @@ describe('vi-button', () => {
   });
 
   describe('Step 5: Accessibility, CSS Parts, and Internals', () => {
-    it('should set type="button" and tabindex="-1" on the internal native button', async () => {
+    it('should set type="button" and tabindex="0" on the internal native button', async () => {
       render(html`<vi-button>Default</vi-button>`, container);
       const nativeButton = await $('vi-button').shadow$('.button');
       
       await expect(nativeButton).toHaveAttribute('type', 'button');
-      await expect(nativeButton).toHaveAttribute('tabindex', '-1');
+      await expect(nativeButton).toHaveAttribute('tabindex', '0');
     });
 
     it('should expose the correct CSS parts for styling', async () => {
@@ -261,6 +261,103 @@ describe('vi-button', () => {
 
       // Expect the host to no longer be focused
       await expect(host).not.toBeFocused();
+    });
+
+    it('should have tabIndex 0 so it participates in the tab order', async () => {
+      render(html`<vi-button>Tab Order</vi-button>`, container);
+      const el = document.querySelector('vi-button') as ViButton;
+      await el.updateComplete;
+
+      expect(el.tabIndex).toBe(0);
+    });
+
+    it('should remove from tab order when disabled', async () => {
+      render(html`<vi-button disabled>Disabled</vi-button>`, container);
+      const el = document.querySelector('vi-button') as ViButton;
+      await el.updateComplete;
+
+      expect(el.tabIndex).toBe(-1);
+    });
+
+    it('should restore tab order when re-enabled after being disabled', async () => {
+      render(html`<vi-button disabled>Toggle</vi-button>`, container);
+      const el = document.querySelector('vi-button') as ViButton;
+      await el.updateComplete;
+
+      el.disabled = false;
+      await el.updateComplete;
+
+      expect(el.tabIndex).toBe(0);
+    });
+
+    it('should move focus backward to the previous element via Shift+Tab', async () => {
+      render(html`<button id="before">Before</button><vi-button>After</vi-button>`, container);
+      const el = document.querySelector('vi-button') as ViButton;
+      await el.updateComplete;
+
+      // A WebDriver click on the host is a real user gesture (equivalent to a mouse click).
+      // It establishes OS-level focus inside the shadow DOM via delegatesFocus.
+      await (await $('vi-button')).click();
+      await browser.pause(50);
+
+      // Shift+Tab should move back to #before.
+      await browser.keys(['Shift', 'Tab']);
+      await browser.pause(50);
+
+      const activeId = await browser.execute(() => document.activeElement?.id);
+      expect(activeId).toBe('before');
+    });
+
+    it('should apply :focus-within on host when inner button is focused', async () => {
+      render(html`<vi-button>Focus Ring</vi-button>`, container);
+      const el = document.querySelector('vi-button') as ViButton;
+      await el.updateComplete;
+
+      el.focus();
+      await browser.pause(50);
+
+      // :focus-within fires on the host whenever any descendant has focus,
+      // including the delegated inner <button tabindex="0">.
+      const hasFocusWithin = await browser.execute(() => {
+        const host = document.querySelector('vi-button') as Element;
+        return host.matches(':focus-within');
+      });
+      expect(hasFocusWithin).toBe(true);
+    });
+
+    it('should lose :focus-within when blurred', async () => {
+      render(html`<vi-button>Blur Test</vi-button>`, container);
+      const el = document.querySelector('vi-button') as ViButton;
+      await el.updateComplete;
+
+      el.focus();
+      await browser.pause(50);
+
+      el.blur();
+      await browser.pause(50);
+
+      const hasFocusWithin = await browser.execute(() => {
+        const host = document.querySelector('vi-button') as Element;
+        return host.matches(':focus-within');
+      });
+      expect(hasFocusWithin).toBe(false);
+    });
+
+    it('should NOT be reachable via Tab when disabled', async () => {
+      render(html`<button id="before">Before</button><vi-button disabled>Disabled</vi-button><button id="after">After</button>`, container);
+      const el = document.querySelector('vi-button') as ViButton;
+      await el.updateComplete;
+
+      // WebDriver click on #before to establish real focus context before pressing Tab.
+      await (await $('#before')).click();
+      await browser.pause(50);
+
+      await browser.keys(['Tab']);
+      await browser.pause(50);
+
+      // Tab should skip the disabled vi-button and land on #after.
+      const activeId = await browser.execute(() => document.activeElement?.id);
+      expect(activeId).toBe('after');
     });
 
     it('should apply aria-label to the host element for accessibility', async () => {

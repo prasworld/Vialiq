@@ -2,11 +2,16 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "ignoreDeprecations": "5.0",
+    "rootDir": "src",
     "outDir": "../../dist/libs/web-components",
     "declaration": true,
     "declarationMap": true,
     "inlineSources": true,
-    "types": ["node"]
+    "types": ["node"],
+    "paths": {
+      "@vialiq/icons": ["../../node_modules/@vialiq/icons/index.d.ts"],
+      "@vialiq/icons/*": ["../../node_modules/@vialiq/icons/*"]
+    }
   },
   "include": ["src/**/*.ts"],
   "exclude": [

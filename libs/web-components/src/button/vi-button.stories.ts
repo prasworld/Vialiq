@@ -4,6 +4,7 @@ import { checkIcon } from '@vialiq/icons';
 import { registerIcons } from '../icons/registry.js';
 import '../icons/vi-icon.js';
 import './vi-button.js';
+import '../input/vi-input.js';
 
 // Register icons once at module load time.
 registerIcons([checkIcon]);
@@ -102,5 +103,28 @@ export const IconOnly: Story = {
     >
       <vi-icon slot="icon" name="check"></vi-icon>
     </vi-button>
+  `,
+};
+
+export const TabNavigation: Story = {
+  name: 'Tab Navigation (Custom Order)',
+  parameters: {
+    docs: {
+      description: {
+        story: 'Demonstrates that mixed interactive components respect custom `tabindex` values explicitly applied to their host elements, navigating out of DOM order.',
+      },
+    },
+  },
+  render: () => html`
+    <div style="display: flex; flex-direction: column; gap: 1rem; width: 320px; padding: 1.5rem; border: 1px dashed #ccc; border-radius: 4px;">
+      <p style="margin: 0; font-size: 0.875rem; color: #666; font-family: sans-serif;">
+        Press <strong>Tab</strong> to cycle focus. Order: First → Second → Third → Fourth.
+      </p>
+      <vi-input tabindex="3" placeholder="Third (tabindex=3)"></vi-input>
+      <vi-button tabindex="1">First (tabindex=1)</vi-button>
+      <vi-input tabindex="4" placeholder="Fourth (tabindex=4)"></vi-input>
+      <vi-button tabindex="2" variant="secondary">Second (tabindex=2)</vi-button>
+      <vi-button disabled tabindex="5">Disabled (skipped)</vi-button>
+    </div>
   `,
 };

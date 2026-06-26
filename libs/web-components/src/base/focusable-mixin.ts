@@ -44,21 +44,26 @@ export declare class FocusableInterface {
  * ARCHITECTURE: host is the tab stop
  * ─────────────────────────────────────────────────────────────────────────
  *
- *   Host:          tabIndex = 0   ← consumer-visible tab stop
- *   Inner element: tabindex="-1" ← NOT directly in tab order; only reachable
- *                                   via host delegation
+ *   Host:          tabIndex = 0   ← consumer-visible light-DOM tab stop
+ *   Inner element: tabindex="0"   ← participates in shadow root's own tab
+ *                                   order so :focus-visible fires reliably
  *   delegatesFocus: true          ← routes host focus → inner element
  *
  * This means:
  *   - Tab → lands on host → delegatesFocus → inner element gets visual focus
- *   - `:host(:focus)` and `:host(:focus-within)` both work correctly
+ *   - `:host(:focus)` and `:host(:focus-within)` both activate correctly
+ *   - `:focus-visible` on the inner element fires reliably for all browsers
+ *     (keyboard vs mouse distinction works without browser-specific hacks)
  *   - `element.focus()` calls our override → inner element focused explicitly
  *   - Consumer sets tabindex="-1" on host to remove from tab order entirely
- *   - Consumer sets tabindex="2" for explicit positioning — just works
+ *   - Consumer sets tabindex="2" for explicit ordering — just works
  *
- * CRITICAL: Every component using this mixin MUST set tabindex="-1" on its
- * inner native element in render() to prevent double-tab. Failing to do so
- * creates two tab stops for a single logical control.
+ * NOTE: tabindex="0" on the inner element does NOT create a second light-DOM
+ * tab stop. Shadow DOM children only participate in the shadow root's local
+ * tab order; the host remains the single entry point from the outer document.
+ * The difference from tabindex="-1" is that :focus-visible propagation through
+ * delegatesFocus is more consistent when the delegated target is a proper
+ * sequential-focus participant.
  *
  * DISABLED: When the `disabled` prop changes, the component MUST sync the
  * host's tabIndex:
