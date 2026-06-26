@@ -237,7 +237,6 @@ describe('vi-button', () => {
     it('should correctly handle focus and blur events', async () => {
       render(html`<vi-button>Focus Me</vi-button>`, container);
       const el = document.querySelector('vi-button') as ViButton;
-      const nativeButton = await $('vi-button').shadow$('.button');
       const host = await $('vi-button');
 
       // Focus the host element

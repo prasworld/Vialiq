@@ -93,7 +93,6 @@ export function FocusableMixin<T extends Constructor<LitElement>>(
      * generic `Base` constructor has `shadowRootOptions`, so we re-declare
      * without override (the property is still inherited at runtime).
      */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     static shadowRootOptions: ShadowRootInit = {
       ...(Base as unknown as typeof LitElement).shadowRootOptions,
       delegatesFocus: true,
