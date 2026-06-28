@@ -245,7 +245,7 @@ The host element is the tab stop (tabIndex 0 by default). `delegatesFocus: true`
 
 ## Implementation Notes
 
-- The inner `<button>` always has `tabindex="0"` — the host participates via `delegatesFocus: true`, not by being the tab stop itself.
+- The host element is the tab stop; with `delegatesFocus: true` focus is forwarded to the inner `<button tabindex="0">` for reliable `:focus-visible`.
 - `disabled` state management is in `FocusableMixin` — toggling `disabled` calls `_setHostFocusable()` which synchronises `tabIndex` on the host element.
 - Icon detection (`_hasIcon` state) is driven by the `slotchange` event on the icon slot, not a prop — consumers do not need to declare whether they use an icon.
 - `fullWidth` changes `:host` display from `inline-block` → `block`; the inner `.button` then sets `width: 100%`.
