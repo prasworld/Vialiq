@@ -5,6 +5,20 @@ import { LitElement } from 'lit';
 type Constructor<T = object> = new (...args: any[]) => T;
 
 /**
+ * Tri-state visual status for form controls.
+ *
+ * - `'default'` — no validation styling (neutral / untouched)
+ * - `'invalid'`  — red border, error colours; set by the form when validation fails
+ * - `'valid'`    — green border, success colours; set explicitly by the parent when
+ *                  it wants to confirm a correct value (independent of message)
+ *
+ * Designed to be driven from outside (Angular binding, React prop, plain JS) so
+ * the component never decides on its own that it is "valid" — that is always an
+ * explicit, intentional signal from the consuming code.
+ */
+export type ControlStatus = 'default' | 'valid' | 'invalid';
+
+/**
  * Type-only declaration of the shape ValidityMixin adds to a class.
  * `declare class` emits no runtime code — it is a TS-only contract.
  *
@@ -17,19 +31,36 @@ type Constructor<T = object> = new (...args: any[]) => T;
  * The class must also declare `static formAssociated = true`.
  */
 export declare class ValidityInterface {
-  // ── Reactive properties — subclass MUST declare as @property ──────────────
+  // ── Reactive properties — subclass MUST declare as @property accessor ──────
+  // Declared as get/set pairs so that subclass `accessor` declarations
+  // (required by Lit 3 TC39 decorators) are compatible. TypeScript TS2611
+  // is triggered when a plain field in a base class is overridden with an
+  // accessor; get/set declarations don't have this restriction.
 
-  /** Whether the component is in an invalid state. Reflects as [invalid] attr. */
-  invalid: boolean;
+  /**
+   * Visual/validation state of the control. Reflects as the `[status]` attribute.
+   * - `'default'` — no validation styling
+   * - `'invalid'`  — red border / error colours
+   * - `'valid'`    — green border / success colours
+   *
+   * Set by the mixin's constraint-validation methods AND by the consuming
+   * code/framework. The parent always controls this — the component never
+   * auto-promotes itself to `'valid'`.
+   */
+  get status(): ControlStatus;
+  set status(value: ControlStatus);
 
   /** Whether a value is required. Drives the valueMissing validity flag. */
-  required: boolean;
+  get required(): boolean;
+  set required(value: boolean);
 
   /** The human-readable validation message displayed in the component UI. */
-  validityMessage: string;
+  get validityMessage(): string;
+  set validityMessage(value: string);
 
   /** The current component value. Read by _testValidity for required check. */
-  readonly value: string;
+  get value(): string;
+  set value(v: string);
 
   // ── ElementInternals — subclass MUST attach ───────────────────────────────
 
@@ -115,7 +146,7 @@ export declare class ValidityInterface {
  *      Must be a field initializer (runs after super() in the constructor).
  *
  *   3. Declare reactive properties (MUST be @property so Lit tracks changes):
- *        @property({ type: Boolean, reflect: true }) accessor invalid = false;
+ *        @property({ reflect: true }) accessor status: ControlStatus = 'default';
  *        @property({ type: Boolean, reflect: true }) accessor required = false;
  *        @property() accessor validityMessage = '';
  *        @property() accessor value = '';
@@ -131,7 +162,7 @@ export declare class ValidityInterface {
  *   5. Handle form reset:
  *        formResetCallback(): void {
  *          this.value = this.getAttribute('value') ?? '';
- *          this.invalid = false;
+ *          this.status = 'default';
  *          this.validityMessage = '';
  *        }
  *
@@ -174,7 +205,7 @@ export declare class ValidityInterface {
  *     static override formAssociated = true;
  *     protected readonly _internals = this.attachInternals();
  *
- *     @property({ type: Boolean, reflect: true }) accessor invalid = false;
+   *     @property({ reflect: true }) accessor status: ControlStatus = 'default';
  *     @property({ type: Boolean, reflect: true }) accessor required = false;
  *     @property() accessor validityMessage = '';
  *     @property() accessor value = '';
@@ -191,7 +222,7 @@ export declare class ValidityInterface {
  *
  *     formResetCallback(): void {
  *       this.value = this.getAttribute('value') ?? '';
- *       this.invalid = false;
+ *       this.status = 'default';
  *       this.validityMessage = '';
  *     }
  *
@@ -256,10 +287,15 @@ export function ValidityMixin<T extends Constructor<LitElement>>(
       }
 
       if (isValid) {
+        // Only clear status if it was previously set to 'invalid' by the constraint
+        // API. Do not override an explicit 'valid' set by the parent/framework.
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (this as any).invalid = false;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (this as any).validityMessage = '';
+        if ((this as any).status === 'invalid') {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (this as any).status = 'default';
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (this as any).validityMessage = '';
+        }
       } else {
         // Fire cancelable 'invalid' — mirrors native form element behaviour.
         // Cancelable so consumers can suppress browser tooltip and show their own.
@@ -269,9 +305,9 @@ export function ValidityMixin<T extends Constructor<LitElement>>(
           new Event('invalid', { bubbles: false, cancelable: true, composed: false })
         );
         if (proceed) {
-          // Only set invalid=true if the event was not cancelled.
+          // Only set status='invalid' if the event was not cancelled.
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (this as any).invalid = true;
+          (this as any).status = 'invalid';
         }
       }
 
@@ -294,7 +330,7 @@ export function ValidityMixin<T extends Constructor<LitElement>>(
     setCustomValidity(message: string): void {
       const hasError = Boolean(message);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (this as any).invalid = hasError;
+      (this as any).status = hasError ? 'invalid' : 'default';
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (this as any).validityMessage = message;
 

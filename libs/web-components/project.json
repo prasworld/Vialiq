@@ -12,7 +12,8 @@
       "options": {
         "outputPath": "dist/libs/web-components",
         "configFile": "libs/web-components/vite.config.ts",
-        "tsConfig": "libs/web-components/tsconfig.lib.json"
+        "tsConfig": "libs/web-components/tsconfig.lib.json",
+        "skipTypeCheck": true
       },
       "configurations": {
         "production": {

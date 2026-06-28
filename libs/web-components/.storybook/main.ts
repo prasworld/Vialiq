@@ -1,6 +1,11 @@
 import type { StorybookConfig } from '@storybook/web-components-vite';
 import swc from 'unplugin-swc';
 import { mergeConfig } from 'vite';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const config: StorybookConfig = {
   framework: {
@@ -15,6 +20,14 @@ const config: StorybookConfig = {
       // Replace esbuild (which doesn't support TC39 standard decorators) with
       // SWC so the same decorator transform used by the build target works here.
       esbuild: false,
+      resolve: {
+        alias: {
+          '@vialiq/flux-ui/styles/_index.scss': path.resolve(
+            __dirname,
+            '../../flux-ui/styles/_index.scss'
+          ),
+        },
+      },
       plugins: [
         swc.vite({
           jsc: {

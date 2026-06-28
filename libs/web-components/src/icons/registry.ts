@@ -13,9 +13,10 @@
  *   // <vi-icon name="check"></vi-icon>
  */
 
-import type { SvgIconDef } from '@vialiq/icons';
-
-export type { SvgIconDef };
+export interface SvgIconDef {
+  name: string;
+  data: string;
+}
 
 const registry = new Map<string, SvgIconDef>();
 

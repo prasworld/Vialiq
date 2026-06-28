@@ -134,33 +134,289 @@ Searchable dropdown with optional multi-select.
 
 ### 4. `vi-accordion` + `vi-accordion-item` 🔲
 Container + item pair.
-- Item props: `label`, `open`, `disabled`
+- `vi-accordion` props: `multi` (allow multiple open), `variant` (default|bordered|flush)
+- `vi-accordion-item` props: `label`, `open`, `disabled`, `icon`
+- Slots: `header-actions`, default content, `icon`
 - ARIA: header `<button>` with `aria-expanded`, `aria-controls` → panel `id`; panel `role="region"`, `aria-labelledby`
 - Keyboard: `Enter`/`Space` toggle, `↑↓` between items, `Home`/`End`
+- Animation: CSS `max-height` + `opacity` transition with `overflow: hidden`
 
-### 5. `vi-modal` 🔲
-- Props: `open`, `headline`, `size` (sm|md|lg|fullscreen), `closable`, `persistent`
-- Slots: `header`, default body, `footer`
-- ARIA: `role="dialog"`, `aria-modal="true"`, `aria-labelledby`
-- Focus trap (Tab cycles within); `Escape` closes unless `persistent`; focus returns to trigger on close
+### 5. `vi-chip` 🔲
+Interactive chip/pill — selectable and/or removable. Richer than `vi-tag` (supports groups, avatar, leading icon, checkbox semantics).
+- Props: `selected`, `removable`, `disabled`, `value`, `variant` (neutral|primary|success|warning|danger)
+- Slots: `avatar` (leading image/icon), `icon`, default (label), `trailing-icon`
+- ARIA: `role="option"` when inside `vi-chip-group`; standalone uses `role="checkbox"` or `role="button"`
+- Events: `vialiq-select`, `vialiq-remove`
+- `vi-chip-group`: manages multi-select chip set with `aria-multiselectable`
 
-### 6. `vi-notification` 🔲
-- Props: `variant`, `title`, `message`, `dismissible`, `duration` (0 = permanent)
-- ARIA: `role="alert"` for error/warning (assertive), `role="status"` for info/success (polite), `aria-atomic="true"`
-- Auto-dismiss with `duration > 0`; dispatches `vi-dismiss` event
+### 6. `vi-modal` 🔲
+- Wraps native `<dialog>` element (not polyfilled div)
+- Props: `open`, `size` (xs|sm|md|lg|xl|fullscreen), `closable`, `persistent`, `scrollable`
+- Variants: `default` (centred), `drawer` (right/left side-panel), `alert` (compact confirmation with icon)
+- Slots: `header`, default body, `footer`, `icon` (for alert variant)
+- ARIA: `role="dialog"`, `aria-modal="true"`, `aria-labelledby`; `alert` variant uses `role="alertdialog"`
+- Focus trap via `FocusTrapMixin`; `Escape` closes unless `persistent`; focus returns to trigger on close
+- Animation: scale + fade (default), slide (drawer), zoom-out (alert)
+- Backdrop: click closes unless `persistent`; backdrop customisable via CSS part
 
-### 7. `vi-tooltip` 🔲
+### 6. `vi-alert` 🔲
+Inline persistent status banner (not time-limited). Embedded in page layout.
+- Props: `variant` (info|success|warning|danger), `title`, `dismissible`
+- Slots: default message, `actions` (buttons)
+- ARIA: `role="alert"` (warning/danger) | `role="status"` (info/success), `aria-atomic="true"`
+- Events: `vialiq-dismiss` when close button clicked
+- Usage: form-level validation summary, page-level info banners, query context messages
+
+### 7. `vi-toast` + `vi-toast-service` 🔲
+Ephemeral floating notifications. Rendered in a portal at document root.
+- Props: `variant` (info|success|warning|danger), `title`, `message`, `duration` (ms; 0 = sticky), `closable`
+- Position: top-right by default; configurable via `vi-toast-service` global config
+- Slots: `actions` (optional action link/button)
+- ARIA: `role="status"` (info/success, polite live region) | `role="alert"` (warning/danger, assertive)
+- Auto-dismiss timer with pause-on-hover; progress bar indicator
+- Events: `vialiq-close` on dismiss
+- `vi-toast-service`: singleton service class for programmatic dispatch:
+  ```typescript
+  ViToastService.show({ variant: 'success', title: 'Form saved', duration: 3000 });
+  ```
+- Stack: multiple toasts stack vertically, newest on top; max visible = 5 (older collapse)
+- Keyboard: `Escape` dismisses focused toast; focus moves to next
+
+### 8. `vi-notification` + `vi-notification-center` 🔲
+Persistent notification bell with drawer/panel.
+- `vi-notification` — a single notification card:
+  - Props: `variant`, `title`, `message`, `timestamp`, `read` (boolean), `actions`
+  - Events: `vialiq-read`, `vialiq-dismiss`, `vialiq-action`
+- `vi-notification-center` — bell trigger + sliding panel:
+  - Props: `count` (unread count badge), `open`, `placement` (right|left)
+  - Slots: `trigger` (custom trigger button), default (notification items)
+  - ARIA: `aria-label="Notifications"` on trigger; panel `role="region"` `aria-label="Notification centre"`
+  - `count` drives unread badge on bell icon
+  - Events: `vialiq-open`, `vialiq-close`, `vialiq-clear-all`
+- Usage: EDC query alerts, data entry reminders, system announcements
+
+### 9. `vi-tooltip` 🔲
 - Props: `content`, `placement`, `trigger` (hover|focus|both), `delay-ms`
 - ARIA: `role="tooltip"`; trigger element gets `aria-describedby`
-- Keyboard: focus shows; `Escape` dismisses — never hover-only
+- Keyword: focus shows; `Escape` dismisses — never hover-only
+- Uses CSS anchor-positioning with JS fallback for placement
 
-### 8. `vi-tabs` + `vi-tab` + `vi-tab-panel` 🔲
-- ARIA: `role="tablist"`, `role="tab"` (`aria-selected`, `aria-controls`), `role="tabpanel"` (`aria-labelledby`)
-- Keyboard: `←→` navigate (roving tabindex), `Home`/`End`, `Delete` to close if closable
+### 10. `vi-tabs` + `vi-tab` + `vi-tab-panel` 🔲
+Full tabs implementation with closable, dynamic, and responsive modes.
+- **`vi-tabs`** (container): Props: `active` (active tab id), `orientation` (horizontal|vertical), `variant` (line|pill|card), `overflow` (scroll|menu|wrap), `addable` (boolean — show "+" tab)
+- **`vi-tab`** (individual tab): Props: `id`, `label`, `closable`, `disabled`, `badge-count`
+- **`vi-tab-panel`** (content area): Props: `for` (tab id it corresponds to)
+- ARIA: `role="tablist"`, `role="tab"` (`aria-selected`, `aria-controls`, `aria-disabled`), `role="tabpanel"` (`aria-labelledby`), `aria-orientation`
+- Keyboard: `←→` navigate (roving tabindex), `Home`/`End`, `Delete` close (if `closable`), `Ctrl+T` / `+` button adds tab (if `addable`)
+- **Closable tabs**: Each `vi-tab[closable]` renders an × button; fires `vialiq-close`; tab is removed from DOM after animation; focus moves to adjacent tab
+- **Dynamic tabs**: Host app manages tab list reactively; `addable` shows "+" button that fires `vialiq-add-tab`
+- **Responsive overflow**: When tab list overflows, `overflow="scroll"` adds horizontal scroll with fade shadows; `overflow="menu"` collapses hidden tabs into a "More ▾" dropdown; `overflow="wrap"` allows wrap (use only for small sets)
+- Events: `vialiq-change` (new active tab), `vialiq-close` (tab removed), `vialiq-add` (+ clicked)
+
+### 11. `vi-skeleton` 🔲
+Loading placeholder that mimics the shape of real content. Shown while data is fetching.
+- Props: `variant` (text|circle|rect|button|card), `width`, `height`, `lines` (for multi-line text), `animated` (shimmer | pulse | none)
+- Slots: none (self-contained shape)
+- ARIA: `aria-hidden="true"` — screen readers skip skeletons; announce loading state at parent level via `aria-busy="true"`
+- Variants:
+  - `text` — one or more lines of text-height bars
+  - `circle` — circular avatar/icon placeholder
+  - `rect` — arbitrary rectangle (image, card image)
+  - `button` — button-shaped block
+  - `card` — full card layout (header + body lines)
+- CSS: shimmer animation uses `linear-gradient` sweep, `background-size: 200%`, `animation: shimmer 1.5s infinite`; respects `prefers-reduced-motion` (static when reduced)
+- Composable: nest multiple `vi-skeleton` inside a layout div to build realistic page skeletons
+
+### 12. `vi-combobox` 🔲
+Searchable select. Supports single-select, multi-select with tags, and free-text entry.
+- **Modes** (set via `mode` prop):
+  - `single` — user types to filter, picks one option; typed text reverts to selected label on blur
+  - `multi` — multiple selections shown as `vi-tag` chips in the input; `Backspace` removes last chip
+  - `tags` — free-text tag entry (no predefined options list required); `Enter` or comma creates a tag
+  - `creatable` — like `single` but allows creating new options not in the list
+- **Props**: `mode` (single|multi|tags|creatable), `value` (string for single, string[] for multi/tags), `options` (array or async function), `placeholder`, `loading`, `disabled`, `required`, `maxTags`, `name`, `status`, `validityMessage`, `filterFn`, `renderOption`
+- **Options source**: static array **or** async function `(query: string) => Promise<Option[]>` for server-side search (debounced at 300ms)
+- **Option type**: `{ value: string; label: string; group?: string; disabled?: boolean; icon?: string }`
+- ARIA: `role="combobox"`, `aria-autocomplete="list"`, `aria-expanded`, `aria-activedescendant`; listbox: `role="listbox"`, each option `role="option"` with `aria-selected`
+- Keyboard:
+  - `↓` / `↑` — navigate options
+  - `Enter` — select focused option
+  - `Escape` — close listbox, revert input text
+  - `Backspace` on empty input (multi/tags) — remove last tag
+  - `Home`/`End` — first/last option
+  - Type-ahead filter as user types
+- Selected tags rendered as `vi-tag[removable]` inline before the search input
+- Loading state: shows `vi-spinner` inside listbox while async options load
+- Empty state: configurable "No results" message + optional "Create: {query}" item (creatable mode)
+- Events: `vialiq-change` (value changed), `vialiq-search` (query changed), `vialiq-create` (new tag/option created)
+- Form-associated: `static formAssociated = true`; `ElementInternals.setFormValue()` with serialised value
+
+---
+
+## Phase 2 (continued) — Date & Time Components
+
+### Date picker architecture — flatpickr integration
+All date/time pickers wrap **flatpickr** (MIT, TypeScript, zero dependencies, highly pluggable).
+- `flatpickr` handles calendar UI, keyboard navigation, locale, range selection — Lit component wraps it as a web component
+- The Lit component owns the shadow DOM outer shell (label, helper, validation, tokens); flatpickr calendar is portalled into a `<div>` appended to `document.body` (flatpickr's own appendTo option)
+- Custom flatpickr plugins used: `confirmDatePlugin` (for partial date / unconfirmed entry), `weekSelectPlugin`
+- Shared base: `_flatpickr-base.ts` mixin handles lifecycle (init on `firstUpdated`, destroy on `disconnectedCallback`), value sync, locale loading
+- Theming: flatpickr default CSS is completely **replaced** by Flux UI `_flatpickr.scss` tokens
+
+### `vi-date-picker` update 🔲
+_(spec unchanged; implementation note: wraps flatpickr with `allowInput: true`, `dateFormat: 'd/m/Y'`, partial-date overlay on three separate text inputs when `allowPartial` is set — flatpickr calendar is still shown for full-date selection)_
+
+### `vi-month-year-picker` 🔲
+Month + year selection only. Used for: reporting period selection, drug expiry, birth month (when day unknown).
+- Props: `value` (YYYY-MM format), `min`, `max`, `disabled`, `required`, `name`, `clearable`
+- Flatpickr config: `plugins: [monthSelectPlugin]` — shows month grid calendar, year stepper
+- Output format: `YYYY-MM`; partial `YYYY-??` when month unknown
+- Events: `vialiq-change`, `vialiq-clear`
+
+### `vi-time-picker` 🔲
+Time-of-day input. Used for: AE start/end time, dose time, assessment time.
+- Props: `value` (HH:mm or HH:mm:ss), `format` (12|24), `step` (minutes; default 15), `showSeconds`, `min`, `max`, `disabled`, `required`, `name`
+- Flatpickr config: `enableTime: true`, `noCalendar: true`, `time_24hr: format === '24'`
+- Input mask: two-segment (HH:mm) or three-segment (HH:mm:ss) inputs for direct keyboard entry
+- Unknown time: `value='??:??'` when time not recorded (EDC convention)
+- Events: `vialiq-change`, `vialiq-clear`
+- Keyboard: `↑`/`↓` increments hour/min by step; `Tab` moves between segments
+
+---
+
+## Phase 3 — EDC-Specific Components
+
+### 1. `vi-file-upload` 🔲
+Feature-rich file attachment component. Supports clinical documents (ICF scans, source data, lab reports, protocol amendments).
+- Props: `accept` (MIME/extension list), `multiple`, `max-size` (bytes), `max-files`, `disabled`, `required`, `name`, `capture` (camera|environment), `auto-upload` (boolean)
+- Zones: drag-and-drop area + "Browse" button + optional paste-from-clipboard
+- File list: shows each file with name, size, type icon, upload progress bar, status (pending|uploading|success|error), remove button
+- Upload: exposes `upload(file, options)` method — caller provides `uploadFn: (file, onProgress) => Promise<UploadResult>` prop
+- Preview: image thumbnails inline; PDF/doc icons for non-image files
+- Validation: client-side type + size check before upload; error state per file
+- Slots: `empty` (custom drop zone content), `file-item` (custom file row)
+- ARIA: drag zone `role="button"` + `aria-label="Upload files"`; status live region for upload results
+- Events: `vialiq-files-selected`, `vialiq-upload-progress`, `vialiq-upload-success`, `vialiq-upload-error`, `vialiq-remove`
+- Form participation: `ElementInternals.setFormValue()` with file list serialised as JSON (for non-auto-upload mode)
+
+### 2. `vi-signature` 🔲
+Canvas-based electronic signature per 21 CFR Part 11.
+- Props: `value` (base64 PNG), `disabled`, `locked`, `pen-color`, `pen-width`
+- Methods: `clear()`, `toDataURL(format)`, `toBlob()`
+- Events: `vialiq-signature-change`, `vialiq-signature-clear`
+- Mouse + touch/stylus support; pressure sensitivity when available
+
+### 3. `vi-query-badge` 🔲
+Field-level query indicator (open/answered/closed) that attaches to any form field.
+- Props: `status` (open|answered|closed|resolved), `count`
+- Triggers a query drawer/modal when clicked
+
+---
+
+## Phase 4 — Charts & Data Visualisation
+
+### Architecture decision — base framework
+Build on **D3.js v7** (MIT) as the rendering primitive, wrapped in Lit web components.
+
+**Why D3:**
+- Full SVG control — critical for custom clinical chart types (RECIST waterfall, swimmer plots, KM curves)
+- TypeScript-native (v7+)
+- Composable modules — import only the D3 subpackages needed (`d3-scale`, `d3-axis`, `d3-shape`, etc.)
+- No opinion on component model — integrates cleanly with Lit reactive properties
+
+**Alternative considered: Chart.js** — rejected because canvas-based (no SVG parts for styling), limited axis customisation, no built-in support for clinical chart types.
+
+**Alternative considered: Vega-Lite** — rejected because declarative grammar is opaque to debug and customise; JSON schema not TypeScript-friendly.
+
+### Base chart infrastructure
+
+**`vi-chart-base` (abstract mixin/base class):**
+- `_svg`: D3 selection of the root `<svg>` element in shadow DOM
+- `_margin`: `{ top, right, bottom, left }` — computed from slot availability
+- `_width` / `_height`: from `ResizeObserver` on host; chart redraws on size change
+- `_renderChart()`: abstract — subclasses implement full D3 draw logic
+- Theming: all colours via CSS custom props, read at render time via `getComputedStyle`
+- Tooltip: shared `vi-chart-tooltip` overlay (absolute positioned `<div>` in shadow DOM)
+- Legend: `vi-chart-legend` component (external, slottable)
+- Export: `toSVGString()`, `toPNG()` → `HTMLCanvasElement` → blob
+
+**`vi-chart-axis` (internal helper):**
+- Wraps D3 `axisBottom/Left/Right/Top`
+- Tick formatting, grid lines, axis labels
+- Respects `orientation`, `tickCount`, `tickFormat`, `showGrid`
+
+### Planned chart components
+
+| Component | Type | Clinical use | D3 modules |
+|-----------|------|-------------|------------|
+| `vi-bar-chart` | Grouped/stacked bars | AE frequency by term/grade | `d3-scale`, `d3-axis`, `d3-shape` |
+| `vi-line-chart` | Single/multi-series line | Lab values over time, vitals trend | `d3-scale`, `d3-line`, `d3-axis` |
+| `vi-scatter-chart` | Scatter plot | PK/PD correlation, outlier detection | `d3-scale`, `d3-axis` |
+| `vi-waterfall-chart` | Waterfall | RECIST tumour response | `d3-scale`, `d3-axis`, `d3-shape` |
+| `vi-km-chart` | Kaplan-Meier survival | Time-to-event (OS, PFS) | `d3-scale`, `d3-axis`, `d3-line` + custom step |
+| `vi-heatmap-chart` | Matrix heatmap | AE incidence grid (term × grade) | `d3-scale-chromatic`, `d3-axis` |
+| `vi-swimmer-chart` | Horizontal timeline | Subject treatment duration + events | `d3-scale-band`, `d3-axis-top` |
+| `vi-sparkline` | Inline mini chart | Lab trend in table cells | `d3-line` only |
+
+### Shared chart API contract (all chart components)
+
+```typescript
+// All charts accept a typed data prop
+interface ViChartBase<TDatum> {
+  data: TDatum[];              // the dataset
+  width?: number;              // if not set, uses container width
+  height?: number;             // default: 320px
+  margin?: Partial<ChartMargin>;
+  colors?: string[];           // array of series colours
+  animate?: boolean;           // default: true; off for reduced motion
+  loading?: boolean;           // show skeleton overlay
+  empty?: boolean;             // show empty state message
+  emptyMessage?: string;
+  accessible?: boolean;        // render SVG title + desc + data table
+}
+
+// Events all charts fire
+// vialiq-datum-hover: { datum: TDatum; x: number; y: number }
+// vialiq-datum-click: { datum: TDatum }
+// vialiq-datum-leave
+// vialiq-chart-ready  (after first render)
+```
+
+### CSS Custom Properties (shared)
+
+```css
+--vi-chart-bg: transparent;
+--vi-chart-axis-color: var(--vi-color-grey-400);
+--vi-chart-grid-color: var(--vi-color-grey-100);
+--vi-chart-tick-font: var(--vi-font-size-xs);
+--vi-chart-label-font: var(--vi-font-size-sm);
+--vi-chart-series-1: var(--vi-color-primary);
+--vi-chart-series-2: var(--vi-color-success);
+--vi-chart-series-3: var(--vi-color-warning);
+--vi-chart-series-4: var(--vi-color-error);
+--vi-chart-series-5: #7c3aed;  /* purple */
+--vi-chart-series-6: #db2777;  /* pink */
+--vi-chart-tooltip-bg: var(--vi-color-grey-900);
+--vi-chart-tooltip-color: white;
+```
+
+### Accessibility for charts
+- All SVG charts include `<title>` and `<desc>` elements (screen reader)
+- When `accessible=true`: render a companion `<table aria-label="Chart data">` (visually hidden by default, toggled by "View data" button)
+- Colour palette tested for WCAG 2.1 contrast and colour-blind safe (deuteranopia / protanopia)
+- `prefers-reduced-motion`: animations disabled, transitions set to `0ms`
+- Pattern fills available as an alternative to colour-only differentiation
+
+### Storybook integration
+- Each chart has a story with `controls` for all props (data, colours, labels)
+- Shared `mockClinicalData.ts` fixtures for realistic EDC datasets (AE listings, lab panels, survival data)
+- Snapshot tests via `vi-chart.test.ts` using `jsdom` + D3 headless render
 
 ---
 
 ## Review Log
+
+> Append review notes here as components are completed.
 
 > Append review notes here as components are completed.
 
