@@ -67,7 +67,7 @@ Validation messages are rendered internally (not slotted) and are driven by `val
 | Event | Type | Bubbles | Composed | Fires when |
 |-------|------|---------|---------|-----------|
 | `vialiq-input` | `CustomEvent<{value: string}>` | ✅ | ✅ | Every keystroke (immediate) |
-| `vialiq-change` | `CustomEvent<{value: string}>` | ✅ | ✅ | Value committed (blur or Enter) |
+| `vialiq-change` | `CustomEvent<{value: string}>` | ✅ | ✅ | Value committed (blur) |
 | `invalid` | `Event` (cancelable) | ❌ | — | `checkValidity()` fails |
 
 The native `input` and `change` events are stopped at the shadow boundary (`e.stopPropagation()`) and replaced with prefixed custom events. This prevents double-firing when frameworks attach to native events.
