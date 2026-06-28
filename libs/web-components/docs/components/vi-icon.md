@@ -87,7 +87,7 @@ Each icon module exports a `SvgIconDef` object:
 ```typescript
 interface SvgIconDef {
   name: string;      // e.g. 'save'
-  svg: string;       // Raw SVG string (viewBox="0 0 24 24", no width/height)
+  data: string;      // Raw SVG string (viewBox="0 0 24 24", no width/height)
 }
 ```
 
@@ -228,7 +228,7 @@ import { registerIcons } from '@vialiq/web-components';
 
 registerIcons([{
   name: 'sponsor-logo',
-  svg: `<svg viewBox="0 0 24 24" fill="currentColor">
+  data: `<svg viewBox="0 0 24 24" fill="currentColor">
     <path d="M12 2L2 7v10l10 5 10-5V7L12 2z"/>
   </svg>`
 }]);
