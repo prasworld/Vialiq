@@ -1,4 +1,11 @@
-import { css, html, nothing, unsafeCSS, type PropertyValues, type TemplateResult } from 'lit';
+import {
+  css,
+  html,
+  nothing,
+  unsafeCSS,
+  type PropertyValues,
+  type TemplateResult,
+} from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { FocusableMixin } from '../base/focusable-mixin.js';
 import { ValidityMixin, type ControlStatus } from '../base/validity-mixin.js';
@@ -12,7 +19,14 @@ import inputStyles from './vi-input.scss?inline';
  * multi-line (textarea) and specialised pickers (date, color, file) are
  * separate components.
  */
-export type InputType = 'text' | 'email' | 'password' | 'search' | 'tel' | 'url' | 'number';
+export type InputType =
+  | 'text'
+  | 'email'
+  | 'password'
+  | 'search'
+  | 'tel'
+  | 'url'
+  | 'number';
 
 /**
  * vi-input
@@ -56,7 +70,9 @@ export type InputType = 'text' | 'email' | 'password' | 'search' | 'tel' | 'url'
 @customElement('vi-input')
 export class ViInput extends ValidityMixin(FocusableMixin(ViElement)) {
   static formAssociated = true;
-  static override styles = css`${unsafeCSS(inputStyles)}`;
+  static override styles = css`
+    ${unsafeCSS(inputStyles)}
+  `;
 
   protected readonly _internals = this.attachInternals();
 
@@ -183,11 +199,9 @@ export class ViInput extends ValidityMixin(FocusableMixin(ViElement)) {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   private get _helperContent(): TemplateResult {
-    return html`
-      <div class="input-helper" part="helper" id="helper-text">
-        <slot name="helper"></slot>
-      </div>
-    `;
+    return html`<span id="helper-text" class="input-helper" part="helper"
+      ><slot name="helper"></slot
+    ></span>`;
   }
 
   private get _validationMessage(): TemplateResult {
@@ -198,14 +212,19 @@ export class ViInput extends ValidityMixin(FocusableMixin(ViElement)) {
         : this.status === 'valid'
           ? 'input-validation--valid'
           : '';
-    return html`<span id="validation-message" class="input-validation ${cls}" part="validation" role="alert" aria-live="polite">${this.validityMessage}</span>`;
+    return html`<span
+      id="validation-message"
+      class="input-validation ${cls}"
+      part="validation"
+      role="alert"
+      aria-live="polite"
+      >${this.validityMessage}</span
+    >`;
   }
 
   override render(): TemplateResult {
-    const { type, placeholder, name, value, disabled, required, readonly } = this;
-    const hasMessage = Boolean(this.validityMessage);
-    const hasError = this.status === 'invalid' && hasMessage;
-    const describedby = `helper-text${hasMessage ? ' validation-message' : ''}`;
+    const { type, placeholder, name, value, disabled, required, readonly } =
+      this;
 
     return html`
       <div class="input-field" part="field">
@@ -218,17 +237,22 @@ export class ViInput extends ValidityMixin(FocusableMixin(ViElement)) {
           ?disabled=${disabled}
           ?readonly=${readonly}
           ?required=${required}
-          aria-required=${required ? 'true' : nothing}
+          aria-required=${ifNonEmpty(required ? 'true' : '')}
           aria-invalid=${this.status === 'invalid' ? 'true' : 'false'}
-          aria-describedby=${describedby}
-          aria-errormessage=${hasError ? 'validation-message' : nothing}
+          aria-describedby=${this.validityMessage
+            ? 'helper-text validation-message'
+            : 'helper-text'}
+          aria-errormessage=${ifNonEmpty(
+            this.status === 'invalid' && this.validityMessage
+              ? 'validation-message'
+              : '',
+          )}
           placeholder=${ifNonEmpty(placeholder)}
           name=${ifNonEmpty(name)}
           @input=${this._onInput}
           @change=${this._onChange}
         />
-        ${this._helperContent}
-        ${this._validationMessage}
+        ${this._helperContent} ${this._validationMessage}
       </div>
     `;
   }
