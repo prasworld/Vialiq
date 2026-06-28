@@ -35,7 +35,7 @@ Numeric-only with units → use `vi-number-input`.
 | Property | Attribute | Type | Default | Reflects | Description |
 |----------|-----------|------|---------|---------|-------------|
 | `type` | `type` | `InputType` | `'text'` | ✅ | Input type |
-| `value` | `value` | `string` | `''` | ✅ | Current value |
+| `value` | `value` | `string` | `''` | — | Current value |
 | `placeholder` | `placeholder` | `string` | `''` | — | Placeholder text |
 | `name` | `name` | `string` | `''` | — | Form field name |
 | `disabled` | `disabled` | `boolean` | `false` | ✅ | Disables the input |
