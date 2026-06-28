@@ -32,7 +32,7 @@ export type InputType = 'text' | 'email' | 'password' | 'search' | 'tel' | 'url'
  * @slot helper - Helper text shown below the input.
  *
  * @fires {CustomEvent<{value:string}>} vialiq-input  - Every keystroke. Bubbles, composed.
- * @fires {CustomEvent<{value:string}>} vialiq-change - Value committed (blur/Enter). Bubbles, composed.
+ * @fires {CustomEvent<{value:string}>} vialiq-change - Value committed (blur). Bubbles, composed.
  * @fires {Event}                       invalid        - Cancelable; fires when checkValidity() fails.
  *
  * @csspart field      - The outer `<div>` wrapper
