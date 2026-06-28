@@ -253,6 +253,40 @@ describe('vi-input', () => {
       expect(el.status).toBe('invalid');
       expect(el.validityMessage).toBeTruthy();
     });
+
+    it('should set accessibility ARIA attributes on the native input', async () => {
+      render(html`<vi-input required value=""></vi-input>`, container);
+      const el = document.querySelector('vi-input') as ViInput;
+      await el.updateComplete;
+
+      const input = el.shadowRoot?.querySelector('input') as HTMLInputElement;
+      expect(input).toBeTruthy();
+
+      expect(input.getAttribute('aria-required')).toBe('true');
+      expect(input.getAttribute('aria-describedby')).toBe('helper-text');
+
+      el.checkValidity();
+      el.validityMessage = 'Invalid input value';
+      await el.updateComplete;
+
+      expect(input.getAttribute('aria-invalid')).toBe('true');
+      expect(input.getAttribute('aria-describedby')).toBe('helper-text validation-message');
+      expect(input.getAttribute('aria-errormessage')).toBe('validation-message');
+      
+      const valMsg = el.shadowRoot?.querySelector('#validation-message');
+      expect(valMsg).toBeTruthy();
+    });
+
+    it('should apply helper class and part on helper slot wrapper', async () => {
+      render(html`<vi-input></vi-input>`, container);
+      const el = document.querySelector('vi-input') as ViInput;
+      await el.updateComplete;
+
+      const helperWrapper = el.shadowRoot?.querySelector('#helper-text');
+      expect(helperWrapper).toBeTruthy();
+      expect(helperWrapper?.classList.contains('input-helper')).toBe(true);
+      expect(helperWrapper?.getAttribute('part')).toBe('helper');
+    });
   });
 
   describe('Focus management', () => {

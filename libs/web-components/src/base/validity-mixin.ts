@@ -205,7 +205,7 @@ export declare class ValidityInterface {
  *     static override formAssociated = true;
  *     protected readonly _internals = this.attachInternals();
  *
-   *     @property({ reflect: true }) accessor status: InputStatus = 'default';
+   *     @property({ reflect: true }) accessor status: ControlStatus = 'default';
  *     @property({ type: Boolean, reflect: true }) accessor required = false;
  *     @property() accessor validityMessage = '';
  *     @property() accessor value = '';
