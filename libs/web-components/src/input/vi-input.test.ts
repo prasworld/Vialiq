@@ -451,5 +451,32 @@ describe('vi-input', () => {
       expect(activeAfterTab).toBe('after');
     });
   });
+
+  describe('Form Participation', () => {
+    it('should reset value to initial attribute value on form reset', async () => {
+      render(
+        html`
+          <form id="test-form">
+            <vi-input name="my-field" value="initial-value"></vi-input>
+          </form>
+        `,
+        container,
+      );
+      const el = document.querySelector('vi-input') as ViInput;
+      const form = document.querySelector('#test-form') as HTMLFormElement;
+      await el.updateComplete;
+
+      expect(el.value).toBe('initial-value');
+
+      el.value = 'new-value';
+      await el.updateComplete;
+      expect(el.value).toBe('new-value');
+
+      form.reset();
+      await el.updateComplete;
+
+      expect(el.value).toBe('initial-value');
+    });
+  });
 });
 

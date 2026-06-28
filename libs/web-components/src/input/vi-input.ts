@@ -1,4 +1,4 @@
-import { css, html, unsafeCSS, type PropertyValues, type TemplateResult } from 'lit';
+import { css, html, nothing, unsafeCSS, type PropertyValues, type TemplateResult } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { FocusableMixin } from '../base/focusable-mixin.js';
 import { ValidityMixin, type ControlStatus } from '../base/validity-mixin.js';
@@ -82,7 +82,7 @@ export class ViInput extends ValidityMixin(FocusableMixin(ViElement)) {
   @property() accessor name = '';
 
   /** Current value. Synced to ElementInternals for form participation. */
-  @property({ reflect: true }) accessor value = '';
+  @property() accessor value = '';
 
   /** When true, disables the input and removes it from the tab order. */
   @property({ type: Boolean, reflect: true }) accessor disabled = false;
@@ -183,7 +183,11 @@ export class ViInput extends ValidityMixin(FocusableMixin(ViElement)) {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   private get _helperContent(): TemplateResult {
-    return html`<slot name="helper"><span class="input-helper" part="helper"></span></slot>`;
+    return html`
+      <div class="input-helper" part="helper" id="helper-text">
+        <slot name="helper"></slot>
+      </div>
+    `;
   }
 
   private get _validationMessage(): TemplateResult {
@@ -194,11 +198,13 @@ export class ViInput extends ValidityMixin(FocusableMixin(ViElement)) {
         : this.status === 'valid'
           ? 'input-validation--valid'
           : '';
-    return html`<span class="input-validation ${cls}" part="validation" role="alert" aria-live="polite">${this.validityMessage}</span>`;
+    return html`<span id="validation-message" class="input-validation ${cls}" part="validation" role="alert" aria-live="polite">${this.validityMessage}</span>`;
   }
 
   override render(): TemplateResult {
     const { type, placeholder, name, value, disabled, required, readonly } = this;
+    const hasError = this.status === 'invalid' && this.validityMessage;
+    const describedby = `helper-text${hasError ? ' validation-message' : ''}`;
 
     return html`
       <div class="input-field" part="field">
@@ -211,7 +217,10 @@ export class ViInput extends ValidityMixin(FocusableMixin(ViElement)) {
           ?disabled=${disabled}
           ?readonly=${readonly}
           ?required=${required}
+          aria-required=${required ? 'true' : nothing}
           aria-invalid=${this.status === 'invalid' ? 'true' : 'false'}
+          aria-describedby=${describedby}
+          aria-errormessage=${hasError ? 'validation-message' : nothing}
           placeholder=${ifNonEmpty(placeholder)}
           name=${ifNonEmpty(name)}
           @input=${this._onInput}
