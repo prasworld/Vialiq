@@ -203,8 +203,9 @@ export class ViInput extends ValidityMixin(FocusableMixin(ViElement)) {
 
   override render(): TemplateResult {
     const { type, placeholder, name, value, disabled, required, readonly } = this;
-    const hasError = this.status === 'invalid' && this.validityMessage;
-    const describedby = `helper-text${hasError ? ' validation-message' : ''}`;
+    const hasMessage = Boolean(this.validityMessage);
+    const hasError = this.status === 'invalid' && hasMessage;
+    const describedby = `helper-text${hasMessage ? ' validation-message' : ''}`;
 
     return html`
       <div class="input-field" part="field">
