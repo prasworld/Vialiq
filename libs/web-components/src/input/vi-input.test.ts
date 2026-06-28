@@ -231,6 +231,28 @@ describe('vi-input', () => {
       expect(el.status).toBe('default');
       expect(el.validityMessage).toBe('');
     });
+
+    it('should be invalid when type is email and value is invalid', async () => {
+      render(html`<vi-input type="email" value="invalid-email"></vi-input>`, container);
+      const el = document.querySelector('vi-input') as ViInput;
+      await el.updateComplete;
+
+      const valid = el.checkValidity();
+      expect(valid).toBe(false);
+      expect(el.status).toBe('invalid');
+      expect(el.validityMessage).toBeTruthy();
+    });
+
+    it('should be invalid when type is url and value is invalid', async () => {
+      render(html`<vi-input type="url" value="invalid-url"></vi-input>`, container);
+      const el = document.querySelector('vi-input') as ViInput;
+      await el.updateComplete;
+
+      const valid = el.checkValidity();
+      expect(valid).toBe(false);
+      expect(el.status).toBe('invalid');
+      expect(el.validityMessage).toBeTruthy();
+    });
   });
 
   describe('Focus management', () => {

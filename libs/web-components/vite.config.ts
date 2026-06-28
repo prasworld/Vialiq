@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import path from 'path';
 import { pathToFileURL } from 'url';
+import fs from 'node:fs';
 import swc from 'unplugin-swc';
 
 const workspaceRoot = path.resolve(__dirname, '../..');
@@ -36,9 +37,43 @@ export default defineConfig({
               const match = url.match(/^@vialiq\/([^/]+)\/(.+)$/);
               if (!match) return null;
               const [, libName, subpath] = match;
-              return pathToFileURL(
-                path.resolve(workspaceRoot, 'libs', libName, subpath),
-              );
+              
+              const basePath = path.resolve(workspaceRoot, 'libs', libName, subpath);
+              const dir = path.dirname(basePath);
+              const base = path.basename(basePath);
+              const ext = path.extname(basePath);
+
+              if (ext === '.scss' || ext === '.css') {
+                if (fs.existsSync(basePath)) {
+                  return pathToFileURL(basePath);
+                }
+                if (!base.startsWith('_')) {
+                  const partial = path.join(dir, `_${base}`);
+                  if (fs.existsSync(partial)) {
+                    return pathToFileURL(partial);
+                  }
+                }
+                return null;
+              }
+
+              const candidates = [
+                path.join(dir, `_${base}.scss`),
+                path.join(dir, `${base}.scss`),
+                path.join(dir, `_${base}.css`),
+                path.join(dir, `${base}.css`),
+                path.join(basePath, `_index.scss`),
+                path.join(basePath, `index.scss`),
+                path.join(basePath, `_index.css`),
+                path.join(basePath, `index.css`),
+              ];
+
+              for (const candidate of candidates) {
+                if (fs.existsSync(candidate)) {
+                  return pathToFileURL(candidate);
+                }
+              }
+
+              return null;
             },
           },
         ],

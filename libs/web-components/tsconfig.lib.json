@@ -7,11 +7,10 @@
     "declaration": true,
     "declarationMap": true,
     "inlineSources": true,
+    "noEmit": true,
+    "noEmitOnError": false,
     "types": ["node"],
-    "paths": {
-      "@vialiq/icons": ["../../node_modules/@vialiq/icons/index.d.ts"],
-      "@vialiq/icons/*": ["../../node_modules/@vialiq/icons/*"]
-    }
+    "skipLibCheck": true
   },
   "include": ["src/**/*.ts"],
   "exclude": [

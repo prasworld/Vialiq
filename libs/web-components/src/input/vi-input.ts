@@ -96,7 +96,35 @@ export class ViInput extends ValidityMixin(FocusableMixin(ViElement)) {
   // mixin intersection type does not always surface protected members for
   // `override` checking. The method is still an override at runtime.
   protected _testValidity(): Partial<ValidityStateFlags> {
-    if (this.required && !this.value) return { valueMissing: true };
+    if (this._internals.validity.customError) {
+      return { customError: true };
+    }
+
+    const input = this._focusableElement;
+    if (input) {
+      if (input.value !== this.value) {
+        input.value = this.value;
+      }
+      const validity = input.validity;
+      if (!validity.valid) {
+        this.validityMessage = input.validationMessage;
+        return {
+          badInput: validity.badInput,
+          customError: validity.customError,
+          patternMismatch: validity.patternMismatch,
+          rangeOverflow: validity.rangeOverflow,
+          rangeUnderflow: validity.rangeUnderflow,
+          stepMismatch: validity.stepMismatch,
+          tooLong: validity.tooLong,
+          tooShort: validity.tooShort,
+          typeMismatch: validity.typeMismatch,
+          valueMissing: validity.valueMissing,
+        };
+      }
+    } else if (this.required && !this.value) {
+      this.validityMessage = 'Please fill out this field.';
+      return { valueMissing: true };
+    }
     return {};
   }
 

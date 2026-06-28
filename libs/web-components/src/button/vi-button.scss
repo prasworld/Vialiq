@@ -190,7 +190,7 @@
 // Focus ring
 //
 // With delegatesFocus: true the host passes Tab focus to the inner
-// <button tabindex="-1">. Some browsers don't set :focus-visible on a
+// <button tabindex="0">. Some browsers don't set :focus-visible on a
 // delegated target, so we use :host(:focus-within) which fires reliably
 // Put the focus ring on the inner <button> that actually receives the delegated
 // focus, rather than on the host via :host(:focus-visible). Targeting the inner
