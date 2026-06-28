@@ -23,7 +23,7 @@ export type InputType = 'text' | 'email' | 'password' | 'search' | 'tel' | 'url'
  * @attr {InputType} type         - Input type (default: text)
  * @attr {string}    placeholder  - Native input placeholder
  * @attr {string}    name         - Form field name
- * @attr {string}    value        - Current value (reflected)
+ * @attr {string}    value        - Current value
  * @attr {boolean}   disabled     - Disables the input (reflected)
  * @attr {boolean}   readonly     - Makes the input read-only (reflected)
  * @attr {boolean}   required     - Marks the field as required (reflected)
