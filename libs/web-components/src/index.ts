@@ -8,3 +8,7 @@ export type { InputType } from './input/vi-input.js';
 export { ViIcon } from './icons/vi-icon.js';
 export { registerIcons, getIcon } from './icons/registry.js';
 export type { SvgIconDef } from './icons/registry.js';
+export { ViRadio } from './radio/vi-radio.js';
+export { ViRadioGroup } from './radio/vi-radio-group.js';
+export type { RadioGroupOrientation } from './radio/vi-radio-group.js';
+

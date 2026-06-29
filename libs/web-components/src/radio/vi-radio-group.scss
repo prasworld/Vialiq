@@ -1,0 +1,22 @@
+@use '@vialiq/flux-ui/styles/variables' as tokens;
+@use '@vialiq/flux-ui/components/radio';
+
+:host {
+  display: block;
+  outline: none;
+}
+
+:host([disabled]) {
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+:host([status="invalid"]) {
+  --vi-radio-group-label-color: #{tokens.$color-error};
+}
+
+::slotted(*) {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}

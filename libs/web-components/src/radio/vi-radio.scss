@@ -1,0 +1,18 @@
+@use '@vialiq/flux-ui/styles/variables' as tokens;
+@use '@vialiq/flux-ui/components/radio';
+
+:host {
+  display: inline-block;
+  outline: none;
+}
+
+:host([disabled]) {
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+::slotted(*) {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
