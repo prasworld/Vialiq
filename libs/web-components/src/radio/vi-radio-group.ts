@@ -102,7 +102,7 @@ export class ViRadioGroup extends ValidityMixin(ViElement) {
     super.updated(changed);
     
     if (changed.has('value')) {
-      this._internals.setFormValue(this.value);
+      this._internals.setFormValue(this.value === '' ? null : this.value);
     }
     
     if (
