@@ -35,6 +35,18 @@
     "./input": {
       "types": "./input/vi-input.d.ts",
       "default": "./input/vi-input.js"
+    },
+    "./radio/vi-radio": {
+      "types": "./radio/vi-radio.d.ts",
+      "default": "./radio/vi-radio.js"
+    },
+    "./radio/vi-radio-group": {
+      "types": "./radio/vi-radio-group.d.ts",
+      "default": "./radio/vi-radio-group.js"
+    },
+    "./radio": {
+      "types": "./radio/index.d.ts",
+      "default": "./radio/index.js"
     }
   },
   "peerDependencies": {

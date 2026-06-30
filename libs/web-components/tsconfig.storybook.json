@@ -8,5 +8,9 @@
     ".storybook/**/*.ts",
     "src/**/*.stories.ts",
     "src/**/*.ts"
+  ],
+  "exclude": [
+    "src/**/*.spec.ts",
+    "src/**/*.test.ts"
   ]
 }

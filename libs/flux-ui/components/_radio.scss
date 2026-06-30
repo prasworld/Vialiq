@@ -1,0 +1,176 @@
+/**
+ * Radio and Radio Group component base styles.
+ *
+ * Provides the host-agnostic foundation for radio buttons:
+ * layout, circle structure, dot animations, state colors, focus styles.
+ * Sizing and positioning custom properties are available for overrides.
+ */
+
+@use '../styles/variables' as tokens;
+
+@layer components {
+  // -------------------------------------------------------------------------
+  // Radio Group Container
+  // -------------------------------------------------------------------------
+  .radio-group {
+    border: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--vi-radio-group-spacing-field-gap, #{tokens.$spacing-xs});
+    width: 100%;
+  }
+
+  .radio-group-legend {
+    font-family: #{tokens.$font-family-base};
+    font-size: var(--vi-radio-group-label-font-size, #{tokens.$font-size-base});
+    font-weight: #{tokens.$font-weight-semibold};
+    color: var(--vi-radio-group-label-color, #{tokens.$color-foreground});
+    padding: 0;
+    margin: 0;
+    margin-block-end: var(--vi-radio-group-legend-margin-bottom, #{tokens.$spacing-xs});
+  }
+
+  .radio-group-items {
+    display: flex;
+    gap: var(--vi-radio-group-gap, 8px);
+
+    &[orientation="vertical"] {
+      flex-direction: column;
+    }
+
+    &[orientation="horizontal"] {
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: var(--vi-radio-group-gap-horizontal, 24px);
+    }
+  }
+
+  .radio-group-helper {
+    display: block;
+    font-family: #{tokens.$font-family-base};
+    font-size: var(--vi-radio-group-helper-font-size, #{tokens.$font-size-xs});
+    color: var(--vi-radio-group-helper-color, #{tokens.$text-disabled});
+  }
+
+  .radio-group-validation {
+    display: block;
+    font-family: #{tokens.$font-family-base};
+    font-size: var(--vi-radio-group-validation-font-size, #{tokens.$font-size-xs});
+    color: var(--vi-radio-group-validation-color, #{tokens.$text-disabled});
+    margin-block-start: var(--vi-radio-group-validation-margin-top, #{tokens.$spacing-xs});
+
+    &.radio-group-validation--invalid {
+      color: var(--vi-radio-group-error-color, #{tokens.$color-error});
+    }
+
+    &.radio-group-validation--valid {
+      color: var(--vi-radio-group-success-color, #{tokens.$color-success});
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Individual Radio Component
+  // -------------------------------------------------------------------------
+  .radio-wrapper {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--vi-radio-label-gap, 8px);
+    cursor: pointer;
+    font-family: #{tokens.$font-family-base};
+    font-size: var(--vi-radio-label-font-size, #{tokens.$font-size-base});
+    line-height: #{tokens.$line-height-normal};
+    color: var(--vi-radio-label-color, #{tokens.$color-foreground});
+    position: relative;
+    user-select: none;
+  }
+
+  // Visually hide the native input but keep it keyboard accessible
+  .radio-input {
+    position: absolute !important;
+    clip-path: inset(50%) !important;
+    overflow: hidden !important;
+    width: 1px !important;
+    height: 1px !important;
+    margin: -1px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    white-space: nowrap !important;
+  }
+
+  .radio-circle {
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--vi-radio-size, 18px);
+    height: var(--vi-radio-size, 18px);
+    border: #{tokens.$border-width-base} solid var(--vi-radio-border-color, #{tokens.$border-04});
+    border-radius: 50%;
+    background-color: var(--vi-radio-background-color, #{tokens.$color-background});
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+    flex-shrink: 0;
+  }
+
+  .radio-dot {
+    box-sizing: border-box;
+    width: var(--vi-radio-dot-size, 8px);
+    height: var(--vi-radio-dot-size, 8px);
+    border-radius: 50%;
+    background-color: var(--vi-radio-dot-color, #{tokens.$color-primary});
+    transform: scale(0);
+    opacity: 0;
+    transition: transform 150ms cubic-bezier(0.4, 0, 0.2, 1), opacity 150ms ease;
+  }
+
+  // Checked state
+  .radio-input:checked + .radio-circle {
+    border-color: var(--vi-radio-border-color-checked, #{tokens.$color-primary});
+
+    .radio-dot {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  // Focus ring
+  .radio-input:focus-visible + .radio-circle {
+    outline: #{tokens.$border-width-base} solid var(--vi-radio-focus-ring-color, #{tokens.$color-primary});
+    outline-offset: 2px;
+    box-shadow: 0 0 0 3px var(--vi-radio-focus-ring-glow, #{tokens.$color-blue-200});
+  }
+
+  // Hover state (only on non-disabled)
+  .radio-wrapper:hover:not(.radio-wrapper--disabled) {
+    .radio-circle {
+      border-color: var(--vi-radio-border-color-hover, #{tokens.$border-inverse-03});
+    }
+
+    .radio-input:checked + .radio-circle {
+      border-color: var(--vi-radio-border-color-checked-hover, #{tokens.$color-primary});
+    }
+  }
+
+  // Disabled state
+  .radio-wrapper--disabled {
+    cursor: not-allowed;
+    opacity: var(--vi-radio-disabled-opacity, 0.5);
+
+    .radio-circle {
+      background-color: #{tokens.$layer-disabled};
+      border-color: #{tokens.$border-02};
+    }
+
+    .radio-dot {
+      background-color: #{tokens.$text-disabled};
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .radio-circle,
+    .radio-dot {
+      transition: none;
+    }
+  }
+}

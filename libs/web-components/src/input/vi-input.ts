@@ -1,7 +1,6 @@
 import {
   css,
   html,
-  nothing,
   unsafeCSS,
   type PropertyValues,
   type TemplateResult,
