@@ -120,7 +120,7 @@ describe('vi-radio & vi-radio-group', () => {
       // Dynamically disable the first radio
       radio1.disabled = true;
       // Wait for updates to propagate and MutationObserver to fire
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await browser.waitUntil(() => radio1.tabIndex === -1 && radio2.tabIndex === 0);
       await group.updateComplete;
 
       // The second radio should now have tabIndex 0 (first enabled)
