@@ -311,7 +311,7 @@ export class ViRadioGroup extends ValidityMixin(ViElement) {
         role="radiogroup"
         aria-required=${required ? 'true' : 'false'}
         aria-invalid=${status === 'invalid' ? 'true' : 'false'}
-        aria-describedby=${this.validityMessage ? 'validation-message' : ''}
+        aria-describedby=${this.validityMessage ? 'validation-message' : undefined}
         aria-errormessage=${status === 'invalid' && this.validityMessage ? 'validation-message' : undefined}
         @vi-radio-checked=${this._handleRadioChecked}
         @keydown=${this._onKeydown}
