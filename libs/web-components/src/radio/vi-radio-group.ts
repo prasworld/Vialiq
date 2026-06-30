@@ -115,9 +115,8 @@ export class ViRadioGroup extends ValidityMixin(ViElement) {
     }
   }
 
-  /** Resets the value and validation state when the parent form resets. */
   formResetCallback(): void {
-    this.value = this._initialValue;
+    this.value = this.getAttribute('value') ?? '';
     this.status = 'default';
     this.validityMessage = '';
     this._updateRadios();
