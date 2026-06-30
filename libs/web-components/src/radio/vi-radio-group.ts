@@ -70,7 +70,7 @@ export class ViRadioGroup extends ValidityMixin(ViElement) {
 
   override connectedCallback(): void {
     super.connectedCallback();
-    this._initialValue = this.value;
+    this._initialValue = this.getAttribute('value') ?? '';
     
     // Set up MutationObserver to react to child vi-radio nodes added/removed dynamically
     this._observer = new MutationObserver(() => {
@@ -102,7 +102,7 @@ export class ViRadioGroup extends ValidityMixin(ViElement) {
     super.updated(changed);
     
     if (changed.has('value')) {
-      this._internals.setFormValue(this.value === '' ? null : this.value);
+      this._internals.setFormValue(this.value);
     }
     
     if (
@@ -115,8 +115,9 @@ export class ViRadioGroup extends ValidityMixin(ViElement) {
     }
   }
 
+  /** Resets the value and validation state when the parent form resets. */
   formResetCallback(): void {
-    this.value = this.getAttribute('value') ?? '';
+    this.value = this._initialValue;
     this.status = 'default';
     this.validityMessage = '';
     this._updateRadios();

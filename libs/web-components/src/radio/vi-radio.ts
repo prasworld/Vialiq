@@ -11,6 +11,10 @@ import type { ViRadioGroup } from './vi-radio-group.js';
  * vi-radio
  * Individual radio option within a vi-radio-group.
  *
+ * NOTE: For correct roving tabindex, form submission, and mutual exclusivity,
+ * vi-radio should be used inside a vi-radio-group. Standalone usage is supported (e.g. for
+ * custom layout structures), but keyboard navigation and form association must be handled manually.
+ *
  * @element vi-radio
  * @slot - Label text/content.
  *
@@ -51,9 +55,25 @@ export class ViRadio extends FocusableMixin(ViElement) {
 
   override updated(changed: PropertyValues): void {
     super.updated(changed);
-    if (changed.has('disabled')) {
-      this._setHostFocusable(!this._isEffectiveDisabled);
+
+    // If standalone, sync the host focusability with disabled state changes
+    if (!this._group && changed.has('disabled')) {
+      this._setHostFocusable(!this.disabled);
     }
+
+    // Sync inner input's tabindex with host's tabIndex (which is managed by parent vi-radio-group or FocusableMixin)
+    const input = this._focusableElement;
+    if (input && input.tabIndex !== this.tabIndex) {
+      input.tabIndex = this.tabIndex;
+    }
+  }
+
+  protected override _setHostFocusable(enabled: boolean): void {
+    if (this._group) {
+      // No-op: parent vi-radio-group manages host's tabIndex for roving tabindex compliance
+      return;
+    }
+    super._setHostFocusable(enabled);
   }
 
   private _onChange(e: Event): void {

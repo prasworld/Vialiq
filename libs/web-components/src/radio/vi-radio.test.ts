@@ -128,6 +128,35 @@ describe('vi-radio & vi-radio-group', () => {
       expect(radio1.tabIndex).toBe(-1);
       expect(radio2.tabIndex).toBe(0);
     });
+
+    it('should correctly handle focusability when used as a standalone radio element', async () => {
+      render(
+        html`
+          <vi-radio value="standalone">Standalone Radio</vi-radio>
+        `,
+        container
+      );
+
+      const radio = document.querySelector('vi-radio') as ViRadio;
+      await radio.updateComplete;
+
+      // By default, standalone radio has tabIndex 0
+      expect(radio.tabIndex).toBe(0);
+
+      // Disable the standalone radio
+      radio.disabled = true;
+      await radio.updateComplete;
+
+      // When disabled, its host tabIndex should change to -1 via FocusableMixin
+      expect(radio.tabIndex).toBe(-1);
+
+      // Re-enable standalone radio
+      radio.disabled = false;
+      await radio.updateComplete;
+
+      // tabIndex should restore to 0
+      expect(radio.tabIndex).toBe(0);
+    });
   });
 
   describe('Step 3: User interactions and state changes', () => {
@@ -331,6 +360,65 @@ describe('vi-radio & vi-radio-group', () => {
 
       expect(group.value).toBe('1');
       expect(r1.checked).toBe(true);
+    });
+
+    it('should skip disabled radios when moving selection via Arrow keys', async () => {
+      render(
+        html`
+          <vi-radio-group name="kbd-skip-test">
+            <vi-radio value="1">One</vi-radio>
+            <vi-radio value="2" disabled>Two (disabled)</vi-radio>
+            <vi-radio value="3">Three</vi-radio>
+          </vi-radio-group>
+        `,
+        container
+      );
+
+      const r1 = document.querySelector('vi-radio[value="1"]') as ViRadio;
+      const r2 = document.querySelector('vi-radio[value="2"]') as ViRadio;
+      const r3 = document.querySelector('vi-radio[value="3"]') as ViRadio;
+      const group = document.querySelector('vi-radio-group') as ViRadioGroup;
+
+      r1.focus();
+      await r1.updateComplete;
+
+      // Programmatically dispatch ArrowDown keydown event on r1
+      r1.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: 'ArrowDown',
+          bubbles: true,
+          composed: true,
+        })
+      );
+      await group.updateComplete;
+
+      // It should skip '2' and select '3'
+      expect(group.value).toBe('3');
+      expect(r3.checked).toBe(true);
+      expect(r2.checked).toBe(false);
+      expect(r1.checked).toBe(false);
+    });
+
+    it('should not allow focusing a disabled radio programmatically', async () => {
+      render(
+        html`
+          <vi-radio-group name="disabled-focus-test">
+            <vi-radio value="1">One</vi-radio>
+            <vi-radio value="2" disabled>Two (disabled)</vi-radio>
+          </vi-radio-group>
+        `,
+        container
+      );
+
+      const r2 = document.querySelector('vi-radio[value="2"]') as ViRadio;
+      
+      // Attempt programmatic focus
+      r2.focus();
+      await r2.updateComplete;
+
+      // Verify that the active element is not the inner input or the host
+      const activeEl = document.activeElement;
+      expect(activeEl === r2).toBe(false);
     });
 
     it('should clear selection when double-clicked and allowDblclickClear is true', async () => {
