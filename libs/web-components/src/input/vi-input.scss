@@ -42,9 +42,9 @@
 
 :host([status="invalid"]) {
   --vi-input-border-color: #{tokens.$color-error};
-  --vi-input-border-color-hover: #{tokens.$color-red-700};
+  --vi-input-border-color-hover: #{tokens.$color-error};
   --vi-input-focus-ring-color: #{tokens.$color-error};
-  --vi-input-focus-ring-glow: #{tokens.$color-red-100};
+  --vi-input-focus-ring-glow: #{tokens.$focus-ring-error-glow};
   --vi-input-label-color: #{tokens.$color-error};
 }
 
@@ -54,7 +54,7 @@
 
 :host([status="valid"]) {
   --vi-input-border-color: #{tokens.$color-success};
-  --vi-input-border-color-hover: #{tokens.$color-green-700};
+  --vi-input-border-color-hover: #{tokens.$color-success};
   --vi-input-focus-ring-color: #{tokens.$color-success};
   --vi-input-focus-ring-glow: #{tokens.$color-green-100};
 }
@@ -92,6 +92,29 @@
   letter-spacing: #{tokens.$letter-spacing-wider};
   color: var(--vi-input-helper-color, #{tokens.$color-grey-500});
 }
+
+// ============================================================================
+// Size overrides — adjust input padding and font-size
+// ============================================================================
+
+:host([size='xs']) {
+  --vi-input-spacing-padding-block: 2px;
+  --vi-input-spacing-padding-inline: 8px;
+  --vi-input-typography-font-size: #{tokens.$font-size-xs};
+}
+
+:host([size='sm']) {
+  --vi-input-spacing-padding-block: 4px;
+  --vi-input-spacing-padding-inline: 12px;
+  --vi-input-typography-font-size: #{tokens.$font-size-sm};
+}
+
+:host([size='lg']) {
+  --vi-input-spacing-padding-block: 12px;
+  --vi-input-spacing-padding-inline: 20px;
+  --vi-input-typography-font-size: #{tokens.$font-size-lg};
+}
+
 
 
 

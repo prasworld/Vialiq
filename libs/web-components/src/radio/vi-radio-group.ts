@@ -5,7 +5,7 @@ import { ViElement } from '../base/vi-element.js';
 import radioGroupStyles from './vi-radio-group.scss?inline';
 
 // Import ViRadio to support type declarations and element operations
-import { ViRadio } from './vi-radio.js';
+import { ViRadio, type RadioSize } from './vi-radio.js';
 
 export type RadioGroupOrientation = 'vertical' | 'horizontal';
 
@@ -60,6 +60,9 @@ export class ViRadioGroup extends ValidityMixin(ViElement) {
   /** Layout direction of the radio group. */
   @property({ reflect: true }) accessor orientation: RadioGroupOrientation = 'vertical';
 
+  /** Size scale — controls spacing and propagates to child radios. */
+  @property({ type: String, reflect: true }) accessor size: RadioSize = 'md';
+
   /** Allows clearing the selected radio button on double click. */
   @property({ type: Boolean, attribute: 'allow-dblclick-clear', reflect: true })
   accessor allowDblclickClear = false;
@@ -109,7 +112,8 @@ export class ViRadioGroup extends ValidityMixin(ViElement) {
       changed.has('value') ||
       changed.has('name') ||
       changed.has('disabled') ||
-      changed.has('required')
+      changed.has('required') ||
+      changed.has('size')
     ) {
       this._updateRadios();
     }
@@ -145,10 +149,14 @@ export class ViRadioGroup extends ValidityMixin(ViElement) {
   private _updateRadios(): void {
     const radios = this._getRadios();
 
-    // 1. Propagate name and checked attributes to children
+    // 1. Propagate name, checked, and size attributes to children
     radios.forEach(radio => {
       if (this.name && radio.name !== this.name) {
         radio.name = this.name;
+      }
+      
+      if (this.size && radio.size !== this.size) {
+        radio.size = this.size;
       }
       
       const shouldBeChecked = this.value !== '' && radio.value === this.value;

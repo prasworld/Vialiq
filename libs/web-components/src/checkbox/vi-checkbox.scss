@@ -1,0 +1,66 @@
+@use '@vialiq/flux-ui/styles/variables' as tokens;
+@use '@vialiq/flux-ui/components/checkbox';
+
+:host {
+  display: inline-block;
+  outline: none;
+}
+
+:host([disabled]) {
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+::slotted(*) {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+// Validation overrides - colors propagate to base styles
+:host([status="invalid"]) {
+  --vi-checkbox-border-color: #{tokens.$color-error};
+  --vi-checkbox-border-color-hover: #{tokens.$color-error};
+  --vi-checkbox-border-color-checked: #{tokens.$color-error};
+  --vi-checkbox-border-color-checked-hover: #{tokens.$color-error};
+  --vi-checkbox-background-checked: #{tokens.$color-error};
+  --vi-checkbox-focus-ring-color: #{tokens.$color-error};
+  --vi-checkbox-focus-ring-glow: #{tokens.$focus-ring-error-glow};
+  --vi-checkbox-label-color: #{tokens.$color-error};
+}
+
+:host([status="valid"]) {
+  --vi-checkbox-border-color: #{tokens.$color-success};
+  --vi-checkbox-border-color-hover: #{tokens.$color-success};
+  --vi-checkbox-border-color-checked: #{tokens.$color-success};
+  --vi-checkbox-border-color-checked-hover: #{tokens.$color-success};
+  --vi-checkbox-background-checked: #{tokens.$color-success};
+  --vi-checkbox-focus-ring-color: #{tokens.$color-success};
+  --vi-checkbox-focus-ring-glow: #{tokens.$color-green-100};
+}
+
+// ============================================================================
+// Size overrides — adjust checkbox size, gap, and label font-size
+// ============================================================================
+
+:host([size='xs']) {
+  --vi-checkbox-size: 12px;
+  --vi-checkbox-border-radius: 2px;
+  --vi-checkbox-label-gap: 4px;
+  --vi-checkbox-label-font-size: #{tokens.$font-size-xs};
+}
+
+:host([size='sm']) {
+  --vi-checkbox-size: 14px;
+  --vi-checkbox-border-radius: 2px;
+  --vi-checkbox-label-gap: 6px;
+  --vi-checkbox-label-font-size: #{tokens.$font-size-sm};
+}
+
+:host([size='lg']) {
+  --vi-checkbox-size: 22px;
+  --vi-checkbox-border-radius: 4px;
+  --vi-checkbox-label-gap: 10px;
+  --vi-checkbox-label-font-size: #{tokens.$font-size-lg};
+}
+

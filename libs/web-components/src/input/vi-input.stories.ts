@@ -42,6 +42,11 @@ const meta: Meta<InputArgs> = {
       control: 'text',
       description: 'Input name attribute',
     },
+    size: {
+      control: 'select',
+      options: ['xs', 'sm', 'md', 'lg'],
+      description: 'Size scale of the input',
+    },
   },
 };
 
@@ -57,9 +62,10 @@ interface InputArgs {
   status: ControlStatus;
   validityMessage: string;
   name: string;
+  size: string;
 }
 
-const renderInput = ({ type, placeholder, value, disabled, required, status, validityMessage, name }: InputArgs) => html`
+const renderInput = ({ type, placeholder, value, disabled, required, status, validityMessage, name, size }: InputArgs) => html`
   <vi-input
     type=${type}
     placeholder=${placeholder}
@@ -69,6 +75,7 @@ const renderInput = ({ type, placeholder, value, disabled, required, status, val
     status=${status}
     .validityMessage=${validityMessage}
     name=${name}
+    size=${size}
   ></vi-input>
 `;
 
@@ -83,6 +90,7 @@ export const Text: Story = {
     status: 'default',
     validityMessage: '',
     name: 'text',
+    size: 'md',
   },
   render: renderInput,
 };
@@ -238,6 +246,20 @@ export const Search: Story = {
     status: 'default',
     validityMessage: '',
     name: 'search',
+    size: 'md',
   },
   render: renderInput,
 };
+
+export const Sizes: Story = {
+  name: 'Input Sizes',
+  render: () => html`
+    <div style="display: flex; flex-direction: column; gap: 16px; width: 300px;">
+      <vi-input size="xs" placeholder="Extra Small (xs)"></vi-input>
+      <vi-input size="sm" placeholder="Small (sm)"></vi-input>
+      <vi-input size="md" placeholder="Medium (md - default)"></vi-input>
+      <vi-input size="lg" placeholder="Large (lg)"></vi-input>
+    </div>
+  `,
+};
+

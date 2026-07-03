@@ -532,4 +532,49 @@ describe('vi-radio & vi-radio-group', () => {
       expect(group.value).toBe('b');
     });
   });
+
+  describe('Sizing', () => {
+    it('should default to md size for group and children', async () => {
+      render(
+        html`
+          <vi-radio-group name="sizes">
+            <vi-radio value="1">One</vi-radio>
+          </vi-radio-group>
+        `,
+        container
+      );
+      const group = document.querySelector('vi-radio-group') as ViRadioGroup;
+      const radio = document.querySelector('vi-radio') as ViRadio;
+      await group.updateComplete;
+
+      expect(group.size).toBe('md');
+      expect(radio.size).toBe('md');
+    });
+
+    it('should propagate size attribute from group to children', async () => {
+      render(
+        html`
+          <vi-radio-group name="sizes" size="lg">
+            <vi-radio value="1">One</vi-radio>
+          </vi-radio-group>
+        `,
+        container
+      );
+      const group = document.querySelector('vi-radio-group') as ViRadioGroup;
+      const radio = document.querySelector('vi-radio') as ViRadio;
+      await group.updateComplete;
+      await radio.updateComplete;
+
+      expect(group.size).toBe('lg');
+      expect(radio.size).toBe('lg');
+
+      // Change group size dynamically
+      group.size = 'xs';
+      await group.updateComplete;
+      await radio.updateComplete;
+
+      expect(radio.size).toBe('xs');
+    });
+  });
 });
+

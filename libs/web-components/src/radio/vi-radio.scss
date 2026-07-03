@@ -16,3 +16,29 @@
   font-size: inherit;
   color: inherit;
 }
+
+// ============================================================================
+// Size overrides — adjust radio size, dot size, gap, and label font-size
+// ============================================================================
+
+:host([size='xs']) {
+  --vi-radio-size: 12px;
+  --vi-radio-dot-size: 5px;
+  --vi-radio-label-gap: 4px;
+  --vi-radio-label-font-size: #{tokens.$font-size-xs};
+}
+
+:host([size='sm']) {
+  --vi-radio-size: 14px;
+  --vi-radio-dot-size: 6px;
+  --vi-radio-label-gap: 6px;
+  --vi-radio-label-font-size: #{tokens.$font-size-sm};
+}
+
+:host([size='lg']) {
+  --vi-radio-size: 22px;
+  --vi-radio-dot-size: 10px;
+  --vi-radio-label-gap: 10px;
+  --vi-radio-label-font-size: #{tokens.$font-size-lg};
+}
+

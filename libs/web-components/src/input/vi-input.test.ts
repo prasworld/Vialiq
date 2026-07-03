@@ -478,5 +478,21 @@ describe('vi-input', () => {
       expect(el.value).toBe('initial-value');
     });
   });
+
+  describe('Sizing', () => {
+    it('should default to md size', () => {
+      render(html`<vi-input></vi-input>`, container);
+      const el = document.querySelector('vi-input') as ViInput;
+      expect(el.size).toBe('md');
+    });
+
+    it('should reflect size attribute changes', async () => {
+      render(html`<vi-input size="lg"></vi-input>`, container);
+      const el = document.querySelector('vi-input') as ViInput;
+      await el.updateComplete;
+      expect(el.size).toBe('lg');
+    });
+  });
 });
+
 
