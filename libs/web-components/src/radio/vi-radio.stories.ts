@@ -168,7 +168,7 @@ export const Sizes: Story = {
   name: 'Radio Group Sizes',
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 24px;">
-      <vi-radio-group name="size-xs" size="xs" label="Extra Small (xs)">
+      <vi-radio-group name="size-xs" size="xs">
         <span slot="label">Extra Small (xs)</span>
         <vi-radio value="1">Yes</vi-radio>
         <vi-radio value="2">No</vi-radio>
