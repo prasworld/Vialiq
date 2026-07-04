@@ -174,7 +174,7 @@ export const Sizes: Story = {
         <vi-radio value="2">No</vi-radio>
       </vi-radio-group>
       
-      <vi-radio-group name="size-sm" size="sm" label="Small (sm)">
+      <vi-radio-group name="size-sm" size="sm">
         <span slot="label">Small (sm)</span>
         <vi-radio value="1">Yes</vi-radio>
         <vi-radio value="2">No</vi-radio>
