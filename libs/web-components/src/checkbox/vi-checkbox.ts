@@ -18,8 +18,8 @@ export type CheckboxSize = 'xs' | 'sm' | 'md' | 'lg';
  * vi-checkbox
  * Form-associated checkbox control using Flux UI tokens.
  *
- * NOTE: For correct roving tabindex, form submission, and mutual exclusivity,
- * vi-checkbox should be used within a layout fieldset or form.
+ * NOTE: vi-checkbox is form-associated and participates in form submission and constraint validation.
+ * Each checkbox is independently focusable (no roving tabindex / mutual-exclusivity behavior).
  *
  * @element vi-checkbox
  *
