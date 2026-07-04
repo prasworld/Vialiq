@@ -4,6 +4,8 @@ import { FocusableMixin } from '../base/focusable-mixin.js';
 import { ViElement } from '../base/vi-element.js';
 import radioStyles from './vi-radio.scss?inline';
 
+export type RadioSize = 'xs' | 'sm' | 'md' | 'lg';
+
 // We import the group type to support resolving closest parent
 import type { ViRadioGroup } from './vi-radio-group.js';
 
@@ -43,6 +45,9 @@ export class ViRadio extends FocusableMixin(ViElement) {
 
   /** Shared name for the radio group (synced by parent). */
   @property({ type: String }) accessor name = '';
+
+  /** Size scale. */
+  @property({ type: String, reflect: true }) accessor size: RadioSize = 'md';
 
   private get _group(): ViRadioGroup | null {
     return this.closest('vi-radio-group');

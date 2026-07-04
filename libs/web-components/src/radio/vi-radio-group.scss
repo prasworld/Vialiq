@@ -20,3 +20,23 @@
   font-size: inherit;
   color: inherit;
 }
+
+// ============================================================================
+// Size overrides — adjust radio group legend size and spacing
+// ============================================================================
+
+:host([size='xs']) {
+  --vi-radio-group-label-font-size: #{tokens.$font-size-xs};
+  --vi-radio-group-legend-margin-bottom: 4px;
+}
+
+:host([size='sm']) {
+  --vi-radio-group-label-font-size: #{tokens.$font-size-sm};
+  --vi-radio-group-legend-margin-bottom: 6px;
+}
+
+:host([size='lg']) {
+  --vi-radio-group-label-font-size: #{tokens.$font-size-lg};
+  --vi-radio-group-legend-margin-bottom: 10px;
+}
+

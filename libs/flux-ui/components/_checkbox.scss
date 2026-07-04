@@ -1,0 +1,148 @@
+/**
+ * Checkbox and Checkbox Group component base styles.
+ *
+ * Provides the host-agnostic foundation for checkboxes:
+ * layout, square box, checkmark/dash indicators, state colors, focus styles.
+ * Sizing and positioning custom properties are available for overrides.
+ */
+
+@use '../styles/variables' as tokens;
+
+@layer components {
+  .checkbox-wrapper {
+    display: inline-flex;
+    align-items: flex-start;
+    gap: var(--vi-checkbox-label-gap, 8px);
+    cursor: pointer;
+    font-family: #{tokens.$font-family-base};
+    font-size: var(--vi-checkbox-label-font-size, #{tokens.$font-size-base});
+    line-height: #{tokens.$line-height-normal};
+    color: var(--vi-checkbox-label-color, #{tokens.$color-foreground});
+    position: relative;
+    user-select: none;
+    align-items: center;
+  }
+
+  // Visually hide the native input but keep it keyboard accessible
+  .checkbox-input {
+    position: absolute !important;
+    clip-path: inset(50%) !important;
+    overflow: hidden !important;
+    width: 1px !important;
+    height: 1px !important;
+    margin: -1px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    white-space: nowrap !important;
+  }
+
+  .checkbox-box {
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--vi-checkbox-size, 18px);
+    height: var(--vi-checkbox-size, 18px);
+    border: #{tokens.$border-width-base} solid var(--vi-checkbox-border-color, #{tokens.$border-04});
+    border-radius: var(--vi-checkbox-border-radius, 3px);
+    background-color: var(--vi-checkbox-background-color, #{tokens.$color-background});
+    transition: border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease;
+    flex-shrink: 0;
+  }
+
+  .checkbox-check {
+    width: 100%;
+    height: 100%;
+    fill: none;
+    stroke: var(--vi-checkbox-check-color, #ffffff);
+    stroke-width: 2px;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .check-mark,
+  .check-dash {
+    opacity: 0;
+    transform: scale(0);
+    transform-origin: center;
+    transition: transform 150ms cubic-bezier(0.4, 0, 0.2, 1), opacity 150ms ease;
+  }
+
+  // Checked state (not indeterminate)
+  .checkbox-input:checked:not(:indeterminate) ~ .checkbox-box {
+    border-color: var(--vi-checkbox-border-color-checked, #{tokens.$color-primary});
+    background-color: var(--vi-checkbox-background-checked, #{tokens.$color-primary});
+
+    .check-mark {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  // Indeterminate state (using CSS :indeterminate pseudo-class or backup class)
+  .checkbox-input:indeterminate ~ .checkbox-box,
+  .checkbox-input.checkbox-input--indeterminate ~ .checkbox-box {
+    border-color: var(--vi-checkbox-border-color-checked, #{tokens.$color-primary});
+    background-color: var(--vi-checkbox-background-checked, #{tokens.$color-primary});
+
+    .check-dash {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  // Focus ring
+  .checkbox-input:focus-visible ~ .checkbox-box {
+    outline: #{tokens.$border-width-base} solid var(--vi-checkbox-focus-ring-color, #{tokens.$color-primary});
+    outline-offset: 2px;
+    box-shadow: 0 0 0 3px var(--vi-checkbox-focus-ring-glow, #{tokens.$color-blue-200});
+  }
+
+  // Hover state (only on non-disabled)
+  .checkbox-wrapper:hover:not(.checkbox-wrapper--disabled) {
+    .checkbox-box {
+      border-color: var(--vi-checkbox-border-color-hover, #{tokens.$border-inverse-03});
+    }
+
+    .checkbox-input:checked:not(:indeterminate) ~ .checkbox-box {
+      border-color: var(--vi-checkbox-border-color-checked-hover, #{tokens.$color-primary});
+    }
+
+    .checkbox-input:indeterminate ~ .checkbox-box,
+    .checkbox-input.checkbox-input--indeterminate ~ .checkbox-box {
+      border-color: var(--vi-checkbox-border-color-checked-hover, #{tokens.$color-primary});
+    }
+  }
+
+  // Disabled state
+  .checkbox-wrapper--disabled {
+    cursor: not-allowed;
+    opacity: var(--vi-checkbox-disabled-opacity, 0.5);
+
+    .checkbox-box {
+      background-color: #{tokens.$layer-disabled};
+      border-color: #{tokens.$border-03};
+    }
+
+    .checkbox-check {
+      stroke: #{tokens.$text-inverse}; // White stroke for checks/dashes
+    }
+
+    // High contrast background when checked/indeterminate and disabled
+    .checkbox-input:checked ~ .checkbox-box,
+    .checkbox-input:indeterminate ~ .checkbox-box,
+    .checkbox-input.checkbox-input--indeterminate ~ .checkbox-box {
+      background-color: #{tokens.$text-disabled};
+      border-color: #{tokens.$text-disabled};
+    }
+  }
+
+
+  @media (prefers-reduced-motion: reduce) {
+    .checkbox-box,
+    .check-mark,
+    .check-dash {
+      transition: none;
+    }
+  }
+}

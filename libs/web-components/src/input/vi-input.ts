@@ -27,6 +27,8 @@ export type InputType =
   | 'url'
   | 'number';
 
+export type InputSize = 'xs' | 'sm' | 'md' | 'lg';
+
 /**
  * vi-input
  * Form-associated single-line text input using Flux UI token fallbacks.
@@ -101,6 +103,9 @@ export class ViInput extends ValidityMixin(FocusableMixin(ViElement)) {
 
   /** When true, disables the input and removes it from the tab order. */
   @property({ type: Boolean, reflect: true }) accessor disabled = false;
+
+  /** Size scale — controls padding and font-size. */
+  @property({ type: String, reflect: true }) accessor size: InputSize = 'md';
 
   /** When true, the value cannot be edited but is still submitted. */
   @property({ type: Boolean, reflect: true }) accessor readonly = false;

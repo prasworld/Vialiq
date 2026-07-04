@@ -93,6 +93,8 @@ export default defineConfig({
         'radio/vi-radio': path.resolve(__dirname, 'src/radio/vi-radio.ts'),
         'radio/vi-radio-group': path.resolve(__dirname, 'src/radio/vi-radio-group.ts'),
         'radio/index': path.resolve(__dirname, 'src/radio/index.ts'),
+        'checkbox/vi-checkbox': path.resolve(__dirname, 'src/checkbox/vi-checkbox.ts'),
+        'checkbox/index': path.resolve(__dirname, 'src/checkbox/index.ts'),
       },
       formats: ['es'],
     },

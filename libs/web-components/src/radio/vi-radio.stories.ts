@@ -42,6 +42,11 @@ const meta: Meta = {
       control: 'boolean',
       description: 'Allows clearing the selected radio button on double click',
     },
+    size: {
+      control: 'select',
+      options: ['xs', 'sm', 'md', 'lg'],
+      description: 'Size scale of the radio group',
+    },
   },
   args: {
     name: 'adverseEvent',
@@ -52,6 +57,7 @@ const meta: Meta = {
     status: 'default',
     validityMessage: '',
     allowDblclickClear: true,
+    size: 'md',
   },
   render: (args) => {
     // Storybook sets arguments using the custom name key if provided (kebab-case)
@@ -68,6 +74,7 @@ const meta: Meta = {
         status=${args.status}
         validity-message=${validityMessage}
         ?allow-dblclick-clear=${allowDblclickClear}
+        size=${args.size}
       >
         <span slot="label">${args.label ?? 'Was there an adverse event?'}</span>
         ${args.content ?? html`
@@ -149,7 +156,6 @@ export const DisabledOptions: Story = {
   args: {
     name: 'paymentMethod',
     value: 'credit-card',
-    label: 'Select Payment Method:',
     content: html`
       <vi-radio value="credit-card">Credit Card</vi-radio>
       <vi-radio value="paypal" disabled>PayPal (Under Maintenance)</vi-radio>
@@ -157,4 +163,36 @@ export const DisabledOptions: Story = {
     `,
   },
 };
+
+export const Sizes: Story = {
+  name: 'Radio Group Sizes',
+  render: () => html`
+    <div style="display: flex; flex-direction: column; gap: 24px;">
+      <vi-radio-group name="size-xs" size="xs">
+        <span slot="label">Extra Small (xs)</span>
+        <vi-radio value="1">Yes</vi-radio>
+        <vi-radio value="2">No</vi-radio>
+      </vi-radio-group>
+      
+      <vi-radio-group name="size-sm" size="sm">
+        <span slot="label">Small (sm)</span>
+        <vi-radio value="1">Yes</vi-radio>
+        <vi-radio value="2">No</vi-radio>
+      </vi-radio-group>
+
+      <vi-radio-group name="size-md" size="md">
+        <span slot="label">Medium (md)</span>
+        <vi-radio value="1">Yes</vi-radio>
+        <vi-radio value="2">No</vi-radio>
+      </vi-radio-group>
+
+      <vi-radio-group name="size-lg" size="lg">
+        <span slot="label">Large (lg)</span>
+        <vi-radio value="1">Yes</vi-radio>
+        <vi-radio value="2">No</vi-radio>
+      </vi-radio-group>
+    </div>
+  `,
+};
+
 
