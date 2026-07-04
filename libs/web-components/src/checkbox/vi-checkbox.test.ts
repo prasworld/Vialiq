@@ -198,18 +198,8 @@ describe('vi-checkbox', () => {
       el.focus();
       await el.updateComplete;
 
-      // Dispatch Space keydown
-      const input = el.shadowRoot?.querySelector('input') as HTMLInputElement;
-      input.dispatchEvent(
-        new KeyboardEvent('keydown', {
-          key: ' ',
-          bubbles: true,
-          composed: true,
-        })
-      );
-      
-      // Let the browser click transition occur on the inner element
-      input.click();
+      // Press Space on the focused element to toggle (native checkbox behavior)
+      await browser.keys(['Space']);
       await el.updateComplete;
 
       expect(el.checked).toBe(true);
