@@ -11,8 +11,8 @@ Use document-wide event broadcasting to inform all other instances of a radio bu
 ### Code Pattern (Lit Implementation)
 
 ```typescript
-import { LitElement, html } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
+import { LitElement, html, property } from 'lit';
+import { customElement } from 'lit/decorators.js';
 
 @customElement('vi-radio')
 export class ViRadio extends LitElement {

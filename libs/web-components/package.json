@@ -47,9 +47,26 @@
     "./radio": {
       "types": "./radio/index.d.ts",
       "default": "./radio/index.js"
+    },
+    "./checkbox": {
+      "types": "./checkbox/index.d.ts",
+      "default": "./checkbox/index.js"
+    },
+    "./checkbox/vi-checkbox": {
+      "types": "./checkbox/vi-checkbox.d.ts",
+      "default": "./checkbox/vi-checkbox.js"
+    },
+    "./tooltip": {
+      "types": "./tooltip/index.d.ts",
+      "default": "./tooltip/index.js"
+    },
+    "./tooltip/vi-tooltip": {
+      "types": "./tooltip/vi-tooltip.d.ts",
+      "default": "./tooltip/vi-tooltip.js"
     }
   },
   "peerDependencies": {
+    "@floating-ui/dom": ">=1.0.0",
     "@vialiq/flux-ui": ">=0.0.4",
     "@vialiq/icons": ">=0.0.3",
     "lit": "^3.0.0"
@@ -69,6 +86,9 @@
     "button/",
     "icons/",
     "input/",
+    "radio/",
+    "checkbox/",
+    "tooltip/",
     "README.md"
   ]
 }

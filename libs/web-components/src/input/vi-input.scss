@@ -56,7 +56,7 @@
   --vi-input-border-color: #{tokens.$color-success};
   --vi-input-border-color-hover: #{tokens.$color-success};
   --vi-input-focus-ring-color: #{tokens.$color-success};
-  --vi-input-focus-ring-glow: #{tokens.$color-green-100};
+  --vi-input-focus-ring-glow: #{tokens.$focus-ring-success-glow};
 }
 
 // ============================================================================

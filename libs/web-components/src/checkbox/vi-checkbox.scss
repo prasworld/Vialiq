@@ -36,7 +36,7 @@
   --vi-checkbox-border-color-checked-hover: #{tokens.$color-success};
   --vi-checkbox-background-checked: #{tokens.$color-success};
   --vi-checkbox-focus-ring-color: #{tokens.$color-success};
-  --vi-checkbox-focus-ring-glow: #{tokens.$color-green-100};
+  --vi-checkbox-focus-ring-glow: #{tokens.$focus-ring-success-glow};
 }
 
 // ============================================================================
