@@ -110,6 +110,12 @@ export class ViInput extends ValidityMixin(FocusableMixin(ViElement)) {
   /** When true, the value cannot be edited but is still submitted. */
   @property({ type: Boolean, reflect: true }) accessor readonly = false;
 
+  /** The accessibility label. */
+  @property({ attribute: 'aria-label' }) accessor ariaLabel = '';
+
+  /** Reference to an element id containing the label. */
+  @property({ attribute: 'aria-labelledby' }) accessor ariaLabelledby = '';
+
   // ── ValidityMixin hook ─────────────────────────────────────────────────────
 
   // _testValidity is declared protected in ValidityInterface, but TypeScript's
@@ -243,6 +249,8 @@ export class ViInput extends ValidityMixin(FocusableMixin(ViElement)) {
           ?required=${required}
           aria-required=${ifNonEmpty(required ? 'true' : '')}
           aria-invalid=${this.status === 'invalid' ? 'true' : 'false'}
+          aria-label=${ifNonEmpty(this.ariaLabel)}
+          aria-labelledby=${ifNonEmpty(this.ariaLabelledby)}
           aria-describedby=${this.validityMessage
             ? 'helper-text validation-message'
             : 'helper-text'}

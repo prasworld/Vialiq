@@ -1,0 +1,135 @@
+@use '../styles/variables' as tokens;
+
+$vi-tooltip-background: var(--vi-tooltip-background, tokens.$layer-inverse);
+$vi-tooltip-color: var(--vi-tooltip-color, tokens.$text-inverse);
+$vi-tooltip-font-size: var(--vi-tooltip-font-size, 12px);
+$vi-tooltip-border-radius: var(--vi-tooltip-border-radius, 4px);
+$vi-tooltip-padding: var(--vi-tooltip-padding, 6px 10px);
+$vi-tooltip-max-width: var(--vi-tooltip-max-width, 240px);
+$vi-tooltip-arrow-size: var(--vi-tooltip-arrow-size, 6px);
+$vi-tooltip-z-index: var(--vi-tooltip-z-index, 9999);
+$vi-tooltip-shadow: var(--vi-tooltip-shadow, tokens.$shadow-md);
+
+.tooltip-panel {
+  position: fixed;
+  z-index: $vi-tooltip-z-index;
+  pointer-events: none;
+  opacity: 0;
+  transform: scale(0.95);
+  transition: opacity 0.15s ease-out, transform 0.15s ease-out;
+  margin: 0;
+  border: none;
+  background: transparent;
+  padding: 0;
+  overflow: visible;
+  font-family: tokens.$font-family-base;
+
+  &[popover]:popover-open {
+    display: block;
+    pointer-events: auto;
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  // Handle discrete visibility animations
+  transition-property: opacity, transform, display, overlay;
+  transition-behavior: allow-discrete;
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+    transform: none;
+  }
+}
+
+.tooltip-content {
+  background-color: $vi-tooltip-background;
+  color: $vi-tooltip-color;
+  font-size: $vi-tooltip-font-size;
+  line-height: 1.4;
+  padding: $vi-tooltip-padding;
+  border-radius: $vi-tooltip-border-radius;
+  box-shadow: $vi-tooltip-shadow;
+  max-width: $vi-tooltip-max-width;
+  word-wrap: break-word;
+  white-space: normal;
+  position: relative;
+}
+
+.tooltip-arrow {
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-color: transparent;
+  pointer-events: none;
+}
+
+// ----------------------------------------------------------------------------
+// Placement and Arrow Positioning (CSS Anchor Positioning & Fallbacks)
+// ----------------------------------------------------------------------------
+
+// 1. Default placements (used both as initial state and JS fallback)
+.tooltip-panel[placement^="top"],
+.tooltip-panel[data-placement^="top"] {
+  .tooltip-arrow {
+    bottom: calc(-1 * $vi-tooltip-arrow-size);
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: $vi-tooltip-arrow-size $vi-tooltip-arrow-size 0;
+    border-top-color: $vi-tooltip-background;
+  }
+}
+
+.tooltip-panel[placement^="bottom"],
+.tooltip-panel[data-placement^="bottom"] {
+  .tooltip-arrow {
+    top: calc(-1 * $vi-tooltip-arrow-size);
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 0 $vi-tooltip-arrow-size $vi-tooltip-arrow-size;
+    border-bottom-color: $vi-tooltip-background;
+  }
+}
+
+.tooltip-panel[placement="left"],
+.tooltip-panel[data-placement="left"] {
+  .tooltip-arrow {
+    right: calc(-1 * $vi-tooltip-arrow-size);
+    top: 50%;
+    transform: translateY(-50%);
+    border-width: $vi-tooltip-arrow-size 0 $vi-tooltip-arrow-size $vi-tooltip-arrow-size;
+    border-left-color: $vi-tooltip-background;
+  }
+}
+
+.tooltip-panel[placement="right"],
+.tooltip-panel[data-placement="right"] {
+  .tooltip-arrow {
+    left: calc(-1 * $vi-tooltip-arrow-size);
+    top: 50%;
+    transform: translateY(-50%);
+    border-width: $vi-tooltip-arrow-size $vi-tooltip-arrow-size $vi-tooltip-arrow-size 0;
+    border-right-color: $vi-tooltip-background;
+  }
+}
+
+// Start variations
+.tooltip-panel[placement$="-start"],
+.tooltip-panel[data-placement$="-start"] {
+  .tooltip-arrow {
+    left: 12px;
+    transform: none;
+  }
+}
+
+// End variations
+.tooltip-panel[placement$="-end"],
+.tooltip-panel[data-placement$="-end"] {
+  .tooltip-arrow {
+    left: auto;
+    right: 12px;
+    transform: none;
+  }
+}
+
+// 2. CSS Anchor positioning block deleted to run Floating UI uniformly.

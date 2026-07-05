@@ -95,6 +95,8 @@ export default defineConfig({
         'radio/index': path.resolve(__dirname, 'src/radio/index.ts'),
         'checkbox/vi-checkbox': path.resolve(__dirname, 'src/checkbox/vi-checkbox.ts'),
         'checkbox/index': path.resolve(__dirname, 'src/checkbox/index.ts'),
+        'tooltip/vi-tooltip': path.resolve(__dirname, 'src/tooltip/vi-tooltip.ts'),
+        'tooltip/index': path.resolve(__dirname, 'src/tooltip/index.ts'),
       },
       formats: ['es'],
     },
@@ -103,6 +105,8 @@ export default defineConfig({
         'lit', 
         /^lit\//, 
         /^@lit\//,
+        '@floating-ui/dom',
+        /^@floating-ui\//,
         /^@vialiq\// // Ensures other workspace libraries are treated as external dependencies
       ],
       output: {

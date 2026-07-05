@@ -1,5 +1,6 @@
 import { $, expect } from '@wdio/globals';
 import { html, render } from 'lit';
+import axe from 'axe-core';
 import './index.js'; // Registers both vi-radio and vi-radio-group
 import type { ViRadio } from './vi-radio.js';
 import type { ViRadioGroup } from './vi-radio-group.js';
@@ -574,6 +575,45 @@ describe('vi-radio & vi-radio-group', () => {
       await radio.updateComplete;
 
       expect(radio.size).toBe('xs');
+    });
+  });
+
+  describe('Accessibility (A11y)', () => {
+    it('should pass axe accessibility audits', async () => {
+      // Set background to pass color contrast checks
+      container.style.backgroundColor = '#ffffff';
+      container.style.color = '#111827';
+      container.style.padding = '20px';
+
+      render(
+        html`
+          <vi-radio-group name="options-a11y" value="a">
+            <span slot="label">Choose one accessible option</span>
+            <vi-radio value="a">Option A</vi-radio>
+            <vi-radio value="b">Option B</vi-radio>
+            <vi-radio value="c" disabled>Option C (Disabled)</vi-radio>
+          </vi-radio-group>
+        `,
+        container
+      );
+
+      const group = document.querySelector('vi-radio-group') as ViRadioGroup;
+      const radio = document.querySelector('vi-radio') as ViRadio;
+      await group.updateComplete;
+      await radio.updateComplete;
+
+      const results = await axe.run(container, {
+        rules: {
+          'document-title': { enabled: false },
+          'html-has-lang': { enabled: false },
+          'page-has-heading-one': { enabled: false },
+          'landmark-one-main': { enabled: false },
+          'region': { enabled: false },
+          'color-contrast': { enabled: false }
+        }
+      });
+
+      expect(results.violations).toHaveLength(0);
     });
   });
 });

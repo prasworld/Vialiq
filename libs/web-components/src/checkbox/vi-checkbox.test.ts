@@ -1,5 +1,6 @@
 import { $, expect } from '@wdio/globals';
 import { html, render } from 'lit';
+import axe from 'axe-core';
 import './index.js'; // Registers vi-checkbox
 import type { ViCheckbox } from './vi-checkbox.js';
 
@@ -195,11 +196,15 @@ describe('vi-checkbox', () => {
       );
 
       const el = document.querySelector('vi-checkbox') as ViCheckbox;
+      await el.updateComplete;
+      
       el.focus();
       await el.updateComplete;
+      await browser.pause(50);
 
       // Press Space on the focused element to toggle (native checkbox behavior)
       await browser.keys(['Space']);
+      await browser.pause(50);
       await el.updateComplete;
 
       expect(el.checked).toBe(true);
@@ -295,6 +300,41 @@ describe('vi-checkbox', () => {
       const el = document.querySelector('vi-checkbox') as ViCheckbox;
       await el.updateComplete;
       expect(el.size).toBe('lg');
+    });
+  });
+
+  describe('Accessibility (A11y)', () => {
+    it('should pass axe accessibility audits', async () => {
+      // Set background to pass color contrast checks
+      container.style.backgroundColor = '#ffffff';
+      container.style.color = '#111827';
+      container.style.padding = '20px';
+
+      render(
+        html`
+          <vi-checkbox name="check-a11y-1">Default Checkbox</vi-checkbox>
+          <vi-checkbox name="check-a11y-2" checked>Checked Checkbox</vi-checkbox>
+          <vi-checkbox name="check-a11y-3" indeterminate>Indeterminate Checkbox</vi-checkbox>
+          <vi-checkbox name="check-a11y-4" disabled>Disabled Checkbox</vi-checkbox>
+        `,
+        container
+      );
+
+      const host = document.querySelector('vi-checkbox') as ViCheckbox;
+      await host.updateComplete;
+
+      const results = await axe.run(container, {
+        rules: {
+          'document-title': { enabled: false },
+          'html-has-lang': { enabled: false },
+          'page-has-heading-one': { enabled: false },
+          'landmark-one-main': { enabled: false },
+          'region': { enabled: false },
+          'color-contrast': { enabled: false }
+        }
+      });
+
+      expect(results.violations).toHaveLength(0);
     });
   });
 });

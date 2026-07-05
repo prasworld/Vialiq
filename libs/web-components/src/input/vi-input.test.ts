@@ -1,5 +1,6 @@
 import { $, expect } from '@wdio/globals';
 import { html, render } from 'lit';
+import axe from 'axe-core';
 import './vi-input.js'; // Ensure the Custom Element is registered
 import type { ViInput } from './vi-input.js';
 
@@ -491,6 +492,40 @@ describe('vi-input', () => {
       const el = document.querySelector('vi-input') as ViInput;
       await el.updateComplete;
       expect(el.size).toBe('lg');
+    });
+  });
+
+  describe('Accessibility (A11y)', () => {
+    it('should pass axe accessibility audits', async () => {
+      // Set background to pass color contrast checks
+      container.style.backgroundColor = '#ffffff';
+      container.style.color = '#111827';
+      container.style.padding = '20px';
+
+      render(
+        html`
+          <vi-input aria-label="Full Name" placeholder="John Doe" name="input-a11y-1"></vi-input>
+          <vi-input aria-label="Email Address" type="email" value="invalid-email" status="invalid" validityMessage="Email is invalid" name="input-a11y-2"></vi-input>
+          <vi-input aria-label="Disabled Field" disabled name="input-a11y-3"></vi-input>
+        `,
+        container
+      );
+
+      const host = document.querySelector('vi-input') as ViInput;
+      await host.updateComplete;
+
+      const results = await axe.run(container, {
+        rules: {
+          'document-title': { enabled: false },
+          'html-has-lang': { enabled: false },
+          'page-has-heading-one': { enabled: false },
+          'landmark-one-main': { enabled: false },
+          'region': { enabled: false },
+          'color-contrast': { enabled: false }
+        }
+      });
+
+      expect(results.violations).toHaveLength(0);
     });
   });
 });

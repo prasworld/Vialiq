@@ -152,7 +152,7 @@ $border-inverse-03:   var(--vi-border-inverse-03,   #757575); // grey-600
 $border-inverse-04:   var(--vi-border-inverse-04,   #9e9e9e); // grey-500
 
 $focus-ring-error-glow: var(--vi-color-red-100, #ffccce); // alias for $color-red-100
-
+$focus-ring-success-glow: var(--vi-color-green-100, #e6f0eb); // alias for $color-green-100
 // -- Primitive: Spacing ------------------------------------------------------
 
 $spacing-unit: var(--vi-spacing-unit, 8px);

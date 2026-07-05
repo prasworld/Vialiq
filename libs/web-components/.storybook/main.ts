@@ -12,7 +12,7 @@ const config: StorybookConfig = {
     name: '@storybook/web-components-vite',
     options: {},
   },
-  // addons: no separate addon packages needed — Storybook v10 bundles
+  addons: ['@storybook/addon-a11y'],
   // addon-essentials (controls, actions, docs) into core.
   stories: ['../src/**/*.stories.ts'],
   async viteFinal(config) {

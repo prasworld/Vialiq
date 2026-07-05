@@ -14,4 +14,7 @@ export { ViRadioGroup } from './radio/vi-radio-group.js';
 export type { RadioGroupOrientation } from './radio/vi-radio-group.js';
 export { ViCheckbox } from './checkbox/vi-checkbox.js';
 export type { CheckboxSize } from './checkbox/vi-checkbox.js';
+export { ViTooltip } from './tooltip/vi-tooltip.js';
+export type { TooltipPlacement, TooltipTrigger } from './tooltip/vi-tooltip.js';
+
 

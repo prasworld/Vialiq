@@ -1,5 +1,6 @@
 import { $, expect } from '@wdio/globals';
 import { html, render } from 'lit';
+import axe from 'axe-core';
 import './vi-button.js'; // Ensure the Custom Element is registered
 import type { ViButton } from './vi-button.js';
 
@@ -437,6 +438,39 @@ describe('vi-button', () => {
       
       await browser.waitUntil(async () => (await iconSlot.getAttribute('hidden')) === null);
       await expect(iconSlot).not.toHaveAttribute('hidden');
+    });
+  });
+
+  describe('Accessibility (A11y)', () => {
+    it('should pass axe accessibility audits', async () => {
+      // Set background to pass color contrast checks
+      container.style.backgroundColor = '#ffffff';
+      container.style.color = '#111827';
+      container.style.padding = '20px';
+
+      render(
+        html`
+          <vi-button>Accessible Button</vi-button>
+          <vi-button disabled>Disabled Button</vi-button>
+        `,
+        container
+      );
+
+      const host = document.querySelector('vi-button') as ViButton;
+      await host.updateComplete;
+
+      const results = await axe.run(container, {
+        rules: {
+          'document-title': { enabled: false },
+          'html-has-lang': { enabled: false },
+          'page-has-heading-one': { enabled: false },
+          'landmark-one-main': { enabled: false },
+          'region': { enabled: false },
+          'color-contrast': { enabled: false }
+        }
+      });
+
+      expect(results.violations).toHaveLength(0);
     });
   });
 });

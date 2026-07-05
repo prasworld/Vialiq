@@ -15,15 +15,588 @@ Buildable and publishable Lit web component library for the Vi design system.
 npm install @vialiq/web-components lit
 ```
 
-## Usage
+## Integration Guide
+
+Since these components are built using standard Custom Elements APIs, they are compatible with any web framework or vanilla web stack.
+
+### Subpath Exports & Tree-Shaking
+To keep your bundle sizes minimal, import only the components you need:
 
 ```ts
+// Good: Imports only the button component
 import '@vialiq/web-components/button';
+
+// Good: Imports only the input component
+import '@vialiq/web-components/input';
 ```
 
-```html
-<vi-button variant="primary">Save</vi-button>
+If you prefer to import all components, or if you need helper classes and TypeScript types, you can import from the main package entrypoint:
+
+```ts
+import { registerIcons, ViButton } from '@vialiq/web-components';
 ```
+
+### Framework Guides
+
+#### 1. React
+React 19 supports Custom Elements natively. If you are using React <19, you must set properties and custom events manually via `ref` or use custom wrapper packages.
+
+**React 19 Example:**
+```tsx
+import React from 'react';
+import '@vialiq/web-components/button';
+import '@vialiq/web-components/input';
+
+export function SearchForm() {
+  return (
+    <form onSubmit={(e) => { e.preventDefault(); console.log('Submitted'); }}>
+      <vi-input 
+        name="query" 
+        placeholder="Search..." 
+        required 
+        onvialiq-input={(e: any) => console.log(e.detail.value)}
+      />
+      <vi-button type="submit" variant="primary">Search</vi-button>
+    </form>
+  );
+}
+```
+
+#### 2. Vue
+Vue supports custom elements seamlessly out-of-the-box. Register the tags so Vue's compiler knows not to treat them as Vue components:
+
+**vite.config.ts:**
+```ts
+export default defineConfig({
+  plugins: [
+    vue({
+      template: {
+        compilerOptions: {
+          isCustomElement: (tag) => tag.startsWith('vi-')
+        }
+      }
+    })
+  ]
+});
+```
+
+**Vue Component Template:**
+```html
+<template>
+  <div>
+    <vi-input :value="username" @vialiq-input="onInput" />
+    <vi-button variant="success">Register</vi-button>
+  </div>
+</template>
+```
+
+#### 3. Angular
+To use Custom Elements in Angular, you must add the `CUSTOM_ELEMENTS_SCHEMA` to the `schemas` array of the `@Component` (for standalone components) or `@NgModule` where they are consumed.
+
+**Standalone Component Setup:**
+```typescript
+import { Component, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+
+@Component({
+  selector: 'app-search-form',
+  standalone: true,
+  templateUrl: './search-form.component.html',
+  schemas: [CUSTOM_ELEMENTS_SCHEMA]
+})
+export class SearchFormComponent {
+  searchQuery = '';
+
+  onInput(event: Event) {
+    const customEvent = event as CustomEvent<{ value: string }>;
+    this.searchQuery = customEvent.detail.value;
+  }
+}
+```
+
+**search-form.component.html Template:**
+```html
+<div>
+  <vi-input 
+    [value]="searchQuery" 
+    (vialiq-input)="onInput($event)"
+    placeholder="Search catalog..."
+  ></vi-input>
+  
+  <vi-button variant="primary">Search</vi-button>
+</div>
+```
+
+#### 4. Next.js (SSR / React Server Components)
+Custom Elements must register on the browser's `window` object. Next.js and server-side rendering environments require lazy-loading or dynamic imports to ensure registration occurs client-side.
+
+```tsx
+'use client';
+
+import { useEffect } from 'react';
+
+export default function MyClientComponent() {
+  useEffect(() => {
+    // Import dynamically on the client
+    import('@vialiq/web-components/button');
+  }, []);
+
+  return <vi-button>Save</vi-button>;
+}
+```
+
+
+---
+
+## Component API & Detailed Examples
+
+### Button ([vi-button](./src/button/vi-button.ts))
+The [ViButton](./src/button/vi-button.ts) is a versatile button component that wraps a native `<button>` element with keyboard interaction, focus indicators, visual variations, and slot options.
+
+#### Properties & Attributes
+| Attribute | Property | Type | Default | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `variant` | `variant` | `'primary'\|'secondary'\|'danger'\|'success'\|'info'\|'ghost'` | `'primary'` | Visual design style. |
+| `size` | `size` | `'xs'\|'sm'\|'md'\|'lg'` | `'md'` | Sizing scale. |
+| `icon-placement` | `iconPlacement` | `'start'\|'end'` | `'start'` | Location of the icon relative to the label. |
+| `full-width` | `fullWidth` | `boolean` | `false` | Sets width to 100% of container. |
+| `icon-only` | `iconOnly` | `boolean` | `false` | Squares padding and matches dimensions for an icon-only layout. |
+| `disabled` | `disabled` | `boolean` | `false` | Disables button interactions and sets `tabindex="-1"`. |
+
+#### Slots
+- **Default Slot**: Button label (text/content).
+- **`icon` Slot**: Container for standard icons.
+
+#### CSS Parts
+- `button`: The native internal `<button>` element.
+- `icon`: The icon wrapper element.
+- `label`: The text label span wrapper.
+
+#### Snippets
+
+**Standard Button Variants:**
+```html
+<vi-button variant="primary">Primary Action</vi-button>
+<vi-button variant="secondary">Secondary Action</vi-button>
+<vi-button variant="danger">Delete Item</vi-button>
+<vi-button variant="ghost">Cancel</vi-button>
+```
+
+**Sizes & Layouts:**
+```html
+<vi-button size="xs">Extra Small</vi-button>
+<vi-button size="sm">Small</vi-button>
+<vi-button size="md">Medium (Default)</vi-button>
+<vi-button size="lg">Large</vi-button>
+
+<!-- Stretches width to 100% -->
+<vi-button full-width variant="primary">Submit Order</vi-button>
+```
+
+**Icons Support:**
+```html
+<!-- Icon at start (default) -->
+<vi-button>
+  <vi-icon slot="icon" name="plus"></vi-icon>
+  Add User
+</vi-button>
+
+<!-- Icon at end -->
+<vi-button icon-placement="end">
+  <vi-icon slot="icon" name="arrow-right"></vi-icon>
+  Next Step
+</vi-button>
+
+<!-- Icon-only configuration -->
+<vi-button icon-only aria-label="Settings">
+  <vi-icon slot="icon" name="settings"></vi-icon>
+</vi-button>
+```
+
+---
+
+### Input ([vi-input](./src/input/vi-input.ts))
+The [ViInput](./src/input/vi-input.ts) component is a form-associated custom text input control. It wraps a native single-line input field and automatically supports accessibility features, validation states, helper text slots, and custom style configuration.
+
+#### Properties & Attributes
+| Attribute | Property | Type | Default | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `type` | `type` | `'text'\|'email'\|'password'\|'search'\|'tel'\|'url'\|'number'` | `'text'` | Renders appropriate input format. |
+| `placeholder` | `placeholder` | `string` | `''` | Input placeholder text. |
+| `name` | `name` | `string` | `''` | Form participation field name. |
+| `value` | `value` | `string` | `''` | Controlled input value. |
+| `disabled` | `disabled` | `boolean` | `false` | Disables field interactions. |
+| `readonly` | `readonly` | `boolean` | `false` | Disables keyboard editing. |
+| `required` | `required` | `boolean` | `false` | Marks field validation as mandatory. |
+| `status` | `status` | `'default'\|'valid'\|'invalid'` | `'default'` | Controls validation visual presentation. |
+| `validity-message` | `validityMessage` | `string` | `''` | Native or custom error message to display in UI. |
+| `size` | `size` | `'xs'\|'sm'\|'md'\|'lg'` | `'md'` | Controls font sizes and paddings. |
+| `aria-label` | `ariaLabel` | `string` | `''` | Accessibility label. |
+| `aria-labelledby` | `ariaLabelledby` | `string` | `''` | ID reference of accessible label. |
+
+#### Slots
+- **`helper` Slot**: Location to insert description text below the input field.
+
+#### Events
+- `vialiq-input`: Fires on every keypress. Detail: `{ value: string }`.
+- `vialiq-change`: Fires when element loses focus (blur). Detail: `{ value: string }`.
+- `invalid`: Native HTML5 validation failed event.
+
+#### CSS Custom Properties
+Exposes variables for custom theme styling:
+```css
+vi-input {
+  --vi-input-border-color: #d1d5db;
+  --vi-input-focus-ring-color: #3b82f6;
+  --vi-input-background-color: #ffffff;
+  --vi-input-text-color: #1f2937;
+  --vi-input-placeholder-color: #9ca3af;
+  --vi-input-helper-color: #6b7280;
+  --vi-input-error-color: #ef4444;
+  --vi-input-success-color: #10b981;
+  --vi-input-shape-border-radius: 6px;
+}
+```
+
+#### Snippets
+
+**Basic Text & Password Inputs:**
+```html
+<vi-input name="username" placeholder="Enter username"></vi-input>
+
+<!-- Password input -->
+<vi-input type="password" name="password" placeholder="••••••••"></vi-input>
+```
+
+**Required with Helper Text & Validation:**
+```html
+<vi-input 
+  type="email" 
+  name="email" 
+  placeholder="you@vialiq.com" 
+  required
+>
+  <span slot="helper">We will never share your email address.</span>
+</vi-input>
+```
+
+---
+
+### Checkbox ([vi-checkbox](./src/checkbox/vi-checkbox.ts))
+The [ViCheckbox](./src/checkbox/vi-checkbox.ts) is a customizable form-associated checkbox control using SVG graphics for checkmarks and supporting the indeterminate (mixed) validation state.
+
+#### Properties & Attributes
+| Attribute | Property | Type | Default | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `checked` | `checked` | `boolean` | `false` | Checked state. |
+| `indeterminate` | `indeterminate` | `boolean` | `false` | Indeterminate (mixed) dash state. |
+| `value` | `value` | `string` | `'on'` | Submitted form value. |
+| `name` | `name` | `string` | `''` | Form field identifier. |
+| `disabled` | `disabled` | `boolean` | `false` | Disables checkbox toggles. |
+| `required` | `required` | `boolean` | `false` | Makes checking field mandatory. |
+| `status` | `status` | `'default'\|'valid'\|'invalid'` | `'default'` | Controls validation visual border colors. |
+| `size` | `size` | `'xs'\|'sm'\|'md'\|'lg'` | `'md'` | Controls dimension metrics. |
+
+#### Events
+- `vialiq-change`: Fired on user toggle. Detail: `{ checked: boolean, value: string }`.
+
+#### Snippets
+
+**Simple Configurations:**
+```html
+<vi-checkbox name="agree" required>I accept the terms and conditions</vi-checkbox>
+
+<vi-checkbox name="newsletter" checked>Subscribe to newsletter</vi-checkbox>
+```
+
+**Indeterminate State (Parent/Child controls):**
+```html
+<vi-checkbox id="select-all" indeterminate>Select All Modules</vi-checkbox>
+```
+
+---
+
+### Radio Group & Radio ([vi-radio-group](./src/radio/vi-radio-group.ts) & [vi-radio](./src/radio/vi-radio.ts))
+The [ViRadioGroup](./src/radio/vi-radio-group.ts) and [ViRadio](./src/radio/vi-radio.ts) work in tandem. The group container handles form-association, propagation of attributes (`name`, `disabled`, `size`), roving tabindexes, and WAI-ARIA compliant keyboard navigation via arrow keys.
+
+#### `<vi-radio-group>` Properties & Attributes
+| Attribute | Property | Type | Default | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `value` | `value` | `string` | `''` | Selection value. |
+| `name` | `name` | `string` | `''` | Shared name propagated to children. |
+| `disabled` | `disabled` | `boolean` | `false` | Disables entire selection array. |
+| `required` | `required` | `boolean` | `false` | Marks group validation as mandatory. |
+| `status` | `status` | `'default'\|'valid'\|'invalid'` | `'default'` | Group visual status. |
+| `validity-message` | `validity-message` | `string` | `''` | Helper error label when validation triggers. |
+| `orientation` | `orientation` | `'vertical'\|'horizontal'` | `'vertical'` | Direction grid layout. |
+| `size` | `size` | `'xs'\|'sm'\|'md'\|'lg'` | `'md'` | Shared size propagated to children. |
+| `allow-dblclick-clear` | `allowDblclickClear` | `boolean` | `false` | Double clicking a selected radio deselects it. |
+
+#### `<vi-radio>` Properties & Attributes
+| Attribute | Property | Type | Default | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `value` | `value` | `string` | `''` | Value this radio represents. |
+| `checked` | `checked` | `boolean` | `false` | Checked selection status. |
+| `disabled` | `disabled` | `boolean` | `false` | Local disable flag override. |
+
+#### Slots (`<vi-radio-group>`)
+- **Default Slot**: Holds the list of `<vi-radio>` child tags.
+- **`label` Slot**: Legend label displayed above the list.
+- **`helper` Slot**: Support text shown below the components.
+
+#### Snippets
+
+**Vertical Layout (Default):**
+```html
+<vi-radio-group name="shipping" value="standard">
+  <span slot="label">Choose Shipping Method</span>
+  <vi-radio value="standard">Standard Shipping (3-5 days)</vi-radio>
+  <vi-radio value="express">Express Shipping (1-2 days)</vi-radio>
+  <vi-radio value="overnight" disabled>Overnight Shipping (Unavailable)</vi-radio>
+  <span slot="helper">Shipping options vary by location.</span>
+</vi-radio-group>
+```
+
+**Horizontal Layout with Double-Click Clear:**
+```html
+<vi-radio-group 
+  name="rating" 
+  orientation="horizontal" 
+  size="lg" 
+  allow-dblclick-clear
+>
+  <span slot="label">Score rating (Double-click to clear)</span>
+  <vi-radio value="1">1 Star</vi-radio>
+  <vi-radio value="2">2 Stars</vi-radio>
+  <vi-radio value="3">3 Stars</vi-radio>
+  <vi-radio value="4">4 Stars</vi-radio>
+  <vi-radio value="5">5 Stars</vi-radio>
+</vi-radio-group>
+```
+
+---
+
+### Tooltip ([vi-tooltip](./src/tooltip/vi-tooltip.ts))
+The [ViTooltip](./src/tooltip/vi-tooltip.ts) manages floating help text. It leverages `@floating-ui/dom` under the hood for collision-detection, auto-flipping, dynamic viewport alignments, and manual trigger controls.
+
+#### Properties & Attributes
+| Attribute | Property | Type | Default | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `content` | `content` | `string` | `''` | Plain text tooltip label. Overridden if the `content` slot is populated. |
+| `placement` | `placement` | `TooltipPlacement` | `'top'` | Direction: `top`\|`top-start`\|`top-end`\|`bottom`\|`bottom-start`\|`bottom-end`\|`left`\|`right`. |
+| `trigger` | `trigger` | `TooltipTrigger` | `'hover focus'` | Trigger events: `hover focus`\|`hover`\|`focus`\|`click`. |
+| `delay` | `delay` | `number` | `500` | Wait delay before displaying in ms. |
+| `hide-delay` | `hide-delay` | `number` | `100` | Hide delay after trigger lost in ms. |
+| `max-width` | `max-width` | `number` | `240` | Max width bounds size in pixels. |
+| `disabled` | `disabled` | `boolean` | `false` | Prevents rendering/open operations. |
+| `popper-options` | `popperOptions` | `object` | `{}` | Custom options passed directly to Floating UI's `computePosition`. |
+
+#### Slots
+- **Default Slot**: The target anchor element (e.g. `<vi-button>`).
+- **`content` Slot**: Holds rich interactive HTML content. (When used, automatically updates ARIA parameters from `aria-describedby` to `aria-details` for screen readers).
+
+#### Methods
+- `show()`: Force displays the tooltip pane.
+- `hide(immediate = false)`: Force hides the tooltip pane.
+
+#### Snippets
+
+**Basic Text Tooltip:**
+```html
+<vi-tooltip content="Press to permanently remove configuration" placement="right">
+  <vi-button variant="danger">Delete Account</vi-button>
+</vi-tooltip>
+```
+
+**Rich Interactive Content (Aria-Details compliant):**
+```html
+<vi-tooltip placement="bottom-start" trigger="click">
+  <vi-button>View Pricing Plan</vi-button>
+  <div slot="content" style="padding: 8px;">
+    <strong>Enterprise Subscription</strong>
+    <p style="margin: 4px 0 8px;">Includes 24/7 dedicated support team access.</p>
+    <a href="/pricing" style="color: #60a5fa; text-decoration: underline;">Read More</a>
+  </div>
+</vi-tooltip>
+```
+
+**Auto-Placement (Collision Detection & Opposite Side Flipping):**
+By default, the tooltip uses the Floating UI `flip()` and `shift()` middlewares. If the preferred placement (e.g. `top`) does not have sufficient space within the viewport, it automatically flips to the opposite side (`bottom`) and shifts along the axis to remain completely visible.
+
+```html
+<!-- Automatically flips to bottom if top space is restricted at runtime -->
+<vi-tooltip content="Flipped placement when near top boundary" placement="top">
+  <vi-button>Hover Me near Window Edge</vi-button>
+</vi-tooltip>
+```
+
+**Custom Advanced Auto-Placement Middleware:**
+If you want the tooltip to dynamically choose the absolute best side (e.g., auto-detecting the side with the most space, rather than just flipping to the opposite side), you can provide custom middleware via the `popper-options` property.
+
+```html
+<!-- Passing custom autoPlacement middleware via popper-options property -->
+<vi-tooltip 
+  id="auto-placement-tooltip" 
+  content="Dynamic placement based on available viewport space"
+>
+  <vi-button>Auto placement</vi-button>
+</vi-tooltip>
+
+<script>
+  import { autoPlacement, offset, shift } from '@floating-ui/dom';
+  
+  const tooltip = document.getElementById('auto-placement-tooltip');
+  // Configure custom options directly to override default middleware list
+  tooltip.popperOptions = {
+    middleware: [
+      offset(12),
+      autoPlacement({ padding: 8 }),
+      shift({ padding: 8 })
+    ]
+  };
+</script>
+```
+
+---
+
+### Icon ([vi-icon](./src/icons/vi-icon.ts))
+The [ViIcon](./src/icons/vi-icon.ts) component renders named inline SVG elements. It depends on a dynamic map store, registering only the icons utilized in your project to allow bundlers to prune unused assets (tree-shaking).
+
+#### Properties & Attributes
+| Attribute | Property | Type | Default | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `name` | `name` | `string` | `''` | Name identifier inside the registry. |
+| `size` | `size` | `number` | `24` | Width/height footprint dimension in pixels. |
+| `label` | `label` | `string` | `''` | Accessibility label. When set, renders as an interactive image with `role="img"`. When empty, marks element as `aria-hidden="true"`. |
+
+#### Icon Registration API
+Before rendering `<vi-icon>`, you must register the required icon definitions using the [registerIcons](./src/icons/registry.ts) function:
+
+```ts
+import { registerIcons } from '@vialiq/web-components';
+import { checkIcon } from '@vialiq/icons/check';
+import { settingsIcon } from '@vialiq/icons/settings';
+
+// Register single or batch lists
+registerIcons([checkIcon, settingsIcon]);
+```
+
+*Note: For security, `registerIcons` includes internal sanity checks that filter out inline `<script>` tags or event handlers (e.g. `onload=`) to prevent XSS exploits.*
+
+#### Snippets
+
+**Usage Example:**
+```html
+<!-- Decorative usage (aria-hidden is true) -->
+<vi-icon name="check" size="20"></vi-icon>
+
+<!-- Accessible interactive usage -->
+<vi-icon name="settings" size="32" label="Open workspace settings"></vi-icon>
+```
+
+---
+
+## Form Validation & ElementInternals
+
+Custom controls inside this library utilize the native browser [ValidityMixin](./src/base/validity-mixin.ts) to integrate with standard `<form>` features like `.elements`, `.checkValidity()`, and `.reportValidity()`.
+
+### Handling Submit Validation
+```html
+<form id="profile-form">
+  <vi-input 
+    type="text" 
+    name="fullname" 
+    placeholder="John Doe" 
+    required
+  >
+    <span slot="helper">Enter your full name.</span>
+  </vi-input>
+
+  <vi-checkbox name="newsletter" required>
+    Confirm subscription policy
+  </vi-checkbox>
+
+  <vi-button type="submit" variant="primary">Submit</vi-button>
+</form>
+
+<script>
+  const form = document.getElementById('profile-form');
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    
+    // Checks validity for all elements in the form
+    if (form.checkValidity()) {
+      const formData = new FormData(form);
+      console.log('Valid data submitted: ', Object.fromEntries(formData));
+    } else {
+      console.warn('Form validation failed.');
+    }
+  });
+</script>
+```
+
+### Custom Error Reporting
+Use `setCustomValidity` to configure custom error messages or run manual server-side validation responses:
+
+```javascript
+const emailField = document.querySelector('vi-input[name="email"]');
+
+emailField.addEventListener('vialiq-change', (e) => {
+  const email = e.detail.value;
+  
+  if (email.endsWith('@forbidden-domain.com')) {
+    emailField.setCustomValidity('Registrations from this domain are forbidden.');
+    emailField.reportValidity(); // Displays the custom validation message tooltip
+  } else {
+    emailField.setCustomValidity(''); // Clear errors
+  }
+});
+```
+
+---
+
+## CSS Styling & Shadow Parts
+
+Web Components utilize CSS Shadow Roots to encapsulate logic and layout styles. To override designs safely without bleeding global configurations, use **CSS Shadow Parts** or **CSS Variables**.
+
+### CSS Shadow Parts (`::part`)
+Elements expose internal sub-nodes through the `part="..."` syntax. Customize these nodes using the CSS `::part()` selector:
+
+```css
+/* Change focus border styles on the vi-input inner input tag */
+vi-input::part(input) {
+  border-radius: 8px;
+  background: #f9fafb;
+}
+
+/* Customise helper text color */
+vi-input::part(helper) {
+  color: #4b5563;
+}
+
+/* Style the checkbox custom drawn frame box */
+vi-checkbox::part(box) {
+  border: 2px solid #6b7280;
+}
+```
+
+### CSS Variables Custom Properties
+For variables used repeatedly, custom elements offer direct CSS property bindings. Customize them globally or on single layouts:
+
+```css
+/* Custom variables declared on theme layers */
+:root {
+  --vi-input-border-color: #6366f1;
+  --vi-input-focus-ring-color: #818cf8;
+}
+
+/* Specific class styling override */
+.danger-zone {
+  --vi-input-border-color: #ef4444;
+  --vi-input-focus-ring-color: #fca5a5;
+}
+```
+
+---
 
 ## Token strategy
 
