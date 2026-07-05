@@ -60,9 +60,24 @@ export class ViTooltip extends ViElement {
 
   /**
    * Custom options passed directly to Floating UI's computePosition.
-   * Exposes complete control of offset, flip, shift middlewares, strategy, and more.
-   */
-  @property({ type: Object, attribute: 'popper-options' }) accessor popperOptions: Partial<ComputePositionConfig> = {};
+   * Note: the `popper-options` attribute only supports JSON-serializable values;
+   * middleware functions must be set via the `popperOptions` property.        
+  */
+   @property({
+     type: Object,
+     attribute: 'popper-options',
+     converter: {
+       fromAttribute: (value) => {
+         if (value == null || value === '') return {};
+         try {
+           return JSON.parse(value) as Partial<ComputePositionConfig>;
+         } catch {
+           return {};
+         }
+       },
+     },
+   })
+   accessor popperOptions: Partial<ComputePositionConfig> = {};
 
   @state() private accessor _open = false;
 
@@ -416,11 +431,13 @@ const config: ComputePositionConfig = {
         part="tooltip"
         role=${this._isInteractive ? 'dialog' : 'tooltip'}
         aria-modal=${this._isInteractive ? 'false' : nothing}
+        aria-label=${this._isInteractive ? (content || 'Tooltip') : nothing}
         placement=${placement}
         @pointerenter=${_onPointerEnter}
         @pointerleave=${_onPointerLeave}
         @focusin=${_onFocusIn}
         @focusout=${_onFocusOut}
+        @keydown=${_onKeyDown}
       >
         <div class="tooltip-content" part="content">
           <slot name="content" @slotchange=${this._updateTriggerAria}>${content}</slot>

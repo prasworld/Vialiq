@@ -97,6 +97,7 @@ describe('vi-tooltip', () => {
     expect(btn.getAttribute('aria-describedby')).toBeNull();
     expect(panel.getAttribute('role')).toBe('dialog');
     expect(panel.getAttribute('aria-modal')).toBe('false');
+    expect(panel.getAttribute('aria-label')).toBe('Tooltip');
   });
 
   it('should show and hide tooltip on pointer events with configured delays', async () => {
@@ -175,6 +176,36 @@ describe('vi-tooltip', () => {
     expect(panel.matches(':popover-open')).toBe(false);
   });
 
+  it('should immediately close when Escape key is pressed inside the panel', async () => {
+    render(
+      html`
+        <vi-tooltip .delay=${10}>
+          <span id="target">Focus Me</span>
+          <div slot="content">
+            <button id="inside-btn">Inside Button</button>
+          </div>
+        </vi-tooltip>
+      `,
+      container
+    );
+
+    const host = document.querySelector('vi-tooltip') as ViTooltip;
+    await host.updateComplete;
+    await new Promise(resolve => setTimeout(resolve, 50));
+
+    const triggerWrapper = host.shadowRoot?.querySelector('.trigger-wrapper') as HTMLElement;
+    const panel = host.shadowRoot?.querySelector('.tooltip-panel') as HTMLElement;
+
+    // Open it
+    triggerWrapper.dispatchEvent(new PointerEvent('pointerenter'));
+    await new Promise(resolve => setTimeout(resolve, 50));
+    expect(panel.matches(':popover-open')).toBe(true);
+
+    // Press Escape inside the panel content
+    panel.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(panel.matches(':popover-open')).toBe(false);
+  });
+
   it('should not display the tooltip when disabled is true', async () => {
     render(
       html`
@@ -226,6 +257,33 @@ describe('vi-tooltip', () => {
     expect(panel.matches(':popover-open')).toBe(true);
     // Floating UI uses the 'strategy' config to set position style (absolute vs fixed)
     expect(panel.style.position).toBe('fixed');
+  });
+
+  it('should not crash and fallback gracefully when invalid JSON is passed to popper-options attribute', async () => {
+    const originalWarn = console.warn;
+    let warnCalled = false;
+    console.warn = () => { warnCalled = true; };
+    
+    render(
+      html`
+        <vi-tooltip 
+          content="Fallback Test" 
+          .delay=${10} 
+          popper-options="{invalid-json}"
+        >
+          <span>Target</span>
+        </vi-tooltip>
+      `,
+      container
+    );
+
+    const host = document.querySelector('vi-tooltip') as ViTooltip;
+    await host.updateComplete;
+    await new Promise(resolve => setTimeout(resolve, 30));
+
+    expect(host.popperOptions).toEqual({});
+    expect(warnCalled).toBe(true);
+    console.warn = originalWarn;
   });
 
   describe('Accessibility (A11y)', () => {
