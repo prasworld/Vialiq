@@ -1,4 +1,4 @@
-import { css, html, unsafeCSS, type PropertyValues, type TemplateResult } from 'lit';
+import { css, html, unsafeCSS, nothing, type PropertyValues, type TemplateResult } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { ViElement } from '../base/vi-element.js';
 import {
@@ -65,6 +65,8 @@ export class ViTooltip extends ViElement {
   @property({ type: Object, attribute: 'popper-options' }) accessor popperOptions: Partial<ComputePositionConfig> = {};
 
   @state() private accessor _open = false;
+
+  @state() private accessor _isInteractive = false;
 
   @query('.tooltip-panel') private accessor _tooltipPanel!: HTMLDivElement | null;
   @query('slot:not([name])') private accessor _defaultSlot!: HTMLSlotElement | null;
@@ -247,9 +249,12 @@ hide(immediate = false): void {
 
   private _updateTriggerAria(): void {
     const trigger = this._triggerElement;
+    const isInteractive = this._hasInteractiveContent();
+    this._isInteractive = isInteractive;
+
     if (!trigger) return;
 
-    if (this._hasInteractiveContent()) {
+    if (isInteractive) {
       trigger.setAttribute('aria-details', this._panelId);
       trigger.removeAttribute('aria-describedby');
     } else {
@@ -409,7 +414,8 @@ const config: ComputePositionConfig = {
         id=${_panelId}
         class="tooltip-panel"
         part="tooltip"
-        role="tooltip"
+        role=${this._isInteractive ? 'dialog' : 'tooltip'}
+        aria-modal=${this._isInteractive ? 'false' : nothing}
         placement=${placement}
         @pointerenter=${_onPointerEnter}
         @pointerleave=${_onPointerLeave}

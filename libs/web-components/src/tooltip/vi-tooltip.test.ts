@@ -69,6 +69,8 @@ describe('vi-tooltip', () => {
 
     expect(btn.getAttribute('aria-describedby')).toBe(panel.id);
     expect(btn.getAttribute('aria-details')).toBeNull();
+    expect(panel.getAttribute('role')).toBe('tooltip');
+    expect(panel.getAttribute('aria-modal')).toBeNull();
   });
 
   it('should associate trigger element via aria-details for interactive content', async () => {
@@ -93,6 +95,8 @@ describe('vi-tooltip', () => {
 
     expect(btn.getAttribute('aria-details')).toBe(panel.id);
     expect(btn.getAttribute('aria-describedby')).toBeNull();
+    expect(panel.getAttribute('role')).toBe('dialog');
+    expect(panel.getAttribute('aria-modal')).toBe('false');
   });
 
   it('should show and hide tooltip on pointer events with configured delays', async () => {
