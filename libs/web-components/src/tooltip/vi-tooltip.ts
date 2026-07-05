@@ -86,15 +86,17 @@ export class ViTooltip extends ViElement {
     super.connectedCallback();
   }
 
-  override disconnectedCallback(): void {
-    this._clearTimeouts();
-    if (this._cleanupAutoUpdate) {
-      this._cleanupAutoUpdate();
-      this._cleanupAutoUpdate = undefined;
-    }
-    this._removeTriggerAria();
-    super.disconnectedCallback();
+override disconnectedCallback(): void {
+  this._clearTimeouts();
+  document.removeEventListener('pointerdown', this._handleDocumentClick);
+
+  if (this._cleanupAutoUpdate) {
+    this._cleanupAutoUpdate();
+    this._cleanupAutoUpdate = undefined;
   }
+  this._removeTriggerAria();
+  super.disconnectedCallback();
+}
 
   protected override firstUpdated(): void {
     this._updateTriggerElement();
