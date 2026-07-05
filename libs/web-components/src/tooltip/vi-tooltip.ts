@@ -342,13 +342,15 @@ override disconnectedCallback(): void {
       arrowEl ? arrow({ element: arrowEl }) : null,
     ].filter(Boolean);
 
-    // Merge consumer popperOptions, allowing overrides for middleware, strategy, etc.
-    const config: ComputePositionConfig = {
-      placement: this.placement,
-      strategy: this.popperOptions?.strategy ?? 'absolute',
-      middleware: this.popperOptions?.middleware ?? defaultMiddleware,
-      ...this.popperOptions
-    };
+// Merge consumer popperOptions, allowing overrides for middleware, strategy, etc.
+// (but keep `placement` controlled by the `placement` prop to avoid two sources of truth)
+const { placement: _ignoredPlacement, ...popperOptions } = this.popperOptions ?? {};
+const config: ComputePositionConfig = {
+  placement: this.placement,
+  strategy: popperOptions.strategy ?? 'absolute',
+  middleware: popperOptions.middleware ?? defaultMiddleware,
+  ...popperOptions,
+};
 
     computePosition(trigger, panel, config).then(({ x, y, placement, strategy, middlewareData }) => {
       Object.assign(panel.style, {
