@@ -133,21 +133,21 @@ override disconnectedCallback(): void {
     }
   }
 
-  /** Force hide the tooltip */
-  hide(immediate = false): void {
-    window.clearTimeout(this._showTimeout);
+/** Force hide the tooltip */
+hide(immediate = false): void {
+  window.clearTimeout(this._showTimeout);
+  window.clearTimeout(this._hideTimeout);
 
-    if (!this._open) return;
+  if (!this._open) return;
 
-    if (this.hideDelay > 0 && !immediate) {
-      window.clearTimeout(this._hideTimeout);
-      this._hideTimeout = window.setTimeout(() => {
-        this._closeTooltip();
-      }, this.hideDelay);
-    } else {
+  if (this.hideDelay > 0 && !immediate) {
+    this._hideTimeout = window.setTimeout(() => {
       this._closeTooltip();
-    }
+    }, this.hideDelay);
+  } else {
+    this._closeTooltip();
   }
+}
 
   private _openTooltip(): void {
     this._open = true;
