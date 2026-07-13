@@ -279,9 +279,7 @@ export class ViTextarea extends ValidityMixin(FocusableMixin(ViElement)) {
           ?readonly=${readonly}
           ?required=${required}
           rows=${rows}
-          .maxLength=${maxlength !== null && maxlength >= 0
-            ? maxlength
-            : nothing}
+          maxlength=${maxlength !== null && maxlength >= 0 ? maxlength : nothing}
           aria-required=${required ? 'true' : 'false'}
           aria-invalid=${this.status === 'invalid' ? 'true' : 'false'}
           aria-label=${ifNonEmpty(this.ariaLabel)}
