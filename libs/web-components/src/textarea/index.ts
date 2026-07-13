@@ -1,6 +1,2 @@
-import { ViTextarea } from './vi-textarea.js';
-
-export * from './vi-textarea.js';
-
-// Side-effect import to register component
-export default ViTextarea;
+export { ViTextarea } from './vi-textarea.js';
+export type { TextareaResize } from './vi-textarea.js';
