@@ -422,7 +422,7 @@ Mirrors `vi-input` with additional properties for height, resizing, and characte
 | `--vi-textarea-min-height` | `96px` | Minimum rows height |
 | `--vi-textarea-max-height` | `none` | Maximum height (scroll beyond) |
 | `--vi-textarea-resize` | `vertical` | CSS resize axis: `none | vertical | both` |
-| `--vi-textarea-char-counter-color` | `var(--vi-color-grey-500)` | Character count colour |
+| `--vi-textarea-char-counter-color` | `var(--vi-text-helper)` | Character count colour |
 | `--vi-textarea-char-counter-warning-color` | `var(--vi-color-warning)` | Counter colour at 90% capacity |
 | `--vi-textarea-char-counter-error-color` | `var(--vi-color-error)` | Counter colour at 100% |
 
