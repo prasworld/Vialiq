@@ -2,7 +2,11 @@ export { ViElement } from './base/vi-element.js';
 export type { ViSize, ViStatus } from './base/vi-element.js';
 export type { ControlStatus } from './base/validity-mixin.js';
 export { ViButton } from './button/vi-button.js';
-export type { ButtonVariant, ButtonSize, ButtonIconPlacement } from './button/vi-button.js';
+export type {
+  ButtonVariant,
+  ButtonSize,
+  ButtonIconPlacement,
+} from './button/vi-button.js';
 export { ViInput } from './input/vi-input.js';
 export type { InputType, InputSize } from './input/vi-input.js';
 export { ViIcon } from './icons/vi-icon.js';
@@ -16,5 +20,5 @@ export { ViCheckbox } from './checkbox/vi-checkbox.js';
 export type { CheckboxSize } from './checkbox/vi-checkbox.js';
 export { ViTooltip } from './tooltip/vi-tooltip.js';
 export type { TooltipPlacement, TooltipTrigger } from './tooltip/vi-tooltip.js';
-
-
+export { ViTextarea } from './textarea/vi-textarea.js';
+export type { TextareaResize } from './textarea/vi-textarea.js';

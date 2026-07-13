@@ -51,14 +51,14 @@
     display: block;
     font-family: #{tokens.$font-family-base};
     font-size: var(--vi-radio-group-helper-font-size, #{tokens.$font-size-xs});
-    color: var(--vi-radio-group-helper-color, #{tokens.$text-disabled});
+    color: var(--vi-radio-group-helper-color, #{tokens.$text-helper});
   }
 
   .radio-group-validation {
     display: block;
     font-family: #{tokens.$font-family-base};
     font-size: var(--vi-radio-group-validation-font-size, #{tokens.$font-size-xs});
-    color: var(--vi-radio-group-validation-color, #{tokens.$text-disabled});
+    color: var(--vi-radio-group-validation-color, #{tokens.$text-helper});
     margin-block-start: var(--vi-radio-group-validation-margin-top, #{tokens.$spacing-xs});
 
     &.radio-group-validation--invalid {

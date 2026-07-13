@@ -82,8 +82,24 @@ export class ViCheckbox extends ValidityMixin(FocusableMixin(ViElement)) {
   // ── ValidityMixin hook ───────────────────────────────────────────────────
 
   protected _testValidity(): Partial<ValidityStateFlags> {
-    if (this.required && !this.checked) {
-      this.validityMessage = 'Please check this box if you want to proceed.';
+    const input = this._focusableElement;
+    if (input) {
+      if (input.checked !== this.checked) {
+        input.checked = this.checked;
+      }
+      const validity = input.validity;
+      if (!validity.valid) {
+        this.validityMessage = input.validationMessage;
+        return {
+          valueMissing: validity.valueMissing,
+          customError: validity.customError,
+        };
+      }
+    } else if (this.required && !this.checked) {
+      const temp = document.createElement('input');
+      temp.type = 'checkbox';
+      temp.required = true;
+      this.validityMessage = temp.validationMessage;
       return { valueMissing: true };
     }
     return {};

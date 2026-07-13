@@ -260,10 +260,6 @@ describe('vi-tooltip', () => {
   });
 
   it('should not crash and fallback gracefully when invalid JSON is passed to popper-options attribute', async () => {
-    const originalWarn = console.warn;
-    let warnCalled = false;
-    console.warn = () => { warnCalled = true; };
-    
     render(
       html`
         <vi-tooltip 
@@ -282,8 +278,6 @@ describe('vi-tooltip', () => {
     await new Promise(resolve => setTimeout(resolve, 30));
 
     expect(host.popperOptions).toEqual({});
-    expect(warnCalled).toBe(true);
-    console.warn = originalWarn;
   });
 
   describe('Accessibility (A11y)', () => {

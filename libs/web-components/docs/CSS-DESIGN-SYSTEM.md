@@ -415,13 +415,16 @@ vi-input[required]          { /* label asterisk via ::after in label */ }
 
 ### `vi-textarea` CSS API
 
-Mirrors `vi-input` with two additional properties:
+Mirrors `vi-input` with additional properties for height, resizing, and character counter states:
 
 | Property | Default | Description |
 |----------|---------|-------------|
 | `--vi-textarea-min-height` | `96px` | Minimum rows height |
 | `--vi-textarea-max-height` | `none` | Maximum height (scroll beyond) |
 | `--vi-textarea-resize` | `vertical` | CSS resize axis: `none | vertical | both` |
+| `--vi-textarea-char-counter-color` | `var(--vi-text-helper)` | Character count colour |
+| `--vi-textarea-char-counter-warning-color` | `var(--vi-color-warning)` | Counter colour at 90% capacity |
+| `--vi-textarea-char-counter-error-color` | `var(--vi-color-error)` | Counter colour at 100% |
 
 All `--vi-input-*` tokens apply identically.
 
