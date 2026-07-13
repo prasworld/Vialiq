@@ -46,7 +46,13 @@ describe('vi-textarea', () => {
     });
 
     it('should pass rows and placeholder to native control', async () => {
-      render(html`<vi-textarea rows="5" placeholder="Enter comments..."></vi-textarea>`, container);
+      render(
+        html`<vi-textarea
+          rows="5"
+          placeholder="Enter comments..."
+        ></vi-textarea>`,
+        container,
+      );
       const el = document.querySelector('vi-textarea') as ViTextarea;
       await el.updateComplete;
 
@@ -87,17 +93,22 @@ describe('vi-textarea', () => {
       let inputVal = '';
       render(
         html`<vi-textarea
-          @vialiq-textarea-input=${(e: CustomEvent<{ value: string }>) => (inputVal = e.detail.value)}
+          @vialiq-textarea-input=${(e: CustomEvent<{ value: string }>) =>
+            (inputVal = e.detail.value)}
         ></vi-textarea>`,
-        container
+        container,
       );
 
       const host = document.querySelector('vi-textarea') as ViTextarea;
       await host.updateComplete;
 
-      const textarea = host.shadowRoot?.querySelector('textarea') as HTMLTextAreaElement;
+      const textarea = host.shadowRoot?.querySelector(
+        'textarea',
+      ) as HTMLTextAreaElement;
       textarea.value = 'hello';
-      textarea.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+      textarea.dispatchEvent(
+        new Event('input', { bubbles: true, composed: true }),
+      );
 
       expect(inputVal).toBe('hello');
       expect(host.value).toBe('hello');
@@ -107,17 +118,22 @@ describe('vi-textarea', () => {
       let changeVal = '';
       render(
         html`<vi-textarea
-          @vialiq-textarea-change=${(e: CustomEvent<{ value: string }>) => (changeVal = e.detail.value)}
+          @vialiq-textarea-change=${(e: CustomEvent<{ value: string }>) =>
+            (changeVal = e.detail.value)}
         ></vi-textarea>`,
-        container
+        container,
       );
 
       const host = document.querySelector('vi-textarea') as ViTextarea;
       await host.updateComplete;
 
-      const textarea = host.shadowRoot?.querySelector('textarea') as HTMLTextAreaElement;
+      const textarea = host.shadowRoot?.querySelector(
+        'textarea',
+      ) as HTMLTextAreaElement;
       textarea.value = 'committed text';
-      textarea.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
+      textarea.dispatchEvent(
+        new Event('change', { bubbles: true, composed: true }),
+      );
 
       expect(changeVal).toBe('committed text');
       expect(host.value).toBe('committed text');
@@ -127,18 +143,16 @@ describe('vi-textarea', () => {
   describe('Character counter', () => {
     it('should display the character counter when char-count and maxlength are enabled', async () => {
       render(
-        html`<vi-textarea
-          value="abc"
-          maxlength="10"
-          char-count
-        ></vi-textarea>`,
-        container
+        html`<vi-textarea value="abc" maxlength="10" char-count></vi-textarea>`,
+        container,
       );
 
       const host = document.querySelector('vi-textarea') as ViTextarea;
       await host.updateComplete;
 
-      const counter = host.shadowRoot?.querySelector('.char-counter') as HTMLElement;
+      const counter = host.shadowRoot?.querySelector(
+        '.char-counter',
+      ) as HTMLElement;
       expect(counter).not.toBeNull();
       expect(counter.textContent?.trim()).toBe('3 / 10');
     });
@@ -150,13 +164,15 @@ describe('vi-textarea', () => {
           maxlength="10"
           char-count
         ></vi-textarea>`,
-        container
+        container,
       );
 
       const host = document.querySelector('vi-textarea') as ViTextarea;
       await host.updateComplete;
 
-      const counter = host.shadowRoot?.querySelector('.char-counter') as HTMLElement;
+      const counter = host.shadowRoot?.querySelector(
+        '.char-counter',
+      ) as HTMLElement;
       expect(counter.className).not.toContain('char-counter--warning');
       expect(counter.className).not.toContain('char-counter--error');
 
@@ -187,7 +203,10 @@ describe('vi-textarea', () => {
     });
 
     it('should pass validity checking when required and has a value', async () => {
-      render(html`<vi-textarea required value="some text"></vi-textarea>`, container);
+      render(
+        html`<vi-textarea required value="some text"></vi-textarea>`,
+        container,
+      );
       const host = document.querySelector('vi-textarea') as ViTextarea;
       await host.updateComplete;
 
@@ -212,6 +231,33 @@ describe('vi-textarea', () => {
     });
   });
 
+  describe('Form Participation', () => {
+    it('should reset value to initial attribute value on form reset', async () => {
+      render(
+        html`
+          <form id="test-form">
+            <vi-textarea name="my-field" value="initial-value"></vi-textarea>
+          </form>
+        `,
+        container,
+      );
+      const el = document.querySelector('vi-textarea') as ViTextarea;
+      const form = document.querySelector('#test-form') as HTMLFormElement;
+      await el.updateComplete;
+
+      expect(el.value).toBe('initial-value');
+
+      el.value = 'new-value';
+      await el.updateComplete;
+      expect(el.value).toBe('new-value');
+
+      form.reset();
+      await el.updateComplete;
+
+      expect(el.value).toBe('initial-value');
+    });
+  });
+
   describe('Accessibility (A11y)', () => {
     it('should pass axe accessibility audits', async () => {
       container.style.backgroundColor = '#ffffff';
@@ -224,7 +270,7 @@ describe('vi-textarea', () => {
             <span slot="helper">Please enter notes here</span>
           </vi-textarea>
         `,
-        container
+        container,
       );
 
       const host = document.querySelector('vi-textarea') as ViTextarea;
@@ -236,9 +282,9 @@ describe('vi-textarea', () => {
           'html-has-lang': { enabled: false },
           'page-has-heading-one': { enabled: false },
           'landmark-one-main': { enabled: false },
-          'region': { enabled: false },
-          'color-contrast': { enabled: false }
-        }
+          region: { enabled: false },
+          'color-contrast': { enabled: false },
+        },
       });
 
       expect(results.violations).toHaveLength(0);

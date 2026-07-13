@@ -74,7 +74,7 @@ export class ViTextarea extends ValidityMixin(FocusableMixin(ViElement)) {
   @property() accessor name = '';
 
   /** Current text value. */
-  @property({ reflect: true }) accessor value = '';
+  @property() accessor value = '';
 
   /** Initial visible lines of text. */
   @property({ type: Number }) accessor rows = 3;
@@ -279,7 +279,9 @@ export class ViTextarea extends ValidityMixin(FocusableMixin(ViElement)) {
           ?readonly=${readonly}
           ?required=${required}
           rows=${rows}
-          maxlength=${maxlength !== null && maxlength >= 0 ? maxlength : nothing}
+          maxlength=${maxlength !== null && maxlength >= 0
+            ? maxlength
+            : nothing}
           aria-required=${required ? 'true' : 'false'}
           aria-invalid=${this.status === 'invalid' ? 'true' : 'false'}
           aria-label=${ifNonEmpty(this.ariaLabel)}
