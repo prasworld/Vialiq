@@ -2,6 +2,7 @@ import {
   css,
   html,
   unsafeCSS,
+  nothing,
   type PropertyValues,
   type TemplateResult,
 } from 'lit';
@@ -91,7 +92,8 @@ export class ViTextarea extends ValidityMixin(FocusableMixin(ViElement)) {
   @property({ type: Boolean, reflect: true }) accessor readonly = false;
 
   /** Enables displaying a character counter (requires maxlength to be set). */
-  @property({ type: Boolean, attribute: 'char-count' }) accessor charCount = false;
+  @property({ type: Boolean, attribute: 'char-count' }) accessor charCount =
+    false;
 
   /** The accessibility label. */
   @property({ attribute: 'aria-label' }) accessor ariaLabel = '';
@@ -128,7 +130,9 @@ export class ViTextarea extends ValidityMixin(FocusableMixin(ViElement)) {
         };
       }
     } else if (this.required && !this.value) {
-      this.validityMessage = 'Please fill in this field.';
+      const temp = document.createElement('textarea');
+      temp.required = true;
+      this.validityMessage = temp.validationMessage;
       return { valueMissing: true };
     }
     return {};
@@ -169,7 +173,7 @@ export class ViTextarea extends ValidityMixin(FocusableMixin(ViElement)) {
         detail: { value: this.value },
         bubbles: true,
         composed: true,
-      })
+      }),
     );
   }
 
@@ -182,7 +186,7 @@ export class ViTextarea extends ValidityMixin(FocusableMixin(ViElement)) {
         detail: { value: this.value },
         bubbles: true,
         composed: true,
-      })
+      }),
     );
   }
 
@@ -218,7 +222,8 @@ export class ViTextarea extends ValidityMixin(FocusableMixin(ViElement)) {
   }
 
   private get _charCounter(): TemplateResult {
-    if (!this.charCount || this.maxlength == null) return html``;
+    if (!this.charCount || this.maxlength == null || this.maxlength < 0)
+      return html``;
     const length = this.value.length;
     const limit = this.maxlength;
     const ratio = length / limit;
@@ -242,8 +247,18 @@ export class ViTextarea extends ValidityMixin(FocusableMixin(ViElement)) {
   }
 
   override render(): TemplateResult {
-    const { placeholder, name, value, disabled, required, readonly, rows, maxlength } = this;
-    const hasCharCounter = this.charCount && maxlength != null;
+    const {
+      placeholder,
+      name,
+      value,
+      disabled,
+      required,
+      readonly,
+      rows,
+      maxlength,
+    } = this;
+    const hasCharCounter =
+      this.charCount && maxlength != null && maxlength >= 0;
 
     const describedBy = [
       'helper-text',
@@ -264,7 +279,9 @@ export class ViTextarea extends ValidityMixin(FocusableMixin(ViElement)) {
           ?readonly=${readonly}
           ?required=${required}
           rows=${rows}
-          maxlength=${maxlength ?? -1}
+          .maxLength=${maxlength !== null && maxlength >= 0
+            ? maxlength
+            : nothing}
           aria-required=${required ? 'true' : 'false'}
           aria-invalid=${this.status === 'invalid' ? 'true' : 'false'}
           aria-label=${ifNonEmpty(this.ariaLabel)}
@@ -273,16 +290,14 @@ export class ViTextarea extends ValidityMixin(FocusableMixin(ViElement)) {
           aria-errormessage=${ifNonEmpty(
             this.status === 'invalid' && this.validityMessage
               ? 'validation-message'
-              : ''
+              : '',
           )}
           placeholder=${ifNonEmpty(placeholder)}
           name=${ifNonEmpty(name)}
           @input=${this._onInput}
           @change=${this._onChange}
         ></textarea>
-        ${this._helperContent}
-        ${this._validationMessage}
-        ${this._charCounter}
+        ${this._helperContent} ${this._validationMessage} ${this._charCounter}
       </div>
     `;
   }

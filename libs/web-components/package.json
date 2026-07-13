@@ -21,6 +21,10 @@
       "default": "./index.js"
     },
     "./button": {
+      "types": "./button/index.d.ts",
+      "default": "./button/index.js"
+    },
+    "./button/vi-button": {
       "types": "./button/vi-button.d.ts",
       "default": "./button/vi-button.js"
     },
@@ -33,6 +37,10 @@
       "default": "./icons/registry.js"
     },
     "./input": {
+      "types": "./input/index.d.ts",
+      "default": "./input/index.js"
+    },
+    "./input/vi-input": {
       "types": "./input/vi-input.d.ts",
       "default": "./input/vi-input.js"
     },
@@ -55,6 +63,14 @@
     "./checkbox/vi-checkbox": {
       "types": "./checkbox/vi-checkbox.d.ts",
       "default": "./checkbox/vi-checkbox.js"
+    },
+    "./textarea": {
+      "types": "./textarea/index.d.ts",
+      "default": "./textarea/index.js"
+    },
+    "./textarea/vi-textarea": {
+      "types": "./textarea/vi-textarea.d.ts",
+      "default": "./textarea/vi-textarea.js"
     },
     "./tooltip": {
       "types": "./tooltip/index.d.ts",

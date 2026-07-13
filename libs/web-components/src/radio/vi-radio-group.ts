@@ -134,7 +134,25 @@ export class ViRadioGroup extends ValidityMixin(ViElement) {
 
   protected override _testValidity(): Partial<ValidityStateFlags> {
     if (this.required && !this.value) {
-      this.validityMessage = 'Please select an option.';
+      const radios = this._getRadios();
+      if (radios.length > 0) {
+        const firstInput = radios[0].shadowRoot?.querySelector('input');
+        if (firstInput) {
+          const wasRequired = firstInput.required;
+          firstInput.required = true;
+          this.validityMessage = firstInput.validationMessage;
+          firstInput.required = wasRequired;
+          return { valueMissing: true };
+        }
+      }
+
+      const temp = document.createElement('input');
+      temp.type = 'radio';
+      temp.name = 'temp-radio-group';
+      temp.required = true;
+      this.appendChild(temp);
+      this.validityMessage = temp.validationMessage;
+      this.removeChild(temp);
       return { valueMissing: true };
     }
     return {};

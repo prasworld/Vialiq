@@ -64,6 +64,22 @@ describe('vi-textarea', () => {
       expect(textarea?.disabled).toBe(true);
       expect(textarea?.readOnly).toBe(true);
     });
+
+    it('should handle native maxlength attribute correctly based on property value', async () => {
+      render(html`<vi-textarea></vi-textarea>`, container);
+      const el = document.querySelector('vi-textarea') as ViTextarea;
+      await el.updateComplete;
+      const textarea = el.shadowRoot?.querySelector('textarea');
+      expect(textarea?.hasAttribute('maxlength')).toBe(false);
+
+      el.maxlength = -5;
+      await el.updateComplete;
+      expect(textarea?.hasAttribute('maxlength')).toBe(false);
+
+      el.maxlength = 100;
+      await el.updateComplete;
+      expect(textarea?.getAttribute('maxlength')).toBe('100');
+    });
   });
 
   describe('Value binding and events', () => {
@@ -164,11 +180,11 @@ describe('vi-textarea', () => {
       const host = document.querySelector('vi-textarea') as ViTextarea;
       await host.updateComplete;
 
-      const isValid = host.checkValidity();
-      expect(isValid).toBe(false);
-      expect(host.status).toBe('invalid');
-      expect(host.validityMessage).toBe('Please fill in this field.');
-    });
+       const isValid = host.checkValidity();
+       expect(isValid).toBe(false);
+       expect(host.status).toBe('invalid');
+       expect(host.validityMessage).toBeTruthy();
+     });
 
     it('should pass validity checking when required and has a value', async () => {
       render(html`<vi-textarea required value="some text"></vi-textarea>`, container);

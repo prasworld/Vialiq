@@ -126,6 +126,8 @@ export default defineConfig({
         'lit',
         /^lit\//,
         /^@lit\//,
+        '@floating-ui/dom',
+        /^@floating-ui\//,
         /^@vialiq\//, // Ensures other workspace libraries are treated as external dependencies
       ],
       output: {

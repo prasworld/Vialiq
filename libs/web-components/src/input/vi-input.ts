@@ -148,7 +148,9 @@ export class ViInput extends ValidityMixin(FocusableMixin(ViElement)) {
         };
       }
     } else if (this.required && !this.value) {
-      this.validityMessage = 'Please fill out this field.';
+      const temp = document.createElement('input');
+      temp.required = true;
+      this.validityMessage = temp.validationMessage;
       return { valueMissing: true };
     }
     return {};
