@@ -37,8 +37,13 @@ export default defineConfig({
               const match = url.match(/^@vialiq\/([^/]+)\/(.+)$/);
               if (!match) return null;
               const [, libName, subpath] = match;
-              
-              const basePath = path.resolve(workspaceRoot, 'libs', libName, subpath);
+
+              const basePath = path.resolve(
+                workspaceRoot,
+                'libs',
+                libName,
+                subpath,
+              );
               const dir = path.dirname(basePath);
               const base = path.basename(basePath);
               const ext = path.extname(basePath);
@@ -87,27 +92,41 @@ export default defineConfig({
       entry: {
         index: path.resolve(__dirname, 'src/index.ts'),
         'button/vi-button': path.resolve(__dirname, 'src/button/vi-button.ts'),
+        'button/index': path.resolve(__dirname, 'src/button/index.ts'),
         'input/vi-input': path.resolve(__dirname, 'src/input/vi-input.ts'),
+        'input/index': path.resolve(__dirname, 'src/input/index.ts'),
         'icons/vi-icon': path.resolve(__dirname, 'src/icons/vi-icon.ts'),
         'icons/registry': path.resolve(__dirname, 'src/icons/registry.ts'),
         'radio/vi-radio': path.resolve(__dirname, 'src/radio/vi-radio.ts'),
-        'radio/vi-radio-group': path.resolve(__dirname, 'src/radio/vi-radio-group.ts'),
+        'radio/vi-radio-group': path.resolve(
+          __dirname,
+          'src/radio/vi-radio-group.ts',
+        ),
         'radio/index': path.resolve(__dirname, 'src/radio/index.ts'),
-        'checkbox/vi-checkbox': path.resolve(__dirname, 'src/checkbox/vi-checkbox.ts'),
+        'checkbox/vi-checkbox': path.resolve(
+          __dirname,
+          'src/checkbox/vi-checkbox.ts',
+        ),
         'checkbox/index': path.resolve(__dirname, 'src/checkbox/index.ts'),
-        'tooltip/vi-tooltip': path.resolve(__dirname, 'src/tooltip/vi-tooltip.ts'),
+        'tooltip/vi-tooltip': path.resolve(
+          __dirname,
+          'src/tooltip/vi-tooltip.ts',
+        ),
         'tooltip/index': path.resolve(__dirname, 'src/tooltip/index.ts'),
+        'textarea/vi-textarea': path.resolve(
+          __dirname,
+          'src/textarea/vi-textarea.ts',
+        ),
+        'textarea/index': path.resolve(__dirname, 'src/textarea/index.ts'),
       },
       formats: ['es'],
     },
     rollupOptions: {
       external: [
-        'lit', 
-        /^lit\//, 
+        'lit',
+        /^lit\//,
         /^@lit\//,
-        '@floating-ui/dom',
-        /^@floating-ui\//,
-        /^@vialiq\// // Ensures other workspace libraries are treated as external dependencies
+        /^@vialiq\//, // Ensures other workspace libraries are treated as external dependencies
       ],
       output: {
         entryFileNames: '[name].js',

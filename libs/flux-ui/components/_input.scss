@@ -68,7 +68,7 @@
   .input-helper {
     font-size: var(--vi-input-helper-size, #{tokens.$font-size-xs});
     line-height: var(--vi-input-helper-leading, #{tokens.$line-height-normal});
-    color: var(--vi-input-helper-color, #{tokens.$color-grey-500});
+    color: var(--vi-input-helper-color, #{tokens.$text-helper});
   }
 
   .input-error {

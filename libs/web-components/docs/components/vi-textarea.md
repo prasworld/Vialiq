@@ -57,8 +57,8 @@ type ControlStatus = 'default' | 'valid' | 'invalid';
 
 | Event | Type | Bubbles | Composed | Fires when |
 |-------|------|---------|---------|-----------|
-| `vialiq-input` | `CustomEvent<{value: string}>` | ✅ | ✅ | Every keystroke |
-| `vialiq-change` | `CustomEvent<{value: string}>` | ✅ | ✅ | Blur (committed) |
+| `vialiq-textarea-input` | `CustomEvent<{value: string}>` | ✅ | ✅ | Every keystroke |
+| `vialiq-textarea-change` | `CustomEvent<{value: string}>` | ✅ | ✅ | Blur (committed) |
 | `invalid` | `Event` (cancelable) | ❌ | — | `checkValidity()` fails |
 
 ---
