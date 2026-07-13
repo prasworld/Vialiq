@@ -180,11 +180,11 @@ describe('vi-textarea', () => {
       const host = document.querySelector('vi-textarea') as ViTextarea;
       await host.updateComplete;
 
-       const isValid = host.checkValidity();
-       expect(isValid).toBe(false);
-       expect(host.status).toBe('invalid');
-       expect(host.validityMessage).toBeTruthy();
-     });
+      const isValid = host.checkValidity();
+      expect(isValid).toBe(false);
+      expect(host.status).toBe('invalid');
+      expect(host.validityMessage).toBeTruthy();
+    });
 
     it('should pass validity checking when required and has a value', async () => {
       render(html`<vi-textarea required value="some text"></vi-textarea>`, container);
