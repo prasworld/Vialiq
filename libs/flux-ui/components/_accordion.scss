@@ -1,0 +1,210 @@
+@use '../styles/variables' as tokens;
+
+// ============================================================================
+// Accordion variables following three-level cascade strategy
+// ============================================================================
+$accordion-border-color: var(--vi-accordion-border-color, var(--vi-outline, tokens.$outline));
+$accordion-border-radius: var(--vi-accordion-border-radius, tokens.$border-radius-md);
+$accordion-gap: var(--vi-accordion-gap, 0px);
+$accordion-animation-duration: var(--vi-accordion-animation-duration, 200ms);
+
+$accordion-item-header-padding: var(--vi-accordion-item-header-padding, 14px 16px);
+$accordion-item-body-padding: var(--vi-accordion-item-body-padding, 0 16px 16px);
+$accordion-item-header-bg: var(--vi-accordion-item-header-bg, transparent);
+$accordion-item-header-bg-hover: var(--vi-accordion-item-header-bg-hover, var(--vi-layer-hover-01, tokens.$layer-hover-01));
+$accordion-item-header-bg-open: var(--vi-accordion-item-header-bg-open, transparent);
+$accordion-item-label-color: var(--vi-accordion-item-label-color, var(--vi-text-primary, tokens.$text-primary));
+$accordion-item-label-font-weight: var(--vi-accordion-item-label-font-weight, tokens.$font-weight-medium);
+$accordion-item-chevron-color: var(--vi-accordion-item-chevron-color, var(--vi-text-disabled, tokens.$text-disabled));
+
+.accordion {
+  display: flex;
+  flex-direction: column;
+  gap: $accordion-gap;
+  width: 100%;
+}
+
+.accordion-item {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  box-sizing: border-box;
+
+  &:not(:last-child) {
+    border-bottom: 1px solid $accordion-border-color;
+  }
+}
+
+.accordion-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: $accordion-item-header-padding;
+  background-color: $accordion-item-header-bg;
+  color: $accordion-item-label-color;
+  font-family: tokens.$font-family-base;
+  font-size: var(--vi-accordion-item-header-font-size, tokens.$font-size-base);
+  font-weight: $accordion-item-label-font-weight;
+  text-align: left;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: background-color $accordion-animation-duration ease,
+              color $accordion-animation-duration ease;
+  user-select: none;
+
+  &:hover:not(:disabled) {
+    background-color: $accordion-item-header-bg-hover;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  // Standard focus ring system
+  &:focus-visible {
+    outline: 2px solid var(--vi-focus-ring, tokens.$focus);
+    outline-offset: -2px;
+  }
+}
+
+.accordion-header-content {
+  display: flex;
+  align-items: center;
+  gap: tokens.$spacing-xs;
+  flex: 1;
+}
+
+.accordion-label {
+  flex: 1;
+}
+
+.accordion-chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: $accordion-item-chevron-color;
+  transition: transform $accordion-animation-duration ease;
+  margin-inline-start: tokens.$spacing-xs;
+
+  svg {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+}
+
+.accordion-panel {
+  display: block;
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transition: max-height $accordion-animation-duration ease-out,
+              opacity $accordion-animation-duration ease-out;
+}
+
+.accordion-panel-inner {
+  padding: $accordion-item-body-padding;
+  font-family: tokens.$font-family-base;
+  font-size: tokens.$font-size-sm;
+  color: var(--vi-text-secondary, tokens.$text-secondary);
+  box-sizing: border-box;
+}
+
+// ============================================================================
+// Variants
+// ============================================================================
+
+// Bordered variant: full border wrapper around each item
+.accordion--bordered {
+  border: 1px solid $accordion-border-color;
+  border-radius: $accordion-border-radius;
+  overflow: hidden;
+
+  .accordion-item:last-child {
+    border-bottom: none;
+  }
+}
+
+// Flush variant: no outer border, full-width edge-to-edge
+.accordion--flush {
+  border: none;
+  border-radius: 0;
+
+  .accordion-item {
+    border-inline: none;
+  }
+}
+
+// Card variant: each item is a card with shadow and gap
+.accordion--card {
+  --vi-accordion-gap: 8px;
+
+  .accordion-item {
+    border: 1px solid $accordion-border-color;
+    border-radius: $accordion-border-radius;
+    background-color: var(--vi-card-bg, tokens.$layer-01);
+    box-shadow: var(--vi-shadow-sm, tokens.$shadow-sm);
+    overflow: hidden;
+
+    &:not(:last-child) {
+      border-bottom: 1px solid $accordion-border-color;
+    }
+  }
+}
+
+// ============================================================================
+// Size overrides
+// ============================================================================
+
+.accordion--sm {
+  --vi-accordion-item-header-padding: 10px 12px;
+  --vi-accordion-item-body-padding: 0 12px 12px;
+  --vi-accordion-item-header-font-size: #{tokens.$font-size-sm};
+}
+
+.accordion--md {
+  --vi-accordion-item-header-padding: 14px 16px;
+  --vi-accordion-item-body-padding: 0 16px 16px;
+  --vi-accordion-item-header-font-size: #{tokens.$font-size-base};
+}
+
+.accordion--lg {
+  --vi-accordion-item-header-padding: 18px 20px;
+  --vi-accordion-item-body-padding: 0 20px 20px;
+  --vi-accordion-item-header-font-size: #{tokens.$font-size-lg};
+}
+
+// ============================================================================
+// Open & Motion states
+// ============================================================================
+
+.accordion-item--open {
+  .accordion-header {
+    background-color: $accordion-item-header-bg-open;
+  }
+
+  .accordion-chevron {
+    transform: rotate(90deg);
+  }
+
+  .accordion-panel {
+    max-height: var(--vi-accordion-panel-height, none);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .accordion-panel,
+  .accordion-chevron,
+  .accordion-header {
+    transition: none !important;
+  }
+}

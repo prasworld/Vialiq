@@ -47,7 +47,7 @@ type AccordionSize = 'sm' | 'md' | 'lg';
 
 | Event | Type | Bubbles | Fires when |
 |-------|------|---------|-----------|
-| `vialiq-change` | `CustomEvent<{itemId: string; open: boolean}>` | ✅ | Any item opens or closes |
+| `vialiq-accordion-change` | `CustomEvent<{itemId: string; open: boolean}>` | ✅ | Any item opens or closes |
 
 ### CSS Parts
 
@@ -88,10 +88,12 @@ type AccordionSize = 'sm' | 'md' | 'lg';
 
 ### Events
 
-| Event | Type | Bubbles | Fires when |
-|-------|------|---------|-----------|
-| `vialiq-open` | `CustomEvent<{itemId: string}>` | ✅ | Item expands |
-| `vialiq-close` | `CustomEvent<{itemId: string}>` | ✅ | Item collapses |
+| Event | Type | Bubbles | Cancelable | Fires when |
+|-------|------|---------|------------|------------|
+| `vialiq-accordion-before-open` | `CustomEvent<{itemId: string}>` | ✅ | ✅ | Item is about to expand. Calling `event.preventDefault()` cancels the action. |
+| `vialiq-accordion-before-close` | `CustomEvent<{itemId: string}>` | ✅ | ✅ | Item is about to collapse. Calling `event.preventDefault()` cancels the action. |
+| `vialiq-accordion-open` | `CustomEvent<{itemId: string}>` | ✅ | — | Item expands. |
+| `vialiq-accordion-close` | `CustomEvent<{itemId: string}>` | ✅ | — | Item collapses. |
 
 ### CSS Parts
 
@@ -286,7 +288,8 @@ collapseAll() {
 ## Implementation Notes
 
 - `vi-accordion` observes slotted `vi-accordion-item` children via `MutationObserver` + `slotchange` to build the keyboard navigation list.
-- When `multi = false`, `vi-accordion` listens for `vialiq-open` on children and closes all other items automatically (single-open invariant).
+- When `multi = false`, `vi-accordion` listens for `vialiq-accordion-open` on children and closes all other items automatically (single-open invariant).
+- Both container and child components support cancelable events (`vialiq-accordion-before-open`, `vialiq-accordion-before-close`) using `event.preventDefault()` to conditionally lock expansion or collapse states. In single-open/multi-open modes, the container orchestrates closure checks across active items before allowing a new item to open.
 - Item IDs are auto-generated (UUID) if `item-id` is not set — stable within a session but not across page loads. Set `item-id` explicitly if URL-based deep-linking to a section is required.
 - `vi-accordion-item` uses `ResizeObserver` on the panel inner content to track natural height changes (e.g. dynamic content inside) and update `max-height`.
 
