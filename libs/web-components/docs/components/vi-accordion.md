@@ -90,8 +90,8 @@ type AccordionSize = 'sm' | 'md' | 'lg';
 
 | Event | Type | Bubbles | Cancelable | Fires when |
 |-------|------|---------|------------|------------|
-| `vialiq-accordion-before-open` | `CustomEvent<{itemId: string}>` | ✅ | ✅ | Item is about to expand. Calling `event.preventDefault()` cancels the action. |
-| `vialiq-accordion-before-close` | `CustomEvent<{itemId: string}>` | ✅ | ✅ | Item is about to collapse. Calling `event.preventDefault()` cancels the action. |
+| `vialiq-accordion-before-open` | `CustomEvent<{itemId: string}>` | ✅ | ✅ | Item is about to expand. `itemId` is the ID of the expanding item. Calling `event.preventDefault()` cancels the action. |
+| `vialiq-accordion-before-close` | `CustomEvent<{itemId: string}>` | ✅ | ✅ | Item is about to collapse. `itemId` contains the ID of the clicked/trigger item (the expanding sibling for coordinated checks, or the item itself for direct closures). Calling `event.preventDefault()` cancels the action. |
 | `vialiq-accordion-open` | `CustomEvent<{itemId: string}>` | ✅ | — | Item expands. |
 | `vialiq-accordion-close` | `CustomEvent<{itemId: string}>` | ✅ | — | Item collapses. |
 
@@ -289,7 +289,8 @@ collapseAll() {
 
 - `vi-accordion` observes slotted `vi-accordion-item` children via `MutationObserver` + `slotchange` to build the keyboard navigation list.
 - When `multi = false`, `vi-accordion` listens for `vialiq-accordion-open` on children and closes all other items automatically (single-open invariant).
-- Both container and child components support cancelable events (`vialiq-accordion-before-open`, `vialiq-accordion-before-close`) using `event.preventDefault()` to conditionally lock expansion or collapse states. In single-open/multi-open modes, the container orchestrates closure checks across active items before allowing a new item to open.
+- Both container and child components support cancelable events (`vialiq-accordion-before-open`, `vialiq-accordion-before-close`) using `event.preventDefault()` to conditionally lock expansion or collapse states. In both single-open and multi-open modes, the container orchestrates closure checks across active items before allowing a new item to open.
+- During coordinated sibling close checks, the `vialiq-accordion-before-close` event is dispatched on the open sibling(s), with the event detail's `itemId` carrying the ID of the expanding item that triggered the check. Inspecting `event.currentTarget` identifies the item requested to close.
 - Item IDs are auto-generated (UUID) if `item-id` is not set — stable within a session but not across page loads. Set `item-id` explicitly if URL-based deep-linking to a section is required.
 - `vi-accordion-item` uses `ResizeObserver` on the panel inner content to track natural height changes (e.g. dynamic content inside) and update `max-height`.
 
