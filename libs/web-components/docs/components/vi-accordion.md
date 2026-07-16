@@ -91,7 +91,7 @@ type AccordionSize = 'sm' | 'md' | 'lg';
 | Event | Type | Bubbles | Cancelable | Fires when |
 |-------|------|---------|------------|------------|
 | `vialiq-accordion-before-open` | `CustomEvent<{itemId: string}>` | ✅ | ✅ | Item is about to expand. `itemId` is the ID of the expanding item. Calling `event.preventDefault()` cancels the action. |
-| `vialiq-accordion-before-close` | `CustomEvent<{itemId: string}>` | ✅ | ✅ | Item is about to collapse. `itemId` contains the ID of the clicked/trigger item (the expanding sibling for coordinated checks, or the item itself for direct closures). Calling `event.preventDefault()` cancels the action. |
+| `vialiq-accordion-before-close` | `CustomEvent<{itemId: string}>` | ✅ | ✅ | Item is about to collapse. `itemId` contains the ID of the clicked/triggered control (the expanding sibling for coordinated checks, or the item itself for direct closures). Calling `event.preventDefault()` cancels the action. |
 | `vialiq-accordion-open` | `CustomEvent<{itemId: string}>` | ✅ | — | Item expands. |
 | `vialiq-accordion-close` | `CustomEvent<{itemId: string}>` | ✅ | — | Item collapses. |
 

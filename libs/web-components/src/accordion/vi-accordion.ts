@@ -26,7 +26,7 @@ export type AccordionSize = 'sm' | 'md' | 'lg';
  *
  * @slot - Default slot for vi-accordion-item elements
  *
- * @fires {CustomEvent<{itemId: string; open: boolean}>} vialiq-change - Fired when any accordion item toggles
+ * @fires {CustomEvent<{itemId: string; open: boolean}>} vialiq-accordion-change - Fired when any accordion item toggles
  */
 @customElement('vi-accordion')
 export class ViAccordion extends ViElement {

@@ -3,7 +3,7 @@
 // ============================================================================
 // Accordion variables following three-level cascade strategy
 // ============================================================================
-$accordion-border-color: var(--vi-accordion-border-color, var(--vi-outline, tokens.$outline));
+$accordion-border-color: var(--vi-accordion-border-color, tokens.$outline);
 $accordion-border-radius: var(--vi-accordion-border-radius, tokens.$border-radius-md);
 $accordion-gap: var(--vi-accordion-gap, 0px);
 $accordion-animation-duration: var(--vi-accordion-animation-duration, 200ms);
@@ -11,11 +11,11 @@ $accordion-animation-duration: var(--vi-accordion-animation-duration, 200ms);
 $accordion-item-header-padding: var(--vi-accordion-item-header-padding, 14px 16px);
 $accordion-item-body-padding: var(--vi-accordion-item-body-padding, 0 16px 16px);
 $accordion-item-header-bg: var(--vi-accordion-item-header-bg, transparent);
-$accordion-item-header-bg-hover: var(--vi-accordion-item-header-bg-hover, var(--vi-layer-hover-01, tokens.$layer-hover-01));
+$accordion-item-header-bg-hover: var(--vi-accordion-item-header-bg-hover, tokens.$layer-hover-01);
 $accordion-item-header-bg-open: var(--vi-accordion-item-header-bg-open, transparent);
-$accordion-item-label-color: var(--vi-accordion-item-label-color, var(--vi-text-primary, tokens.$text-primary));
+$accordion-item-label-color: var(--vi-accordion-item-label-color, tokens.$text-primary);
 $accordion-item-label-font-weight: var(--vi-accordion-item-label-font-weight, tokens.$font-weight-medium);
-$accordion-item-chevron-color: var(--vi-accordion-item-chevron-color, var(--vi-text-disabled, tokens.$text-disabled));
+$accordion-item-chevron-color: var(--vi-accordion-item-chevron-color, tokens.$text-disabled);
 
 .accordion {
   display: flex;
@@ -66,7 +66,7 @@ $accordion-item-chevron-color: var(--vi-accordion-item-chevron-color, var(--vi-t
 
   // Standard focus ring system
   &:focus-visible {
-    outline: 2px solid var(--vi-focus, tokens.$focus);
+    outline: 2px solid tokens.$focus;
     outline-offset: -2px;
   }
 }
@@ -114,7 +114,7 @@ $accordion-item-chevron-color: var(--vi-accordion-item-chevron-color, var(--vi-t
   padding: $accordion-item-body-padding;
   font-family: tokens.$font-family-base;
   font-size: tokens.$font-size-sm;
-  color: var(--vi-text-secondary, tokens.$text-secondary);
+  color: tokens.$text-secondary;
   box-sizing: border-box;
 }
 
