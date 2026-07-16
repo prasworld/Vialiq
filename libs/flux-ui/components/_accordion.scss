@@ -66,7 +66,7 @@ $accordion-item-chevron-color: var(--vi-accordion-item-chevron-color, var(--vi-t
 
   // Standard focus ring system
   &:focus-visible {
-    outline: 2px solid var(--vi-focus-ring, tokens.$focus);
+    outline: 2px solid var(--vi-focus, tokens.$focus);
     outline-offset: -2px;
   }
 }
@@ -134,29 +134,31 @@ $accordion-item-chevron-color: var(--vi-accordion-item-chevron-color, var(--vi-t
 }
 
 // Flush variant: no outer border, full-width edge-to-edge
-.accordion--flush {
+.accordion--flush,
+.accordion-item--flush {
   border: none;
   border-radius: 0;
 
   .accordion-item {
     border-inline: none;
   }
+  border-inline: none;
 }
 
 // Card variant: each item is a card with shadow and gap
 .accordion--card {
   --vi-accordion-gap: 8px;
+}
 
-  .accordion-item {
-    border: 1px solid $accordion-border-color;
-    border-radius: $accordion-border-radius;
-    background-color: var(--vi-card-bg, tokens.$layer-01);
-    box-shadow: var(--vi-shadow-sm, tokens.$shadow-sm);
-    overflow: hidden;
+.accordion-item--card {
+  border: 1px solid $accordion-border-color;
+  border-radius: $accordion-border-radius;
+  background-color: var(--vi-card-bg, tokens.$layer-01);
+  box-shadow: var(--vi-shadow-sm, tokens.$shadow-sm);
+  overflow: hidden;
 
-    &:not(:last-child) {
-      border-bottom: 1px solid $accordion-border-color;
-    }
+  &:not(:last-child) {
+    border-bottom: 1px solid $accordion-border-color;
   }
 }
 
@@ -164,19 +166,22 @@ $accordion-item-chevron-color: var(--vi-accordion-item-chevron-color, var(--vi-t
 // Size overrides
 // ============================================================================
 
-.accordion--sm {
+.accordion--sm,
+.accordion-item--sm {
   --vi-accordion-item-header-padding: 10px 12px;
   --vi-accordion-item-body-padding: 0 12px 12px;
   --vi-accordion-item-header-font-size: #{tokens.$font-size-sm};
 }
 
-.accordion--md {
+.accordion--md,
+.accordion-item--md {
   --vi-accordion-item-header-padding: 14px 16px;
   --vi-accordion-item-body-padding: 0 16px 16px;
   --vi-accordion-item-header-font-size: #{tokens.$font-size-base};
 }
 
-.accordion--lg {
+.accordion--lg,
+.accordion-item--lg {
   --vi-accordion-item-header-padding: 18px 20px;
   --vi-accordion-item-body-padding: 0 20px 20px;
   --vi-accordion-item-header-font-size: #{tokens.$font-size-lg};

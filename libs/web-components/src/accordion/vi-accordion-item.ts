@@ -127,6 +127,9 @@ export class ViAccordionItem extends ViElement {
       'accordion-item--sm': this.size === 'sm',
       'accordion-item--md': this.size === 'md',
       'accordion-item--lg': this.size === 'lg',
+      'accordion-item--bordered': this.variant === 'bordered',
+      'accordion-item--flush': this.variant === 'flush',
+      'accordion-item--card': this.variant === 'card',
     });
 
     return html`
