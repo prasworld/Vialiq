@@ -22,3 +22,6 @@ export { ViTooltip } from './tooltip/vi-tooltip.js';
 export type { TooltipPlacement, TooltipTrigger } from './tooltip/vi-tooltip.js';
 export { ViTextarea } from './textarea/vi-textarea.js';
 export type { TextareaResize } from './textarea/vi-textarea.js';
+export { ViAccordion } from './accordion/vi-accordion.js';
+export type { AccordionVariant, AccordionSize } from './accordion/vi-accordion.js';
+export { ViAccordionItem } from './accordion/vi-accordion-item.js';

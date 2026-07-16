@@ -136,9 +136,15 @@ $layer-disabled:      var(--vi-layer-disabled,      #f3f4f6); // grey-100
 $layer-inverse:       var(--vi-layer-inverse,       #111827); // grey-900
 $layer-inverse-hover: var(--vi-layer-inverse-hover, #1f2937); // grey-800
 
+$text-primary:           var(--vi-text-primary,           #111827); // grey-900
+$text-secondary:         var(--vi-text-secondary,         #4b5563); // grey-600
+$text-primary-inverse:   var(--vi-text-primary-inverse,   #ffffff); // white
+$text-secondary-inverse: var(--vi-text-secondary-inverse, #d1d5db); // grey-300
 $text-inverse:        var(--vi-text-inverse,        #ffffff);
 $text-disabled:       var(--vi-text-disabled,       #9e9e9e); // grey-500
 $text-helper:         var(--vi-text-helper,         #9e9e9e); // grey-500
+$focus:               var(--vi-focus,               #3676d0); // blue-700
+$outline:             var(--vi-outline,             #e5e7eb); // grey-200
 
 // -- Borders -----------------------------------------------------------------
 

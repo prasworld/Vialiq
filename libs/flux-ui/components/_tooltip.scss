@@ -1,7 +1,7 @@
 @use '../styles/variables' as tokens;
 
 $vi-tooltip-background: var(--vi-tooltip-background, tokens.$layer-inverse);
-$vi-tooltip-color: var(--vi-tooltip-color, tokens.$text-inverse);
+$vi-tooltip-color: var(--vi-tooltip-color, tokens.$text-primary-inverse);
 $vi-tooltip-font-size: var(--vi-tooltip-font-size, 12px);
 $vi-tooltip-border-radius: var(--vi-tooltip-border-radius, 4px);
 $vi-tooltip-padding: var(--vi-tooltip-padding, 6px 10px);

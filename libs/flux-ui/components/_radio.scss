@@ -26,7 +26,7 @@
     font-family: #{tokens.$font-family-base};
     font-size: var(--vi-radio-group-label-font-size, #{tokens.$font-size-base});
     font-weight: #{tokens.$font-weight-semibold};
-    color: var(--vi-radio-group-label-color, #{tokens.$color-foreground});
+    color: var(--vi-radio-group-label-color, #{tokens.$text-primary});
     padding: 0;
     margin: 0;
     margin-block-end: var(--vi-radio-group-legend-margin-bottom, #{tokens.$spacing-xs});
@@ -81,7 +81,7 @@
     font-family: #{tokens.$font-family-base};
     font-size: var(--vi-radio-label-font-size, #{tokens.$font-size-base});
     line-height: #{tokens.$line-height-normal};
-    color: var(--vi-radio-label-color, #{tokens.$color-foreground});
+    color: var(--vi-radio-label-color, #{tokens.$text-primary});
     position: relative;
     user-select: none;
   }
@@ -106,7 +106,7 @@
     justify-content: center;
     width: var(--vi-radio-size, 18px);
     height: var(--vi-radio-size, 18px);
-    border: #{tokens.$border-width-base} solid var(--vi-radio-border-color, #{tokens.$border-04});
+    border: #{tokens.$border-width-base} solid var(--vi-radio-border-color, #{tokens.$outline});
     border-radius: 50%;
     background-color: var(--vi-radio-background-color, #{tokens.$color-background});
     transition: border-color 150ms ease, box-shadow 150ms ease;
@@ -136,7 +136,7 @@
 
   // Focus ring
   .radio-input:focus-visible + .radio-circle {
-    outline: #{tokens.$border-width-base} solid var(--vi-radio-focus-ring-color, #{tokens.$color-primary});
+    outline: #{tokens.$border-width-base} solid var(--vi-radio-focus-ring-color, #{tokens.$focus});
     outline-offset: 2px;
     box-shadow: 0 0 0 3px var(--vi-radio-focus-ring-glow, #{tokens.$color-blue-200});
   }

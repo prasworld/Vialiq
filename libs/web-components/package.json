@@ -79,6 +79,18 @@
     "./tooltip/vi-tooltip": {
       "types": "./tooltip/vi-tooltip.d.ts",
       "default": "./tooltip/vi-tooltip.js"
+    },
+    "./accordion": {
+      "types": "./accordion/index.d.ts",
+      "default": "./accordion/index.js"
+    },
+    "./accordion/vi-accordion": {
+      "types": "./accordion/vi-accordion.d.ts",
+      "default": "./accordion/vi-accordion.js"
+    },
+    "./accordion/vi-accordion-item": {
+      "types": "./accordion/vi-accordion-item.d.ts",
+      "default": "./accordion/vi-accordion-item.js"
     }
   },
   "peerDependencies": {

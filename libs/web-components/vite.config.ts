@@ -118,6 +118,15 @@ export default defineConfig({
           'src/textarea/vi-textarea.ts',
         ),
         'textarea/index': path.resolve(__dirname, 'src/textarea/index.ts'),
+        'accordion/vi-accordion': path.resolve(
+          __dirname,
+          'src/accordion/vi-accordion.ts',
+        ),
+        'accordion/vi-accordion-item': path.resolve(
+          __dirname,
+          'src/accordion/vi-accordion-item.ts',
+        ),
+        'accordion/index': path.resolve(__dirname, 'src/accordion/index.ts'),
       },
       formats: ['es'],
     },
