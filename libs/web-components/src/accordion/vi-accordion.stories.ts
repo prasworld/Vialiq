@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
 import './index.js';
+import type { ViAccordion } from './vi-accordion.js';
 
 const meta: Meta = {
   title: 'Components/Accordion',
@@ -175,14 +176,21 @@ export const CoordinatedCancellation: Story = {
     multi: false,
   },
   render: (args) => {
-    const handleBeforeCloseSection1 = (e: Event) => {
+    const handleBeforeCloseSection1 = (e: CustomEvent) => {
       const checkbox = document.getElementById('lock-sec1-close') as HTMLInputElement;
       if (checkbox && checkbox.checked) {
-        e.preventDefault();
         const isDirectClose = document.activeElement && (document.activeElement.closest('vi-accordion-item') === e.currentTarget);
+        
+        // Find if accordion is currently in multi-open mode
+        const accordion = document.querySelector('vi-accordion') as ViAccordion | null;
+        const isMulti = accordion ? accordion.multi : false;
+
+        console.log(e.detail);
         if (isDirectClose) {
+          e.preventDefault();
           alert('Section 1 close prevented!');
-        } else {
+        } else if (!isMulti) {
+          e.preventDefault();
           alert('Section 1 close prevented! Opening other sections is blocked in single-open mode.');
         }
       }

@@ -273,8 +273,10 @@ describe('vi-accordion & vi-accordion-item', () => {
       expect(items[0].open).toBe(true);
       expect(items[1].open).toBe(false);
 
-      // Prevent item-1 from closing
+      // Prevent item-1 from closing and assert it carries the trigger item ID
       items[0].addEventListener('vialiq-accordion-before-close', (e) => {
+        const customEvent = e as CustomEvent;
+        expect(customEvent.detail.itemId).toBe('item-2');
         e.preventDefault();
       });
 
@@ -306,8 +308,10 @@ describe('vi-accordion & vi-accordion-item', () => {
       expect(items[0].open).toBe(true);
       expect(items[1].open).toBe(false);
 
-      // Prevent item-1 from closing
+      // Prevent item-1 from closing and assert it carries the trigger item ID
       items[0].addEventListener('vialiq-accordion-before-close', (e) => {
+        const customEvent = e as CustomEvent;
+        expect(customEvent.detail.itemId).toBe('item-2');
         e.preventDefault();
       });
 

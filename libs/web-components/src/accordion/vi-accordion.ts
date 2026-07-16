@@ -82,7 +82,7 @@ export class ViAccordion extends ViElement {
 
     for (const openItem of openItems) {
       const beforeCloseEvent = new CustomEvent('vialiq-accordion-before-close', {
-        detail: { itemId: openItem.itemId },
+        detail: { itemId: targetId }, // Emit the ID of the clicked item that is triggering the check
         bubbles: true,
         composed: true,
         cancelable: true,
