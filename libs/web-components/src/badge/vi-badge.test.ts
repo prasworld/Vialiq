@@ -44,8 +44,8 @@ describe('vi-badge', () => {
     expect(badge.hasAttribute('pill')).toBe(false); // Should be false because we removed it via prop update/or init
   });
 
-  it('renders a dot when dot is true', async () => {
-    render(html`<vi-badge dot></vi-badge>`, container);
+  it('renders a dot when dot is true, alongside label if provided', async () => {
+    render(html`<vi-badge dot>Label</vi-badge>`, container);
     const badge = container.querySelector('vi-badge') as ViBadge;
     await badge.updateComplete;
 
@@ -53,6 +53,11 @@ describe('vi-badge', () => {
     expect(innerSpan).toBeTruthy();
     const dotPart = innerSpan?.querySelector('.dot');
     expect(dotPart).toBeTruthy();
+
+    // Default slot is still rendered
+    const slot = innerSpan?.querySelector('slot:not([name])') as HTMLSlotElement;
+    expect(slot).toBeTruthy();
+    expect(badge.textContent).toContain('Label');
   });
 
   it('renders count when count is set', async () => {

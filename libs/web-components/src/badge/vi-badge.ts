@@ -1,5 +1,5 @@
 import { css, html, unsafeCSS, type TemplateResult } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
+import { customElement, property, state } from 'lit/decorators.js';
 import { ViElement } from '../base/vi-element.js';
 import badgeStyles from './vi-badge.scss?inline';
 
@@ -19,7 +19,7 @@ export type BadgeSize = 'sm' | 'md' | 'lg';
  * @attr max     - Max count before showing {max}+
  * @attr outline - Outlined/ghost style
  *
- * @slot         - Badge text content (omit when using dot or count)
+ * @slot         - Badge text content
  * @slot icon    - Optional leading icon
  *
  * @csspart badge - The badge <span> element
@@ -36,7 +36,7 @@ export class ViBadge extends ViElement {
   /** Size */
   @property({ type: String, reflect: true }) accessor size: BadgeSize = 'md';
 
-  /** Show coloured dot instead of text */
+  /** Show coloured dot */
   @property({ type: Boolean, reflect: true }) accessor dot = false;
 
   /** Fully rounded (pill shape) vs. square */
@@ -51,22 +51,35 @@ export class ViBadge extends ViElement {
   /** Outlined/ghost style */
   @property({ type: Boolean, reflect: true }) accessor outline = false;
 
+  @state() private accessor _hasIcon = false;
+
   override connectedCallback(): void {
     super.connectedCallback();
+  }
+
+  private onIconSlotChange(e: Event): void {
+    const slot = e.target as HTMLSlotElement;
+    this._hasIcon = slot.assignedElements({ flatten: true }).length > 0;
   }
 
   override render(): TemplateResult {
     let content: TemplateResult | string = html`<slot></slot>`;
 
-    if (this.dot) {
-      content = html`<span part="dot" class="dot"></span>`;
-    } else if (this.count !== undefined) {
-      content = this.count > this.max ? `${this.max}+` : `${this.count}`;
+    if (this.count !== undefined) {
+      content = html`${this.count > this.max ? `${this.max}+` : `${this.count}`}`;
+    } else if (this.dot) {
+      content = html`<span part="dot" class="dot"></span><slot></slot>`;
     }
 
     return html`
       <span class="badge" part="badge">
-        <slot name="icon" part="icon" class="icon"></slot>
+        <slot
+          name="icon"
+          part="icon"
+          class="icon"
+          ?hidden=${!this._hasIcon}
+          @slotchange=${this.onIconSlotChange}
+        ></slot>
         ${content}
       </span>
     `;

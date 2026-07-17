@@ -48,8 +48,8 @@
   --vi-badge-border-radius: #{tokens.$border-radius-sm};
 }
 
-// Dot specific padding when no text
-:host([dot]) {
+// Dot specific padding when no text is provided
+:host([dot]) .badge:empty {
   --vi-badge-padding: 4px;
 }
 
@@ -62,28 +62,28 @@
 }
 
 :host([variant='primary']) .badge {
-  background-color: var(--vi-badge-primary-background, #{tokens.$color-blue-100});
-  color: var(--vi-badge-primary-color, #{tokens.$color-primary});
+  background-color: var(--vi-badge-primary-background, var(--vi-color-blue-100, #{tokens.$color-blue-100}));
+  color: var(--vi-badge-primary-color, var(--vi-color-primary, #{tokens.$color-primary}));
 }
 
 :host([variant='success']) .badge {
-  background-color: var(--vi-badge-success-background, #{tokens.$color-green-100});
-  color: var(--vi-badge-success-color, #{tokens.$color-success});
+  background-color: var(--vi-badge-success-background, var(--vi-color-green-100, #{tokens.$color-green-100}));
+  color: var(--vi-badge-success-color, var(--vi-color-success, #{tokens.$color-success}));
 }
 
 :host([variant='warning']) .badge {
-  background-color: var(--vi-badge-warning-background, #{tokens.$color-yellow-100});
-  color: var(--vi-badge-warning-color, #{tokens.$color-warning});
+  background-color: var(--vi-badge-warning-background, var(--vi-color-yellow-100, #{tokens.$color-yellow-100}));
+  color: var(--vi-badge-warning-color, var(--vi-color-warning, #{tokens.$color-warning}));
 }
 
 :host([variant='danger']) .badge {
-  background-color: var(--vi-badge-danger-background, #{tokens.$color-red-100});
-  color: var(--vi-badge-danger-color, #{tokens.$color-error});
+  background-color: var(--vi-badge-danger-background, var(--vi-color-red-100, #{tokens.$color-red-100}));
+  color: var(--vi-badge-danger-color, var(--vi-color-error, #{tokens.$color-error}));
 }
 
 :host([variant='info']) .badge {
-  background-color: var(--vi-badge-info-background, #{tokens.$color-blue-100});
-  color: var(--vi-badge-info-color, #{tokens.$color-info});
+  background-color: var(--vi-badge-info-background, var(--vi-color-cyan-100, #{tokens.$color-blue-100}));
+  color: var(--vi-badge-info-color, var(--vi-color-info, #{tokens.$color-info}));
 }
 
 // ============================================================================
@@ -97,40 +97,47 @@
 
 :host([outline][variant='primary']) .badge {
   background-color: transparent;
-  color: var(--vi-badge-primary-color, #{tokens.$color-primary});
-  border-color: var(--vi-badge-primary-border, #{tokens.$color-blue-200});
+  color: var(--vi-badge-primary-color, var(--vi-color-primary, #{tokens.$color-primary}));
+  border-color: var(--vi-badge-primary-border, var(--vi-color-blue-200, #{tokens.$color-blue-200}));
 }
 
 :host([outline][variant='success']) .badge {
   background-color: transparent;
-  color: var(--vi-badge-success-color, #{tokens.$color-success});
-  border-color: var(--vi-badge-success-border, #{tokens.$color-green-200});
+  color: var(--vi-badge-success-color, var(--vi-color-success, #{tokens.$color-success}));
+  border-color: var(--vi-badge-success-border, var(--vi-color-green-200, #{tokens.$color-green-200}));
 }
 
 :host([outline][variant='warning']) .badge {
   background-color: transparent;
-  color: var(--vi-badge-warning-color, #{tokens.$color-warning});
-  border-color: var(--vi-badge-warning-border, #{tokens.$color-yellow-200});
+  color: var(--vi-badge-warning-color, var(--vi-color-warning, #{tokens.$color-warning}));
+  border-color: var(--vi-badge-warning-border, var(--vi-color-yellow-200, #{tokens.$color-yellow-200}));
 }
 
 :host([outline][variant='danger']) .badge {
   background-color: transparent;
-  color: var(--vi-badge-danger-color, #{tokens.$color-error});
-  border-color: var(--vi-badge-danger-border, #{tokens.$color-red-200});
+  color: var(--vi-badge-danger-color, var(--vi-color-error, #{tokens.$color-error}));
+  border-color: var(--vi-badge-danger-border, var(--vi-color-red-200, #{tokens.$color-red-200}));
 }
 
 :host([outline][variant='info']) .badge {
   background-color: transparent;
-  color: var(--vi-badge-info-color, #{tokens.$color-info});
-  border-color: var(--vi-badge-info-border, #{tokens.$color-blue-200});
+  color: var(--vi-badge-info-color, var(--vi-color-info, #{tokens.$color-info}));
+  border-color: var(--vi-badge-info-border, var(--vi-color-cyan-200, #{tokens.$color-blue-200}));
+}
+
+.icon {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.icon[hidden] {
+  display: none;
 }
 
 // Hide the icon slot if empty so it doesn't add gap
-.icon::slotted(*) {
+::slotted(vi-icon),
+::slotted(svg) {
   --vi-icon-size: 1em;
   width: 1em;
   height: 1em;
 }
-
-// If icon slot is completely empty, it has no dimensions, but flex gap might apply.
-// We can manage this via CSS or JS slotchange if needed, but flex wrap/gap usually handles empty items okay.
