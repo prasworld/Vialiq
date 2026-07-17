@@ -27,7 +27,7 @@ export default withModuleFederation(
 ).then(
   (mfFactory) =>
     (baseConfig: Record<string, unknown>) => {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
       const mfConfig = mfFactory(baseConfig);
       return {
         ...mfConfig,
