@@ -52,9 +52,27 @@ export class ViBadge extends ViElement {
   @property({ type: Boolean, reflect: true }) accessor outline = false;
 
   @state() private accessor _hasIcon = false;
+  @state() private accessor _hasDefaultSlot = false;
 
   override connectedCallback(): void {
     super.connectedCallback();
+    this.updateAriaHidden();
+  }
+
+  override updated(changedProperties: Map<string | number | symbol, unknown>): void {
+    super.updated(changedProperties);
+    if (changedProperties.has('dot') || changedProperties.has('count') || changedProperties.has('_hasDefaultSlot')) {
+      this.updateAriaHidden();
+    }
+  }
+
+  private updateAriaHidden(): void {
+    const isPurelyDecorative = this.dot && !this._hasDefaultSlot && this.count === undefined && !this.hasAttribute('aria-label') && !this.hasAttribute('aria-labelledby');
+    if (isPurelyDecorative) {
+      this.setAttribute('aria-hidden', 'true');
+    } else {
+      this.removeAttribute('aria-hidden');
+    }
   }
 
   private onIconSlotChange(e: Event): void {
@@ -62,17 +80,28 @@ export class ViBadge extends ViElement {
     this._hasIcon = slot.assignedElements({ flatten: true }).length > 0;
   }
 
+  private onDefaultSlotChange(e: Event): void {
+    const slot = e.target as HTMLSlotElement;
+    this._hasDefaultSlot = slot.assignedNodes({ flatten: true }).some(node => {
+      // Check if it's text with actual content or an element
+      return (node.nodeType === Node.TEXT_NODE && node.textContent?.trim().length) || node.nodeType === Node.ELEMENT_NODE;
+    });
+    this.updateAriaHidden();
+  }
+
   override render(): TemplateResult {
-    let content: TemplateResult | string = html`<slot></slot>`;
+    let countContent: TemplateResult | string = '';
+    // If count is defined, render it, and we do not render the default slot content
+    const hideDefaultSlot = this.count !== undefined;
 
     if (this.count !== undefined) {
-      content = html`${this.count > this.max ? `${this.max}+` : `${this.count}`}`;
-    } else if (this.dot) {
-      content = html`<span part="dot" class="dot"></span><slot></slot>`;
+      countContent = html`${this.count > this.max ? `${this.max}+` : `${this.count}`}`;
     }
 
+    const dotContent = this.dot ? html`<span part="dot" class="dot"></span>` : '';
+
     return html`
-      <span class="badge" part="badge">
+      <span class="badge ${this.dot && !this._hasDefaultSlot && this.count === undefined ? 'dot-only' : ''}" part="badge">
         <slot
           name="icon"
           part="icon"
@@ -80,7 +109,9 @@ export class ViBadge extends ViElement {
           ?hidden=${!this._hasIcon}
           @slotchange=${this.onIconSlotChange}
         ></slot>
-        ${content}
+        ${dotContent}
+        ${countContent}
+        <slot ?hidden=${hideDefaultSlot} @slotchange=${this.onDefaultSlotChange}></slot>
       </span>
     `;
   }

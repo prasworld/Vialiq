@@ -49,7 +49,7 @@
 }
 
 // Dot specific padding when no text is provided
-:host([dot]) .badge:empty {
+.badge.dot-only {
   --vi-badge-padding: 4px;
 }
 
@@ -81,6 +81,8 @@
   color: var(--vi-badge-danger-color, var(--vi-color-error, #{tokens.$color-error}));
 }
 
+// Using blue tokens for info as cyan tokens are not available in Flux UI currently.
+// If cyan is added to the palette, these tokens should be updated to cyan-100 and cyan-700.
 :host([variant='info']) .badge {
   background-color: var(--vi-badge-info-background, var(--vi-color-cyan-100, #{tokens.$color-blue-100}));
   color: var(--vi-badge-info-color, var(--vi-color-info, #{tokens.$color-info}));
