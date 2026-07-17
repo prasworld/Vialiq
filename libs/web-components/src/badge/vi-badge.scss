@@ -1,0 +1,136 @@
+@use '@vialiq/flux-ui/styles/variables' as tokens;
+@use '@vialiq/flux-ui/components/badge';
+
+:host {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+:host([hidden]) {
+  display: none !important;
+}
+
+// Ensure the inner badge matches the expected design rules.
+// Since we used a .badge wrapper, all base properties come from flux-ui _badge.scss.
+
+// ============================================================================
+// Sizes
+// ============================================================================
+:host([size='sm']) {
+  --vi-badge-font-size: 10px;
+  --vi-badge-padding: 0 6px;
+  --vi-badge-gap: 2px;
+  --vi-badge-dot-size: 6px;
+}
+
+:host([size='md']) {
+  --vi-badge-font-size: 11px;
+  --vi-badge-padding: 2px 8px;
+  --vi-badge-gap: 4px;
+  --vi-badge-dot-size: 8px;
+}
+
+:host([size='lg']) {
+  --vi-badge-font-size: 13px;
+  --vi-badge-padding: 4px 12px;
+  --vi-badge-gap: 6px;
+  --vi-badge-dot-size: 10px;
+}
+
+// ============================================================================
+// Pill / Square
+// ============================================================================
+:host([pill]) {
+  --vi-badge-border-radius: 9999px;
+}
+
+:host(:not([pill])) {
+  --vi-badge-border-radius: #{tokens.$border-radius-sm};
+}
+
+// Dot specific padding when no text
+:host([dot]) {
+  --vi-badge-padding: 4px;
+}
+
+// ============================================================================
+// Variants (Solid)
+// ============================================================================
+:host([variant='neutral']) .badge {
+  background-color: var(--vi-badge-neutral-background, #{tokens.$layer-03});
+  color: var(--vi-badge-neutral-color, #{tokens.$text-primary});
+}
+
+:host([variant='primary']) .badge {
+  background-color: var(--vi-badge-primary-background, #{tokens.$color-blue-100});
+  color: var(--vi-badge-primary-color, #{tokens.$color-primary});
+}
+
+:host([variant='success']) .badge {
+  background-color: var(--vi-badge-success-background, #{tokens.$color-green-100});
+  color: var(--vi-badge-success-color, #{tokens.$color-success});
+}
+
+:host([variant='warning']) .badge {
+  background-color: var(--vi-badge-warning-background, #{tokens.$color-yellow-100});
+  color: var(--vi-badge-warning-color, #{tokens.$color-warning});
+}
+
+:host([variant='danger']) .badge {
+  background-color: var(--vi-badge-danger-background, #{tokens.$color-red-100});
+  color: var(--vi-badge-danger-color, #{tokens.$color-error});
+}
+
+:host([variant='info']) .badge {
+  background-color: var(--vi-badge-info-background, #{tokens.$color-blue-100});
+  color: var(--vi-badge-info-color, #{tokens.$color-info});
+}
+
+// ============================================================================
+// Variants (Outline)
+// ============================================================================
+:host([outline][variant='neutral']) .badge {
+  background-color: transparent;
+  color: var(--vi-badge-neutral-color, #{tokens.$text-primary});
+  border-color: var(--vi-badge-neutral-border, #{tokens.$border-03});
+}
+
+:host([outline][variant='primary']) .badge {
+  background-color: transparent;
+  color: var(--vi-badge-primary-color, #{tokens.$color-primary});
+  border-color: var(--vi-badge-primary-border, #{tokens.$color-blue-200});
+}
+
+:host([outline][variant='success']) .badge {
+  background-color: transparent;
+  color: var(--vi-badge-success-color, #{tokens.$color-success});
+  border-color: var(--vi-badge-success-border, #{tokens.$color-green-200});
+}
+
+:host([outline][variant='warning']) .badge {
+  background-color: transparent;
+  color: var(--vi-badge-warning-color, #{tokens.$color-warning});
+  border-color: var(--vi-badge-warning-border, #{tokens.$color-yellow-200});
+}
+
+:host([outline][variant='danger']) .badge {
+  background-color: transparent;
+  color: var(--vi-badge-danger-color, #{tokens.$color-error});
+  border-color: var(--vi-badge-danger-border, #{tokens.$color-red-200});
+}
+
+:host([outline][variant='info']) .badge {
+  background-color: transparent;
+  color: var(--vi-badge-info-color, #{tokens.$color-info});
+  border-color: var(--vi-badge-info-border, #{tokens.$color-blue-200});
+}
+
+// Hide the icon slot if empty so it doesn't add gap
+.icon::slotted(*) {
+  --vi-icon-size: 1em;
+  width: 1em;
+  height: 1em;
+}
+
+// If icon slot is completely empty, it has no dimensions, but flex gap might apply.
+// We can manage this via CSS or JS slotchange if needed, but flex wrap/gap usually handles empty items okay.

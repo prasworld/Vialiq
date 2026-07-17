@@ -1,0 +1,43 @@
+/**
+ * Badge component base styles.
+ *
+ * Shared foundation styles for the badge component.
+ * Provides flexbox layout, spacing via tokens, and interaction states.
+ * Component-specific colors and sizing defined by consuming components.
+ */
+
+@use '../styles/variables' as tokens;
+
+@layer components {
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+    box-sizing: border-box;
+
+    font-size: var(--vi-badge-font-size, 11px);
+    font-weight: var(--vi-badge-font-weight, #{tokens.$font-weight-semibold});
+    padding: var(--vi-badge-padding, 2px 8px);
+    border-radius: var(--vi-badge-border-radius, 9999px);
+    gap: var(--vi-badge-gap, 4px);
+
+    border: #{tokens.$border-width-thin} solid transparent;
+  }
+
+  .dot {
+    display: inline-block;
+    width: var(--vi-badge-dot-size, 8px);
+    height: var(--vi-badge-dot-size, 8px);
+    border-radius: 50%;
+    background-color: currentColor;
+    flex-shrink: 0;
+  }
+
+  .icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+}
