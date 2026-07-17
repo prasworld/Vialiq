@@ -30,8 +30,9 @@ A compact inline indicator used to communicate status, category, or count. Badge
 | `size` | `size` | `BadgeSize` | `'md'` | ✅ | Size |
 | `dot` | `dot` | `boolean` | `false` | ✅ | Show coloured dot instead of text |
 | `pill` | `pill` | `boolean` | `true` | ✅ | Fully rounded (pill shape) vs. square |
-| `count` | `count` | `number` | `undefined` | — | Numeric count (renders number) |
+| `count` | `count` | `number` | `undefined` | ✅ | Numeric count (badge is hidden if `count="0"` and `show-zero` is not true) |
 | `max` | `max` | `number` | `99` | — | Max count before showing `{max}+` |
+| `showZero` | `show-zero` | `boolean` | `false` | ✅ | Show the badge even when count is `0` |
 | `outline` | `outline` | `boolean` | `false` | ✅ | Outlined/ghost style |
 
 ```typescript
@@ -88,9 +89,9 @@ Variant-specific (example for `danger`):
 
 | Property | Default | Description |
 |----------|---------|-------------|
-| `--vi-badge-danger-background` | `var(--vi-color-red-100)` | Background |
-| `--vi-badge-danger-color` | `var(--vi-color-red-700)` | Text / dot colour |
-| `--vi-badge-danger-border` | `var(--vi-color-red-200)` | Border (outline variant) |
+| `--vi-badge-danger-bg` | `tokens.$bg-error` | Background |
+| `--vi-badge-danger-color` | `tokens.$text-error` | Text / dot colour |
+| `--vi-badge-danger-border` | `tokens.$color-error` | Border (outline variant) |
 
 ---
 

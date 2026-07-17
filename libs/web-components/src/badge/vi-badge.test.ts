@@ -92,6 +92,29 @@ describe('vi-badge', () => {
     expect(iconSpan.classList.contains('my-icon')).toBe(true);
   });
 
+  it('hides the badge by default when count is 0', async () => {
+    render(html`<vi-badge count="0"></vi-badge>`, container);
+    const badge = container.querySelector('vi-badge') as ViBadge;
+    await badge.updateComplete;
+
+    expect(badge.hasAttribute('count')).toBe(true);
+    expect(badge.getAttribute('count')).toBe('0');
+    expect(badge.showZero).toBe(false);
+    
+    const displayStyle = window.getComputedStyle(badge).display;
+    expect(displayStyle).toBe('none');
+  });
+
+  it('shows the badge when count is 0 and show-zero is set', async () => {
+    render(html`<vi-badge count="0" show-zero></vi-badge>`, container);
+    const badge = container.querySelector('vi-badge') as ViBadge;
+    await badge.updateComplete;
+
+    expect(badge.hasAttribute('show-zero')).toBe(true);
+    const displayStyle = window.getComputedStyle(badge).display;
+    expect(displayStyle).not.toBe('none');
+  });
+
   it('has purely presentational default accessibility unless labeled', async () => {
     render(html`<vi-badge dot></vi-badge>`, container);
     const badge = container.querySelector('vi-badge') as ViBadge;

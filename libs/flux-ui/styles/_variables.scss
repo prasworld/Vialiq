@@ -143,6 +143,19 @@ $text-secondary-inverse: var(--vi-text-secondary-inverse, #d1d5db); // grey-300
 $text-inverse:        var(--vi-text-inverse,        #ffffff);
 $text-disabled:       var(--vi-text-disabled,       #9e9e9e); // grey-500
 $text-helper:         var(--vi-text-helper,         #9e9e9e); // grey-500
+
+// -- Semantic status text colors
+$text-success:        var(--vi-text-success,        #265a3d); // green-700
+$text-warning:        var(--vi-text-warning,        #e68300); // yellow-800
+$text-error:          var(--vi-text-error,          #db231b); // red-700
+$text-info:           var(--vi-text-info,           #3676d0); // blue-700
+
+// -- Semantic status background colors
+$bg-success:          var(--vi-bg-success,          #e6f9f0);
+$bg-warning:          var(--vi-bg-warning,          #fff8e1);
+$bg-error:            var(--vi-bg-error,            #ffebee);
+$bg-info:             var(--vi-bg-info,             #e3f2fd);
+
 $focus:               var(--vi-focus,               #3676d0); // blue-700
 $outline:             var(--vi-outline,             #e5e7eb); // grey-200
 
@@ -223,6 +236,7 @@ $border-radius-xl: var(--vi-border-radius-xl, 12px);
 $border-width-thin:  var(--vi-border-width-thin,  1px);
 $border-width-base:  var(--vi-border-width-base,  2px);
 $border-width-thick: var(--vi-border-width-thick, 3px);
+// End of Semantic SASS Tokens
 
 // ============================================================================
 // SCSS MAPS  (for programmatic class generation via @each)
