@@ -25,3 +25,5 @@ export type { TextareaResize } from './textarea/vi-textarea.js';
 export { ViAccordion } from './accordion/vi-accordion.js';
 export type { AccordionVariant, AccordionSize } from './accordion/vi-accordion.js';
 export { ViAccordionItem } from './accordion/vi-accordion-item.js';
+export { ViBadge } from './badge/vi-badge.js';
+export type { BadgeVariant, BadgeSize } from './badge/vi-badge.js';

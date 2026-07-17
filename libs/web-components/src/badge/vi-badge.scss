@@ -1,0 +1,145 @@
+@use '@vialiq/flux-ui/styles/variables' as tokens;
+@use '@vialiq/flux-ui/components/badge';
+
+:host {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+:host([hidden]) {
+  display: none !important;
+}
+
+// Ensure the inner badge matches the expected design rules.
+// Since we used a .badge wrapper, all base properties come from flux-ui _badge.scss.
+
+// ============================================================================
+// Sizes
+// ============================================================================
+:host([size='sm']) {
+  --vi-badge-font-size: 10px;
+  --vi-badge-padding: 0 6px;
+  --vi-badge-gap: 2px;
+  --vi-badge-dot-size: 6px;
+}
+
+:host([size='md']) {
+  --vi-badge-font-size: 11px;
+  --vi-badge-padding: 2px 8px;
+  --vi-badge-gap: 4px;
+  --vi-badge-dot-size: 8px;
+}
+
+:host([size='lg']) {
+  --vi-badge-font-size: 13px;
+  --vi-badge-padding: 4px 12px;
+  --vi-badge-gap: 6px;
+  --vi-badge-dot-size: 10px;
+}
+
+// ============================================================================
+// Pill / Square
+// ============================================================================
+:host([pill]) {
+  --vi-badge-border-radius: 9999px;
+}
+
+:host(:not([pill])) {
+  --vi-badge-border-radius: #{tokens.$border-radius-sm};
+}
+
+// Dot specific padding when no text is provided
+.badge.dot-only {
+  --vi-badge-padding: 4px;
+}
+
+// ============================================================================
+// Variants (Solid)
+// ============================================================================
+:host([variant='neutral']) .badge {
+  background-color: var(--vi-badge-neutral-background, #{tokens.$layer-03});
+  color: var(--vi-badge-neutral-color, #{tokens.$text-primary});
+}
+
+:host([variant='primary']) .badge {
+  background-color: var(--vi-badge-primary-background, var(--vi-color-blue-100, #{tokens.$color-blue-100}));
+  color: var(--vi-badge-primary-color, var(--vi-color-primary, #{tokens.$color-primary}));
+}
+
+:host([variant='success']) .badge {
+  background-color: var(--vi-badge-success-background, var(--vi-color-green-100, #{tokens.$color-green-100}));
+  color: var(--vi-badge-success-color, var(--vi-color-success, #{tokens.$color-success}));
+}
+
+:host([variant='warning']) .badge {
+  background-color: var(--vi-badge-warning-background, var(--vi-color-yellow-100, #{tokens.$color-yellow-100}));
+  color: var(--vi-badge-warning-color, var(--vi-color-warning, #{tokens.$color-warning}));
+}
+
+:host([variant='danger']) .badge {
+  background-color: var(--vi-badge-danger-background, var(--vi-color-red-100, #{tokens.$color-red-100}));
+  color: var(--vi-badge-danger-color, var(--vi-color-error, #{tokens.$color-error}));
+}
+
+// Using blue tokens for info as cyan tokens are not available in Flux UI currently.
+// If cyan is added to the palette, these tokens should be updated to cyan-100 and cyan-700.
+:host([variant='info']) .badge {
+  background-color: var(--vi-badge-info-background, var(--vi-color-cyan-100, #{tokens.$color-blue-100}));
+  color: var(--vi-badge-info-color, var(--vi-color-info, #{tokens.$color-info}));
+}
+
+// ============================================================================
+// Variants (Outline)
+// ============================================================================
+:host([outline][variant='neutral']) .badge {
+  background-color: transparent;
+  color: var(--vi-badge-neutral-color, #{tokens.$text-primary});
+  border-color: var(--vi-badge-neutral-border, #{tokens.$border-03});
+}
+
+:host([outline][variant='primary']) .badge {
+  background-color: transparent;
+  color: var(--vi-badge-primary-color, var(--vi-color-primary, #{tokens.$color-primary}));
+  border-color: var(--vi-badge-primary-border, var(--vi-color-blue-200, #{tokens.$color-blue-200}));
+}
+
+:host([outline][variant='success']) .badge {
+  background-color: transparent;
+  color: var(--vi-badge-success-color, var(--vi-color-success, #{tokens.$color-success}));
+  border-color: var(--vi-badge-success-border, var(--vi-color-green-200, #{tokens.$color-green-200}));
+}
+
+:host([outline][variant='warning']) .badge {
+  background-color: transparent;
+  color: var(--vi-badge-warning-color, var(--vi-color-warning, #{tokens.$color-warning}));
+  border-color: var(--vi-badge-warning-border, var(--vi-color-yellow-200, #{tokens.$color-yellow-200}));
+}
+
+:host([outline][variant='danger']) .badge {
+  background-color: transparent;
+  color: var(--vi-badge-danger-color, var(--vi-color-error, #{tokens.$color-error}));
+  border-color: var(--vi-badge-danger-border, var(--vi-color-red-200, #{tokens.$color-red-200}));
+}
+
+:host([outline][variant='info']) .badge {
+  background-color: transparent;
+  color: var(--vi-badge-info-color, var(--vi-color-info, #{tokens.$color-info}));
+  border-color: var(--vi-badge-info-border, var(--vi-color-cyan-200, #{tokens.$color-blue-200}));
+}
+
+.icon {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.icon[hidden] {
+  display: none;
+}
+
+// Hide the icon slot if empty so it doesn't add gap
+::slotted(vi-icon),
+::slotted(svg) {
+  --vi-icon-size: 1em;
+  width: 1em;
+  height: 1em;
+}

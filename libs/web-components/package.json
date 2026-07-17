@@ -88,6 +88,14 @@
       "types": "./accordion/vi-accordion.d.ts",
       "default": "./accordion/vi-accordion.js"
     },
+    "./badge": {
+      "types": "./badge/index.d.ts",
+      "default": "./badge/index.js"
+    },
+    "./badge/vi-badge": {
+      "types": "./badge/vi-badge.d.ts",
+      "default": "./badge/vi-badge.js"
+    },
     "./accordion/vi-accordion-item": {
       "types": "./accordion/vi-accordion-item.d.ts",
       "default": "./accordion/vi-accordion-item.js"
@@ -117,6 +125,7 @@
     "radio/",
     "checkbox/",
     "tooltip/",
+    "badge/",
     "README.md"
   ]
 }
