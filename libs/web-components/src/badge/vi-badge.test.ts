@@ -1,4 +1,4 @@
-import { $, expect } from '@wdio/globals';
+import { expect } from '@wdio/globals';
 import { html, render } from 'lit';
 import './vi-badge.js';
 import type { ViBadge } from './vi-badge.js';
@@ -34,7 +34,7 @@ describe('vi-badge', () => {
       html`<vi-badge variant="success" size="lg" outline></vi-badge>`,
       container
     );
-    let badge = container.querySelector('vi-badge') as ViBadge;
+    const badge = container.querySelector('vi-badge') as ViBadge;
     badge.pill = false;
     await badge.updateComplete;
 
