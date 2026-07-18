@@ -45,10 +45,10 @@ $vi-theme--light: (
   'bg-secondary':           $color-grey-200,
   'bg-tertiary':            $color-grey-300,
   'bg-inverse':             $color-grey-900,
-  'bg-success':             #e6f9f0,
-  'bg-warning':             #fff8e1,
-  'bg-error':               #ffebee,
-  'bg-info':                #e3f2fd,
+  'bg-success':             $color-green-100,
+  'bg-warning':             $color-yellow-100,
+  'bg-error':               $color-red-100,
+  'bg-info':                $color-blue-100,
 
   // Layer/depth backgrounds (Light to Dark)
   'layer-01':               #ffffff,
@@ -144,6 +144,16 @@ $vi-theme--dark: map.merge($vi-theme--light, (
 
   'card-bg':                $color-grey-900,
   'card-border':            $color-grey-800,
+
+  // Status colors - dark theme overrides
+  'text-success':           $color-green-300,
+  'bg-success':             $color-green-900,
+  'text-warning':           $color-yellow-300,
+  'bg-warning':             $color-yellow-900,
+  'text-error':             $color-red-300,
+  'bg-error':               $color-red-900,
+  'text-info':              $color-blue-300,
+  'bg-info':                $color-blue-900,
 ));
 
 // ============================================================================

@@ -63,11 +63,15 @@ export class ViIcon extends ViElement {
 
   @state() private accessor _icon: SvgIconDef | undefined = undefined;
 
-  override updated(changedProperties: PropertyValues): void {
-    super.updated(changedProperties);
+  override willUpdate(changedProperties: PropertyValues): void {
+    super.willUpdate(changedProperties);
     if (changedProperties.has('name')) {
       this._icon = getIcon(this.name);
     }
+  }
+
+  override updated(changedProperties: PropertyValues): void {
+    super.updated(changedProperties);
     // Set or clear the inline custom property based on whether the consumer
     // has explicitly provided a size attribute. Clearing on removal ensures
     // a stale inline style does not keep overriding consumer CSS.
@@ -82,7 +86,6 @@ export class ViIcon extends ViElement {
 
   override firstUpdated(changedProperties: PropertyValues): void {
     super.firstUpdated(changedProperties);
-    this._icon = getIcon(this.name);
     if (this.hasAttribute('size')) {
       this.style.setProperty('--vi-icon-size', `${this.size}px`);
     }

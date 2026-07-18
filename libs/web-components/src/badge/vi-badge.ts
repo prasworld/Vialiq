@@ -43,7 +43,10 @@ export class ViBadge extends ViElement {
   @property({ type: Boolean, reflect: true }) accessor pill = true;
 
   /** Numeric count to display */
-  @property({ type: Number }) accessor count: number | undefined = undefined;
+  @property({ type: Number, reflect: true }) accessor count: number | undefined = undefined;
+
+  /** Show the badge even if the count is zero */
+  @property({ type: Boolean, reflect: true, attribute: 'show-zero' }) accessor showZero = false;
 
   /** Max count before showing {max}+ */
   @property({ type: Number }) accessor max = 99;
@@ -61,7 +64,7 @@ export class ViBadge extends ViElement {
 
   override updated(changedProperties: Map<string | number | symbol, unknown>): void {
     super.updated(changedProperties);
-    if (changedProperties.has('dot') || changedProperties.has('count') || changedProperties.has('_hasDefaultSlot')) {
+    if (changedProperties.has('dot') || changedProperties.has('count') || changedProperties.has('showZero') || changedProperties.has('_hasDefaultSlot')) {
       this.updateAriaHidden();
     }
   }

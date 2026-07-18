@@ -6,7 +6,8 @@
   vertical-align: middle;
 }
 
-:host([hidden]) {
+:host([hidden]),
+:host([count="0"]:not([show-zero])) {
   display: none !important;
 }
 
@@ -57,35 +58,33 @@
 // Variants (Solid)
 // ============================================================================
 :host([variant='neutral']) .badge {
-  background-color: var(--vi-badge-neutral-background, #{tokens.$layer-03});
-  color: var(--vi-badge-neutral-color, #{tokens.$text-primary});
+  background-color: var(--vi-badge-neutral-bg, #{tokens.$border-02});
+  color: var(--vi-badge-neutral-color, #{tokens.$text-secondary});
 }
 
 :host([variant='primary']) .badge {
-  background-color: var(--vi-badge-primary-background, var(--vi-color-blue-100, #{tokens.$color-blue-100}));
-  color: var(--vi-badge-primary-color, var(--vi-color-primary, #{tokens.$color-primary}));
+  background-color: var(--vi-badge-primary-bg, #{tokens.$bg-info});
+  color: var(--vi-badge-primary-color, #{tokens.$text-info});
 }
 
 :host([variant='success']) .badge {
-  background-color: var(--vi-badge-success-background, var(--vi-color-green-100, #{tokens.$color-green-100}));
-  color: var(--vi-badge-success-color, var(--vi-color-success, #{tokens.$color-success}));
+  background-color: var(--vi-badge-success-bg, #{tokens.$bg-success});
+  color: var(--vi-badge-success-color, #{tokens.$text-success});
 }
 
 :host([variant='warning']) .badge {
-  background-color: var(--vi-badge-warning-background, var(--vi-color-yellow-100, #{tokens.$color-yellow-100}));
-  color: var(--vi-badge-warning-color, var(--vi-color-warning, #{tokens.$color-warning}));
+  background-color: var(--vi-badge-warning-bg, #{tokens.$bg-warning});
+  color: var(--vi-badge-warning-color, #{tokens.$text-warning});
 }
 
 :host([variant='danger']) .badge {
-  background-color: var(--vi-badge-danger-background, var(--vi-color-red-100, #{tokens.$color-red-100}));
-  color: var(--vi-badge-danger-color, var(--vi-color-error, #{tokens.$color-error}));
+  background-color: var(--vi-badge-danger-bg, #{tokens.$bg-error});
+  color: var(--vi-badge-danger-color, #{tokens.$text-error});
 }
 
-// Using blue tokens for info as cyan tokens are not available in Flux UI currently.
-// If cyan is added to the palette, these tokens should be updated to cyan-100 and cyan-700.
 :host([variant='info']) .badge {
-  background-color: var(--vi-badge-info-background, var(--vi-color-cyan-100, #{tokens.$color-blue-100}));
-  color: var(--vi-badge-info-color, var(--vi-color-info, #{tokens.$color-info}));
+  background-color: var(--vi-badge-info-bg, #{tokens.$bg-info});
+  color: var(--vi-badge-info-color, #{tokens.$text-info});
 }
 
 // ============================================================================
@@ -93,38 +92,38 @@
 // ============================================================================
 :host([outline][variant='neutral']) .badge {
   background-color: transparent;
-  color: var(--vi-badge-neutral-color, #{tokens.$text-primary});
+  color: var(--vi-badge-neutral-color, #{tokens.$text-secondary});
   border-color: var(--vi-badge-neutral-border, #{tokens.$border-03});
 }
 
 :host([outline][variant='primary']) .badge {
   background-color: transparent;
-  color: var(--vi-badge-primary-color, var(--vi-color-primary, #{tokens.$color-primary}));
-  border-color: var(--vi-badge-primary-border, var(--vi-color-blue-200, #{tokens.$color-blue-200}));
+  color: var(--vi-badge-primary-color, #{tokens.$text-info});
+  border-color: var(--vi-badge-primary-border, #{tokens.$color-primary});
 }
 
 :host([outline][variant='success']) .badge {
   background-color: transparent;
-  color: var(--vi-badge-success-color, var(--vi-color-success, #{tokens.$color-success}));
-  border-color: var(--vi-badge-success-border, var(--vi-color-green-200, #{tokens.$color-green-200}));
+  color: var(--vi-badge-success-color, #{tokens.$text-success});
+  border-color: var(--vi-badge-success-border, #{tokens.$color-success});
 }
 
 :host([outline][variant='warning']) .badge {
   background-color: transparent;
-  color: var(--vi-badge-warning-color, var(--vi-color-warning, #{tokens.$color-warning}));
-  border-color: var(--vi-badge-warning-border, var(--vi-color-yellow-200, #{tokens.$color-yellow-200}));
+  color: var(--vi-badge-warning-color, #{tokens.$text-warning});
+  border-color: var(--vi-badge-warning-border, #{tokens.$color-warning});
 }
 
 :host([outline][variant='danger']) .badge {
   background-color: transparent;
-  color: var(--vi-badge-danger-color, var(--vi-color-error, #{tokens.$color-error}));
-  border-color: var(--vi-badge-danger-border, var(--vi-color-red-200, #{tokens.$color-red-200}));
+  color: var(--vi-badge-danger-color, #{tokens.$text-error});
+  border-color: var(--vi-badge-danger-border, #{tokens.$color-error});
 }
 
 :host([outline][variant='info']) .badge {
   background-color: transparent;
-  color: var(--vi-badge-info-color, var(--vi-color-info, #{tokens.$color-info}));
-  border-color: var(--vi-badge-info-border, var(--vi-color-cyan-200, #{tokens.$color-blue-200}));
+  color: var(--vi-badge-info-color, #{tokens.$text-info});
+  border-color: var(--vi-badge-info-border, #{tokens.$color-info});
 }
 
 .icon {
