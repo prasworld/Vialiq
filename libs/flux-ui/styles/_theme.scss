@@ -35,20 +35,20 @@ $vi-theme--light: (
   'text-inverse':           #ffffff,
   'text-disabled':          $color-grey-500,
   'text-helper':            $color-grey-500,
-  'text-success':           $text-success,
-  'text-warning':           $text-warning,
-  'text-error':             $text-error,
-  'text-info':              $text-info,
+  'text-success':           $color-green-700,
+  'text-warning':           $color-yellow-800,
+  'text-error':             $color-red-700,
+  'text-info':              $color-blue-700,
 
   // Background colors
   'bg-primary':             $color-grey-100,
   'bg-secondary':           $color-grey-200,
   'bg-tertiary':            $color-grey-300,
   'bg-inverse':             $color-grey-900,
-  'bg-success':             $bg-success,
-  'bg-warning':             $bg-warning,
-  'bg-error':               $bg-error,
-  'bg-info':                $bg-info,
+  'bg-success':             $color-green-100,
+  'bg-warning':             $color-yellow-100,
+  'bg-error':               $color-red-100,
+  'bg-info':                $color-blue-100,
 
   // Layer/depth backgrounds (Light to Dark)
   'layer-01':               #ffffff,

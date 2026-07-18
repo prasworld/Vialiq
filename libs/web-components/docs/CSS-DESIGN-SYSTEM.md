@@ -47,6 +47,11 @@ This document is the authoritative reference for every CSS custom property expos
 Every CSS custom property in a Vialiq component follows the same three-level fallback chain:
 
 ```
+var(--vi-{component}-{token}, #{tokens.$sass-token})
+```
+
+Which resolves at build-time to:
+```
 var(--vi-{component}-{token}, var(--vi-{semantic-token}, {compile-time-fallback}))
 ```
 
@@ -54,7 +59,7 @@ var(--vi-{component}-{token}, var(--vi-{semantic-token}, {compile-time-fallback}
 |-------|------------|---------|
 | **Level 1 — Consumer override** | Application / study theme | `--vi-button-surface-primary-background-color: #005eb8` |
 | **Level 2 — Theme token** | Flux UI theme (`:root`, `[data-theme]`) | `--vi-color-primary: #3676d0` |
-| **Level 3 — Compile-time fallback** | Hard-coded in the SCSS `var()` | `#3676d0` (blue-700) |
+| **Level 3 — Compile-time fallback** | Hard-coded SASS variable fallback | `tokens.$color-primary` (resolving to `#3676d0`) |
 
 **Why three levels?**
 - Level 1 lets a study-specific Angular shell override a single component's surface without affecting all components.
@@ -66,8 +71,7 @@ var(--vi-{component}-{token}, var(--vi-{semantic-token}, {compile-time-fallback}
 // In vi-button.scss (inside flux-ui _button.scss):
 background-color: var(
   --vi-button-surface-primary-background-color,   // Level 1
-  var(--vi-color-primary,                          // Level 2
-      #3676d0)                                     // Level 3
+  #{tokens.$color-primary}                         // Level 2 & 3 (SASS token)
 );
 ```
 
@@ -75,45 +79,9 @@ background-color: var(
 
 ## 2. Design Tokens — Color
 
-### 2.1 Palette (Raw)
+All colors in the design system are defined as semantic CSS custom properties. Do not use raw palette hex codes directly.
 
-Palette tokens are rarely used directly in component CSS. Use semantic tokens instead.
-
-| Token | Value | Usage |
-|-------|-------|-------|
-| `--vi-color-grey-50` | `#fafafa` | Backgrounds |
-| `--vi-color-grey-100` | `#f5f5f5` | Layer 02 |
-| `--vi-color-grey-200` | `#eeeeee` | Layer 03, borders |
-| `--vi-color-grey-300` | `#e0e0e0` | Border 03 |
-| `--vi-color-grey-400` | `#bdbdbd` | Border 04, placeholder |
-| `--vi-color-grey-500` | `#9e9e9e` | Disabled text, helper |
-| `--vi-color-grey-600` | `#757575` | Secondary text |
-| `--vi-color-grey-700` | `#616161` | Tertiary text |
-| `--vi-color-grey-800` | `#424242` | Dark backgrounds |
-| `--vi-color-grey-900` | `#212121` | Foreground, dark BG |
-| `--vi-color-blue-100` | `#ebf5ff` | Info bg tint |
-| `--vi-color-blue-200` | `#cee6ff` | Focus ring glow |
-| `--vi-color-blue-300` | `#a3d1fa` | |
-| `--vi-color-blue-400` | `#74b6f4` | |
-| `--vi-color-blue-500` | `#3f96f1` | Focus ring, interactive |
-| `--vi-color-blue-600` | `#3b86de` | |
-| `--vi-color-blue-700` | `#3676d0` | Primary (default) |
-| `--vi-color-blue-800` | `#2d5fa8` | Primary hover |
-| `--vi-color-blue-900` | `#254882` | Primary active |
-| `--vi-color-green-100` | `#e6f0eb` | Success bg tint |
-| `--vi-color-green-500` | `#489167` | Success (default) |
-| `--vi-color-green-700` | `#265a3d` | Success hover |
-| `--vi-color-red-100` | `#ffccce` | Danger/error bg tint |
-| `--vi-color-red-500` | `#fb3c1e` | Danger |
-| `--vi-color-red-700` | `#db231b` | Error/danger hover |
-| `--vi-color-yellow-100` | `#ffeab1` | Warning bg tint |
-| `--vi-color-yellow-500` | `#ffba00` | Warning |
-| `--vi-color-yellow-800` | `#e68300` | Warning text (on light bg) |
-| `--vi-color-purple-500` | `#7609d0` | Accent / coding |
-
-### 2.2 Semantic Tokens
-
-These are the tokens components use. Override these to retheme the entire system.
+### 2.1 Brand & Status Colors
 
 | Token | Default | Meaning |
 |-------|---------|---------|
@@ -123,24 +91,57 @@ These are the tokens components use. Override these to retheme the entire system
 | `--vi-color-warning` | `#ffba00` | Warning, attention |
 | `--vi-color-error` | `#ef4444` | Error, invalid, danger |
 | `--vi-color-info` | `#3676d0` | Informational |
-| `--vi-color-background` | `#ffffff` | Page / panel background |
-| `--vi-color-foreground` | `#111827` | Default text colour |
-| `--vi-color-border` | `#e5e7eb` | Default border |
 
-### 2.3 Layer Tokens (Surfaces)
+### 2.2 Functional Colors
+
+| Token | Default | Meaning |
+|-------|---------|---------|
+| `--vi-color-background` | `#ffffff` | Page / panel background |
+| `--vi-color-foreground` | `#111827` | Default body text color |
+| `--vi-color-border` | `#e5e7eb` | Default border outline |
+
+### 2.3 Semantic Text Colors
+
+| Token | Default | Meaning |
+|-------|---------|---------|
+| `--vi-text-primary` | `#111827` | Primary text |
+| `--vi-text-secondary` | `#4b5563` | Secondary text |
+| `--vi-text-primary-inverse` | `#ffffff` | Primary text on dark backgrounds |
+| `--vi-text-secondary-inverse` | `#d1d5db` | Secondary text on dark backgrounds |
+| `--vi-text-inverse` | `#ffffff` | Inverse text |
+| `--vi-text-disabled` | `#9e9e9e` | Disabled text |
+| `--vi-text-helper` | `#9e9e9e` | Helper caption / fine print |
+
+### 2.4 Layer Tokens (Surfaces)
 
 Used for depth / elevation hierarchy of background surfaces.
 
 | Token | Default | Meaning |
 |-------|---------|---------|
-| `--vi-layer-01` | `#ffffff` | Base (page) |
-| `--vi-layer-02` | `#f3f4f6` | Card / panel |
-| `--vi-layer-03` | `#e5e7eb` | Nested section |
-| `--vi-layer-04` | `#d1d5db` | Deeply nested |
-| `--vi-layer-hover-01` | `#f3f4f6` | Hover on layer-01 |
-| `--vi-layer-hover-02` | `#e5e7eb` | Hover on layer-02 |
-| `--vi-layer-disabled` | `#f3f4f6` | Disabled surface |
-| `--vi-layer-inverse` | `#111827` | Dark inverse surface |
+| `--vi-layer-01` | `#ffffff` | Base page layer |
+| `--vi-layer-02` | `#f3f4f6` | Card / panel background |
+| `--vi-layer-03` | `#e5e7eb` | Nested section background |
+| `--vi-layer-04` | `#d1d5db` | Deeply nested background |
+| `--vi-layer-hover-01` | `#f3f4f6` | Hover state on layer-01 |
+| `--vi-layer-hover-02` | `#e5e7eb` | Hover state on layer-02 |
+| `--vi-layer-disabled` | `#f3f4f6` | Disabled surface background |
+| `--vi-layer-inverse` | `#111827` | Dark inverse surface background |
+
+### 2.5 Border Tokens
+
+| Token | Default | Meaning |
+|-------|---------|---------|
+| `--vi-border-01` | `#f5f5f5` | Lightest division lines |
+| `--vi-border-02` | `#eeeeee` | Secondary dividers |
+| `--vi-border-03` | `#e0e0e0` | Stronger component borders |
+| `--vi-border-04` | `#bdbdbd` | Focus / active indicators |
+
+### 2.6 Focus & Outline Tokens
+
+| Token | Default | Meaning |
+|-------|---------|---------|
+| `--vi-focus` | `#3676d0` | Focus ring outline color |
+| `--vi-outline` | `#e5e7eb` | Resting component outlines |
 
 ---
 
@@ -298,6 +299,7 @@ When `prefers-contrast: more` is active, components increase border widths and r
   :root {
     --vi-border-width-thin: 2px;
     --vi-border-width-base: 3px;
+    --vi-outline: #000000;
     --vi-color-border: #000000;
   }
 }
@@ -338,23 +340,22 @@ Each component section lists:
 
 | Property | Default | Description |
 |----------|---------|-------------|
-| `--vi-button-shape-border-radius` | `4px` (md) | Corner radius |
-| `--vi-button-spacing-padding-block` | `8px` | Vertical padding |
-| `--vi-button-spacing-padding-inline` | `16px` | Horizontal padding |
-| `--vi-button-typography-font-size` | `16px` | Label font size |
-| `--vi-button-typography-font-weight` | `600` | Label font weight |
+| `--vi-button-shape-border-radius` | `tokens.$border-radius-md` | Corner radius |
+| `--vi-button-spacing-padding-block` | `tokens.$spacing-xs` / `tokens.$spacing-sm` / `tokens.$spacing-lg` | Vertical padding |
+| `--vi-button-spacing-padding-inline` | `tokens.$spacing-xs` / `tokens.$spacing-md` / `tokens.$spacing-lg` | Horizontal padding |
+| `--vi-button-typography-font-size` | `tokens.$font-size-base` | Label font size |
+| `--vi-button-typography-font-weight` | `tokens.$font-weight-semibold` | Label font weight |
 | `--vi-button-effect-transition-duration` | `160ms` | Hover/press transition |
-| `--vi-button-surface-primary-background-color` | `var(--vi-color-primary)` | Primary bg |
-| `--vi-button-surface-primary-background-color-hover` | `var(--vi-color-blue-800)` | Primary bg on hover |
-| `--vi-button-surface-primary-text-color` | `#ffffff` | Primary label colour |
-| `--vi-button-surface-secondary-background-color` | `var(--vi-color-secondary)` | Secondary bg |
-| `--vi-button-surface-secondary-text-color` | `var(--vi-color-primary)` | Secondary label |
-| `--vi-button-surface-danger-background-color` | `var(--vi-color-error)` | Danger bg |
+| `--vi-button-surface-primary-background-color` | `tokens.$color-primary` | Primary bg |
+| `--vi-button-surface-primary-text-color` | `tokens.$color-grey-100` | Primary label colour |
+| `--vi-button-surface-secondary-background-color` | `tokens.$color-secondary` | Secondary bg |
+| `--vi-button-surface-secondary-text-color` | `tokens.$color-foreground` | Secondary label |
+| `--vi-button-surface-danger-background-color` | `tokens.$color-error` | Danger bg |
 | `--vi-button-surface-ghost-background-color` | `transparent` | Ghost bg |
-| `--vi-button-surface-ghost-text-color` | `var(--vi-color-primary)` | Ghost label |
-| `--vi-button-icon-size` | `16px` | Icon slot size |
-| `--vi-button-icon-gap` | `8px` | Gap between icon and label |
-| `--vi-button-disabled-opacity` | `0.5` | Opacity when disabled |
+| `--vi-button-surface-ghost-text-color` | `tokens.$color-primary` | Ghost label |
+| `--vi-button-icon-size` | `1em` | Icon slot size |
+| `--vi-button-icon-gap` | `tokens.$spacing-xs` | Gap between icon and label |
+| `--vi-button-disabled-opacity` | `0.6` | Opacity when disabled |
 
 #### Host State Selectors
 
@@ -385,22 +386,22 @@ vi-button[variant="ghost"] { /* transparent background */ }
 
 | Property | Default | Description |
 |----------|---------|-------------|
-| `--vi-input-border-color` | `var(--vi-color-grey-300)` | Border at rest |
-| `--vi-input-border-color-hover` | `var(--vi-color-grey-500)` | Border on hover |
-| `--vi-input-focus-ring-color` | `var(--vi-color-primary)` | Focus outline |
-| `--vi-input-focus-ring-glow` | `var(--vi-color-blue-200)` | Focus glow shadow |
-| `--vi-input-background-color` | `var(--vi-color-background)` | Field background |
-| `--vi-input-text-color` | `var(--vi-color-foreground)` | Typed text |
-| `--vi-input-placeholder-color` | `var(--vi-color-grey-500)` | Placeholder text |
-| `--vi-input-helper-color` | `var(--vi-color-grey-500)` | Helper text |
-| `--vi-input-error-color` | `var(--vi-color-error)` | Error text |
-| `--vi-input-success-color` | `var(--vi-color-success)` | Success text |
-| `--vi-input-shape-border-radius` | `8px` | Corner radius |
+| `--vi-input-border-color` | `tokens.$outline` | Border at rest |
+| `--vi-input-border-color-hover` | `tokens.$text-secondary` | Border on hover |
+| `--vi-input-focus-ring-color` | `tokens.$focus` | Focus outline |
+| `--vi-input-focus-ring-glow` | `tokens.$color-blue-200` | Focus glow shadow |
+| `--vi-input-background-color` | `tokens.$color-background` | Field background |
+| `--vi-input-text-color` | `tokens.$text-primary` | Typed text |
+| `--vi-input-placeholder-color` | `tokens.$text-secondary` | Placeholder text |
+| `--vi-input-helper-color` | `tokens.$text-helper` | Helper text |
+| `--vi-input-error-color` | `tokens.$color-error` | Error text |
+| `--vi-input-success-color` | `tokens.$color-success` | Success text |
+| `--vi-input-shape-border-radius` | `tokens.$border-radius-lg` | Corner radius |
 | `--vi-input-sizing-min-height` | `40px` | Min field height |
-| `--vi-input-spacing-padding-block` | `8px` | Vertical padding |
-| `--vi-input-spacing-padding-inline` | `16px` | Horizontal padding |
-| `--vi-input-typography-font-size` | `16px` | Input text size |
-| `--vi-input-spacing-field-gap` | `8px` | Gap: label→field→helper |
+| `--vi-input-spacing-padding-block` | `tokens.$spacing-xs` | Vertical padding |
+| `--vi-input-spacing-padding-inline` | `tokens.$spacing-sm` | Horizontal padding |
+| `--vi-input-typography-font-size` | `tokens.$font-size-base` | Input text size |
+| `--vi-input-spacing-field-gap` | `tokens.$spacing-xs` | Gap: label→field→helper |
 
 #### Host State Selectors (via reflected attributes)
 
@@ -435,15 +436,15 @@ All `--vi-input-*` tokens apply identically.
 | Property | Default | Description |
 |----------|---------|-------------|
 | `--vi-checkbox-size` | `18px` | Box width/height |
-| `--vi-checkbox-border-color` | `var(--vi-color-grey-400)` | Unchecked border |
-| `--vi-checkbox-border-color-checked` | `var(--vi-color-primary)` | Checked border |
-| `--vi-checkbox-background-checked` | `var(--vi-color-primary)` | Checked fill |
-| `--vi-checkbox-check-color` | `#ffffff` | Check mark stroke |
+| `--vi-checkbox-border-color` | `tokens.$outline` | Unchecked border |
+| `--vi-checkbox-border-color-checked` | `tokens.$color-primary` | Checked border |
+| `--vi-checkbox-background-checked` | `tokens.$color-primary` | Checked fill |
+| `--vi-checkbox-check-color` | `tokens.$text-primary-inverse` | Check mark stroke |
 | `--vi-checkbox-border-radius` | `3px` | Corner radius |
-| `--vi-checkbox-focus-ring-color` | `var(--vi-color-primary)` | Focus ring |
-| `--vi-checkbox-focus-ring-glow` | `var(--vi-color-blue-200)` | Focus glow |
+| `--vi-checkbox-focus-ring-color` | `tokens.$focus` | Focus ring |
+| `--vi-checkbox-focus-ring-glow` | `tokens.$color-blue-200` | Focus glow |
 | `--vi-checkbox-label-gap` | `8px` | Gap: box→label |
-| `--vi-checkbox-label-font-size` | `var(--vi-font-size-base)` | Label size |
+| `--vi-checkbox-label-font-size` | `tokens.$font-size-base` | Label size |
 | `--vi-checkbox-disabled-opacity` | `0.5` | Disabled opacity |
 
 Host state selectors:
@@ -464,19 +465,20 @@ vi-checkbox[status="invalid"] { --vi-checkbox-border-color: var(--vi-color-error
 |----------|---------|-------------|
 | `--vi-radio-size` | `18px` | Outer circle diameter |
 | `--vi-radio-dot-size` | `8px` | Inner dot diameter |
-| `--vi-radio-border-color` | `var(--vi-color-grey-400)` | Unchecked ring |
-| `--vi-radio-border-color-checked` | `var(--vi-color-primary)` | Checked ring |
-| `--vi-radio-dot-color` | `var(--vi-color-primary)` | Inner dot fill |
-| `--vi-radio-focus-ring-color` | `var(--vi-color-primary)` | Focus outline |
-| `--vi-radio-focus-ring-glow` | `var(--vi-color-blue-200)` | Focus glow |
+| `--vi-radio-border-color` | `tokens.$outline` | Unchecked ring |
+| `--vi-radio-border-color-checked` | `tokens.$color-primary` | Checked ring |
+| `--vi-radio-dot-color` | `tokens.$color-primary` | Inner dot fill |
+| `--vi-radio-focus-ring-color` | `tokens.$focus` | Focus outline |
+| `--vi-radio-focus-ring-glow` | `tokens.$color-blue-200` | Focus glow |
 | `--vi-radio-label-gap` | `8px` | Gap: circle→label |
 | `--vi-radio-disabled-opacity` | `0.5` | Disabled opacity |
+| `--vi-radio-background-color` | `tokens.$color-background` | Base circle background |
 
 #### `vi-radio-group`
 
 | Property | Default | Description |
 |----------|---------|-------------|
-| `--vi-radio-group-gap` | `8px` | Gap between radio items |
+| `--vi-radio-group-gap` | `tokens.$spacing-xs` | Gap between radio items |
 | `--vi-radio-group-direction` | `column` | `column | row` layout |
 
 ---
@@ -485,17 +487,17 @@ vi-checkbox[status="invalid"] { --vi-checkbox-border-color: var(--vi-color-error
 
 | Property | Default | Description |
 |----------|---------|-------------|
-| `--vi-select-border-color` | `var(--vi-color-grey-300)` | Border at rest |
-| `--vi-select-border-color-hover` | `var(--vi-color-grey-500)` | Hover border |
-| `--vi-select-focus-ring-color` | `var(--vi-color-primary)` | Focus ring |
-| `--vi-select-background-color` | `var(--vi-color-background)` | Select background |
-| `--vi-select-text-color` | `var(--vi-color-foreground)` | Selected text |
-| `--vi-select-placeholder-color` | `var(--vi-color-grey-500)` | Placeholder colour |
-| `--vi-select-arrow-color` | `var(--vi-color-grey-600)` | Chevron icon colour |
-| `--vi-select-shape-border-radius` | `8px` | Corner radius |
+| `--vi-select-border-color` | `tokens.$border-03` | Border at rest |
+| `--vi-select-border-color-hover` | `tokens.$border-04` | Hover border |
+| `--vi-select-focus-ring-color` | `tokens.$focus` | Focus ring |
+| `--vi-select-background-color` | `tokens.$color-background` | Select background |
+| `--vi-select-text-color` | `tokens.$color-foreground` | Selected text |
+| `--vi-select-placeholder-color` | `tokens.$text-secondary` | Placeholder colour |
+| `--vi-select-arrow-color` | `tokens.$text-secondary` | Chevron icon colour |
+| `--vi-select-shape-border-radius` | `tokens.$border-radius-lg` | Corner radius |
 | `--vi-select-sizing-min-height` | `40px` | Min height |
-| `--vi-select-spacing-padding-block` | `8px` | Vertical padding |
-| `--vi-select-spacing-padding-inline` | `16px` | Horizontal padding |
+| `--vi-select-spacing-padding-block` | `tokens.$spacing-xs` | Vertical padding |
+| `--vi-select-spacing-padding-inline` | `tokens.$spacing-sm` | Horizontal padding |
 
 ---
 
@@ -506,10 +508,10 @@ vi-checkbox[status="invalid"] { --vi-checkbox-border-color: var(--vi-color-error
 | `--vi-switch-track-width` | `44px` | Track width |
 | `--vi-switch-track-height` | `24px` | Track height |
 | `--vi-switch-thumb-size` | `18px` | Thumb diameter |
-| `--vi-switch-track-color-off` | `var(--vi-color-grey-300)` | Off state track |
-| `--vi-switch-track-color-on` | `var(--vi-color-primary)` | On state track |
-| `--vi-switch-thumb-color` | `#ffffff` | Thumb fill |
-| `--vi-switch-focus-ring-color` | `var(--vi-color-primary)` | Focus outline |
+| `--vi-switch-track-color-off` | `tokens.$border-03` | Off state track |
+| `--vi-switch-track-color-on` | `tokens.$color-primary` | On state track |
+| `--vi-switch-thumb-color` | `tokens.$text-primary-inverse` | Thumb fill |
+| `--vi-switch-focus-ring-color` | `tokens.$focus` | Focus outline |
 | `--vi-switch-label-gap` | `8px` | Gap: track→label |
 | `--vi-switch-disabled-opacity` | `0.5` | Disabled opacity |
 | `--vi-switch-transition-duration` | `200ms` | Thumb slide duration |
@@ -522,20 +524,20 @@ vi-checkbox[status="invalid"] { --vi-checkbox-border-color: var(--vi-color-error
 |----------|---------|-------------|
 | `--vi-badge-padding-block` | `2px` | Vertical padding |
 | `--vi-badge-padding-inline` | `8px` | Horizontal padding |
-| `--vi-badge-font-size` | `12px` | Text size |
-| `--vi-badge-font-weight` | `600` | Text weight |
-| `--vi-badge-border-radius` | `9999px` | Pill radius |
+| `--vi-badge-font-size` | `tokens.$font-size-xs` | Text size |
+| `--vi-badge-font-weight` | `tokens.$font-weight-semibold` | Text weight |
+| `--vi-badge-border-radius` | `tokens.$border-radius-full` | Pill radius |
 | `--vi-badge-dot-size` | `8px` | Dot mode diameter |
-| `--vi-badge-neutral-bg` | `var(--vi-color-grey-200)` | Neutral bg |
-| `--vi-badge-neutral-color` | `var(--vi-color-grey-700)` | Neutral text |
-| `--vi-badge-success-bg` | `#e6f9f0` | Success bg |
-| `--vi-badge-success-color` | `var(--vi-color-green-700)` | Success text |
-| `--vi-badge-warning-bg` | `#fff8e1` | Warning bg |
-| `--vi-badge-warning-color` | `var(--vi-color-yellow-800)` | Warning text |
-| `--vi-badge-danger-bg` | `#ffebee` | Danger bg |
-| `--vi-badge-danger-color` | `var(--vi-color-red-700)` | Danger text |
-| `--vi-badge-info-bg` | `#e3f2fd` | Info bg |
-| `--vi-badge-info-color` | `var(--vi-color-blue-700)` | Info text |
+| `--vi-badge-neutral-bg` | `tokens.$border-02` | Neutral bg |
+| `--vi-badge-neutral-color` | `tokens.$text-secondary` | Neutral text |
+| `--vi-badge-success-bg` | `tokens.$bg-success` | Success bg |
+| `--vi-badge-success-color` | `tokens.$text-success` | Success text |
+| `--vi-badge-warning-bg` | `tokens.$bg-warning` | Warning bg |
+| `--vi-badge-warning-color` | `tokens.$text-warning` | Warning text |
+| `--vi-badge-danger-bg` | `tokens.$bg-error` | Danger bg |
+| `--vi-badge-danger-color` | `tokens.$text-error` | Danger text |
+| `--vi-badge-info-bg` | `tokens.$bg-info` | Info bg |
+| `--vi-badge-info-color` | `tokens.$text-info` | Info text |
 
 ---
 
@@ -545,12 +547,12 @@ vi-checkbox[status="invalid"] { --vi-checkbox-border-color: var(--vi-color-error
 |----------|---------|-------------|
 | `--vi-tag-height` | `28px` | Tag height |
 | `--vi-tag-padding-inline` | `10px` | Horizontal padding |
-| `--vi-tag-font-size` | `12px` | Label font size |
-| `--vi-tag-border-radius` | `4px` | Corner radius |
-| `--vi-tag-gap` | `4px` | Gap: label→remove button |
-| `--vi-tag-background-color` | `var(--vi-layer-02)` | Background |
-| `--vi-tag-text-color` | `var(--vi-color-foreground)` | Label colour |
-| `--vi-tag-border-color` | `var(--vi-color-grey-300)` | Border |
+| `--vi-tag-font-size` | `tokens.$font-size-xs` | Label font size |
+| `--vi-tag-border-radius` | `tokens.$border-radius-sm` | Corner radius |
+| `--vi-tag-gap` | `tokens.$spacing-xs` | Gap: label→remove button |
+| `--vi-tag-background-color` | `tokens.$layer-02` | Background |
+| `--vi-tag-text-color` | `tokens.$color-foreground` | Label colour |
+| `--vi-tag-border-color` | `tokens.$border-03` | Border |
 | `--vi-tag-remove-size` | `16px` | Remove button icon size |
 
 ---
@@ -573,8 +575,8 @@ vi-checkbox[status="invalid"] { --vi-checkbox-border-color: var(--vi-color-error
 | Property | Default | Description |
 |----------|---------|-------------|
 | `--vi-spinner-size` | `24px` | Diameter |
-| `--vi-spinner-color` | `var(--vi-color-primary)` | Track colour |
-| `--vi-spinner-track-color` | `var(--vi-color-grey-200)` | Background track |
+| `--vi-spinner-color` | `tokens.$color-primary` | Track colour |
+| `--vi-spinner-track-color` | `tokens.$border-02` | Background track |
 | `--vi-spinner-stroke-width` | `3px` | Ring stroke width |
 | `--vi-spinner-duration` | `800ms` | Rotation duration |
 
@@ -584,26 +586,26 @@ vi-checkbox[status="invalid"] { --vi-checkbox-border-color: var(--vi-color-error
 
 | Property | Default | Description |
 |----------|---------|-------------|
-| `--vi-alert-padding` | `16px` | Internal padding |
-| `--vi-alert-border-radius` | `8px` | Corner radius |
-| `--vi-alert-border-width` | `1px` | Left accent border width |
+| `--vi-alert-padding` | `tokens.$spacing-sm` | Internal padding |
+| `--vi-alert-border-radius` | `tokens.$border-radius-lg` | Corner radius |
+| `--vi-alert-border-width` | `tokens.$border-width-thin` | Left accent border width |
 | `--vi-alert-icon-size` | `20px` | Status icon size |
 | `--vi-alert-gap` | `12px` | Gap: icon→content |
-| `--vi-alert-neutral-bg` | `var(--vi-layer-02)` | Neutral background |
-| `--vi-alert-neutral-color` | `var(--vi-color-foreground)` | Neutral text |
-| `--vi-alert-neutral-border` | `var(--vi-color-grey-400)` | Neutral accent border |
-| `--vi-alert-success-bg` | `#e6f9f0` | Success background |
-| `--vi-alert-success-color` | `var(--vi-color-green-700)` | Success text |
-| `--vi-alert-success-border` | `var(--vi-color-success)` | Success accent |
-| `--vi-alert-warning-bg` | `#fff8e1` | Warning background |
-| `--vi-alert-warning-color` | `var(--vi-color-yellow-800)` | Warning text |
-| `--vi-alert-warning-border` | `var(--vi-color-warning)` | Warning accent |
-| `--vi-alert-danger-bg` | `#ffebee` | Danger background |
-| `--vi-alert-danger-color` | `var(--vi-color-red-700)` | Danger text |
-| `--vi-alert-danger-border` | `var(--vi-color-error)` | Danger accent |
-| `--vi-alert-info-bg` | `#e3f2fd` | Info background |
-| `--vi-alert-info-color` | `var(--vi-color-blue-700)` | Info text |
-| `--vi-alert-info-border` | `var(--vi-color-info)` | Info accent |
+| `--vi-alert-neutral-bg` | `tokens.$layer-02` | Neutral background |
+| `--vi-alert-neutral-color` | `tokens.$color-foreground` | Neutral text |
+| `--vi-alert-neutral-border` | `tokens.$border-04` | Neutral accent border |
+| `--vi-alert-success-bg` | `tokens.$bg-success` | Success background |
+| `--vi-alert-success-color` | `tokens.$text-success` | Success text |
+| `--vi-alert-success-border` | `tokens.$color-success` | Success accent |
+| `--vi-alert-warning-bg` | `tokens.$bg-warning` | Warning background |
+| `--vi-alert-warning-color` | `tokens.$text-warning` | Warning text |
+| `--vi-alert-warning-border` | `tokens.$color-warning` | Warning accent |
+| `--vi-alert-danger-bg` | `tokens.$bg-error` | Danger background |
+| `--vi-alert-danger-color` | `tokens.$text-error` | Danger text |
+| `--vi-alert-danger-border` | `tokens.$color-error` | Danger accent |
+| `--vi-alert-info-bg` | `tokens.$bg-info` | Info background |
+| `--vi-alert-info-color` | `tokens.$text-info` | Info text |
+| `--vi-alert-info-border` | `tokens.$color-info` | Info accent |
 
 ---
 
@@ -611,13 +613,13 @@ vi-checkbox[status="invalid"] { --vi-checkbox-border-color: var(--vi-color-error
 
 | Property | Default | Description |
 |----------|---------|-------------|
-| `--vi-tooltip-background` | `var(--vi-layer-inverse)` | Tooltip background |
-| `--vi-tooltip-color` | `var(--vi-text-inverse)` | Tooltip text |
-| `--vi-tooltip-font-size` | `12px` | Tooltip font size |
+| `--vi-tooltip-background` | `tokens.$layer-inverse` | Tooltip background |
+| `--vi-tooltip-color` | `tokens.$text-primary-inverse` | Tooltip text |
+| `--vi-tooltip-font-size` | `tokens.$font-size-xs` | Tooltip font size |
 | `--vi-tooltip-padding` | `6px 10px` | Internal padding |
-| `--vi-tooltip-border-radius` | `4px` | Corner radius |
+| `--vi-tooltip-border-radius` | `tokens.$border-radius-sm` | Corner radius |
 | `--vi-tooltip-max-width` | `280px` | Maximum width |
-| `--vi-tooltip-shadow` | `var(--vi-shadow-lg)` | Drop shadow |
+| `--vi-tooltip-shadow` | `tokens.$shadow-md` | Drop shadow |
 | `--vi-tooltip-arrow-size` | `6px` | Arrow triangle size |
 | `--vi-tooltip-delay` | `500ms` | Hover show delay |
 | `--vi-tooltip-z-index` | `9000` | z-index layer |
@@ -647,16 +649,16 @@ vi-checkbox[status="invalid"] { --vi-checkbox-border-color: var(--vi-color-error
 
 | Property | Default | Description |
 |----------|---------|-------------|
-| `--vi-date-picker-border-color` | `var(--vi-color-grey-300)` | Input border |
-| `--vi-date-picker-focus-ring-color` | `var(--vi-color-primary)` | Focus ring |
-| `--vi-date-picker-calendar-bg` | `var(--vi-layer-01)` | Calendar popup bg |
-| `--vi-date-picker-calendar-shadow` | `var(--vi-shadow-lg)` | Popup shadow |
+| `--vi-date-picker-border-color` | `tokens.$border-03` | Input border |
+| `--vi-date-picker-focus-ring-color` | `tokens.$focus` | Focus ring |
+| `--vi-date-picker-calendar-bg` | `tokens.$layer-01` | Calendar popup bg |
+| `--vi-date-picker-calendar-shadow` | `tokens.$shadow-lg` | Popup shadow |
 | `--vi-date-picker-day-size` | `36px` | Day cell size |
-| `--vi-date-picker-day-selected-bg` | `var(--vi-color-primary)` | Selected day bg |
-| `--vi-date-picker-day-selected-color` | `#ffffff` | Selected day text |
-| `--vi-date-picker-day-today-border` | `var(--vi-color-primary)` | Today indicator |
-| `--vi-date-picker-day-hover-bg` | `var(--vi-layer-hover-01)` | Hover day bg |
-| `--vi-date-picker-partial-color` | `var(--vi-color-grey-500)` | Unknown/partial date |
+| `--vi-date-picker-day-selected-bg` | `tokens.$color-primary` | Selected day bg |
+| `--vi-date-picker-day-selected-color` | `tokens.$text-primary-inverse` | Selected day text |
+| `--vi-date-picker-day-today-border` | `tokens.$color-primary` | Today indicator |
+| `--vi-date-picker-day-hover-bg` | `tokens.$layer-hover-01` | Hover day bg |
+| `--vi-date-picker-partial-color` | `tokens.$text-disabled` | Unknown/partial date |
 
 ---
 
@@ -664,14 +666,14 @@ vi-checkbox[status="invalid"] { --vi-checkbox-border-color: var(--vi-color-error
 
 | Property | Default | Description |
 |----------|---------|-------------|
-| `--vi-signature-border-color` | `var(--vi-color-grey-300)` | Canvas border |
-| `--vi-signature-border-radius` | `8px` | Corner radius |
-| `--vi-signature-background` | `var(--vi-color-background)` | Canvas background |
-| `--vi-signature-pen-color` | `#111827` | Stroke colour |
+| `--vi-signature-border-color` | `tokens.$border-03` | Canvas border |
+| `--vi-signature-border-radius` | `tokens.$border-radius-lg` | Corner radius |
+| `--vi-signature-background` | `tokens.$color-background` | Canvas background |
+| `--vi-signature-pen-color` | `tokens.$text-primary` | Stroke colour |
 | `--vi-signature-pen-width` | `2px` | Default stroke width |
 | `--vi-signature-height` | `120px` | Canvas height |
-| `--vi-signature-placeholder-color` | `var(--vi-color-grey-400)` | Placeholder text |
-| `--vi-signature-focus-ring-color` | `var(--vi-color-primary)` | Focus outline |
+| `--vi-signature-placeholder-color` | `tokens.$text-disabled` | Placeholder text |
+| `--vi-signature-focus-ring-color` | `tokens.$focus` | Focus outline |
 | `--vi-signature-locked-overlay-bg` | `rgba(0,0,0,0.04)` | Locked state overlay |
 
 ---
@@ -802,8 +804,8 @@ The dark theme map (`$vi-theme--dark`) in `_theme.scss` remaps semantic tokens:
 | `--vi-color-border` | `#e5e7eb` | `#374151` |
 | `--vi-layer-01` | `#ffffff` | `#1f2937` |
 | `--vi-layer-02` | `#f3f4f6` | `#111827` |
-| `--vi-color-grey-300` | `#e0e0e0` | `#374151` |
-| `--vi-color-grey-500` | `#9e9e9e` | `#6b7280` |
+| `--vi-border-03` | `#e0e0e0` | `#374151` |
+| `--vi-text-disabled` | `#9e9e9e` | `#6b7280` |
 
 All component CSS custom property fallbacks reference these semantic tokens, so dark mode works **automatically** for all components without any per-component dark mode code.
 
