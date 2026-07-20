@@ -30,9 +30,9 @@ const config: StorybookConfig = {
             __dirname,
             '../../flux-ui/styles/_index.scss'
           ),
-          'lit': path.dirname(require.resolve('lit/package.json', { paths: [workspaceRoot] })),
-          'lit-html': path.dirname(require.resolve('lit-html/package.json', { paths: [workspaceRoot] })),
-          'lit-element': path.dirname(require.resolve('lit-element/package.json', { paths: [workspaceRoot] })),
+          'lit': path.join(workspaceRoot, 'node_modules/lit'),
+          'lit-html': path.join(workspaceRoot, 'node_modules/lit-html'),
+          'lit-element': path.join(workspaceRoot, 'node_modules/lit-element'),
         },
       },
       plugins: [
