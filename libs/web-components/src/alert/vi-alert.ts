@@ -140,7 +140,7 @@ export class ViAlert extends ViElement {
     if (changedProperties.has('variant')) {
       this.updateRole();
     }
-    if (changedProperties.has('open')) {
+    if (this.hasUpdated && changedProperties.has('open')) {
       if (this.open) {
         this._handleOpen();
       } else if (!this.hidden) {
@@ -253,16 +253,20 @@ export class ViAlert extends ViElement {
     const root = this.shadowRoot.querySelector('.alert-root') as HTMLElement;
     if (root && typeof root.animate === 'function') {
       try {
-        const height = root.offsetHeight;
+        const computed = getComputedStyle(root);
+        const currentHeight = root.offsetHeight;
+        const currentPadding = computed.padding;
+        const currentMargin = computed.margin;
+
         const animation = root.animate(
           [
             {
-              height: `${height}px`,
+              height: `${currentHeight}px`,
               opacity: 1,
-              margin: '0',
-              padding: 'var(--vi-alert-padding, 12px 16px)',
+              margin: currentMargin,
+              padding: currentPadding,
             },
-            { height: '0px', opacity: 0, margin: '0', padding: '0px 16px' },
+            { height: '0px', opacity: 0, margin: '0px', padding: '0px' },
           ],
           { duration: 200, easing: 'ease-out', fill: 'forwards' },
         );
@@ -288,11 +292,15 @@ export class ViAlert extends ViElement {
   /** Programmatically shows the alert */
   public async show(): Promise<void> {
     this.open = true;
+    await this.updateComplete;
   }
 
   /** Programmatically hides/dismisses the alert */
   public async hide(): Promise<void> {
-    this.open = false;
+    if (this.open) {
+      this.open = false;
+      await this.handleDismiss();
+    }
   }
 
   override render(): TemplateResult {

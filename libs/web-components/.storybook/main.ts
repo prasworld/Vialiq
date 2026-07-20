@@ -13,9 +13,11 @@ const workspaceRoot = path.resolve(__dirname, '../../..');
 function resolvePackageDir(pkgName: string): string {
   try {
     const mainPath = require.resolve(pkgName, { paths: [workspaceRoot] });
-    const idx = mainPath.lastIndexOf('node_modules' + path.sep + pkgName);
+    const marker = path.join('node_modules', pkgName);
+    const idx = mainPath.lastIndexOf(marker);
     if (idx !== -1) {
-      return mainPath.slice(0, idx + 'node_modules'.length + 1 + pkgName.length);
+      const base = mainPath.slice(0, idx);
+      return path.join(base, 'node_modules', pkgName);
     }
     return path.dirname(mainPath);
   } catch {
