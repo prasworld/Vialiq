@@ -22,17 +22,17 @@ describe('vi-alert', () => {
     const el = getAlert();
     await el.updateComplete;
 
-    expect(el).toExist();
+    expect(el).toBeTruthy();
     expect(el.variant).toBe('info');
     expect(el.getAttribute('role')).toBe('status');
 
     const root = el.shadowRoot!.querySelector('.alert-root');
-    expect(root).toExist();
+    expect(root).toBeTruthy();
     expect(root!.getAttribute('data-variant')).toBe('info');
 
     // Default info icon
     const icon = el.shadowRoot!.querySelector('vi-icon');
-    expect(icon).toExist();
+    expect(icon).toBeTruthy();
     expect(icon!.getAttribute('name')).toBe('info');
   });
 
@@ -63,7 +63,7 @@ describe('vi-alert', () => {
     await el.updateComplete;
 
     const titleSlot = el.shadowRoot!.querySelector('slot[name="title"]') as HTMLSlotElement;
-    expect(titleSlot).toExist();
+    expect(titleSlot).toBeTruthy();
 
     // Check innerText of the slot fallback or assigned content logic
     expect(titleSlot!.textContent?.trim()).toBe('Alert Title');
@@ -87,21 +87,21 @@ describe('vi-alert', () => {
     expect(icon!.getAttribute('name')).toBe('settings');
   });
 
-  it('fires vialiq-close on dismiss button click', async () => {
-    render(html`<vi-alert dismissible>Dismissible message</vi-alert>`, container);
+  it('fires vialiq-alert-close and sets hidden on dismiss button click', async () => {
+    render(html`<vi-alert id="test-alert-1" dismissible>Dismissible message</vi-alert>`, container);
     const el = getAlert();
     await el.updateComplete;
 
     const closeBtn = el.shadowRoot!.querySelector('vi-button[part="close-btn"]') as HTMLElement;
-    expect(closeBtn).toExist();
+    expect(closeBtn).toBeTruthy();
 
     let eventFired = false;
-    el.addEventListener('vialiq-close', () => {
+    let eventDetail: any = null;
+    el.addEventListener('vialiq-alert-close', (e: Event) => {
       eventFired = true;
+      eventDetail = (e as CustomEvent).detail;
     });
 
-    // We mock Element.prototype.animate to immediately return a resolved promise
-    // to bypass actual animation in tests
     const originalAnimate = Element.prototype.animate;
     try {
       Element.prototype.animate = function() {
@@ -112,13 +112,125 @@ describe('vi-alert', () => {
 
       closeBtn.click();
 
-      // Wait for async handleDismiss to complete
       await new Promise(r => setTimeout(r, 0));
 
       expect(eventFired).toBe(true);
+      expect(eventDetail).toEqual({ id: 'test-alert-1' });
+      expect(el.hidden).toBe(true);
     } finally {
-      // Restore
       Element.prototype.animate = originalAnimate;
     }
+  });
+
+  it('handles dismiss gracefully when Element.prototype.animate is missing or rejected', async () => {
+    render(html`<vi-alert id="test-alert-2" dismissible>Dismissible fallback message</vi-alert>`, container);
+    const el = getAlert();
+    await el.updateComplete;
+
+    const closeBtn = el.shadowRoot!.querySelector('vi-button[part="close-btn"]') as HTMLElement;
+    let eventFired = false;
+    let eventDetail: any = null;
+    el.addEventListener('vialiq-alert-close', (e: Event) => {
+      eventFired = true;
+      eventDetail = (e as CustomEvent).detail;
+    });
+
+    const originalAnimate = Element.prototype.animate;
+    try {
+      // Test when animate returns a rejected promise
+      Element.prototype.animate = function() {
+        return {
+          finished: Promise.reject(new Error('Animation cancelled'))
+        } as any;
+      };
+
+      closeBtn.click();
+      await new Promise(r => setTimeout(r, 0));
+
+      expect(eventFired).toBe(true);
+      expect(eventDetail).toEqual({ id: 'test-alert-2' });
+      expect(el.hidden).toBe(true);
+    } finally {
+      Element.prototype.animate = originalAnimate;
+    }
+  });
+
+  it('allows opening and closing declaratively via open property', async () => {
+    render(html`<vi-alert id="test-alert-3" ?open=${false}>Initially closed message</vi-alert>`, container);
+    const el = getAlert();
+    await el.updateComplete;
+
+    expect(el.open).toBe(false);
+    expect(el.hidden).toBe(true);
+
+    let showFired = false;
+    let showDetail: any = null;
+    el.addEventListener('vialiq-alert-show', (e: Event) => {
+      showFired = true;
+      showDetail = (e as CustomEvent).detail;
+    });
+
+    el.open = true;
+    await el.updateComplete;
+
+    expect(el.hidden).toBe(false);
+    expect(showFired).toBe(true);
+    expect(showDetail).toEqual({ id: 'test-alert-3' });
+  });
+
+  it('supports imperative show() and hide() methods', async () => {
+    render(html`<vi-alert id="test-alert-4">Imperative alert message</vi-alert>`, container);
+    const el = getAlert();
+    await el.updateComplete;
+
+    expect(el.open).toBe(true);
+
+    let closeFired = false;
+    el.addEventListener('vialiq-alert-close', () => {
+      closeFired = true;
+    });
+
+    await el.hide();
+    await el.updateComplete;
+
+    expect(el.open).toBe(false);
+    expect(el.hidden).toBe(true);
+    expect(closeFired).toBe(true);
+
+    let showFired = false;
+    el.addEventListener('vialiq-alert-show', () => {
+      showFired = true;
+    });
+
+    await el.show();
+    await el.updateComplete;
+
+    expect(el.open).toBe(true);
+    expect(el.hidden).toBe(false);
+    expect(showFired).toBe(true);
+  });
+
+  it('reflects floating attribute and property', async () => {
+    render(html`<vi-alert floating>Floating alert message</vi-alert>`, container);
+    const el = getAlert();
+    await el.updateComplete;
+
+    expect(el.floating).toBe(true);
+    expect(el.hasAttribute('floating')).toBe(true);
+  });
+
+  it('automatically hides alert when auto-hide is enabled', async () => {
+    render(html`<vi-alert auto-hide auto-hide-duration="50">Auto hide message</vi-alert>`, container);
+    const el = getAlert();
+    await el.updateComplete;
+
+    expect(el.open).toBe(true);
+    expect(el.hidden).toBe(false);
+
+    // Wait for auto-hide timer to trigger
+    await new Promise(r => setTimeout(r, 80));
+
+    expect(el.open).toBe(false);
+    expect(el.hidden).toBe(true);
   });
 });

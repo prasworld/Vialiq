@@ -6,8 +6,24 @@
   width: 100%;
 }
 
+:host([floating]) {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: var(--vi-alert-floating-z-index, 10);
+  box-shadow: var(
+    --vi-alert-floating-shadow,
+    0 4px 12px rgba(0, 0, 0, 0.12)
+  );
+}
+
 :host([hidden]) {
   display: none !important;
+}
+
+.alert-root {
+  overflow: hidden;
 }
 
 // Ensure the inner alert matches the expected design rules.
@@ -75,7 +91,7 @@
 
 .alert-root[data-variant='danger'] {
   background-color: var(--vi-alert-danger-bg, #{tokens.$bg-error});
-  border-color: var(--vi-alert-danger-border-color, #{tokens.$color-error});
+  border-color: var(--vi-alert-danger-border, #{tokens.$color-error});
   color: var(--vi-alert-danger-text-color, #{tokens.$text-error});
 
   .alert-title {

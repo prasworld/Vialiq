@@ -10,6 +10,19 @@ const __dirname = path.dirname(__filename);
 const require = createRequire(import.meta.url);
 const workspaceRoot = path.resolve(__dirname, '../../..');
 
+function resolvePackageDir(pkgName: string): string {
+  try {
+    const mainPath = require.resolve(pkgName, { paths: [workspaceRoot] });
+    const idx = mainPath.lastIndexOf('node_modules' + path.sep + pkgName);
+    if (idx !== -1) {
+      return mainPath.slice(0, idx + 'node_modules'.length + 1 + pkgName.length);
+    }
+    return path.dirname(mainPath);
+  } catch {
+    return path.join(workspaceRoot, 'node_modules', pkgName);
+  }
+}
+
 const config: StorybookConfig = {
   framework: {
     name: '@storybook/web-components-vite',
@@ -30,9 +43,9 @@ const config: StorybookConfig = {
             __dirname,
             '../../flux-ui/styles/_index.scss'
           ),
-          'lit': path.join(workspaceRoot, 'node_modules/lit'),
-          'lit-html': path.join(workspaceRoot, 'node_modules/lit-html'),
-          'lit-element': path.join(workspaceRoot, 'node_modules/lit-element'),
+          'lit': resolvePackageDir('lit'),
+          'lit-html': resolvePackageDir('lit-html'),
+          'lit-element': resolvePackageDir('lit-element'),
         },
       },
       plugins: [

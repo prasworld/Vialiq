@@ -8,32 +8,37 @@ import { registerIcons, type SvgIconDef } from '../icons/registry.js';
 
 const checkCircleIcon: SvgIconDef = {
   name: 'check-circle',
-  data: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>`
+  data: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>`,
 };
 
 const alertTriangleIcon: SvgIconDef = {
   name: 'alert-triangle',
-  data: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>`
+  data: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>`,
 };
 
 const infoIcon: SvgIconDef = {
   name: 'info',
-  data: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`
+  data: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`,
 };
 
 const xIcon: SvgIconDef = {
   name: 'x',
-  data: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`
+  data: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`,
 };
 
 const lockIcon: SvgIconDef = {
   name: 'lock',
-  data: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>`
+  data: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>`,
 };
 
 registerIcons([checkCircleIcon, alertTriangleIcon, infoIcon, xIcon, lockIcon]);
 
-export type AlertVariant = 'info' | 'success' | 'warning' | 'danger' | 'neutral';
+export type AlertVariant =
+  | 'info'
+  | 'success'
+  | 'warning'
+  | 'danger'
+  | 'neutral';
 
 /**
  * vi-alert
@@ -42,6 +47,8 @@ export type AlertVariant = 'info' | 'success' | 'warning' | 'danger' | 'neutral'
  * @element vi-alert
  * @attr variant - Colour semantic: info | success | warning | danger | neutral (default: info)
  * @attr title   - Bold headline (optional)
+ * @attr open - Controls alert visibility (default: true)
+ * @attr floating - Positions alert absolutely over parent container (100% width)
  * @attr dismissible - Show × dismiss button
  * @attr icon    - Override the default status icon name
  * @attr no-icon - Hide the icon
@@ -59,14 +66,18 @@ export type AlertVariant = 'info' | 'success' | 'warning' | 'danger' | 'neutral'
  * @csspart actions - Actions slot wrapper
  * @csspart close-btn - × dismiss button
  *
- * @fires vialiq-close - Fired when the alert is dismissed
+ * @fires vialiq-alert-show - Fired when the alert is shown
+ * @fires vialiq-alert-close - Fired when the alert is dismissed
  */
 @customElement('vi-alert')
 export class ViAlert extends ViElement {
-  static override styles = css`${unsafeCSS(alertStyles)}`;
+  static override styles = css`
+    ${unsafeCSS(alertStyles)}
+  `;
 
   /** Colour, icon, ARIA role */
-  @property({ type: String, reflect: true }) accessor variant: AlertVariant = 'info';
+  @property({ type: String, reflect: true }) accessor variant: AlertVariant =
+    'info';
 
   /** Bold headline (optional) */
   @property({ type: String }) accessor title = '';
@@ -74,8 +85,30 @@ export class ViAlert extends ViElement {
   /** Show × dismiss button */
   @property({ type: Boolean, reflect: true }) accessor dismissible = false;
 
+  /** Accessible label for the dismiss button */
+  @property({ type: String, attribute: 'dismiss-label' })
+  accessor dismissLabel = 'Dismiss alert';
+
+  /** Auto hide alert after a specified duration */
+  @property({ type: Boolean, attribute: 'auto-hide', reflect: true })
+  accessor autoHide = false;
+
+  /** Auto hide duration in milliseconds (default: 5000ms) */
+  @property({ type: Number, attribute: 'auto-hide-duration' })
+  accessor autoHideDuration = 5000;
+
+  /** Alias for auto-hide-duration */
+  @property({ type: Number })
+  accessor duration: number | undefined = undefined;
+
   /** Override the default status icon name */
   @property({ type: String }) accessor icon: string | undefined = undefined;
+
+  /** Controls whether the alert is displayed */
+  @property({ type: Boolean, reflect: true }) accessor open = true;
+
+  /** Position alert absolutely over parent container without pushing layout */
+  @property({ type: Boolean, reflect: true }) accessor floating = false;
 
   /** Hide the icon */
   @property({ type: Boolean, attribute: 'no-icon' }) accessor noIcon = false;
@@ -83,17 +116,50 @@ export class ViAlert extends ViElement {
   @state() private accessor _hasTitleSlot = false;
   @state() private accessor _hasActionsSlot = false;
 
-  private _alertRoot: HTMLElement | null = null;
+  private _autoHideTimer: ReturnType<typeof setTimeout> | null = null;
 
   override connectedCallback(): void {
     super.connectedCallback();
     this.updateRole();
+    if (!this.open) {
+      this.hidden = true;
+    } else if (this.autoHide || (this.duration !== undefined && this.duration > 0)) {
+      this._startAutoHideTimer();
+    }
   }
 
-  override updated(changedProperties: Map<string | number | symbol, unknown>): void {
+  override disconnectedCallback(): void {
+    super.disconnectedCallback();
+    this._clearAutoHideTimer();
+  }
+
+  override updated(
+    changedProperties: Map<string | number | symbol, unknown>,
+  ): void {
     super.updated(changedProperties);
     if (changedProperties.has('variant')) {
       this.updateRole();
+    }
+    if (changedProperties.has('open')) {
+      if (this.open) {
+        this._handleOpen();
+      } else if (!this.hidden) {
+        this.handleDismiss();
+      }
+    }
+    if (
+      changedProperties.has('autoHide') ||
+      changedProperties.has('autoHideDuration') ||
+      changedProperties.has('duration')
+    ) {
+      if (
+        this.open &&
+        (this.autoHide || (this.duration !== undefined && this.duration > 0))
+      ) {
+        this._startAutoHideTimer();
+      } else {
+        this._clearAutoHideTimer();
+      }
     }
   }
 
@@ -137,30 +203,96 @@ export class ViAlert extends ViElement {
     this._hasActionsSlot = slot.assignedNodes({ flatten: true }).length > 0;
   }
 
-  private async handleDismiss(): Promise<void> {
-    if (!this.shadowRoot) return;
+  private _startAutoHideTimer(): void {
+    this._clearAutoHideTimer();
+    const timeout = this.duration ?? this.autoHideDuration;
+    if (timeout > 0) {
+      this._autoHideTimer = setTimeout(() => {
+        this.hide();
+      }, timeout);
+    }
+  }
 
-    const root = this.shadowRoot.querySelector('.alert-root') as HTMLElement;
-    if (root) {
-      // Use standard Element.animate() for collapse animation
-      const height = root.offsetHeight;
-      const animation = root.animate(
-        [
-          { height: `${height}px`, opacity: 1, margin: '0', padding: 'var(--vi-alert-padding, 12px 16px)' },
-          { height: '0px', opacity: 0, margin: '0', padding: '0px 16px' }
-        ],
-        { duration: 200, easing: 'ease-out', fill: 'forwards' }
-      );
+  private _clearAutoHideTimer(): void {
+    if (this._autoHideTimer !== null) {
+      clearTimeout(this._autoHideTimer);
+      this._autoHideTimer = null;
+    }
+  }
 
-      await animation.finished;
+  private _handleOpen(): void {
+    this.hidden = false;
+
+    if (this.shadowRoot) {
+      const root = this.shadowRoot.querySelector('.alert-root') as HTMLElement;
+      if (root && typeof root.getAnimations === 'function') {
+        root.getAnimations().forEach((anim) => anim.cancel());
+      }
+    }
+
+    if (
+      this.autoHide ||
+      (this.duration !== undefined && this.duration > 0)
+    ) {
+      this._startAutoHideTimer();
     }
 
     this.dispatchEvent(
-      new CustomEvent('vialiq-close', {
+      new CustomEvent('vialiq-alert-show', {
         bubbles: true,
         composed: true,
-      })
+        detail: { id: this.id },
+      }),
     );
+  }
+
+  private async handleDismiss(): Promise<void> {
+    this._clearAutoHideTimer();
+    if (!this.shadowRoot) return;
+
+    const root = this.shadowRoot.querySelector('.alert-root') as HTMLElement;
+    if (root && typeof root.animate === 'function') {
+      try {
+        const height = root.offsetHeight;
+        const animation = root.animate(
+          [
+            {
+              height: `${height}px`,
+              opacity: 1,
+              margin: '0',
+              padding: 'var(--vi-alert-padding, 12px 16px)',
+            },
+            { height: '0px', opacity: 0, margin: '0', padding: '0px 16px' },
+          ],
+          { duration: 200, easing: 'ease-out', fill: 'forwards' },
+        );
+
+        await animation.finished;
+      } catch {
+        // Animation was cancelled or failed; swallow rejection and proceed
+      }
+    }
+
+    this.hidden = true;
+    this.open = false;
+
+    this.dispatchEvent(
+      new CustomEvent('vialiq-alert-close', {
+        bubbles: true,
+        composed: true,
+        detail: { id: this.id },
+      }),
+    );
+  }
+
+  /** Programmatically shows the alert */
+  public async show(): Promise<void> {
+    this.open = true;
+  }
+
+  /** Programmatically hides/dismisses the alert */
+  public async hide(): Promise<void> {
+    this.open = false;
   }
 
   override render(): TemplateResult {
@@ -170,14 +302,21 @@ export class ViAlert extends ViElement {
           ? html`
               <div part="icon" class="alert-icon">
                 <slot name="icon">
-                  <vi-icon name=${this.icon || this.defaultIcon} aria-hidden="true"></vi-icon>
+                  <vi-icon
+                    name=${this.icon || this.defaultIcon}
+                    aria-hidden="true"
+                  ></vi-icon>
                 </slot>
               </div>
             `
           : ''}
 
         <div part="content" class="alert-content">
-          <div part="title" class="alert-title" ?hidden=${!(this.title || this._hasTitleSlot)}>
+          <div
+            part="title"
+            class="alert-title"
+            ?hidden=${!(this.title || this._hasTitleSlot)}
+          >
             <slot name="title" @slotchange=${this.onTitleSlotChange}>
               ${this.title}
             </slot>
@@ -187,7 +326,11 @@ export class ViAlert extends ViElement {
             <slot></slot>
           </div>
 
-          <div part="actions" class="alert-actions" ?hidden=${!this._hasActionsSlot}>
+          <div
+            part="actions"
+            class="alert-actions"
+            ?hidden=${!this._hasActionsSlot}
+          >
             <slot name="actions" @slotchange=${this.onActionsSlotChange}></slot>
           </div>
         </div>
@@ -199,10 +342,10 @@ export class ViAlert extends ViElement {
                 variant="ghost"
                 size="sm"
                 icon-only
-                aria-label="Dismiss alert"
+                aria-label=${this.dismissLabel}
                 @click=${this.handleDismiss}
               >
-                <vi-icon name="x"></vi-icon>
+                <vi-icon name="x" slot="icon"></vi-icon>
               </vi-button>
             `
           : ''}
