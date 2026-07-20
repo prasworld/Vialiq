@@ -219,7 +219,7 @@ The wrapper orchestrates all child `Animation.finished` Promises into a single `
 
 1. **`reduced-motion="auto"` (Default):**
    Checks `window.matchMedia('(prefers-reduced-motion: reduce)')`. If enabled by the user's OS:
-   - Transform/motion presets (e.g., `bounce`, `slide-in-top`, `flip-x`) automatically fallback to a simple, non-orienting 100ms `fade-in` / `fade-out`.
+   - Transform/motion presets (e.g., `bounce`, `slide-in-top`, `flip-x`) automatically fall back to a simple, non-orienting 100ms `fade-in` / `fade-out`.
    - Duration is capped at 100ms.
    - Cascading delays are reduced to 0ms.
 2. **`reduced-motion="fade-only"`:**
@@ -547,7 +547,7 @@ export class ViAnimation extends LitElement {
 
 ---
 
-## Design System Scss Keyframes (`_animation.scss`)
+## Design System SCSS Keyframes (`_animation.scss`)
 
 ```scss
 // Flux UI Design Tokens Integration

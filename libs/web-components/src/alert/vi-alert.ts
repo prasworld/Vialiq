@@ -111,7 +111,8 @@ export class ViAlert extends ViElement {
   @property({ type: Boolean, reflect: true }) accessor floating = false;
 
   /** Hide the icon */
-  @property({ type: Boolean, attribute: 'no-icon' }) accessor noIcon = false;
+  @property({ type: Boolean, attribute: 'no-icon', reflect: true })
+  accessor noIcon = false;
 
   @state() private accessor _hasTitleSlot = false;
   @state() private accessor _hasActionsSlot = false;
@@ -140,7 +141,7 @@ export class ViAlert extends ViElement {
     if (changedProperties.has('variant')) {
       this.updateRole();
     }
-    if (this.hasUpdated && changedProperties.has('open')) {
+    if (changedProperties.has('open') && changedProperties.get('open') !== undefined) {
       if (this.open) {
         this._handleOpen();
       } else if (!this.hidden) {
@@ -246,47 +247,61 @@ export class ViAlert extends ViElement {
     );
   }
 
+  private _dismissPromise: Promise<void> | null = null;
+
   private async handleDismiss(): Promise<void> {
     this._clearAutoHideTimer();
-    if (!this.shadowRoot) return;
-
-    const root = this.shadowRoot.querySelector('.alert-root') as HTMLElement;
-    if (root && typeof root.animate === 'function') {
-      try {
-        const computed = getComputedStyle(root);
-        const currentHeight = root.offsetHeight;
-        const currentPadding = computed.padding;
-        const currentMargin = computed.margin;
-
-        const animation = root.animate(
-          [
-            {
-              height: `${currentHeight}px`,
-              opacity: 1,
-              margin: currentMargin,
-              padding: currentPadding,
-            },
-            { height: '0px', opacity: 0, margin: '0px', padding: '0px' },
-          ],
-          { duration: 200, easing: 'ease-out', fill: 'forwards' },
-        );
-
-        await animation.finished;
-      } catch {
-        // Animation was cancelled or failed; swallow rejection and proceed
-      }
+    if (this._dismissPromise) {
+      return this._dismissPromise;
     }
 
-    this.hidden = true;
-    this.open = false;
+    this._dismissPromise = (async () => {
+      if (this.shadowRoot) {
+        const root = this.shadowRoot.querySelector('.alert-root') as HTMLElement;
+        if (root && typeof root.animate === 'function') {
+          try {
+            const computed = getComputedStyle(root);
+            const currentHeight = root.offsetHeight;
+            const currentPadding = computed.padding;
+            const currentMargin = computed.margin;
 
-    this.dispatchEvent(
-      new CustomEvent('vialiq-alert-close', {
-        bubbles: true,
-        composed: true,
-        detail: { id: this.id },
-      }),
-    );
+            const animation = root.animate(
+              [
+                {
+                  height: `${currentHeight}px`,
+                  opacity: 1,
+                  margin: currentMargin,
+                  padding: currentPadding,
+                },
+                { height: '0px', opacity: 0, margin: '0px', padding: '0px' },
+              ],
+              { duration: 200, easing: 'ease-out', fill: 'forwards' },
+            );
+
+            await animation.finished;
+          } catch {
+            // Animation was cancelled or failed; swallow rejection and proceed
+          }
+        }
+      }
+
+      this.hidden = true;
+      this.open = false;
+
+      this.dispatchEvent(
+        new CustomEvent('vialiq-alert-close', {
+          bubbles: true,
+          composed: true,
+          detail: { id: this.id },
+        }),
+      );
+    })();
+
+    try {
+      await this._dismissPromise;
+    } finally {
+      this._dismissPromise = null;
+    }
   }
 
   /** Programmatically shows the alert */
@@ -299,7 +314,10 @@ export class ViAlert extends ViElement {
   public async hide(): Promise<void> {
     if (this.open) {
       this.open = false;
-      await this.handleDismiss();
+      await this.updateComplete;
+      if (this._dismissPromise) {
+        await this._dismissPromise;
+      }
     }
   }
 

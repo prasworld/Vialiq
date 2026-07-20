@@ -98,7 +98,7 @@ export const QueryContextBanner: Story = {
 export const DataLockIndicator: Story = {
   args: {
     variant: 'info',
-    noIcon: true,
+    noIcon: false,
   },
   render: (args) => html`
     <vi-alert
