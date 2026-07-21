@@ -177,21 +177,12 @@ export function ValidityMixin<
       return undefined;
     }
 
-    // ── Constraint Validation API ────────────────────────────────────────────
-
     /**
-     * Checks whether the control satisfies all validity constraints.
-     *
-     * Per the WHATWG spec, this method:
-     * - Evaluates validity via `_testValidity()`
-     * - Updates `_internals.setValidity()` so `.validity` is fresh
-     * - Dispatches a cancelable `invalid` event if the control is invalid
-     * - Returns `true` if valid, `false` otherwise
-     *
-     * **Does NOT mutate `status`.** Use `reportValidity()` to update
-     * the visual state.
+     * Internal validity check — sets validity on ElementInternals and
+     * dispatches the cancelable `invalid` event if invalid.
+     * Returns whether the control is valid and whether the event was allowed.
      */
-    checkValidity(): boolean {
+    private _checkValidityAndDispatch(): { isValid: boolean; proceed: boolean } {
       const flags = this._testValidity();
       const isValid = !Object.values(flags).some(Boolean);
       const anchor = this._getValidationAnchor();
@@ -207,24 +198,41 @@ export function ValidityMixin<
         }
       }
 
+      let proceed = true;
       if (!isValid) {
-        this.dispatchEvent(
+        proceed = this.dispatchEvent(
           new Event('invalid', { bubbles: false, cancelable: true, composed: false })
         );
       }
 
-      return isValid;
+      return { isValid, proceed };
     }
 
     /**
-     * Checks validity, updates the visual `status`, and triggers the
-     * browser's built-in validation popup (if applicable).
+     * Checks whether the control satisfies all validity constraints.
+     *
+     * Per the WHATWG spec, this method:
+     * - Evaluates validity via `_testValidity()`
+     * - Updates `_internals.setValidity()` so `.validity` is fresh
+     * - Dispatches a cancelable `invalid` event if the control is invalid
+     * - Returns `true` if valid, `false` otherwise
+     *
+     * **Does NOT mutate `status`.** Use `reportValidity()` to update
+     * the visual state.
+     */
+    checkValidity(): boolean {
+      return this._checkValidityAndDispatch().isValid;
+    }
+
+    /**
+     * Checks validity, updates the visual `status` (if the `invalid` event
+     * was not prevented), and triggers the browser's built-in validation popup.
      *
      * This is the method that should be called when you want the user
      * to see validation feedback.
      */
     reportValidity(): boolean {
-      const isValid = this.checkValidity();
+      const { isValid, proceed } = this._checkValidityAndDispatch();
 
       if (isValid) {
         if (this.status === 'invalid') {
@@ -232,10 +240,10 @@ export function ValidityMixin<
           this.validityMessage = '';
         }
       } else {
-        // Only update visual status if the `invalid` event wasn't prevented.
-        // The event was already dispatched in checkValidity(), so we check
-        // the current validity state to decide.
-        this.status = 'invalid';
+        // Only update visual status if the `invalid` event wasn't prevented
+        if (proceed) {
+          this.status = 'invalid';
+        }
       }
 
       return this._internals.reportValidity();

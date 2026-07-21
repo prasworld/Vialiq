@@ -438,9 +438,24 @@ describe('ValidityMixin', () => {
         return { isValid, status: e.status };
       }, el);
 
-      // checkValidity should still return false (value is invalid)
       expect(result.isValid).toBe(false);
-      // status should remain 'default' (checkValidity never mutates it)
+      expect(result.status).toBe('default');
+    });
+
+    it('preventDefault() on invalid event prevents status change in reportValidity()', async () => {
+      render(html`<test-validity-el required></test-validity-el>`, container);
+      const el = await $('test-validity-el') as unknown as TestValidityEl;
+
+      const result = await browser.execute((e: TestValidityEl) => {
+        e.addEventListener('invalid', (evt: Event) => {
+          evt.preventDefault();
+        }, { once: true });
+
+        const isValid = e.reportValidity();
+        return { isValid, status: e.status };
+      }, el);
+
+      expect(result.isValid).toBe(false);
       expect(result.status).toBe('default');
     });
   });

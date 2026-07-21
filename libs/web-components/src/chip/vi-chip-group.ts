@@ -198,7 +198,10 @@ export class ViChipGroup extends ValidityMixin<string[]>(ViElement) {
     const focusableChips = this._chips.filter(c => !c.disabled);
     if (focusableChips.length === 0) return;
 
-    const currentIndex = focusableChips.findIndex(c => c === document.activeElement || c.shadowRoot?.activeElement);
+    const eventTarget = e.target as HTMLElement;
+    const currentIndex = focusableChips.findIndex(
+      c => c.matches(':focus-within') || c === eventTarget || c.contains(eventTarget)
+    );
     if (currentIndex === -1) return;
 
     let nextIndex = currentIndex;
