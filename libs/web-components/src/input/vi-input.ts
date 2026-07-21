@@ -70,22 +70,17 @@ export type InputSize = 'xs' | 'sm' | 'md' | 'lg';
  */
 @customElement('vi-input')
 export class ViInput extends ValidityMixin(FocusableMixin(ViElement)) {
-  static formAssociated = true;
   static override styles = css`
     ${unsafeCSS(inputStyles)}
   `;
-
-  protected readonly _internals = this.attachInternals();
 
   protected override get _focusableElement(): HTMLInputElement | null {
     return this.shadowRoot?.querySelector('input') ?? null;
   }
 
-  // ── ValidityMixin contract — must be declared as @property —————————————
-
-  @property({ reflect: true }) accessor status: ControlStatus = 'default';
-  @property({ type: Boolean, reflect: true }) accessor required = false;
-  @property() accessor validityMessage = '';
+  protected override _getValidationAnchor(): HTMLElement | undefined {
+    return this._focusableElement ?? undefined;
+  }
 
   // ── Public API ─────────────────────────────────────────────────────────────
 
@@ -118,10 +113,7 @@ export class ViInput extends ValidityMixin(FocusableMixin(ViElement)) {
 
   // ── ValidityMixin hook ─────────────────────────────────────────────────────
 
-  // _testValidity is declared protected in ValidityInterface, but TypeScript's
-  // mixin intersection type does not always surface protected members for
-  // `override` checking. The method is still an override at runtime.
-  protected _testValidity(): Partial<ValidityStateFlags> {
+  protected override _testValidity(): Partial<ValidityStateFlags> {
     if (this._internals.validity.customError) {
       return { customError: true };
     }
@@ -168,16 +160,10 @@ export class ViInput extends ValidityMixin(FocusableMixin(ViElement)) {
     }
   }
 
-  /** Resets value and validation state when the associated form resets. */
-  formResetCallback(): void {
+  /** Resets value when the associated form resets. */
+  override formResetCallback(): void {
     this.value = this.getAttribute('value') ?? '';
-    this.status = 'default';
-    this.validityMessage = '';
-  }
-
-  /** Keeps disabled in sync when a containing fieldset or form is disabled. */
-  formDisabledCallback(disabled: boolean): void {
-    this.disabled = disabled;
+    super.formResetCallback();
   }
 
   // ── Event handlers ─────────────────────────────────────────────────────────

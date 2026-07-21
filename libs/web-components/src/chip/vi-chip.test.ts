@@ -19,9 +19,9 @@ describe('vi-chip', () => {
     const chip = await $('vi-chip');
     await expect(chip).toExist();
 
-    const button = await chip.shadow$('button[part="chip"]');
-    await expect(button).toExist();
-    expect(await button.getAttribute('role')).toBe('button');
+    const element = await chip.shadow$('[part="chip"]');
+    await expect(element).toExist();
+    expect(await element.getAttribute('role')).toBe('button');
   });
 
   it('renders check icon when selected', async () => {
@@ -52,8 +52,8 @@ describe('vi-chip', () => {
     const chip = await $('vi-chip');
 
     // Trigger keyboard/mouse events on host itself as wdio shadow click can be flaky
-    await browser.execute((elem) => {
-        elem.shadowRoot.querySelector('button').click();
+    await browser.execute((elem: any) => {
+        (elem.shadowRoot!.querySelector('[part="chip"]') as HTMLElement)!.click();
     }, await chip);
 
     expect(selectFired).toBe(true);
@@ -72,8 +72,8 @@ describe('vi-chip', () => {
     const chip = await $('vi-chip');
 
     // Trigger keyboard event on the host as defined
-    await browser.execute((elem) => {
-        elem.shadowRoot.querySelector('vi-button[part="remove-btn"]').click();
+    await browser.execute((elem: any) => {
+        (elem.shadowRoot!.querySelector('vi-button[part="remove-btn"]') as HTMLElement).click();
     }, await chip);
 
     expect(removeFired).toBe(true);

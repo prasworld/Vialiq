@@ -156,7 +156,7 @@ describe('vi-alert', () => {
   });
 
   it('allows opening and closing declaratively via open property', async () => {
-    render(html`<vi-alert id="test-alert-3" ?open=${false}>Initially closed message</vi-alert>`, container);
+    render(html`<vi-alert id="test-alert-3" .open=${false}>Initially closed message</vi-alert>`, container);
     const el = getAlert();
     await el.updateComplete;
 
@@ -227,8 +227,8 @@ describe('vi-alert', () => {
     expect(el.open).toBe(true);
     expect(el.hidden).toBe(false);
 
-    // Wait for auto-hide timer to trigger
-    await new Promise(r => setTimeout(r, 80));
+    // Wait for auto-hide timer (50ms) and collapse animation (200ms) to trigger and complete
+    await new Promise(r => setTimeout(r, 300));
 
     expect(el.open).toBe(false);
     expect(el.hidden).toBe(true);

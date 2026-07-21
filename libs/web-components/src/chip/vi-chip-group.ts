@@ -1,7 +1,7 @@
 import { css, html, unsafeCSS, type PropertyValues, type TemplateResult } from 'lit';
 import { customElement, property, queryAssignedElements } from 'lit/decorators.js';
 import { ViElement } from '../base/vi-element.js';
-import { ValidityMixin, type ControlStatus } from '../base/validity-mixin.js';
+import { ValidityMixin } from '../base/validity-mixin.js';
 import type { ViChip } from './vi-chip.js';
 import groupStyles from './vi-chip-group.scss?inline';
 
@@ -26,11 +26,8 @@ import groupStyles from './vi-chip-group.scss?inline';
  * @fires invalid       - Fired when checkValidity() fails (cancelable)
  */
 @customElement('vi-chip-group')
-export class ViChipGroup extends ValidityMixin(ViElement) {
-  static override styles = css`${unsafeCSS(groupStyles)}`;
-  static override formAssociated = true;
-
-  protected readonly _internals = this.attachInternals();
+export class ViChipGroup extends ValidityMixin<string[]>(ViElement) {
+  static styles = css`${unsafeCSS(groupStyles)}`;
 
   /** Currently selected chip values. */
   @property({ type: Array }) accessor value: string[] = [];
@@ -42,7 +39,7 @@ export class ViChipGroup extends ValidityMixin(ViElement) {
   @property({ type: String }) accessor name = '';
 
   /** At least one chip must be selected. */
-  @property({ type: Boolean, reflect: true }) accessor required = false;
+  @property({ type: Boolean, reflect: true }) override accessor required = false;
 
   /** Disable all chips. */
   @property({ type: Boolean, reflect: true }) accessor disabled = false;
@@ -52,10 +49,6 @@ export class ViChipGroup extends ValidityMixin(ViElement) {
 
   /** Gap between chips. */
   @property({ type: String }) accessor gap = '8px';
-
-  // ValidityMixin requirements
-  @property({ reflect: true }) accessor status: ControlStatus = 'default';
-  @property() accessor validityMessage = '';
 
   @queryAssignedElements({ selector: 'vi-chip' })
   private accessor _chips!: ViChip[];
@@ -71,6 +64,12 @@ export class ViChipGroup extends ValidityMixin(ViElement) {
   override connectedCallback(): void {
     super.connectedCallback();
     this._syncInternals();
+    this._syncChips();
+  }
+
+  override firstUpdated(changed: PropertyValues): void {
+    super.firstUpdated(changed);
+    this._syncChips();
   }
 
   override disconnectedCallback(): void {
@@ -81,7 +80,7 @@ export class ViChipGroup extends ValidityMixin(ViElement) {
   override updated(changed: PropertyValues): void {
     super.updated(changed);
 
-    if (changed.has('value')) {
+    if (changed.has('value') || changed.has('name')) {
       this._syncInternals();
       this._syncChips();
     }
@@ -91,14 +90,9 @@ export class ViChipGroup extends ValidityMixin(ViElement) {
     }
   }
 
-  formResetCallback(): void {
+  override formResetCallback(): void {
     this.value = [];
-    this.status = 'default';
-    this.validityMessage = '';
-  }
-
-  formDisabledCallback(disabled: boolean): void {
-    this.disabled = disabled;
+    super.formResetCallback();
   }
 
   protected override _testValidity(): Partial<ValidityStateFlags> {
@@ -110,7 +104,7 @@ export class ViChipGroup extends ValidityMixin(ViElement) {
 
   /** Selects all available child chips (if multi is true) */
   selectAll(): void {
-    if (!this.multi) return;
+    if (!this.multi || !this._chips?.length) return;
     this.value = this._chips.map(chip => chip.value).filter(val => val !== undefined);
     this.dispatchEvent(new CustomEvent('vialiq-change', { detail: { value: this.value }, bubbles: true, composed: true }));
   }
@@ -122,22 +116,30 @@ export class ViChipGroup extends ValidityMixin(ViElement) {
   }
 
   private _syncInternals(): void {
-    const formData = new FormData();
-    this.value.forEach(val => formData.append(this.name, val));
-    this._internals.setFormValue(formData);
+    if (this.name && this.name.trim().length > 0) {
+      const formData = new FormData();
+      this.value.forEach(val => formData.append(this.name, val));
+      this._internals.setFormValue(formData);
+    } else {
+      this._internals.setFormValue(null);
+    }
   }
 
   private _syncChips(): void {
-    if (!this._chips) return;
+    const chips = (this._chips && this._chips.length > 0)
+      ? this._chips
+      : Array.from(this.querySelectorAll<ViChip>('vi-chip'));
+
+    if (chips.length === 0) return;
 
     let hasFocusable = false;
 
-    this._chips.forEach(chip => {
+    chips.forEach(chip => {
       chip.selected = this.value.includes(chip.value);
       if (this.disabled) {
         chip.disabled = true;
       } else {
-        chip.disabled = chip.hasAttribute('disabled');
+        chip.disabled = chip.isSelfDisabled;
       }
 
       // Roving tabindex: Only the first selected chip (or the first chip if none selected) is focusable
@@ -150,8 +152,8 @@ export class ViChipGroup extends ValidityMixin(ViElement) {
     });
 
     // If no chip was focusable yet (e.g. none selected), make the first non-disabled chip focusable
-    if (!hasFocusable && this._chips.length > 0) {
-      const firstEnabled = this._chips.find(c => !c.disabled);
+    if (!hasFocusable && chips.length > 0) {
+      const firstEnabled = chips.find(c => !c.disabled);
       if (firstEnabled) firstEnabled.tabIndex = 0;
     }
   }

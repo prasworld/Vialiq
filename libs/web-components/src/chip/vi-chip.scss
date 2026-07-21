@@ -10,28 +10,27 @@
   display: none !important;
 }
 
-// Ensure the inner button matches the expected design rules.
-// Since we used a button part="chip" matching .chip in base, all properties come from flux-ui _chip.scss.
-button {
+// Ensure the root element matches expected design rules.
+[part='chip'] {
   @extend .chip;
 }
 
 // ============================================================================
 // Sizes
 // ============================================================================
-:host([size='sm']) button {
+:host([size='sm']) [part='chip'] {
   --vi-chip-height: var(--vi-chip-height-sm);
   --vi-chip-font-size: var(--vi-font-size-xs);
   --vi-chip-padding: 0 8px;
 }
 
-:host([size='md']) button {
+:host([size='md']) [part='chip'] {
   --vi-chip-height: var(--vi-chip-height-md);
   --vi-chip-font-size: var(--vi-font-size-sm);
   --vi-chip-padding: 0 10px;
 }
 
-:host([size='lg']) button {
+:host([size='lg']) [part='chip'] {
   --vi-chip-height: var(--vi-chip-height-lg);
   --vi-chip-font-size: var(--vi-font-size-base);
   --vi-chip-padding: 0 12px;
@@ -42,114 +41,114 @@ button {
 // ============================================================================
 
 // Neutral
-:host([variant='neutral']) button {
+:host([variant='neutral']) [part='chip'] {
   --vi-chip-bg-color: #{tokens.$color-grey-100};
   --vi-chip-border-color: #{tokens.$color-grey-300};
   --vi-chip-text-color: #{tokens.$color-grey-700};
 }
 
-:host([variant='neutral']:not([disabled])) button:hover {
+:host([variant='neutral']:not([disabled])) [part='chip']:hover {
   --vi-chip-bg-color: #{tokens.$color-grey-200};
   --vi-chip-border-color: #{tokens.$color-grey-400};
   --vi-chip-text-color: #{tokens.$color-grey-900};
 }
 
-:host([variant='neutral'][selected]) button {
+:host([variant='neutral'][selected]) [part='chip'] {
   --vi-chip-bg-color: #{tokens.$color-primary};
   --vi-chip-border-color: #{tokens.$color-primary};
   --vi-chip-text-color: #{tokens.$text-primary-inverse};
 }
 
-:host([variant='neutral'][selected]:not([disabled])) button:hover {
+:host([variant='neutral'][selected]:not([disabled])) [part='chip']:hover {
   --vi-chip-bg-color: #{tokens.$color-blue-800};
   --vi-chip-border-color: #{tokens.$color-blue-800};
 }
 
 // Primary
-:host([variant='primary']) button {
+:host([variant='primary']) [part='chip'] {
   --vi-chip-bg-color: #{tokens.$bg-info};
   --vi-chip-border-color: #{tokens.$bg-info};
   --vi-chip-text-color: #{tokens.$text-info};
 }
 
-:host([variant='primary']:not([disabled])) button:hover {
+:host([variant='primary']:not([disabled])) [part='chip']:hover {
   --vi-chip-bg-color: #{tokens.$color-blue-100};
   --vi-chip-border-color: #{tokens.$color-blue-200};
 }
 
-:host([variant='primary'][selected]) button {
+:host([variant='primary'][selected]) [part='chip'] {
   --vi-chip-bg-color: #{tokens.$color-info};
   --vi-chip-border-color: #{tokens.$color-info};
   --vi-chip-text-color: #{tokens.$text-primary-inverse};
 }
 
 // Success
-:host([variant='success']) button {
+:host([variant='success']) [part='chip'] {
   --vi-chip-bg-color: #{tokens.$bg-success};
   --vi-chip-border-color: #{tokens.$bg-success};
   --vi-chip-text-color: #{tokens.$text-success};
 }
 
-:host([variant='success']:not([disabled])) button:hover {
+:host([variant='success']:not([disabled])) [part='chip']:hover {
   --vi-chip-bg-color: #{tokens.$color-green-100};
   --vi-chip-border-color: #{tokens.$color-green-200};
 }
 
-:host([variant='success'][selected]) button {
+:host([variant='success'][selected]) [part='chip'] {
   --vi-chip-bg-color: #{tokens.$color-success};
   --vi-chip-border-color: #{tokens.$color-success};
   --vi-chip-text-color: #{tokens.$text-primary-inverse};
 }
 
 // Warning
-:host([variant='warning']) button {
+:host([variant='warning']) [part='chip'] {
   --vi-chip-bg-color: #{tokens.$bg-warning};
   --vi-chip-border-color: #{tokens.$bg-warning};
   --vi-chip-text-color: #{tokens.$text-warning};
 }
 
-:host([variant='warning']:not([disabled])) button:hover {
+:host([variant='warning']:not([disabled])) [part='chip']:hover {
   --vi-chip-bg-color: #{tokens.$color-yellow-100};
   --vi-chip-border-color: #{tokens.$color-yellow-200};
 }
 
-:host([variant='warning'][selected]) button {
+:host([variant='warning'][selected]) [part='chip'] {
   --vi-chip-bg-color: #{tokens.$color-warning};
   --vi-chip-border-color: #{tokens.$color-warning};
   --vi-chip-text-color: #{tokens.$text-primary-inverse};
 }
 
 // Danger
-:host([variant='danger']) button {
+:host([variant='danger']) [part='chip'] {
   --vi-chip-bg-color: #{tokens.$bg-error};
   --vi-chip-border-color: #{tokens.$bg-error};
   --vi-chip-text-color: #{tokens.$text-error};
 }
 
-:host([variant='danger']:not([disabled])) button:hover {
+:host([variant='danger']:not([disabled])) [part='chip']:hover {
   --vi-chip-bg-color: #{tokens.$color-red-100};
   --vi-chip-border-color: #{tokens.$color-red-200};
 }
 
-:host([variant='danger'][selected]) button {
+:host([variant='danger'][selected]) [part='chip'] {
   --vi-chip-bg-color: #{tokens.$color-error};
   --vi-chip-border-color: #{tokens.$color-error};
   --vi-chip-text-color: #{tokens.$text-primary-inverse};
 }
 
 // Info
-:host([variant='info']) button {
+:host([variant='info']) [part='chip'] {
   --vi-chip-bg-color: #{tokens.$bg-info};
   --vi-chip-border-color: #{tokens.$bg-info};
   --vi-chip-text-color: #{tokens.$text-info};
 }
 
-:host([variant='info']:not([disabled])) button:hover {
+:host([variant='info']:not([disabled])) [part='chip']:hover {
   --vi-chip-bg-color: #{tokens.$color-blue-100};
   --vi-chip-border-color: #{tokens.$color-blue-200};
 }
 
-:host([variant='info'][selected]) button {
+:host([variant='info'][selected]) [part='chip'] {
   --vi-chip-bg-color: #{tokens.$color-info};
   --vi-chip-border-color: #{tokens.$color-info};
   --vi-chip-text-color: #{tokens.$text-primary-inverse};
@@ -158,7 +157,7 @@ button {
 // ============================================================================
 // Disabled State
 // ============================================================================
-:host([disabled]) button {
+:host([disabled]) [part='chip'] {
   --vi-chip-bg-color: #{tokens.$color-grey-50};
   --vi-chip-border-color: #{tokens.$color-grey-200};
   --vi-chip-text-color: #{tokens.$color-grey-300};

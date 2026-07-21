@@ -48,22 +48,17 @@ export type TextareaResize = 'none' | 'vertical' | 'both';
  */
 @customElement('vi-textarea')
 export class ViTextarea extends ValidityMixin(FocusableMixin(ViElement)) {
-  static formAssociated = true;
   static override styles = css`
     ${unsafeCSS(textareaStyles)}
   `;
-
-  protected readonly _internals = this.attachInternals();
 
   protected override get _focusableElement(): HTMLTextAreaElement | null {
     return this.shadowRoot?.querySelector('textarea') ?? null;
   }
 
-  // ── ValidityMixin contract properties ──────────────────────────────────────
-
-  @property({ reflect: true }) accessor status: ControlStatus = 'default';
-  @property({ type: Boolean, reflect: true }) accessor required = false;
-  @property({ attribute: 'validity-message' }) accessor validityMessage = '';
+  protected override _getValidationAnchor(): HTMLElement | undefined {
+    return this._focusableElement ?? undefined;
+  }
 
   // ── Public API ─────────────────────────────────────────────────────────────
 
@@ -103,7 +98,7 @@ export class ViTextarea extends ValidityMixin(FocusableMixin(ViElement)) {
 
   // ── ValidityMixin implementation ───────────────────────────────────────────
 
-  protected _testValidity(): Partial<ValidityStateFlags> {
+  protected override _testValidity(): Partial<ValidityStateFlags> {
     if (this._internals.validity.customError) {
       return { customError: true };
     }
@@ -150,16 +145,10 @@ export class ViTextarea extends ValidityMixin(FocusableMixin(ViElement)) {
     }
   }
 
-  /** Resets value and validation state when the parent form resets. */
-  formResetCallback(): void {
+  /** Resets value when the parent form resets. */
+  override formResetCallback(): void {
     this.value = this.getAttribute('value') ?? '';
-    this.status = 'default';
-    this.validityMessage = '';
-  }
-
-  /** Keeps disabled in sync when containing fieldset/form state changes. */
-  formDisabledCallback(disabled: boolean): void {
-    this.disabled = disabled;
+    super.formResetCallback();
   }
 
   // ── Event Handlers ─────────────────────────────────────────────────────────

@@ -42,7 +42,7 @@ export class ViChip extends FocusableMixin(ViElement) {
   static override styles = css`${unsafeCSS(chipStyles)}`;
 
   protected override get _focusableElement(): HTMLElement | null {
-    return this.shadowRoot?.querySelector('button') ?? null;
+    return this.shadowRoot?.querySelector('[part="chip"]') ?? null;
   }
 
   /** Value for group selection tracking. */
@@ -58,7 +58,11 @@ export class ViChip extends FocusableMixin(ViElement) {
   @property({ type: Boolean, reflect: true }) accessor removable = false;
 
   /** Screen reader text for the remove button */
-  @property({ type: String, attribute: 'remove-aria-label' }) accessor removeAriaLabel: string | undefined;
+  @property({ type: String, attribute: 'remove-label' }) accessor removeLabel =
+    'Remove';
+  /** Alias for remove-label */
+  @property({ type: String, attribute: 'remove-aria-label' })
+  accessor removeAriaLabel: string | undefined;
 
   /** Base colour. */
   @property({ type: String, reflect: true }) accessor variant: ChipVariant = 'neutral';
@@ -66,19 +70,34 @@ export class ViChip extends FocusableMixin(ViElement) {
   /** Chip size. */
   @property({ type: String, reflect: true }) accessor size: ChipSize = 'md';
 
+  /** Host tabIndex reflecting host focusability for roving tabindex */
+  @property({ type: Number, attribute: 'tabindex', reflect: true })
+  override accessor tabIndex = 0;
+
   @state() private accessor _inGroup = false;
   @state() private accessor _hasAvatar = false;
   @state() private accessor _hasIcon = false;
   @state() private accessor _hasTrailingIcon = false;
 
+  private _userDisabled = false;
+
+  /** Gets whether the chip itself was set as disabled (independent of group) */
+  get isSelfDisabled(): boolean {
+    return this._userDisabled;
+  }
+
   override connectedCallback(): void {
     super.connectedCallback();
     this._inGroup = this.closest('vi-chip-group') !== null;
+    this._userDisabled = this.hasAttribute('disabled');
   }
 
   override updated(changed: PropertyValues): void {
     super.updated(changed);
     if (changed.has('disabled')) {
+      if (!this._inGroup) {
+        this._userDisabled = this.disabled;
+      }
       if (this.disabled) {
         this._setHostFocusable(false);
       } else if (changed.get('disabled') !== undefined) {
@@ -106,6 +125,10 @@ export class ViChip extends FocusableMixin(ViElement) {
     if (this.disabled) {
       e.preventDefault();
       e.stopImmediatePropagation();
+      return;
+    }
+    const path = e.composedPath();
+    if (path.some(el => el instanceof HTMLElement && el.getAttribute('part') === 'remove-btn')) {
       return;
     }
     this.dispatchEvent(
@@ -149,44 +172,63 @@ export class ViChip extends FocusableMixin(ViElement) {
     const role = this._inGroup ? 'option' : 'button';
     const ariaSelected = this._inGroup ? (this.selected ? 'true' : 'false') : null;
     const ariaPressed = !this._inGroup ? (this.selected ? 'true' : 'false') : null;
+    const buttonTabIndex = this.disabled ? -2 : (this.tabIndex >= 0 ? 0 : -1);
+    const removeBtnTabIndex = this.disabled ? -2 : -1;
 
     return html`
-      <button
+      <div
         part="chip"
-        type="button"
         role=${role}
         aria-selected=${ariaSelected ?? undefined}
         aria-pressed=${ariaPressed ?? undefined}
         aria-disabled=${this.disabled ? 'true' : 'false'}
-        tabindex=${this.disabled ? -1 : 0}
+        tabindex=${buttonTabIndex}
         @click=${this._handleSelect}
         @keydown=${this._handleKeyDown}
       >
-        <slot name="avatar" class="chip-avatar" @slotchange=${this.onAvatarSlotChange} ?hidden=${!this._hasAvatar}></slot>
-        <slot name="icon" class="chip-icon" @slotchange=${this.onIconSlotChange} ?hidden=${this._hasAvatar || !this._hasIcon}></slot>
+        <slot
+          name="avatar"
+          class="chip-avatar"
+          @slotchange=${this.onAvatarSlotChange}
+          ?hidden=${!this._hasAvatar}
+        ></slot>
+        <slot
+          name="icon"
+          class="chip-icon"
+          @slotchange=${this.onIconSlotChange}
+          ?hidden=${this._hasAvatar || !this._hasIcon}
+        ></slot>
 
-        ${this.selected ? html`<vi-icon part="check-icon" name="check" size="12"></vi-icon>` : ''}
+        ${this.selected
+          ? html`<vi-icon part="check-icon" name="check" size="12"></vi-icon>`
+          : ''}
 
         <span part="label" class="chip-label">
           <slot></slot>
         </span>
 
-        <slot name="trailing-icon" @slotchange=${this.onTrailingIconSlotChange} ?hidden=${!this._hasTrailingIcon}></slot>
+        <slot
+          name="trailing-icon"
+          @slotchange=${this.onTrailingIconSlotChange}
+          ?hidden=${!this._hasTrailingIcon}
+        ></slot>
 
-        ${this.removable ? html`
-          <vi-button
-            part="remove-btn"
-            variant="ghost"
-            size="xs"
-            icon-only
-            aria-label=${this.removeAriaLabel ?? ''}
-            @click=${this._handleRemove}
-            tabindex=${this.disabled ? -1 : 0}
-          >
-            <vi-icon name="x" size="12" slot="icon"></vi-icon>
-          </vi-button>
+        ${this.removable
+          ? html`
+              <vi-button
+                part="remove-btn"
+                variant="ghost"
+                size="xs"
+                icon-only
+                ?disabled=${this.disabled}
+                aria-label=${this.removeAriaLabel ?? this.removeLabel}
+                @click=${this._handleRemove}
+                tabindex=${removeBtnTabIndex}
+              >
+                <vi-icon name="x" size="12" slot="icon"></vi-icon>
+              </vi-button>
         ` : ''}
-      </button>
+      </div>
     `;
   }
 }

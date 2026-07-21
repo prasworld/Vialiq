@@ -142,25 +142,25 @@ describe('vi-input', () => {
   });
 
   describe('Validation', () => {
-    it('checkValidity() should return false and set status to invalid when required and empty', () => {
+    it('reportValidity() should return false and set status to invalid when required and empty', () => {
       render(html`<vi-input required></vi-input>`, container);
       const el = document.querySelector('vi-input') as ViInput;
 
-      const valid = el.checkValidity();
+      const valid = el.reportValidity();
 
       expect(valid).toBe(false);
       expect(el.status).toBe('invalid');
     });
 
-    it('checkValidity() should return true and clear status when required and has a value', async () => {
+    it('reportValidity() should return true and clear status when required and has a value', async () => {
       render(html`<vi-input required></vi-input>`, container);
       const el = document.querySelector('vi-input') as ViInput;
       // First make it invalid so we can verify the clear
-      el.checkValidity();
+      el.reportValidity();
       el.value = 'test@example.com';
       await el.updateComplete;
 
-      const valid = el.checkValidity();
+      const valid = el.reportValidity();
 
       expect(valid).toBe(true);
       expect(el.status).toBe('default');
@@ -170,7 +170,7 @@ describe('vi-input', () => {
       render(html`<vi-input required></vi-input>`, container);
       const el = document.querySelector('vi-input') as ViInput;
 
-      el.checkValidity();
+      el.reportValidity();
       el.validityMessage = 'This field is required';
       await el.updateComplete;
 
@@ -183,12 +183,12 @@ describe('vi-input', () => {
       render(html`<vi-input required></vi-input>`, container);
       const el = document.querySelector('vi-input') as ViInput;
 
-      el.checkValidity(); // sets status = 'invalid'
+      el.reportValidity(); // sets status = 'invalid'
       el.validityMessage = 'Required';
       await el.updateComplete;
 
       el.value = 'filled';
-      el.checkValidity(); // clears status back to 'default'
+      el.reportValidity(); // clears status back to 'default'
       await el.updateComplete;
 
       const msgEl = el.shadowRoot?.querySelector('.input-validation--invalid');
@@ -238,7 +238,7 @@ describe('vi-input', () => {
       const el = document.querySelector('vi-input') as ViInput;
       await el.updateComplete;
 
-      const valid = el.checkValidity();
+      const valid = el.reportValidity();
       expect(valid).toBe(false);
       expect(el.status).toBe('invalid');
       expect(el.validityMessage).toBeTruthy();
@@ -249,7 +249,7 @@ describe('vi-input', () => {
       const el = document.querySelector('vi-input') as ViInput;
       await el.updateComplete;
 
-      const valid = el.checkValidity();
+      const valid = el.reportValidity();
       expect(valid).toBe(false);
       expect(el.status).toBe('invalid');
       expect(el.validityMessage).toBeTruthy();
@@ -266,7 +266,7 @@ describe('vi-input', () => {
       expect(input.getAttribute('aria-required')).toBe('true');
       expect(input.getAttribute('aria-describedby')).toBe('helper-text');
 
-      el.checkValidity();
+      el.reportValidity();
       el.validityMessage = 'Invalid input value';
       await el.updateComplete;
 

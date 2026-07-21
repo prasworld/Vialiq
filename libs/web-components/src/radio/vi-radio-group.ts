@@ -33,18 +33,9 @@ export type RadioGroupOrientation = 'vertical' | 'horizontal';
  */
 @customElement('vi-radio-group')
 export class ViRadioGroup extends ValidityMixin(ViElement) {
-  static formAssociated = true;
   static override styles = css`
     ${unsafeCSS(radioGroupStyles)}
   `;
-
-  protected readonly _internals = this.attachInternals();
-
-  // ── ValidityMixin contract ───────────────────────────────────────────────
-
-  @property({ reflect: true }) accessor status: ControlStatus = 'default';
-  @property({ type: Boolean, reflect: true }) accessor required = false;
-  @property({ attribute: 'validity-message' }) accessor validityMessage = '';
 
   // ── Public API ─────────────────────────────────────────────────────────────
 
@@ -119,17 +110,11 @@ export class ViRadioGroup extends ValidityMixin(ViElement) {
     }
   }
 
-  /** Resets the value and validation state when the parent form resets. */
-  formResetCallback(): void {
+  /** Resets the value when the parent form resets. */
+  override formResetCallback(): void {
     this.value = this._initialValue;
-    this.status = 'default';
-    this.validityMessage = '';
+    super.formResetCallback();
     this._updateRadios();
-  }
-
-  /** Keeps disabled in sync when a containing fieldset/form is disabled. */
-  formDisabledCallback(disabled: boolean): void {
-    this.disabled = disabled;
   }
 
   protected override _testValidity(): Partial<ValidityStateFlags> {

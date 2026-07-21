@@ -124,6 +124,7 @@ export class ViAlert extends ViElement {
   @state() private accessor _hasActionsSlot = false;
 
   private _autoHideTimer: ReturnType<typeof setTimeout> | null = null;
+  private _isFirstUpdate = true;
 
   /** Helper to check whether auto-hide is enabled via boolean toggle or duration setting */
   private get _shouldAutoHide(): boolean {
@@ -152,16 +153,26 @@ export class ViAlert extends ViElement {
     changedProperties: Map<string | number | symbol, unknown>,
   ): void {
     super.updated(changedProperties);
+
+    const isFirst = this._isFirstUpdate;
+    this._isFirstUpdate = false;
+
     if (changedProperties.has('variant')) {
       this.updateRole();
     }
-    if (changedProperties.has('open') && changedProperties.get('open') !== undefined) {
+
+    if (!isFirst && changedProperties.has('open')) {
       if (this.open) {
         this._handleOpen();
       } else if (!this.hidden) {
         this.handleDismiss();
       }
+    } else if (isFirst) {
+      if (!this.open) {
+        this.hidden = true;
+      }
     }
+
     if (
       changedProperties.has('autoHide') ||
       changedProperties.has('autoHideDuration') ||
@@ -259,6 +270,7 @@ export class ViAlert extends ViElement {
 
   private async handleDismiss(): Promise<void> {
     this._clearAutoHideTimer();
+    this.open = false;
     if (this._dismissPromise) {
       return this._dismissPromise;
     }
