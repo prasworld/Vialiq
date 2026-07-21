@@ -31,12 +31,20 @@ describe('vi-chip', () => {
     await expect(check).toExist();
   });
 
-  it('renders remove button when removable', async () => {
-    render(html`<vi-chip removable remove-aria-label="Remove">Removable</vi-chip>`, container);
+  it('renders remove button with default aria-label when removable', async () => {
+    render(html`<vi-chip removable>Removable</vi-chip>`, container);
     const chip = await $('vi-chip');
     const removeBtn = await chip.shadow$('vi-button[part="remove-btn"]');
     await expect(removeBtn).toExist();
     expect(await removeBtn.getAttribute('aria-label')).toBe('Remove');
+  });
+
+  it('allows overriding remove-aria-label', async () => {
+    render(html`<vi-chip removable remove-aria-label="Delete chip">Removable</vi-chip>`, container);
+    const chip = await $('vi-chip');
+    const removeBtn = await chip.shadow$('vi-button[part="remove-btn"]');
+    await expect(removeBtn).toExist();
+    expect(await removeBtn.getAttribute('aria-label')).toBe('Delete chip');
   });
 
   it('emits vialiq-select when clicked', async () => {
