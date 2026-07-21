@@ -41,12 +41,10 @@ export type CheckboxSize = 'xs' | 'sm' | 'md' | 'lg';
  */
 @customElement('vi-checkbox')
 export class ViCheckbox extends ValidityMixin(FocusableMixin(ViElement)) {
-  static formAssociated = true;
   static override styles = css`
     ${unsafeCSS(checkboxStyles)}
   `;
 
-  protected readonly _internals = this.attachInternals();
   private _initialChecked = false;
 
   protected override get _focusableElement(): HTMLInputElement | null {

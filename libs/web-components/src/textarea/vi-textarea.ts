@@ -48,12 +48,9 @@ export type TextareaResize = 'none' | 'vertical' | 'both';
  */
 @customElement('vi-textarea')
 export class ViTextarea extends ValidityMixin(FocusableMixin(ViElement)) {
-  static formAssociated = true;
   static override styles = css`
     ${unsafeCSS(textareaStyles)}
   `;
-
-  protected readonly _internals = this.attachInternals();
 
   protected override get _focusableElement(): HTMLTextAreaElement | null {
     return this.shadowRoot?.querySelector('textarea') ?? null;

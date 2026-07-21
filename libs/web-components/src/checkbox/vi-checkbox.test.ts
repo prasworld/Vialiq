@@ -226,14 +226,14 @@ describe('vi-checkbox', () => {
       await el.updateComplete;
 
       // Empty/unchecked required checkbox is invalid
-      expect(el.checkValidity()).toBe(false);
+      expect(el.reportValidity()).toBe(false);
       expect(el.status).toBe('invalid');
 
       // Checking checkbox passes validation
       el.checked = true;
       await el.updateComplete;
 
-      expect(el.checkValidity()).toBe(true);
+      expect(el.reportValidity()).toBe(true);
       expect(el.status).toBe('default'); // reset to default since valid
     });
 

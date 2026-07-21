@@ -46,7 +46,7 @@ export class ViChip extends FocusableMixin(ViElement) {
   }
 
   /** Value for group selection tracking. */
-  @property({ type: String }) accessor value = '';
+  @property({ type: String, reflect: true }) accessor value = '';
 
   /** Selected / active state. */
   @property({ type: Boolean, reflect: true }) accessor selected = false;
@@ -74,6 +74,12 @@ export class ViChip extends FocusableMixin(ViElement) {
   override connectedCallback(): void {
     super.connectedCallback();
     this._inGroup = this.closest('vi-chip-group') !== null;
+    this._syncSlotsFromLightDom();
+  }
+
+  override firstUpdated(changed: PropertyValues): void {
+    super.firstUpdated(changed);
+    this._syncSlots();
   }
 
   override updated(changed: PropertyValues): void {
@@ -84,6 +90,28 @@ export class ViChip extends FocusableMixin(ViElement) {
       } else if (changed.get('disabled') !== undefined) {
         this._setHostFocusable(true);
       }
+    }
+  }
+
+  private _syncSlotsFromLightDom(): void {
+    if (this.querySelector('[slot="avatar"]')) this._hasAvatar = true;
+    if (this.querySelector('[slot="icon"]')) this._hasIcon = true;
+    if (this.querySelector('[slot="trailing-icon"]')) this._hasTrailingIcon = true;
+  }
+
+  private _syncSlots(): void {
+    const avatarSlot = this.shadowRoot?.querySelector<HTMLSlotElement>('slot[name="avatar"]');
+    const iconSlot = this.shadowRoot?.querySelector<HTMLSlotElement>('slot[name="icon"]');
+    const trailingSlot = this.shadowRoot?.querySelector<HTMLSlotElement>('slot[name="trailing-icon"]');
+
+    if (avatarSlot) {
+      this._hasAvatar = avatarSlot.assignedElements({ flatten: true }).length > 0;
+    }
+    if (iconSlot) {
+      this._hasIcon = iconSlot.assignedElements({ flatten: true }).length > 0;
+    }
+    if (trailingSlot) {
+      this._hasTrailingIcon = trailingSlot.assignedElements({ flatten: true }).length > 0;
     }
   }
 

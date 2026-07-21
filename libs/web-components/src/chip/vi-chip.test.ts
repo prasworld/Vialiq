@@ -52,8 +52,8 @@ describe('vi-chip', () => {
     const chip = await $('vi-chip');
 
     // Trigger keyboard/mouse events on host itself as wdio shadow click can be flaky
-    await browser.execute((elem) => {
-        elem.shadowRoot.querySelector('button').click();
+    await browser.execute((elem: any) => {
+        (elem.shadowRoot!.querySelector('button') as HTMLButtonElement).click();
     }, await chip);
 
     expect(selectFired).toBe(true);
@@ -72,10 +72,30 @@ describe('vi-chip', () => {
     const chip = await $('vi-chip');
 
     // Trigger keyboard event on the host as defined
-    await browser.execute((elem) => {
-        elem.shadowRoot.querySelector('vi-button[part="remove-btn"]').click();
+    await browser.execute((elem: any) => {
+        (elem.shadowRoot!.querySelector('vi-button[part="remove-btn"]') as HTMLElement).click();
     }, await chip);
 
     expect(removeFired).toBe(true);
+  });
+
+  it('renders slotted avatar and icon content visibly on initial render', async () => {
+    render(
+      html`<vi-chip value="val1">
+        <span slot="avatar" class="test-avatar">AV</span>
+        <span slot="icon" class="test-icon">IC</span>
+        <span slot="trailing-icon" class="test-trailing">TR</span>
+        Label
+      </vi-chip>`,
+      container
+    );
+    const chip = await $('vi-chip');
+
+    const avatarSlotHidden = await browser.execute((elem: HTMLElement) => {
+      const slot = elem.shadowRoot?.querySelector('slot[name="avatar"]') as HTMLSlotElement;
+      return slot?.hasAttribute('hidden');
+    }, await chip);
+
+    expect(avatarSlotHidden).toBe(false);
   });
 });

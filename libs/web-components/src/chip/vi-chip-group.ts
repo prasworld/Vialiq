@@ -26,11 +26,8 @@ import groupStyles from './vi-chip-group.scss?inline';
  * @fires invalid       - Fired when checkValidity() fails (cancelable)
  */
 @customElement('vi-chip-group')
-export class ViChipGroup extends ValidityMixin(ViElement) {
-  static override styles = css`${unsafeCSS(groupStyles)}`;
-  static override formAssociated = true;
-
-  protected readonly _internals = this.attachInternals();
+export class ViChipGroup extends ValidityMixin<string[]>(ViElement) {
+  static styles = css`${unsafeCSS(groupStyles)}`;
 
   /** Currently selected chip values. */
   @property({ type: Array }) accessor value: string[] = [];
@@ -239,6 +236,7 @@ export class ViChipGroup extends ValidityMixin(ViElement) {
         role="listbox"
         aria-multiselectable=${this.multi ? 'true' : 'false'}
         aria-required=${this.required ? 'true' : 'false'}
+        aria-disabled=${this.disabled ? 'true' : 'false'}
         style=${style}
         @keydown=${this._handleKeyDown}
       >
