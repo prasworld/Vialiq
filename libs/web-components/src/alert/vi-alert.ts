@@ -89,7 +89,10 @@ export class ViAlert extends ViElement {
   @property({ type: String, attribute: 'dismiss-label' })
   accessor dismissLabel = 'Dismiss alert';
 
-  /** Auto hide alert after a specified duration */
+  /** 
+   * Enables auto-hiding after a duration (default: 5000ms).
+   * Note: Setting a positive `duration` or `auto-hide-duration` also implicitly enables auto-hiding.
+   */
   @property({ type: Boolean, attribute: 'auto-hide', reflect: true })
   accessor autoHide = false;
 
@@ -97,7 +100,10 @@ export class ViAlert extends ViElement {
   @property({ type: Number, attribute: 'auto-hide-duration' })
   accessor autoHideDuration = 5000;
 
-  /** Alias for auto-hide-duration */
+  /** 
+   * Alias for auto-hide-duration in milliseconds.
+   * Setting a positive duration enables auto-hiding automatically.
+   */
   @property({ type: Number })
   accessor duration: number | undefined = undefined;
 
@@ -119,12 +125,20 @@ export class ViAlert extends ViElement {
 
   private _autoHideTimer: ReturnType<typeof setTimeout> | null = null;
 
+  /** Helper to check whether auto-hide is enabled via boolean toggle or duration setting */
+  private get _shouldAutoHide(): boolean {
+    return (
+      this.autoHide ||
+      (this.duration !== undefined && this.duration > 0)
+    );
+  }
+
   override connectedCallback(): void {
     super.connectedCallback();
     this.updateRole();
     if (!this.open) {
       this.hidden = true;
-    } else if (this.autoHide || (this.duration !== undefined && this.duration > 0)) {
+    } else if (this._shouldAutoHide) {
       this._startAutoHideTimer();
     }
   }
@@ -153,10 +167,7 @@ export class ViAlert extends ViElement {
       changedProperties.has('autoHideDuration') ||
       changedProperties.has('duration')
     ) {
-      if (
-        this.open &&
-        (this.autoHide || (this.duration !== undefined && this.duration > 0))
-      ) {
+      if (this.open && this._shouldAutoHide) {
         this._startAutoHideTimer();
       } else {
         this._clearAutoHideTimer();
@@ -231,10 +242,7 @@ export class ViAlert extends ViElement {
       }
     }
 
-    if (
-      this.autoHide ||
-      (this.duration !== undefined && this.duration > 0)
-    ) {
+    if (this._shouldAutoHide) {
       this._startAutoHideTimer();
     }
 
