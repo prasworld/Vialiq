@@ -80,7 +80,6 @@ describe('vi-chip-group', () => {
     `, container);
 
     const group = await $('vi-chip-group');
-    const hostElement = await group as unknown as ViChipGroup;
     const chips = await $$('vi-chip');
 
     // Initially chip 1 enabled, chip 2 disabled

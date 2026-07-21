@@ -1,6 +1,6 @@
 import { css, html, unsafeCSS, type PropertyValues, type TemplateResult } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
-import { ValidityMixin, type ControlStatus } from '../base/validity-mixin.js';
+import { ValidityMixin } from '../base/validity-mixin.js';
 import { ViElement } from '../base/vi-element.js';
 import radioGroupStyles from './vi-radio-group.scss?inline';
 

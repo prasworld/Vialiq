@@ -120,10 +120,10 @@ export function ValidityMixin<
     accessor status: ControlStatus = 'default';
 
     @property({ type: Boolean, reflect: true })
-    accessor required: boolean = false;
+    accessor required = false;
 
     @property({ attribute: 'validity-message' })
-    accessor validityMessage: string = '';
+    accessor validityMessage = '';
 
     // ── ValidityState getters (WHATWG Constraint Validation API) ──────────────
 

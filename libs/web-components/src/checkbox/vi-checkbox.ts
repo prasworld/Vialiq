@@ -7,7 +7,7 @@ import {
 } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { FocusableMixin } from '../base/focusable-mixin.js';
-import { ValidityMixin, type ControlStatus } from '../base/validity-mixin.js';
+import { ValidityMixin } from '../base/validity-mixin.js';
 import { ViElement } from '../base/vi-element.js';
 import { classMap } from 'lit/directives/class-map.js';
 import checkboxStyles from './vi-checkbox.scss?inline';
