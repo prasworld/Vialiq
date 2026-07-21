@@ -70,12 +70,9 @@ export type InputSize = 'xs' | 'sm' | 'md' | 'lg';
  */
 @customElement('vi-input')
 export class ViInput extends ValidityMixin(FocusableMixin(ViElement)) {
-  static formAssociated = true;
   static override styles = css`
     ${unsafeCSS(inputStyles)}
   `;
-
-  protected readonly _internals = this.attachInternals();
 
   protected override get _focusableElement(): HTMLInputElement | null {
     return this.shadowRoot?.querySelector('input') ?? null;

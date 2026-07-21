@@ -490,7 +490,7 @@ describe('vi-radio & vi-radio-group', () => {
       const group = document.querySelector('vi-radio-group') as ViRadioGroup;
       
       // Empty selection is invalid
-      expect(group.checkValidity()).toBe(false);
+      expect(group.reportValidity()).toBe(false);
       expect(group.status).toBe('invalid');
       expect(group.validityMessage).not.toBe('');
 
@@ -498,7 +498,7 @@ describe('vi-radio & vi-radio-group', () => {
       group.value = 'yes';
       await group.updateComplete;
 
-      expect(group.checkValidity()).toBe(true);
+      expect(group.reportValidity()).toBe(true);
       expect(group.status).toBe('default'); // reset to default since valid
     });
 

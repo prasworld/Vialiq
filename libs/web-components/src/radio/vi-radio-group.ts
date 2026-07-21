@@ -33,12 +33,9 @@ export type RadioGroupOrientation = 'vertical' | 'horizontal';
  */
 @customElement('vi-radio-group')
 export class ViRadioGroup extends ValidityMixin(ViElement) {
-  static formAssociated = true;
   static override styles = css`
     ${unsafeCSS(radioGroupStyles)}
   `;
-
-  protected readonly _internals = this.attachInternals();
 
   // ── ValidityMixin contract ───────────────────────────────────────────────
 
