@@ -27,3 +27,6 @@ export type { AccordionVariant, AccordionSize } from './accordion/vi-accordion.j
 export { ViAccordionItem } from './accordion/vi-accordion-item.js';
 export { ViBadge } from './badge/vi-badge.js';
 export type { BadgeVariant, BadgeSize } from './badge/vi-badge.js';
+export { ViChip } from './chip/vi-chip.js';
+export type { ChipVariant, ChipSize } from './chip/vi-chip.js';
+export { ViChipGroup } from './chip/vi-chip-group.js';

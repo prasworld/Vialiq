@@ -1,0 +1,84 @@
+import { $, expect } from '@wdio/globals';
+import { html, render } from 'lit';
+import './vi-chip.js';
+import type { ViChip } from './vi-chip.js';
+
+describe('vi-chip', () => {
+  let container: HTMLElement;
+
+  beforeEach(() => {
+    container = document.createElement('div');
+    document.body.appendChild(container);
+  });
+
+  afterEach(() => {
+    container.remove();
+  });
+
+  it('renders standard chip structure', async () => {
+    render(html`<vi-chip value="test">Test Chip</vi-chip>`, container);
+    const chip = await $('vi-chip');
+    await expect(chip).toExist();
+
+    const button = await chip.shadow$('button[part="chip"]');
+    await expect(button).toExist();
+    expect(await button.getAttribute('role')).toBe('button');
+  });
+
+  it('renders check icon when selected', async () => {
+    render(html`<vi-chip selected>Selected</vi-chip>`, container);
+    const chip = await $('vi-chip');
+    const check = await chip.shadow$('vi-icon[part="check-icon"]');
+    await expect(check).toExist();
+  });
+
+  it('renders remove button when removable', async () => {
+    render(html`<vi-chip removable>Removable</vi-chip>`, container);
+    const chip = await $('vi-chip');
+    const removeBtn = await chip.shadow$('vi-button[part="remove-btn"]');
+    await expect(removeBtn).toExist();
+    expect(await removeBtn.getAttribute('aria-label')).toBe('Remove');
+  });
+
+  it('emits vialiq-select when clicked', async () => {
+    let selectFired = false;
+    let selectDetail: any = null;
+
+    const onSelect = (e: any) => {
+      selectFired = true;
+      selectDetail = e.detail;
+    };
+
+    render(html`<vi-chip value="val1" @vialiq-select=${onSelect}>Click me</vi-chip>`, container);
+    const chip = await $('vi-chip');
+
+    // Trigger keyboard/mouse events on host itself as wdio shadow click can be flaky
+    await browser.execute((elem) => {
+        elem.shadowRoot.querySelector('button').click();
+    }, await chip);
+
+    expect(selectFired).toBe(true);
+    expect(selectDetail.value).toBe('val1');
+    expect(selectDetail.selected).toBe(true);
+  });
+
+  it('emits vialiq-remove when remove button is clicked', async () => {
+    let removeFired = false;
+
+    const onRemove = (e: any) => {
+      removeFired = true;
+    };
+
+    render(html`<vi-chip value="val1" removable @vialiq-remove=${onRemove}>Remove me</vi-chip>`, container);
+    const chip = await $('vi-chip');
+    const removeBtn = await chip.shadow$('vi-button[part="remove-btn"]');
+
+    // We can't directly click inner shadow DOM button with wdio easily if it's another custom element
+    // Let's trigger a keyboard event on the host as defined
+    await browser.execute((elem) => {
+        elem.shadowRoot.querySelector('vi-button[part="remove-btn"]').click();
+    }, await chip);
+
+    expect(removeFired).toBe(true);
+  });
+});

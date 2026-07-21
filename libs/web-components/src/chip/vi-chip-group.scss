@@ -1,0 +1,13 @@
+:host {
+  display: block; // Form controls typically block level wrapper
+}
+
+:host([hidden]) {
+  display: none !important;
+}
+
+[part="group"] {
+  display: flex;
+  align-items: center;
+  // gap and flex-wrap are applied dynamically via inline styles in the component based on props
+}
