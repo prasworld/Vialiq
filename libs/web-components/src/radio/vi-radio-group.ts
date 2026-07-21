@@ -1,6 +1,6 @@
 import { css, html, unsafeCSS, type PropertyValues, type TemplateResult } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
-import { ValidityMixin } from '../base/validity-mixin.js';
+import { ValidityMixin, type ControlStatus } from '../base/validity-mixin.js';
 import { ViElement } from '../base/vi-element.js';
 import radioGroupStyles from './vi-radio-group.scss?inline';
 
@@ -33,9 +33,18 @@ export type RadioGroupOrientation = 'vertical' | 'horizontal';
  */
 @customElement('vi-radio-group')
 export class ViRadioGroup extends ValidityMixin(ViElement) {
+  static formAssociated = true;
   static override styles = css`
     ${unsafeCSS(radioGroupStyles)}
   `;
+
+  protected readonly _internals = this.attachInternals();
+
+  // ── ValidityMixin contract ───────────────────────────────────────────────
+
+  @property({ reflect: true }) accessor status: ControlStatus = 'default';
+  @property({ type: Boolean, reflect: true }) accessor required = false;
+  @property({ attribute: 'validity-message' }) accessor validityMessage = '';
 
   // ── Public API ─────────────────────────────────────────────────────────────
 
@@ -110,11 +119,17 @@ export class ViRadioGroup extends ValidityMixin(ViElement) {
     }
   }
 
-  /** Resets the value when the parent form resets. */
-  override formResetCallback(): void {
+  /** Resets the value and validation state when the parent form resets. */
+  formResetCallback(): void {
     this.value = this._initialValue;
-    super.formResetCallback();
+    this.status = 'default';
+    this.validityMessage = '';
     this._updateRadios();
+  }
+
+  /** Keeps disabled in sync when a containing fieldset/form is disabled. */
+  formDisabledCallback(disabled: boolean): void {
+    this.disabled = disabled;
   }
 
   protected override _testValidity(): Partial<ValidityStateFlags> {

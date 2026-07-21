@@ -1,13 +1,8 @@
-import { LitElement, type PropertyValues } from 'lit';
-import { property } from 'lit/decorators.js';
+import { LitElement } from 'lit';
 
+// any[] is required here — TypeScript mixin constructors must accept rest args.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Constructor<T = object> = new (...args: any[]) => T;
-
-/**
- * Generic shape of value types supported by form controls.
- */
-export type DefaultValueType = string | string[] | number | boolean | File | FileList | unknown;
 
 /**
  * Tri-state visual status for form controls.
@@ -16,15 +11,42 @@ export type DefaultValueType = string | string[] | number | boolean | File | Fil
  * - `'invalid'`  — red border, error colours; set by the form when validation fails
  * - `'valid'`    — green border, success colours; set explicitly by the parent when
  *                  it wants to confirm a correct value (independent of message)
+ *
+ * Designed to be driven from outside (Angular binding, React prop, plain JS) so
+ * the component never decides on its own that it is "valid" — that is always an
+ * explicit, intentional signal from the consuming code.
  */
 export type ControlStatus = 'default' | 'valid' | 'invalid';
 
 /**
  * Type-only declaration of the shape ValidityMixin adds to a class.
  * `declare class` emits no runtime code — it is a TS-only contract.
+ *
+ * Properties listed here (invalid, required, validityMessage, value) must be
+ * declared as reactive `@property` accessors on the subclass. The mixin reads
+ * and writes them but cannot create them — they must exist on the concrete class
+ * for Lit's reactivity system to pick them up.
+ *
+ * _internals must be set via `this.attachInternals()` on the subclass.
+ * The class must also declare `static formAssociated = true`.
  */
-export declare class ValidityInterface<V = DefaultValueType> {
-  /** Visual/validation state of the control. Reflects as the `[status]` attribute. */
+export declare class ValidityInterface {
+  // ── Reactive properties — subclass MUST declare as @property accessor ──────
+  // Declared as get/set pairs so that subclass `accessor` declarations
+  // (required by Lit 3 TC39 decorators) are compatible. TypeScript TS2611
+  // is triggered when a plain field in a base class is overridden with an
+  // accessor; get/set declarations don't have this restriction.
+
+  /**
+   * Visual/validation state of the control. Reflects as the `[status]` attribute.
+   * - `'default'` — no validation styling
+   * - `'invalid'`  — red border / error colours
+   * - `'valid'`    — green border / success colours
+   *
+   * Set by the mixin's constraint-validation methods AND by the consuming
+   * code/framework. The parent always controls this — the component never
+   * auto-promotes itself to `'valid'`.
+   */
   get status(): ControlStatus;
   set status(value: ControlStatus);
 
@@ -37,316 +59,293 @@ export declare class ValidityInterface<V = DefaultValueType> {
   set validityMessage(value: string);
 
   /** The current component value. Read by _testValidity for required check. */
-  get value(): V;
-  set value(v: V);
+  get value(): string;
+  set value(v: string);
 
-  /** ElementInternals instance created by the mixin. */
+  // ── ElementInternals — subclass MUST attach ───────────────────────────────
+
+  /**
+   * ElementInternals instance. Subclass MUST declare:
+   *   protected readonly _internals = this.attachInternals();
+   * and set:
+   *   static formAssociated = true;
+   */
   protected readonly _internals: ElementInternals;
 
-  /** Checks if the current value satisfies all constraints. Does NOT mutate visual status. */
+  // ── Mixin public API ──────────────────────────────────────────────────────
+
+  /**
+   * Checks if the current value satisfies all constraints.
+   * Fires a cancelable 'invalid' event (bubbles: false) if invalid.
+   * Does NOT show browser validation tooltip.
+   * Returns true if valid.
+   */
   checkValidity(): boolean;
 
-  /** Checks validity, updates visual status, AND triggers the browser's built-in validation UI. */
+  /**
+   * Checks validity AND triggers the browser's built-in validation UI
+   * (tooltip near the field). Delegates to ElementInternals.reportValidity().
+   * Returns true if valid.
+   */
   reportValidity(): boolean;
 
-  /** Sets an arbitrary custom validation message. */
+  /**
+   * Sets an arbitrary custom validation message.
+   * Pass an empty string to clear the custom error and restore validity.
+   * Syncs immediately to ElementInternals so native form constraint API works.
+   */
   setCustomValidity(message: string): void;
 
-  /** Returns the ValidityState object from ElementInternals. */
-  get validity(): ValidityState;
-
-  /** Returns the current validation message from ElementInternals. */
-  get validationMessage(): string;
+  // ── Override point ────────────────────────────────────────────────────────
 
   /**
-   * Whether this element will be validated when the form is submitted.
-   * Returns `false` when the element is disabled.
+   * Returns the set of ValidityStateFlags describing why the value is invalid.
+   * Return {} (empty object) when the value is valid.
+   *
+   * The base implementation returns {} (always valid).
+   * Subclasses override this to add component-specific checks.
+   *
+   * Standard flags (all optional, all boolean):
+   *   valueMissing   — required field has no value
+   *   tooShort       — value is shorter than minlength
+   *   tooLong        — value exceeds maxlength
+   *   rangeUnderflow — numeric value < min
+   *   rangeOverflow  — numeric value > max
+   *   patternMismatch— value doesn't match pattern
+   *   typeMismatch   — value not well-formed for type (email, url, etc.)
+   *   badInput       — user input cannot be converted to a value at all
+   *   customError    — setCustomValidity() was called with a non-empty string
+   *   stepMismatch   — value doesn't conform to step
    */
-  get willValidate(): boolean;
-
-  /**
-   * Returns the ValidityStateFlags describing why the value is invalid.
-   * Subclasses MUST override this to provide component-specific validation logic.
-   */
+  // ValidityStateFlags is a standard DOM lib interface (lib.dom.d.ts) — the
+  // parameter type for ElementInternals.setValidity(). All its fields are
+  // already optional, so Partial<> is redundant but kept for explicitness.
+  // Do NOT confuse with ValidityState (the read-only input.validity object).
   protected _testValidity(): Partial<ValidityStateFlags>;
-
-  /**
-   * Returns the element that the browser validation popup should point at.
-   * Override in subclasses that wrap a native control (input, textarea, etc.).
-   */
-  protected _getValidationAnchor(): HTMLElement | undefined;
-
-  /** Called when the associated form is reset. Resets status and validityMessage. */
-  formResetCallback(): void;
-
-  /** Called when the form or parent fieldset disabled state changes. */
-  formDisabledCallback(disabled: boolean): void;
-
-  /** Called when the browser restores form state (bfcache, autofill). */
-  formStateRestoreCallback(state: string | File | FormData | null, reason: string): void;
 }
 
 /**
  * ValidityMixin
  *
- * Adds the full WHATWG Constraint Validation API and form-associated lifecycle
- * to any Lit element. Consumers only need to:
+ * Adds the standard form validation API (`checkValidity`, `reportValidity`,
+ * `setCustomValidity`) to any form-associated Lit element.
  *
- *   1. Override `_testValidity()` to return component-specific validity flags.
- *   2. Declare `value`, `name`, and `disabled` as `@property`.
- *   3. Call `_internals.setFormValue()` in their `updated()` lifecycle.
+ * Backed by the native `ElementInternals` API so the component participates
+ * in `HTMLFormElement` constraint validation, `.elements`, and browser
+ * validation UI — exactly like a native `<input>`.
  *
- * The mixin owns: `static formAssociated`, `_internals`, `status`, `required`,
- * `validityMessage`, and all form lifecycle callbacks.
+ * ─────────────────────────────────────────────────────────────────────────
+ * MINIMUM SUBCLASS REQUIREMENTS
+ * ─────────────────────────────────────────────────────────────────────────
+ *
+ *   1. Declare static formAssociated = true;
+ *      Makes the browser register this element as a form participant.
+ *
+ *   2. Attach ElementInternals:
+ *        protected readonly _internals = this.attachInternals();
+ *      Must be a field initializer (runs after super() in the constructor).
+ *
+ *   3. Declare reactive properties (MUST be @property so Lit tracks changes):
+ *        @property({ reflect: true }) accessor status: ControlStatus = 'default';
+ *        @property({ type: Boolean, reflect: true }) accessor required = false;
+ *        @property() accessor validityMessage = '';
+ *        @property() accessor value = '';
+ *
+ *   4. Sync value to internals on every value change:
+ *        override updated(changed: PropertyValues): void {
+ *          super.updated(changed);
+ *          if (changed.has('value')) {
+ *            this._internals.setFormValue(this.value);
+ *          }
+ *        }
+ *
+ *   5. Handle form reset:
+ *        formResetCallback(): void {
+ *          this.value = this.getAttribute('value') ?? '';
+ *          this.status = 'default';
+ *          this.validityMessage = '';
+ *        }
+ *
+ *   6. Handle fieldset/form disable:
+ *        formDisabledCallback(disabled: boolean): void {
+ *          this.disabled = disabled;
+ *        }
+ *
+ * ─────────────────────────────────────────────────────────────────────────
+ * OVERRIDE _testValidity() FOR CUSTOM CONSTRAINTS
+ * ─────────────────────────────────────────────────────────────────────────
+ *
+ *   protected override _testValidity(): Partial<ValidityStateFlags> {
+ *     if (this.required && !this.value) return { valueMissing: true };
+ *     return {};
+ *   }
+ *
+ *   Chain constraints for components with multiple rules (e.g. vi-input[type="number"]):
+ *
+ *   protected override _testValidity(): Partial<ValidityStateFlags> {
+ *     if (this.required && !this.value)     return { valueMissing: true };
+ *     if (this.minlength && this.value.length < this.minlength)
+ *                                           return { tooShort: true };
+ *     if (this.maxlength && this.value.length > this.maxlength)
+ *                                           return { tooLong: true };
+ *     return {};
+ *   }
+ *
+ * ─────────────────────────────────────────────────────────────────────────
+ * FULL USAGE EXAMPLE — vi-input
+ * ─────────────────────────────────────────────────────────────────────────
+ *
+ *   import { property } from 'lit/decorators.js';
+ *   import { ValidityMixin } from '../base/validity-mixin.js';
+ *   import { FocusableMixin } from '../base/focusable-mixin.js';
+ *   import { ViElement } from '../base/vi-element.js';
+ *
+ *   @customElement('vi-input')
+ *   export class ViInput extends ValidityMixin(FocusableMixin(ViElement)) {
+ *     static override formAssociated = true;
+ *     protected readonly _internals = this.attachInternals();
+ *
+   *     @property({ reflect: true }) accessor status: ControlStatus = 'default';
+ *     @property({ type: Boolean, reflect: true }) accessor required = false;
+ *     @property() accessor validityMessage = '';
+ *     @property() accessor value = '';
+ *
+ *     protected override _testValidity(): Partial<ValidityStateFlags> {
+ *       if (this.required && !this.value) return { valueMissing: true };
+ *       return {};
+ *     }
+ *
+ *     override updated(changed: PropertyValues): void {
+ *       super.updated(changed);
+ *       if (changed.has('value')) this._internals.setFormValue(this.value);
+ *     }
+ *
+ *     formResetCallback(): void {
+ *       this.value = this.getAttribute('value') ?? '';
+ *       this.status = 'default';
+ *       this.validityMessage = '';
+ *     }
+ *
+ *     formDisabledCallback(disabled: boolean): void {
+ *       this.disabled = disabled;
+ *     }
+ *   }
+ *
+ * ─────────────────────────────────────────────────────────────────────────
+ * INVALID EVENT BEHAVIOUR
+ * ─────────────────────────────────────────────────────────────────────────
+ *
+ *   checkValidity() fires a cancelable 'invalid' event when validation fails.
+ *   The event does NOT bubble (matches native form element behaviour).
+ *   Consumer can suppress the default UI by calling event.preventDefault().
+ *
+ *   Example:
+ *     myInput.addEventListener('invalid', (e) => {
+ *       e.preventDefault(); // suppress browser tooltip
+ *       showMyCustomError(myInput.validityMessage);
+ *     });
+ *
+ * ─────────────────────────────────────────────────────────────────────────
+ * MIXIN COMPOSITION ORDER
+ * ─────────────────────────────────────────────────────────────────────────
+ *
+ *   ValidityMixin should wrap FocusableMixin (outermost):
+ *     ValidityMixin(FocusableMixin(ViElement))
+ *
+ *   Reason: ValidityMixin only adds methods (checkValidity etc.). It does not
+ *   touch shadowRootOptions or focus delegation, so order has no side-effects.
+ *   Convention is: functionality mixins wrap infrastructure mixins.
  */
-export function ValidityMixin<
-  V = DefaultValueType,
-  T extends Constructor<LitElement> = Constructor<LitElement>
->(
+export function ValidityMixin<T extends Constructor<LitElement>>(
   Base: T
-): T & Constructor<ValidityInterface<V>> {
+): T & Constructor<ValidityInterface> {
   class ValidityMixinClass extends Base {
-    // ── Form association ─────────────────────────────────────────────────────
-
-    static formAssociated = true;
-
-    protected readonly _internals = this.attachInternals();
-
-    // ── Shared validation properties ─────────────────────────────────────────
-    // These are the "contract" properties that ValidityMixin manages.
-    // Consumers no longer need to declare these themselves.
-
-    @property({ reflect: true })
-    accessor status: ControlStatus = 'default';
-
-    @property({ type: Boolean, reflect: true })
-    accessor required = false;
-
-    @property({ attribute: 'validity-message' })
-    accessor validityMessage = '';
-
-    // ── ValidityState getters (WHATWG Constraint Validation API) ──────────────
-
     /**
-     * The ValidityState from ElementInternals.
-     * Always reflects the most recent `_testValidity()` result.
-     */
-    get validity(): ValidityState {
-      return this._internals.validity;
-    }
-
-    /**
-     * The human-readable validation message from ElementInternals.
-     * Set by `setValidity()` and `setCustomValidity()`.
-     */
-    get validationMessage(): string {
-      return this._internals.validationMessage;
-    }
-
-    /**
-     * Whether this control will participate in form validation.
-     * Per spec, disabled controls return false (they are not candidates).
-     */
-    get willValidate(): boolean {
-      return this._internals.willValidate;
-    }
-
-    // ── Extension hooks for subclasses ────────────────────────────────────────
-
-    /**
-     * Returns ValidityStateFlags describing why the current value is invalid.
-     * Return `{}` (empty) when the value is valid.
-     *
-     * Subclasses MUST override this. The base implementation returns `{}`
-     * (always valid) as a safe default.
+     * Base implementation — always valid.
+     * Subclass overrides this to return flags like { valueMissing: true }.
      */
     protected _testValidity(): Partial<ValidityStateFlags> {
       return {};
     }
 
-    /**
-     * Returns the element that browser validation popups should anchor to.
-     * Override in subclasses that wrap a native control via FocusableMixin.
-     *
-     * @example
-     *   protected override _getValidationAnchor(): HTMLElement | undefined {
-     *     return this._focusableElement ?? undefined;
-     *   }
-     */
-    protected _getValidationAnchor(): HTMLElement | undefined {
-      return undefined;
-    }
-
-    /**
-     * Internal validity check — sets validity on ElementInternals and
-     * dispatches the cancelable `invalid` event if invalid.
-     * Returns whether the control is valid and whether the event was allowed.
-     */
-    private _checkValidityAndDispatch(): { isValid: boolean; proceed: boolean } {
+    checkValidity(): boolean {
       const flags = this._testValidity();
       const isValid = !Object.values(flags).some(Boolean);
-      const anchor = this._getValidationAnchor();
 
-      if (isValid) {
-        this._internals.setValidity({});
-      } else {
-        const msg = this.validityMessage || 'Invalid value';
-        if (anchor) {
-          this._internals.setValidity(flags, msg, anchor);
+      // Sync to ElementInternals so native form API (formElement.checkValidity,
+      // :invalid CSS pseudo-class, browser tooltip) reflects the same state.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const internals: ElementInternals | undefined = (this as any)._internals;
+      if (internals) {
+        if (isValid) {
+          internals.setValidity({}, '');
         } else {
-          this._internals.setValidity(flags, msg);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const msg: string = (this as any).validityMessage || 'Invalid value';
+          internals.setValidity(flags, msg);
         }
       }
 
-      let proceed = true;
-      if (!isValid) {
-        proceed = this.dispatchEvent(
+      if (isValid) {
+        // Only clear status if it was previously set to 'invalid' by the constraint
+        // API. Do not override an explicit 'valid' set by the parent/framework.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if ((this as any).status === 'invalid') {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (this as any).status = 'default';
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (this as any).validityMessage = '';
+        }
+      } else {
+        // Fire cancelable 'invalid' — mirrors native form element behaviour.
+        // Cancelable so consumers can suppress browser tooltip and show their own.
+        // bubbles: false — matches native <input> 'invalid' event.
+        // composed: false — stays within the document, does not cross shadow boundaries.
+        const proceed = this.dispatchEvent(
           new Event('invalid', { bubbles: false, cancelable: true, composed: false })
         );
-      }
-
-      return { isValid, proceed };
-    }
-
-    /**
-     * Checks whether the control satisfies all validity constraints.
-     *
-     * Per the WHATWG spec, this method:
-     * - Evaluates validity via `_testValidity()`
-     * - Updates `_internals.setValidity()` so `.validity` is fresh
-     * - Dispatches a cancelable `invalid` event if the control is invalid
-     * - Returns `true` if valid, `false` otherwise
-     *
-     * **Does NOT mutate `status`.** Use `reportValidity()` to update
-     * the visual state.
-     */
-    checkValidity(): boolean {
-      return this._checkValidityAndDispatch().isValid;
-    }
-
-    /**
-     * Checks validity, updates the visual `status` (if the `invalid` event
-     * was not prevented), and triggers the browser's built-in validation popup.
-     *
-     * This is the method that should be called when you want the user
-     * to see validation feedback.
-     */
-    reportValidity(): boolean {
-      const { isValid, proceed } = this._checkValidityAndDispatch();
-
-      if (isValid) {
-        if (this.status === 'invalid') {
-          this.status = 'default';
-          this.validityMessage = '';
-        }
-      } else {
-        // Only update visual status if the `invalid` event wasn't prevented
         if (proceed) {
-          this.status = 'invalid';
+          // Only set status='invalid' if the event was not cancelled.
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (this as any).status = 'invalid';
         }
       }
 
-      return this._internals.reportValidity();
+      return isValid;
     }
 
-    /**
-     * Sets or clears a custom validation error.
-     *
-     * - Pass a non-empty string to mark the control as invalid with a custom message.
-     * - Pass an empty string to clear the custom error.
-     */
+    reportValidity(): boolean {
+      // Prefer ElementInternals.reportValidity() — it triggers native browser UI
+      // (tooltip near the field). Falls back to checkValidity() if internals not set.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const internals: ElementInternals | undefined = (this as any)._internals;
+      if (internals) {
+        // Must sync validity state first so the browser has something to show.
+        this.checkValidity();
+        return internals.reportValidity();
+      }
+      return this.checkValidity();
+    }
+
     setCustomValidity(message: string): void {
       const hasError = Boolean(message);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (this as any).status = hasError ? 'invalid' : 'default';
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (this as any).validityMessage = message;
 
-      this.status = hasError ? 'invalid' : 'default';
-      this.validityMessage = message;
-
-      if (hasError) {
-        const anchor = this._getValidationAnchor();
-        if (anchor) {
-          this._internals.setValidity({ customError: true }, message, anchor);
-        } else {
-          this._internals.setValidity({ customError: true }, message);
-        }
-      } else {
-        this._internals.setValidity({});
-      }
-    }
-
-    // ── Auto re-validation (keeps .validity fresh) ───────────────────────────
-
-    /**
-     * Silently keeps `_internals.setValidity()` in sync whenever reactive
-     * properties change. This ensures `.validity` is always fresh without
-     * mutating `status` or dispatching events.
-     */
-    override updated(changed: PropertyValues): void {
-      super.updated(changed);
-
-      if (changed.has('value') || changed.has('required')) {
-        this._syncValidity();
-      }
-    }
-
-    /**
-     * Internal validity sync — updates `_internals.setValidity()` without
-     * changing visual `status` or dispatching events.
-     */
-    private _syncValidity(): void {
-      const flags = this._testValidity();
-      const isValid = !Object.values(flags).some(Boolean);
-      const anchor = this._getValidationAnchor();
-
-      if (isValid) {
-        this._internals.setValidity({});
-      } else {
-        const msg = this.validityMessage || 'Invalid value';
-        if (anchor) {
-          this._internals.setValidity(flags, msg, anchor);
-        } else {
-          this._internals.setValidity(flags, msg);
-        }
-      }
-    }
-
-    // ── Form lifecycle callbacks ─────────────────────────────────────────────
-
-    /**
-     * Called when the associated `<form>` is reset.
-     * Resets visual status and validation message.
-     *
-     * Subclasses should override to also reset their `value` property,
-     * then call `super.formResetCallback()`.
-     */
-    formResetCallback(): void {
-      this.status = 'default';
-      this.validityMessage = '';
-      this._internals.setValidity({});
-    }
-
-    /**
-     * Called when the form or parent `<fieldset>` disabled state changes.
-     * Propagates the disabled state to the element's `disabled` property.
-     */
-    formDisabledCallback(disabled: boolean): void {
-      // All consumers declare `disabled` as @property — set it directly.
-      (this as unknown as { disabled: boolean }).disabled = disabled;
-    }
-
-    /**
-     * Called when the browser restores form state (back/forward cache, autofill).
-     * Default implementation handles string values. Override for complex types
-     * (arrays, FormData, etc.).
-     */
-    formStateRestoreCallback(
-      state: string | File | FormData | null,
-      _reason: string
-    ): void {
-      if (typeof state === 'string') {
-        (this as unknown as { value: V }).value = state as V;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const internals: ElementInternals | undefined = (this as any)._internals;
+      if (internals) {
+        internals.setValidity(
+          hasError ? { customError: true } : {},
+          hasError ? message : ''
+        );
       }
     }
   }
 
-  return ValidityMixinClass as unknown as T & Constructor<ValidityInterface<V>>;
+  // Cast required: TypeScript cannot reconcile LitElement's private fields
+  // with the anonymous class return type. Same pattern as FocusableMixin.
+  return ValidityMixinClass as unknown as T & Constructor<ValidityInterface>;
 }

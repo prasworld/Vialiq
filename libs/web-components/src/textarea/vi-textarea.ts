@@ -8,7 +8,7 @@ import {
 } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { FocusableMixin } from '../base/focusable-mixin.js';
-import { ValidityMixin } from '../base/validity-mixin.js';
+import { ValidityMixin, type ControlStatus } from '../base/validity-mixin.js';
 import { ViElement } from '../base/vi-element.js';
 import { ifNonEmpty } from '../base/if-non-empty.js';
 import textareaStyles from './vi-textarea.scss?inline';
@@ -48,17 +48,22 @@ export type TextareaResize = 'none' | 'vertical' | 'both';
  */
 @customElement('vi-textarea')
 export class ViTextarea extends ValidityMixin(FocusableMixin(ViElement)) {
+  static formAssociated = true;
   static override styles = css`
     ${unsafeCSS(textareaStyles)}
   `;
+
+  protected readonly _internals = this.attachInternals();
 
   protected override get _focusableElement(): HTMLTextAreaElement | null {
     return this.shadowRoot?.querySelector('textarea') ?? null;
   }
 
-  protected override _getValidationAnchor(): HTMLElement | undefined {
-    return this._focusableElement ?? undefined;
-  }
+  // ── ValidityMixin contract properties ──────────────────────────────────────
+
+  @property({ reflect: true }) accessor status: ControlStatus = 'default';
+  @property({ type: Boolean, reflect: true }) accessor required = false;
+  @property({ attribute: 'validity-message' }) accessor validityMessage = '';
 
   // ── Public API ─────────────────────────────────────────────────────────────
 
@@ -98,7 +103,7 @@ export class ViTextarea extends ValidityMixin(FocusableMixin(ViElement)) {
 
   // ── ValidityMixin implementation ───────────────────────────────────────────
 
-  protected override _testValidity(): Partial<ValidityStateFlags> {
+  protected _testValidity(): Partial<ValidityStateFlags> {
     if (this._internals.validity.customError) {
       return { customError: true };
     }
@@ -145,10 +150,16 @@ export class ViTextarea extends ValidityMixin(FocusableMixin(ViElement)) {
     }
   }
 
-  /** Resets value when the parent form resets. */
-  override formResetCallback(): void {
+  /** Resets value and validation state when the parent form resets. */
+  formResetCallback(): void {
     this.value = this.getAttribute('value') ?? '';
-    super.formResetCallback();
+    this.status = 'default';
+    this.validityMessage = '';
+  }
+
+  /** Keeps disabled in sync when containing fieldset/form state changes. */
+  formDisabledCallback(disabled: boolean): void {
+    this.disabled = disabled;
   }
 
   // ── Event Handlers ─────────────────────────────────────────────────────────

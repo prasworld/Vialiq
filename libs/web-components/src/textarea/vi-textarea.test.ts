@@ -196,7 +196,7 @@ describe('vi-textarea', () => {
       const host = document.querySelector('vi-textarea') as ViTextarea;
       await host.updateComplete;
 
-      const isValid = host.reportValidity();
+      const isValid = host.checkValidity();
       expect(isValid).toBe(false);
       expect(host.status).toBe('invalid');
       expect(host.validityMessage).toBeTruthy();
@@ -210,7 +210,7 @@ describe('vi-textarea', () => {
       const host = document.querySelector('vi-textarea') as ViTextarea;
       await host.updateComplete;
 
-      const isValid = host.reportValidity();
+      const isValid = host.checkValidity();
       expect(isValid).toBe(true);
       expect(host.status).toBe('default');
     });

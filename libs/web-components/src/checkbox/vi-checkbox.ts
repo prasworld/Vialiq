@@ -7,7 +7,7 @@ import {
 } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { FocusableMixin } from '../base/focusable-mixin.js';
-import { ValidityMixin } from '../base/validity-mixin.js';
+import { ValidityMixin, type ControlStatus } from '../base/validity-mixin.js';
 import { ViElement } from '../base/vi-element.js';
 import { classMap } from 'lit/directives/class-map.js';
 import checkboxStyles from './vi-checkbox.scss?inline';
@@ -41,19 +41,23 @@ export type CheckboxSize = 'xs' | 'sm' | 'md' | 'lg';
  */
 @customElement('vi-checkbox')
 export class ViCheckbox extends ValidityMixin(FocusableMixin(ViElement)) {
+  static formAssociated = true;
   static override styles = css`
     ${unsafeCSS(checkboxStyles)}
   `;
 
+  protected readonly _internals = this.attachInternals();
   private _initialChecked = false;
 
   protected override get _focusableElement(): HTMLInputElement | null {
     return this.shadowRoot?.querySelector('input') ?? null;
   }
 
-  protected override _getValidationAnchor(): HTMLElement | undefined {
-    return this._focusableElement ?? undefined;
-  }
+  // ── ValidityMixin contract ───────────────────────────────────────────────
+
+  @property({ reflect: true }) accessor status: ControlStatus = 'default';
+  @property({ type: Boolean, reflect: true }) accessor required = false;
+  @property() accessor validityMessage = '';
 
   // ── Public API ────────────────────────────────────────────────────────────
 
@@ -75,7 +79,9 @@ export class ViCheckbox extends ValidityMixin(FocusableMixin(ViElement)) {
   /** Disables the checkbox. */
   @property({ type: Boolean, reflect: true }) accessor disabled = false;
 
-  protected override _testValidity(): Partial<ValidityStateFlags> {
+  // ── ValidityMixin hook ───────────────────────────────────────────────────
+
+  protected _testValidity(): Partial<ValidityStateFlags> {
     const input = this._focusableElement;
     if (input) {
       if (input.checked !== this.checked) {
@@ -126,11 +132,17 @@ export class ViCheckbox extends ValidityMixin(FocusableMixin(ViElement)) {
     }
   }
 
-  /** Resets checked state when the parent form resets. */
-  override formResetCallback(): void {
+  /** Resets value and validation state when the associated form resets. */
+  formResetCallback(): void {
     this.checked = this._initialChecked;
     this.indeterminate = false;
-    super.formResetCallback();
+    this.status = 'default';
+    this.validityMessage = '';
+  }
+
+  /** Keeps disabled in sync when a containing fieldset or form is disabled. */
+  formDisabledCallback(disabled: boolean): void {
+    this.disabled = disabled;
   }
 
   // ── Event Handlers ─────────────────────────────────────────────────────────
