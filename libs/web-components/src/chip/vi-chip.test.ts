@@ -32,7 +32,7 @@ describe('vi-chip', () => {
   });
 
   it('renders remove button when removable', async () => {
-    render(html`<vi-chip removable>Removable</vi-chip>`, container);
+    render(html`<vi-chip removable remove-aria-label="Remove">Removable</vi-chip>`, container);
     const chip = await $('vi-chip');
     const removeBtn = await chip.shadow$('vi-button[part="remove-btn"]');
     await expect(removeBtn).toExist();

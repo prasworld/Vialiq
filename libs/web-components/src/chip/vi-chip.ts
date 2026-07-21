@@ -57,6 +57,9 @@ export class ViChip extends FocusableMixin(ViElement) {
   /** Show × remove button. */
   @property({ type: Boolean, reflect: true }) accessor removable = false;
 
+  /** Screen reader text for the remove button */
+  @property({ type: String, attribute: 'remove-aria-label' }) accessor removeAriaLabel: string | undefined;
+
   /** Base colour. */
   @property({ type: String, reflect: true }) accessor variant: ChipVariant = 'neutral';
 
@@ -176,7 +179,7 @@ export class ViChip extends FocusableMixin(ViElement) {
             variant="ghost"
             size="xs"
             icon-only
-            aria-label="Remove"
+            aria-label=${this.removeAriaLabel ?? ''}
             @click=${this._handleRemove}
             tabindex=${this.disabled ? -1 : 0}
           >
