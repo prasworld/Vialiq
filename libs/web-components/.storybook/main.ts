@@ -5,36 +5,10 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { createRequire } from 'module';
 
-import fs from 'fs';
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const require = createRequire(import.meta.url);
 const workspaceRoot = path.resolve(__dirname, '../../..');
-
-function resolvePackageDir(pkgName: string): string {
-  try {
-    const mainPath = require.resolve(pkgName, { paths: [workspaceRoot] });
-    const marker = path.join('node_modules', pkgName);
-    const idx = mainPath.lastIndexOf(marker);
-    if (idx !== -1) {
-      const base = mainPath.slice(0, idx);
-      return path.join(base, 'node_modules', pkgName);
-    }
-    return path.dirname(mainPath);
-  } catch (error) {
-    const fallbackDir = path.join(workspaceRoot, 'node_modules', pkgName);
-    if (fs.existsSync(fallbackDir)) {
-      return fallbackDir;
-    }
-
-    throw new Error(
-      `Failed to resolve package "${pkgName}" from workspace root "${workspaceRoot}". ` +
-      `require.resolve error: ${(error as Error).message}. ` +
-      `Fallback directory "${fallbackDir}" does not exist.`
-    );
-  }
-}
 
 const config: StorybookConfig = {
   framework: {
@@ -56,9 +30,9 @@ const config: StorybookConfig = {
             __dirname,
             '../../flux-ui/styles/_index.scss'
           ),
-          'lit': resolvePackageDir('lit'),
-          'lit-html': resolvePackageDir('lit-html'),
-          'lit-element': resolvePackageDir('lit-element'),
+          'lit': path.dirname(require.resolve('lit/package.json', { paths: [workspaceRoot] })),
+          'lit-html': path.dirname(require.resolve('lit-html/package.json', { paths: [workspaceRoot] })),
+          'lit-element': path.dirname(require.resolve('lit-element/package.json', { paths: [workspaceRoot] })),
         },
       },
       plugins: [

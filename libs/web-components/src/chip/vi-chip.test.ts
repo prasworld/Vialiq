@@ -1,7 +1,6 @@
 import { $, expect } from '@wdio/globals';
 import { html, render } from 'lit';
 import './vi-chip.js';
-import type { ViChip } from './vi-chip.js';
 
 describe('vi-chip', () => {
   let container: HTMLElement;
@@ -65,16 +64,14 @@ describe('vi-chip', () => {
   it('emits vialiq-remove when remove button is clicked', async () => {
     let removeFired = false;
 
-    const onRemove = (e: any) => {
+    const onRemove = () => {
       removeFired = true;
     };
 
     render(html`<vi-chip value="val1" removable @vialiq-remove=${onRemove}>Remove me</vi-chip>`, container);
     const chip = await $('vi-chip');
-    const removeBtn = await chip.shadow$('vi-button[part="remove-btn"]');
 
-    // We can't directly click inner shadow DOM button with wdio easily if it's another custom element
-    // Let's trigger a keyboard event on the host as defined
+    // Trigger keyboard event on the host as defined
     await browser.execute((elem) => {
         elem.shadowRoot.querySelector('vi-button[part="remove-btn"]').click();
     }, await chip);

@@ -37,8 +37,6 @@ A persistent inline status message displayed within the page layout. Not floatin
 |----------|-----------|------|---------|---------|-------------|
 | `variant` | `variant` | `AlertVariant` | `'info'` | ✅ | Colour, icon, ARIA role |
 | `title` | `title` | `string` | `''` | — | Bold headline (optional) |
-| `open` | `open` | `boolean` | `true` | ✅ | Controls whether the alert is displayed |
-| `floating` | `floating` | `boolean` | `false` | ✅ | Positions alert absolutely over parent container (100% width) |
 | `dismissible` | `dismissible` | `boolean` | `false` | ✅ | Show × dismiss button |
 | `icon` | `icon` | `string` | auto | — | Override the default status icon name |
 | `noIcon` | `no-icon` | `boolean` | `false` | — | Hide the icon |
@@ -59,15 +57,6 @@ type AlertVariant = 'info' | 'success' | 'warning' | 'danger' | 'neutral';
 
 ---
 
-## Methods
-
-| Method | Return Type | Description |
-|--------|-------------|-------------|
-| `show()` | `Promise<void>` | Programmatically opens/shows the alert |
-| `hide()` | `Promise<void>` | Programmatically closes/dismisses the alert (with collapse animation) |
-
----
-
 ## Slots
 
 | Slot | Description |
@@ -83,8 +72,7 @@ type AlertVariant = 'info' | 'success' | 'warning' | 'danger' | 'neutral';
 
 | Event | Type | Bubbles | Fires when |
 |-------|------|---------|-----------|
-| `vialiq-alert-show` | `CustomEvent<{ id: string }>` | ✅ | Alert is opened/shown |
-| `vialiq-alert-close` | `CustomEvent<{ id: string }>` | ✅ | Alert is dismissed (× clicked or hide() called) |
+| `vialiq-close` | `CustomEvent<void>` | ✅ | Alert is dismissed (× clicked) |
 
 ---
 
@@ -110,8 +98,6 @@ type AlertVariant = 'info' | 'success' | 'warning' | 'danger' | 'neutral';
 | `--vi-alert-padding` | `12px 16px` | Inner padding |
 | `--vi-alert-gap` | `12px` | Icon → content gap |
 | `--vi-alert-border-width` | `1px` | Border width |
-| `--vi-alert-floating-z-index` | `10` | Z-index when `floating` is enabled |
-| `--vi-alert-floating-shadow` | `0 4px 12px rgba(0,0,0,0.12)` | Box shadow when `floating` is enabled |
 
 Variant-specific tokens (example for `danger`):
 
@@ -169,19 +155,6 @@ vi-alert[role="alert|status"]
 </vi-alert>
 ```
 
-### Floating Container Overlay (No Layout Shift)
-
-```html
-<div style="position: relative;">
-  <vi-alert floating variant="warning" title="Read-Only Mode" dismissible>
-    This card is currently locked for editing.
-  </vi-alert>
-
-  <h3>Subject Form Record</h3>
-  <p>Form contents remain in place without layout shifts.</p>
-</div>
-```
-
 ### Data lock indicator
 
 ```html
@@ -206,7 +179,7 @@ vi-alert[role="alert|status"]
 ```html
 @if (showSaveConfirmation) {
   <vi-alert variant="success" dismissible
-    (vialiq-alert-close)="showSaveConfirmation = false">
+    (vialiq-close)="showSaveConfirmation = false">
     Form has been saved and submitted for review.
   </vi-alert>
 }
@@ -225,7 +198,7 @@ get formAlertVariant(): AlertVariant {
 
 ```html
 <vi-alert [variant]="formAlertVariant" [title]="formAlertTitle" dismissible
-  (vialiq-alert-close)="clearAlert()">
+  (vialiq-close)="clearAlert()">
   {{formAlertMessage}}
 </vi-alert>
 ```
@@ -250,7 +223,7 @@ get formAlertVariant(): AlertVariant {
 
 - `role` attribute is set automatically based on `variant` — host should not override it.
 - For `warning` and `danger`, content is read assertively on insert. Avoid dynamically updating the text of an existing alert — remove and re-add the element to force a fresh live region announcement.
-- `dismissible` fires `vialiq-alert-close` (emitting `{ id: string }` in `detail`) and sets `hidden` on the element.
+- `dismissible` does not remove the element from the DOM — it fires `vialiq-close` and the host removes it.
 - Transition: `height` + `opacity` collapse animation on dismiss (using `Element.animate()` Web Animations API).
 
 ---

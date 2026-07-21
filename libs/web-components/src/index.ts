@@ -23,15 +23,10 @@ export type { TooltipPlacement, TooltipTrigger } from './tooltip/vi-tooltip.js';
 export { ViTextarea } from './textarea/vi-textarea.js';
 export type { TextareaResize } from './textarea/vi-textarea.js';
 export { ViAccordion } from './accordion/vi-accordion.js';
-export type {
-  AccordionVariant,
-  AccordionSize,
-} from './accordion/vi-accordion.js';
+export type { AccordionVariant, AccordionSize } from './accordion/vi-accordion.js';
 export { ViAccordionItem } from './accordion/vi-accordion-item.js';
 export { ViBadge } from './badge/vi-badge.js';
 export type { BadgeVariant, BadgeSize } from './badge/vi-badge.js';
 export { ViChip } from './chip/vi-chip.js';
 export type { ChipVariant, ChipSize } from './chip/vi-chip.js';
 export { ViChipGroup } from './chip/vi-chip-group.js';
-export { ViAlert } from './alert/vi-alert.js';
-export type { AlertVariant } from './alert/vi-alert.js';
