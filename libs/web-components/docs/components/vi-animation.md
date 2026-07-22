@@ -1,15 +1,15 @@
 # `vi-animation` — Web Animation & Transition Wrapper
 
-**Package:** `@vialiq/web-components/animation`  
-**Elements:** `<vi-animation>`, `<vi-animation-group>`  
-**Status:** 🔲 Planned — Phase 2  
+**Package:** `@vialiq/web-components/animation`
+**Elements:** `<vi-animation>`, `<vi-animation-group>`
+**Status:** 🔲 Planned — Phase 2
 **Flux UI base:** `libs/flux-ui/components/_animation.scss`
 
 ---
 
 ## Purpose
 
-`<vi-animation>` is a lightweight, high-performance Lit Web Component wrapper that abstracts the complexities of the Web Animations API (WAAPI), CSS `@keyframes`, transitions, and modern CSS `@starting-style`. 
+`<vi-animation>` is a lightweight, high-performance Lit Web Component wrapper that abstracts the complexities of the Web Animations API (WAAPI), CSS `@keyframes`, transitions, and modern CSS `@starting-style`.
 
 It provides a unified, declarative, and imperative API for element entry/exit, property morphing, attention-seeking motion, and cascading/staggered child animations. By managing hardware-accelerated compositor-thread execution under the hood, `<vi-animation>` isolates developers from layout thrashing, complex Promise sequencing, display toggling (`display: none` vs. animation lifecycles), and accessibility (`prefers-reduced-motion`) management.
 
@@ -608,9 +608,9 @@ export class ViAnimation extends LitElement {
 ### 2. Enter and Exit Toggle Binding
 
 ```html
-<vi-animation 
-  enter="fade-in-up" 
-  exit="fade-out-down" 
+<vi-animation
+  enter="fade-in-up"
+  exit="fade-out-down"
   duration="300"
   .open=${isFilterOpen}
 >
@@ -624,12 +624,12 @@ export class ViAnimation extends LitElement {
 ### 3. Cascading Staggered Table Rows (Clinical EDC Patient List)
 
 ```html
-<vi-animation 
-  cascade 
-  stagger="40" 
+<vi-animation
+  cascade
+  stagger="40"
   stagger-selector="tr"
   stagger-direction="normal"
-  enter="fade-in-up" 
+  enter="fade-in-up"
   duration="250"
 >
   <table class="edc-table">

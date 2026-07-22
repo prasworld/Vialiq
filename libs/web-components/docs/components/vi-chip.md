@@ -291,16 +291,6 @@ vi-chip-group
 
 ---
 
-## i18n — Internal Labels
-
-All internal text uses `translateDirective`. See [I18N.md](../I18N.md) for setup.
-
-| Key | Default (en) |
-|-----|-------------|
-| `chip.remove` | `"Remove {label}"` |
-
----
-
 ## Related Components
 
 - [`vi-tag`](./vi-tag.md) — display-only label; no group management

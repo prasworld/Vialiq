@@ -89,7 +89,7 @@ export class ViAlert extends ViElement {
   @property({ type: String, attribute: 'dismiss-label' })
   accessor dismissLabel = 'Dismiss alert';
 
-  /** 
+  /**
    * Enables auto-hiding after a duration (default: 5000ms).
    * Note: Setting a positive `duration` or `auto-hide-duration` also implicitly enables auto-hiding.
    */
@@ -100,7 +100,7 @@ export class ViAlert extends ViElement {
   @property({ type: Number, attribute: 'auto-hide-duration' })
   accessor autoHideDuration = 5000;
 
-  /** 
+  /**
    * Alias for auto-hide-duration in milliseconds.
    * Setting a positive duration enables auto-hiding automatically.
    */
