@@ -202,4 +202,52 @@ describe('vi-animation', () => {
     expect(await browser.execute((el: ViAnimation) => el.open, anim)).toBe(false);
     expect(await browser.execute((el: ViAnimation) => el.hidden, anim)).toBe(true);
   });
+
+  it('reverts declarative open=true when vi-animation-before-show is canceled', async () => {
+    render(
+      html`
+        <vi-animation id="test-cancel-show" .autoPlay=${false} .open=${false}>
+          <div>Target</div>
+        </vi-animation>
+      `,
+      container
+    );
+    const wrapper = await $('#test-cancel-show');
+    const anim = (await wrapper) as unknown as ViAnimation;
+
+    const result = await browser.execute(async (el: ViAnimation) => {
+      el.addEventListener('vi-animation-before-show', (e: Event) => e.preventDefault(), { once: true });
+      el.open = true;
+      await el.updateComplete;
+      await el.updateComplete;
+      return { open: el.open, hidden: el.hidden };
+    }, anim);
+
+    expect(result.open).toBe(false);
+    expect(result.hidden).toBe(true);
+  });
+
+  it('reverts declarative open=false when vi-animation-before-hide is canceled', async () => {
+    render(
+      html`
+        <vi-animation id="test-cancel-hide" .autoPlay=${false}>
+          <div>Target</div>
+        </vi-animation>
+      `,
+      container
+    );
+    const wrapper = await $('#test-cancel-hide');
+    const anim = (await wrapper) as unknown as ViAnimation;
+
+    const result = await browser.execute(async (el: ViAnimation) => {
+      el.addEventListener('vi-animation-before-hide', (e: Event) => e.preventDefault(), { once: true });
+      el.open = false;
+      await el.updateComplete;
+      await el.updateComplete;
+      return { open: el.open, hidden: el.hidden };
+    }, anim);
+
+    expect(result.open).toBe(true);
+    expect(result.hidden).toBe(false);
+  });
 });
