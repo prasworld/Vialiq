@@ -418,7 +418,17 @@ export class ViAnimation extends ViElement {
       target: this,
       phase: 'enter',
     });
-    if (!allowed) return;
+    if (!allowed) {
+      // If show() was triggered by a declarative open=true change while still hidden,
+      // revert to a consistent closed state.
+      if (this.open && this.hidden) {
+        this._withUpdateGuard(() => {
+          this.open = false;
+          this.hidden = true;
+        });
+      }
+      return;
+    }
 
     this._withUpdateGuard(() => {
       if (!this.open) this.open = true;
