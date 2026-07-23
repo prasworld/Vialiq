@@ -2,6 +2,17 @@
 
 /**
  * Flux UI Design System — Animation Keyframes & Motion Tokens
+ *
+ * CSS-only consumer path: these @keyframes are used when consuming animations via
+ * the CSS `animation` shorthand property, e.g.:
+ *   .my-el { animation: vi-fade-in 300ms var(--vi-animation-easing-standard) forwards; }
+ *
+ * Parallel WAAPI path: the component `<vi-animation>` uses a separate but equivalent
+ * set of PRESET_KEYFRAMES in `vi-animation.ts` for the Web Animations API runtime path.
+ * Both definitions intentionally coexist — sharing a runtime source would require
+ * a build-time code-gen step. IMPORTANT: When adding or changing a preset, update BOTH:
+ *   1. The `@keyframes vi-<name>` block below (CSS path)
+ *   2. The corresponding entry in `PRESET_KEYFRAMES` in vi-animation.ts (WAAPI path)
  */
 
 :root {

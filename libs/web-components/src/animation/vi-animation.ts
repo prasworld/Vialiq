@@ -81,6 +81,14 @@ const EXIT_COUNTERPART: Partial<Record<string, string>> = {
   'expand-horizontal': 'collapse-horizontal',
 };
 
+/**
+ * WAAPI (Web Animations API) keyframe definitions — used by this component's imperative
+ * runtime path via `element.animate()`. These are the canonical source for adding or
+ * changing a preset. When you add a preset here you MUST also add the matching
+ * `@keyframes vi-<name>` rule in `libs/flux-ui/components/_animation.scss`, which serves
+ * the parallel CSS-only consumer path (`animation: vi-fade-in 300ms ...`).
+ * The two representations cannot share a runtime source without a build-time code-gen step.
+ */
 const PRESET_KEYFRAMES: Record<string, Keyframe[]> = {
   'fade-in': [{ opacity: 0 }, { opacity: 1 }],
   'fade-out': [{ opacity: 1 }, { opacity: 0 }],
@@ -300,7 +308,13 @@ function shuffleIndices(length: number): number[] {
  * @attr stagger - Delay offset per child in ms when cascade is enabled (default: 50)
  * @attr stagger-selector - CSS selector for stagger children (default: :scope > *)
  * @attr stagger-direction - Stagger direction order: normal | reverse | center | random
- * @attr reduced-motion - Accessibility motion handling: auto | disable | fade-only
+ * @attr reduced-motion - Accessibility motion handling:
+ * - `auto` (default): if the OS/browser has `prefers-reduced-motion: reduce`, shorten duration
+ *   to ≤100 ms AND substitute the animation with a simple opacity fade.
+ * - `fade-only`: if the OS/browser has `prefers-reduced-motion: reduce`, substitute the animation
+ *   with an opacity fade but preserve the original duration (useful when the fade itself
+ *   conveys intentional UI feedback and should not be truncated).
+ * - `disable`: always play the full animation regardless of the OS/browser setting.
  *
  * @fires vi-animation-before-show - Cancelable. Call preventDefault() to block show().
  * @fires vi-animation-before-hide - Cancelable. Call preventDefault() to block hide().
@@ -638,7 +652,11 @@ export class ViAnimation extends ViElement {
     const mySequenceId = this._sequenceId;
 
     this._isAnimating = true;
-    const actualDuration = isReduced ? Math.min(this.duration, 100) : this.duration;
+    // 'auto' mode: shorten duration AND substitute keyframes.
+    // 'fade-only' mode: substitute keyframes only, original duration is preserved.
+    const actualDuration = (isReduced && this.reducedMotion !== 'fade-only')
+      ? Math.min(this.duration, 100)
+      : this.duration;
 
     this._dispatch('vi-animation-start', {
       name: animName,
@@ -696,9 +714,19 @@ export class ViAnimation extends ViElement {
     });
   }
 
+  /**
+   * Returns whether any reduced-motion adaptation should be applied.
+   *
+   * Both 'auto' and 'fade-only' gate on the OS/browser preference so that the attribute
+   * does not override what the user has configured at the system level. The distinction
+   * between them is captured in _runAnimationSequence:
+   *   - 'auto':      shorten duration (≤100 ms) + substitute with opacity fade.
+   *   - 'fade-only': substitute with opacity fade, but keep the original duration.
+   *   - 'disable':   ignore OS preference entirely — always play the full animation.
+   */
   private _shouldReduceMotion(): boolean {
     if (this.reducedMotion === 'disable') return false;
-    if (this.reducedMotion === 'fade-only') return true;
+    // Gate on the OS/browser preference for both 'auto' and 'fade-only'.
     return this._reducedMotionMQ?.matches ??
       (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   }
