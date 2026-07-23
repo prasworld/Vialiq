@@ -34,3 +34,11 @@ export type { AlertVariant } from './alert/vi-alert.js';
 export { ViChip } from './chip/vi-chip.js';
 export type { ChipVariant, ChipSize } from './chip/vi-chip.js';
 export { ViChipGroup } from './chip/vi-chip-group.js';
+
+export { ViAnimation } from './animation/vi-animation.js';
+export type {
+  AnimationPreset,
+  StaggerDirection,
+  AnimationPhase,
+  ViAnimationEventDetail,
+} from './animation/vi-animation.js';
