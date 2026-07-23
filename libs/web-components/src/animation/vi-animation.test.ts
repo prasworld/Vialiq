@@ -250,4 +250,34 @@ describe('vi-animation', () => {
     expect(result.open).toBe(true);
     expect(result.hidden).toBe(false);
   });
+
+  it('allows custom keyframes to take precedence over reduced motion fallback', async () => {
+    render(
+      html`
+        <vi-animation id="test-custom-kf" reduced-motion="fade-only" .autoPlay=${false}>
+          <div>Target</div>
+        </vi-animation>
+      `,
+      container
+    );
+    const wrapper = await $('#test-custom-kf');
+    const anim = (await wrapper) as unknown as ViAnimation;
+
+    const customKfUsed = await browser.execute((el: ViAnimation) => {
+      const customKf = [{ opacity: 0.1 }, { opacity: 0.9 }];
+      el.keyframes = customKf;
+      el.play();
+      const activeAnims = el.getAnimations();
+      if (activeAnims.length === 0) return false;
+      const keyframeEffect = activeAnims[0].effect as KeyframeEffect;
+      const computedKf = keyframeEffect?.getKeyframes();
+      return Boolean(
+        computedKf &&
+          computedKf.length === 2 &&
+          (computedKf[0].opacity === 0.1 || computedKf[0].opacity === '0.1')
+      );
+    }, anim);
+
+    expect(customKfUsed).toBe(true);
+  });
 });

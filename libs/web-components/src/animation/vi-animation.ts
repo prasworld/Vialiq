@@ -208,18 +208,18 @@ const PRESET_KEYFRAMES: Record<string, Keyframe[]> = {
   // Fallbacks — dynamically replaced with scrollHeight/Width in _getKeyframes
   'expand-vertical': [
     { maxHeight: '0px', opacity: 0, overflow: 'hidden' },
-    { maxHeight: '2000px', opacity: 1, overflow: 'hidden' },
+    { maxHeight: '100vh', opacity: 1, overflow: 'hidden' },
   ],
   'collapse-vertical': [
-    { maxHeight: '2000px', opacity: 1, overflow: 'hidden' },
+    { maxHeight: '100vh', opacity: 1, overflow: 'hidden' },
     { maxHeight: '0px', opacity: 0, overflow: 'hidden' },
   ],
   'expand-horizontal': [
     { maxWidth: '0px', opacity: 0, overflow: 'hidden' },
-    { maxWidth: '2000px', opacity: 1, overflow: 'hidden' },
+    { maxWidth: '100vw', opacity: 1, overflow: 'hidden' },
   ],
   'collapse-horizontal': [
-    { maxWidth: '2000px', opacity: 1, overflow: 'hidden' },
+    { maxWidth: '100vw', opacity: 1, overflow: 'hidden' },
     { maxWidth: '0px', opacity: 0, overflow: 'hidden' },
   ],
 
@@ -584,11 +584,13 @@ export class ViAnimation extends ViElement {
     isReducedMotion: boolean,
     target?: HTMLElement,
   ): Keyframe[] | PropertyIndexedKeyframes {
+    // Explicit consumer-supplied keyframes take highest priority
+    if (this.keyframes) return this.keyframes;
+
+    // For built-in presets under reduced motion, substitute with safe opacity fades
     if (isReducedMotion) {
       return PRESET_KEYFRAMES[phase === 'exit' ? 'fade-out' : 'fade-in'];
     }
-    // Pass consumer keyframes through directly — no wrapping
-    if (this.keyframes) return this.keyframes;
     // Dynamic expand/collapse using actual element dimensions
     if (EXPAND_COLLAPSE_PRESETS.has(animName) && target) {
       const h = target.scrollHeight;
