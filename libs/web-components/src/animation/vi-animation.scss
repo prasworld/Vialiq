@@ -1,0 +1,10 @@
+@use '@vialiq/flux-ui/styles/variables' as tokens;
+@use '@vialiq/flux-ui/components/animation';
+
+:host {
+  display: contents;
+}
+
+:host([hidden]) {
+  display: none !important;
+}
