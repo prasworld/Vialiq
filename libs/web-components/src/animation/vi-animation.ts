@@ -449,7 +449,15 @@ export class ViAnimation extends ViElement {
       target: this,
       phase: 'exit',
     });
-    if (!allowed) return;
+    if (!allowed) {
+      if (!this.open && !this.hidden) {
+        this._withUpdateGuard(() => {
+          this.open = true;
+          this.hidden = false;
+        });
+      }
+      return;
+    }
 
     await this._runAnimationSequence(exitName, 'exit', true);
     this._withUpdateGuard(() => {
@@ -643,7 +651,7 @@ export class ViAnimation extends ViElement {
 
     const animationPromises = targets.map((el, index) => {
       const elementDelay = isReduced ? 0 : this._calculateStaggerDelay(index, targets.length, shuffledOrder);
-      const kf = this._getKeyframes(animName, isReduced, el);
+      const kf = this._getKeyframes(animName, phase, isReduced, el);
 
       const anim = el.animate(kf as Parameters<typeof el.animate>[0], {
         duration: actualDuration,
