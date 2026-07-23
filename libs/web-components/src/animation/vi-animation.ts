@@ -563,10 +563,13 @@ export class ViAnimation extends ViElement {
    */
   private _getKeyframes(
     animName: string,
+    phase: AnimationPhase,
     isReducedMotion: boolean,
     target?: HTMLElement,
   ): Keyframe[] | PropertyIndexedKeyframes {
-    if (isReducedMotion) return PRESET_KEYFRAMES['fade-in'];
+    if (isReducedMotion) {
+      return PRESET_KEYFRAMES[phase === 'exit' ? 'fade-out' : 'fade-in'];
+    }
     // Pass consumer keyframes through directly — no wrapping
     if (this.keyframes) return this.keyframes;
     // Dynamic expand/collapse using actual element dimensions
