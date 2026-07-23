@@ -555,8 +555,7 @@ export class ViAnimation extends ViElement {
           targetElements.push(...children);
           matched = true;
         }
-      } catch (e) {
-        console.warn(`[vi-animation] Invalid stagger-selector "${this.staggerSelector}":`, e);
+      } catch {
         return assignedNodes; // graceful fallback to all assigned nodes
       }
       if (!matched) targetElements.push(node);
