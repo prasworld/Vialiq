@@ -1,4 +1,10 @@
-import { css, html, nothing, type PropertyValues, type TemplateResult } from 'lit';
+import {
+  css,
+  html,
+  nothing,
+  type PropertyValues,
+  type TemplateResult,
+} from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { ViElement } from '../base/vi-element.js';
@@ -34,11 +40,7 @@ export class ViIcon extends ViElement {
     svg {
       width: 100%;
       height: 100%;
-      fill: none;
-      stroke: currentColor;
-      stroke-width: 2;
-      stroke-linecap: round;
-      stroke-linejoin: round;
+      stroke: var(--vi-icon-color, currentColor);
     }
   `;
 
@@ -106,9 +108,7 @@ export class ViIcon extends ViElement {
     }
 
     return html`
-      <span aria-hidden="true">
-        ${unsafeHTML(this._icon.data)}
-      </span>
+      <span aria-hidden="true"> ${unsafeHTML(this._icon.data)} </span>
     `;
   }
 }

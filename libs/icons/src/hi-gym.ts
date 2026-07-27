@@ -1,0 +1,9 @@
+// AUTO-GENERATED — do not edit by hand.
+// Source: tools/icons-src/hi-gym.svg
+// Regenerate with: node libs/icons/tools/generate-icons.mjs
+import type { SvgIconDef } from './types.js';
+
+export const hiGymIcon: SvgIconDef = {
+  name: 'hi-gym',
+  data: `<svg fill="var(--vi-icon-color, currentColor)" stroke="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><path d="M19 32L19 16H16L16 32H19Z"/><path d="M14 29L14 19H11L11 23H10V25H11L11 29H14Z"/><path d="M29 16V32H32V16H29Z"/><path d="M34 29H37V25H38V23H37V19H34V29Z"/><path d="M21 25H27V23H21V25Z"/><path fill-rule="evenodd" clip-rule="evenodd" d="M6 9C6 7.34315 7.34315 6 9 6H39C40.6569 6 42 7.34315 42 9V39C42 40.6569 40.6569 42 39 42H9C7.34315 42 6 40.6569 6 39V9ZM8 9C8 8.44772 8.44771 8 9 8H39C39.5523 8 40 8.44771 40 9V39C40 39.5523 39.5523 40 39 40H9C8.44772 40 8 39.5523 8 39V9Z"/></svg>`,
+};
