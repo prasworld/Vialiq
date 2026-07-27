@@ -19,7 +19,8 @@
     "affected:build": "nx affected:build",
     "affected:test": "nx affected:test",
     "build:automapper:publish": "node libs/automapper/build.js",
-    "build:prod": "npx nx build automapper --configuration=production --skip-nx-cache && cp libs/automapper/publish-package.json dist/libs/automapper/package.json && (cd dist/libs/automapper && npm pack)"
+    "build:prod": "npx nx build automapper --configuration=production --skip-nx-cache && cp libs/automapper/publish-package.json dist/libs/automapper/package.json && (cd dist/libs/automapper && npm pack)",
+    "generate:icons": "node libs/icons/tools/generate-icons.mjs"
   },
   "private": true,
   "dependencies": {
@@ -30,8 +31,8 @@
     "@angular/platform-browser": "~21.1.0",
     "@angular/router": "~21.1.0",
     "@floating-ui/dom": "^1.7.6",
+    "@lit-labs/virtualizer": "^2.1.1",
     "@nx/angular": "^22.5.1",
-    "@vialiq/icons": "^0.0.7",
     "@vialiq/web-components": "^0.4.0",
     "create-nx": "0.0.0",
     "lit": "^3.3.2",
@@ -100,6 +101,7 @@
     "unplugin-swc": "^1.5.9",
     "verdaccio": "^6.0.5",
     "vite": "^7.0.0",
+    "vite-plugin-dts": "^5.0.3",
     "vitest": "^4.0.8"
   },
   "nx": {

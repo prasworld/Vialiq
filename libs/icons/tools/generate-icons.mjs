@@ -59,8 +59,31 @@ for (const file of svgFiles) {
   // Strip XML declaration
   svg = svg.replace(/<\?xml[^?]*\?>\s*/g, '');
 
+  // Strip XML comments
+  svg = svg.replace(/<!--[\s\S]*?-->/g, '');
+
   // Remove width/height from root <svg> — sizing is controlled by CSS
-  svg = svg.replace(/(<svg[^>]*)\s(?:width|height)="[^"]*"/g, '$1');
+  svg = svg.replace(/(<svg[^>]*?)\swidth="[^"]*"/g, '$1');
+  svg = svg.replace(/(<svg[^>]*?)\sheight="[^"]*"/g, '$1');
+
+  // Strip existing stroke and fill attributes from the root tag
+  svg = svg.replace(/(<svg[^>]*?)\sstroke="[^"]*"/g, '$1');
+  svg = svg.replace(/(<svg[^>]*?)\sfill="[^"]*"/g, '$1');
+
+  if (iconName.startsWith('hi-')) {
+    // Healthicons Outline are actually filled paths.
+    // Inject fill="var(...)" on root SVG, and stroke="none" just to be safe.
+    svg = svg.replace(/<svg\s/, '<svg fill="var(--vi-icon-color, currentColor)" stroke="none" ');
+    // Strip fill="currentColor" from inner paths so they inherit the SVG root color
+    svg = svg.replace(/\sfill="currentColor"/g, '');
+  } else {
+    // Tabler icons are native strokes.
+    // Inject our dynamic CSS variable for stroke, and set fill to none
+    svg = svg.replace(/<svg\s/, '<svg stroke="var(--vi-icon-color, currentColor)" fill="none" ');
+  }
+
+  // Collapse excessive whitespace (e.g., left over from stripped comments)
+  svg = svg.replace(/\s{2,}/g, ' ');
 
   // Collapse whitespace between tags for a compact single-line data string
   svg = svg.replace(/>\s+</g, '><').trim();
