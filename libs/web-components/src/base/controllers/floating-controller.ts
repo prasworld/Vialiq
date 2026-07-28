@@ -1,5 +1,5 @@
 import { ReactiveController, ReactiveControllerHost } from 'lit';
-import { computePosition, flip, offset, autoUpdate, size, type Placement } from '@floating-ui/dom';
+import { computePosition, flip, offset, autoUpdate, size, type Placement, type Middleware } from '@floating-ui/dom';
 
 export interface FloatingControllerOptions {
   /** Function returning the reference element (e.g. trigger/input). */
@@ -87,7 +87,7 @@ export class FloatingController implements ReactiveController {
       if (customBoundary) boundaryElement = customBoundary;
     }
 
-    const middlewares: any[] = [
+    const middlewares: Middleware[] = [
       offset(this.options.offset ?? 4),
       flip({ boundary: boundaryElement, fallbackPlacements: ['top-start', 'bottom-start', 'top-end', 'bottom-end'] })
     ];

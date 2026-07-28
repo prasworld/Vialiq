@@ -4,7 +4,7 @@ import { ViElement } from '../base/vi-element.js';
 import alertStyles from './vi-alert.scss?inline';
 import '../icons/vi-icon.js';
 import '../button/vi-button.js';
-import { registerIcons, type SvgIconDef } from '../icons/registry.js';
+import { registerIcons } from '../icons/registry.js';
 
 import { checkCircleIcon, triangleWarningIcon, infoIcon, xIcon, lockIcon } from '@vialiq/icons';
 

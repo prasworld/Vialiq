@@ -9,17 +9,17 @@ export interface KeyboardControllerHost extends ReactiveControllerHost, HTMLElem
   mode: 'single' | 'multi' | 'tags' | 'creatable';
 }
 
-export interface KeyboardControllerOptions {
+export interface KeyboardControllerOptions<TData = unknown> {
   getActiveIndex: () => number;
   setActiveIndex: (index: number) => void;
-  getFilteredOptions: () => ListboxOption<any>[];
+  getFilteredOptions: () => ListboxOption<TData>[];
   getSlottedItems: () => ViComboboxItem[];
   getVisibleSlottedItems: () => ViComboboxItem[];
   getSelectedValues: () => string[];
   
   updateSlottedActiveState: (index: number) => void;
   scrollToActiveIndex: () => void;
-  selectOption: (opt: ListboxOption<any>) => void;
+  selectOption: (opt: ListboxOption<TData>) => void;
   handleCreate: () => void;
   removeTag: (val: string) => void;
   close: () => void;
@@ -27,10 +27,10 @@ export interface KeyboardControllerOptions {
   getQuery: () => string;
 }
 
-export class ListboxKeyboardController implements ReactiveController {
+export class ListboxKeyboardController<TData = unknown> implements ReactiveController {
   constructor(
     private host: KeyboardControllerHost,
-    private config: KeyboardControllerOptions
+    private config: KeyboardControllerOptions<TData>
   ) {
     this.host.addController(this);
   }
@@ -96,7 +96,7 @@ export class ListboxKeyboardController implements ReactiveController {
                 disabled: item.disabled,
                 icon: item.icon || undefined,
                 description: item.description || undefined,
-                data: item.data,
+                data: item.data as TData,
               });
             } else if (this.host.mode === 'tags' || this.host.mode === 'creatable') {
               this.config.handleCreate();

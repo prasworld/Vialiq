@@ -4,8 +4,9 @@ import { ViIcon } from './vi-icon.js';
 import { registerIcons } from './registry.js';
 import * as allIcons from '@vialiq/icons';
 
-// Ensure the component is registered
-customElements.get('vi-icon') || customElements.define('vi-icon', ViIcon);
+if (!customElements.get('vi-icon')) {
+  customElements.define('vi-icon', ViIcon);
+}
 
 // Register all icons so they can be rendered by name
 const iconsList = Object.values(allIcons);

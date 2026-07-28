@@ -2,9 +2,9 @@ import { ReactiveController, ReactiveControllerHost } from 'lit';
 import type { ListboxOption, ListboxOptionsLoader, ListboxFilterFn } from '../types/listbox.types.js';
 import type { ViComboboxItem } from '../../combobox/vi-combobox-item.js';
 
-export interface FilterControllerHost extends ReactiveControllerHost, HTMLElement {
-  options: ListboxOption<any>[] | ListboxOptionsLoader<any>;
-  filterFn: ListboxFilterFn<any> | null;
+export interface FilterControllerHost<TData = unknown> extends ReactiveControllerHost, HTMLElement {
+  options: ListboxOption<TData>[] | ListboxOptionsLoader<TData>;
+  filterFn: ListboxFilterFn<TData> | null;
   debounce: number;
   minChars: number;
   matchFrom: 'start' | 'any';
@@ -14,25 +14,25 @@ export interface FilterControllerHost extends ReactiveControllerHost, HTMLElemen
   requestUpdate(): void;
 }
 
-export interface FilterControllerOptions {
+export interface FilterControllerOptions<TData = unknown> {
   getSlottedItems: () => ViComboboxItem[];
   getVisibleSlottedItems: () => ViComboboxItem[];
   setSlottedActiveIndex: (index: number) => void;
   setLoading: (loading: boolean) => void;
   resetActiveIndex: () => void;
-  setOptionsList: (opts: ListboxOption<any>[]) => void;
+  setOptionsList: (opts: ListboxOption<TData>[]) => void;
   rebuildOptionDataMap: () => void;
   open: () => void;
   isOpen: () => boolean;
 }
 
-export class FilterController implements ReactiveController {
+export class FilterController<TData = unknown> implements ReactiveController {
   public query = '';
   private _debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
-    private host: FilterControllerHost,
-    private config: FilterControllerOptions
+    private host: FilterControllerHost<TData>,
+    private config: FilterControllerOptions<TData>
   ) {
     this.host.addController(this);
   }
@@ -97,10 +97,11 @@ export class FilterController implements ReactiveController {
     let results: ListboxOption[];
     
     // Ensure we are operating on the correct static array if not a loader
-    const optionsList = typeof this.host.options === 'function' ? [] : (this.host.options as ListboxOption[]);
+    const optionsList = typeof this.host.options === 'function' ? [] : (this.host.options as ListboxOption<TData>[]);
 
-    if (this.host.filterFn) {
-      results = optionsList.filter((opt) => this.host.filterFn!(opt, query));
+    const filterFn = this.host.filterFn;
+    if (filterFn) {
+      results = optionsList.filter((opt) => filterFn(opt, query));
     } else {
       results = optionsList.filter((opt) => {
         const corpus = opt.searchText

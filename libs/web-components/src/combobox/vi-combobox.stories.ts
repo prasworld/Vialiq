@@ -586,7 +586,7 @@ class InfiniteScrollDemo extends LitElement {
               <div
                 style="background: #f0fdf4; color: #16a34a; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 11px; font-weight: bold; flex-shrink: 0;"
               >
-                #${(params.option.data as any)?.id}
+                #${(params.option.data as { id?: string | number })?.id}
               </div>
               <div style="display: flex; flex-direction: column; min-width: 0;">
                 <strong

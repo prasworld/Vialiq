@@ -8,7 +8,7 @@ import '../chip/vi-chip.js';
 import '../button/vi-button.js';
 import './vi-combobox-item.js';
 import type { ViComboboxItem } from './vi-combobox-item.js';
-import { registerIcons, type SvgIconDef } from '../icons/registry.js';
+import { registerIcons } from '../icons/registry.js';
 import { FloatingController } from '../base/controllers/floating-controller.js';
 import { InfiniteScrollController } from '../shared/controllers/infinite-scroll-controller.js';
 import { FilterController } from '../shared/controllers/filter-controller.js';
@@ -139,14 +139,13 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
    * Manages intersection observers for infinite scrolling.
    * Registers itself via Lit's ReactiveController lifecycle.
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-private-class-members
   private _infiniteScrollController = new InfiniteScrollController(this, {
     listbox: () => this._listboxEl,
     sentinelTop: () => this._sentinelTopEl,
     sentinelBottom: () => this._sentinelBottomEl,
   });
 
-  private _filterController = new FilterController(this, {
+  private _filterController = new FilterController<ComboboxOptionData>(this, {
     getSlottedItems: () => this._slottedItems,
     getVisibleSlottedItems: () => this._visibleSlottedItems,
     setSlottedActiveIndex: (index: number) => this._updateSlottedActiveState(index),
@@ -158,7 +157,7 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
     isOpen: () => this.open,
   });
 
-  private _keyboardController = new ListboxKeyboardController(this, {
+  private _keyboardController = new ListboxKeyboardController<ComboboxOptionData>(this, {
     getActiveIndex: () => this._activeIndex,
     setActiveIndex: (index: number) => { this._activeIndex = index; },
     getFilteredOptions: () => this.filteredOptions,
@@ -186,7 +185,7 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
   private _floatingController = new FloatingController(this, {
     reference: () => this._controlEl,
     floating: () => this._listboxEl,
-    placement: () => this.placement as any,
+    placement: () => this.placement as unknown as import('@floating-ui/dom').Placement,
     offset: 4,
     hoist: () => this.hoist,
     boundary: () => this.flipBoundaryElement || this.flipBoundary || null,
@@ -393,8 +392,9 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
     const q = this._query.toLowerCase();
     let results: ComboboxOption[];
 
-    if (this.filterFn) {
-      results = this._optionsList.filter((opt) => this.filterFn!(opt, this._query));
+    const filterFn = this.filterFn;
+    if (filterFn) {
+      results = this._optionsList.filter((opt) => filterFn(opt, this._query));
     } else {
       results = this._optionsList.filter((opt) => {
         const corpus = opt.searchText
@@ -513,7 +513,7 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
     if (this._activeIndex < 0) return;
 
     if (this.virtualize && this._slottedItems.length === 0) {
-      const virtualizer = this.shadowRoot?.querySelector('lit-virtualizer') as any;
+      const virtualizer = this.shadowRoot?.querySelector('lit-virtualizer') as (Element & { scrollToIndex?: (index: number, position?: string) => void }) | null;
       if (virtualizer && typeof virtualizer.scrollToIndex === 'function') {
         virtualizer.scrollToIndex(this._activeIndex, 'nearest');
       }
@@ -727,8 +727,12 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
     const groupsMap = new Map<string, ComboboxOption[]>();
     for (const opt of filtered) {
       const g = opt.group || '';
-      if (!groupsMap.has(g)) groupsMap.set(g, []);
-      groupsMap.get(g)!.push(opt);
+      let groupArr = groupsMap.get(g);
+      if (!groupArr) {
+        groupArr = [];
+        groupsMap.set(g, groupArr);
+      }
+      groupArr.push(opt);
     }
 
     const groupEntries = Array.from(groupsMap.entries());

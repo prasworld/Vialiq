@@ -1,7 +1,7 @@
-import { css, html, unsafeCSS, LitElement, type TemplateResult } from 'lit';
+import { css, html, unsafeCSS, type TemplateResult } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { ViElement } from '../base/vi-element.js';
-import { registerIcons, type SvgIconDef } from '../icons/registry.js';
+import { registerIcons } from '../icons/registry.js';
 import itemStyles from './vi-combobox-item.scss?inline';
 
 import { checkIcon } from '@vialiq/icons';
