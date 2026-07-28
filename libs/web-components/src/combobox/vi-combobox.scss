@@ -1,0 +1,95 @@
+@use '@vialiq/flux-ui/styles/variables' as tokens;
+@use '@vialiq/flux-ui/components/combobox';
+
+:host {
+  display: block;
+}
+
+:host([hidden]) {
+  display: none !important;
+}
+
+:host([searchable="false"]) .combobox-control {
+  cursor: pointer;
+}
+
+.combobox-field {
+  @extend .combobox-field;
+}
+
+.combobox-control {
+  @extend .combobox-control;
+}
+
+.combobox-input {
+  @extend .combobox-input;
+}
+
+.combobox-chevron {
+  @extend .combobox-chevron;
+}
+
+.combobox-clear-btn {
+  @extend .combobox-clear-btn;
+}
+
+.combobox-trigger {
+  @extend .combobox-trigger;
+}
+
+.combobox-tags {
+  @extend .combobox-tags;
+}
+
+.combobox-listbox {
+  @extend .combobox-listbox;
+  max-height: var(--vi-combobox-listbox-max-height, 300px);
+}
+
+.combobox-list {
+  @extend .combobox-list;
+}
+
+.combobox-option {
+  @extend .combobox-option;
+  width: 100%;
+  box-sizing: border-box;
+  border-bottom: 1px solid #{tokens.$border-02};
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.combobox-option-content {
+  @extend .combobox-option-content;
+}
+
+.combobox-option-label {
+  @extend .combobox-option-label;
+}
+
+.combobox-option-description {
+  @extend .combobox-option-description;
+}
+
+.combobox-mark {
+  @extend .combobox-mark;
+}
+
+.combobox-group-header {
+  @extend .combobox-group-header;
+}
+
+.combobox-empty,
+.combobox-loading {
+  @extend .combobox-empty;
+}
+
+.combobox-helper {
+  @extend .combobox-helper;
+}
+
+.combobox-validation {
+  @extend .combobox-validation;
+}

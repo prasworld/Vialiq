@@ -2,6 +2,7 @@ import { defineConfig } from 'vite';
 import path from 'path';
 import { pathToFileURL } from 'url';
 import fs from 'node:fs';
+import dts from 'vite-plugin-dts';
 import swc from 'unplugin-swc';
 
 const workspaceRoot = path.resolve(__dirname, '../..');
@@ -21,6 +22,11 @@ export default defineConfig({
         transform: { decoratorVersion: '2022-03' },
       },
       module: { type: 'es6' },
+    }),
+    dts({
+      entryRoot: 'src',
+      tsconfigPath: path.join(__dirname, 'tsconfig.lib.json'),
+      pathsToAliases: false,
     }),
   ],
   css: {

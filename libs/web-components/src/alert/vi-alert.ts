@@ -6,32 +6,9 @@ import '../icons/vi-icon.js';
 import '../button/vi-button.js';
 import { registerIcons, type SvgIconDef } from '../icons/registry.js';
 
-const checkCircleIcon: SvgIconDef = {
-  name: 'check-circle',
-  data: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>`,
-};
+import { checkCircleIcon, triangleWarningIcon, infoIcon, xIcon, lockIcon } from '@vialiq/icons';
 
-const alertTriangleIcon: SvgIconDef = {
-  name: 'alert-triangle',
-  data: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>`,
-};
-
-const infoIcon: SvgIconDef = {
-  name: 'info',
-  data: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`,
-};
-
-const xIcon: SvgIconDef = {
-  name: 'x',
-  data: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`,
-};
-
-const lockIcon: SvgIconDef = {
-  name: 'lock',
-  data: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>`,
-};
-
-registerIcons([checkCircleIcon, alertTriangleIcon, infoIcon, xIcon, lockIcon]);
+registerIcons([checkCircleIcon, triangleWarningIcon, infoIcon, xIcon, lockIcon]);
 
 export type AlertVariant =
   | 'info'
@@ -198,7 +175,7 @@ export class ViAlert extends ViElement {
         return 'check-circle';
       case 'warning':
       case 'danger':
-        return 'alert-triangle';
+        return 'triangle-warning';
       case 'info':
       default:
         return 'info';

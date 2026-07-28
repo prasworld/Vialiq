@@ -5,6 +5,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { createRequire } from 'module';
 
+
 import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -56,6 +57,7 @@ const config: StorybookConfig = {
             __dirname,
             '../../flux-ui/styles/_index.scss'
           ),
+          '@vialiq/icons': path.resolve(workspaceRoot, 'libs/icons/src/index.ts'),
           'lit': resolvePackageDir('lit'),
           'lit-html': resolvePackageDir('lit-html'),
           'lit-element': resolvePackageDir('lit-element'),
