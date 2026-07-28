@@ -45,25 +45,32 @@ export class ListboxKeyboardController<TData = unknown> implements ReactiveContr
     const activeIndex = this.config.getActiveIndex();
 
     switch (e.key) {
-      case 'ArrowDown':
+      case 'ArrowDown': {
         e.preventDefault();
-        if (!this.host.open) {
-          this.config.openDropdown();
-          this.config.setActiveIndex(0);
-          if (isSlotted) this.config.updateSlottedActiveState(0);
-        } else {
-          if (isSlotted) {
-            const visible = this.config.getVisibleSlottedItems();
-            const next = activeIndex < visible.length - 1 ? activeIndex + 1 : 0;
-            this.config.setActiveIndex(next);
-            this.config.updateSlottedActiveState(next);
-          } else {
-            const next = activeIndex < options.length - 1 ? activeIndex + 1 : 0;
-            this.config.setActiveIndex(next);
-          }
+        if (!this.host.open) this.config.openDropdown();
+
+        const visible = isSlotted ? this.config.getVisibleSlottedItems() : [];
+        const len = isSlotted ? visible.length : options.length;
+        const isDisabled = (i: number) => (isSlotted ? visible[i]?.disabled : options[i]?.disabled) ?? true;
+
+        if (len === 0) {
+          this.config.setActiveIndex(-1);
+          if (isSlotted) this.config.updateSlottedActiveState(-1);
+          break;
         }
+
+        let next = activeIndex;
+        for (let step = 0; step < len; step++) {
+          next = (next + 1 + len) % len;
+          if (!isDisabled(next)) break;
+        }
+
+        if (isDisabled(next)) next = -1;
+        this.config.setActiveIndex(next);
+        if (isSlotted) this.config.updateSlottedActiveState(next);
         this.config.scrollToActiveIndex();
         break;
+      }
 
       case 'ArrowUp':
         e.preventDefault();
