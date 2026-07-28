@@ -76,6 +76,11 @@ export class FilterController<TData = unknown> implements ReactiveController {
               this.config.rebuildOptionDataMap();
               this.host.requestUpdate();
             })
+            .catch(() => {
+              this.config.setOptionsList([]);
+              this.config.rebuildOptionDataMap();
+              this.host.requestUpdate();
+            })
             .finally(() => {
               this.config.setLoading(false);
             });
