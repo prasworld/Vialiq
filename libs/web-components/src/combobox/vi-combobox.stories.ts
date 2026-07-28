@@ -604,7 +604,7 @@ class InfiniteScrollDemo extends LitElement {
               </div>
             </div>
           `}
-          @vi-load-more=${() => this._loadMore()}
+          @vi-load-more=${(e: CustomEvent) => { if (e.detail.direction === 'down') this._loadMore(); }}
         ></vi-combobox>
       </div>
     `;

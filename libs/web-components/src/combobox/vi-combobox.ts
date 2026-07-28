@@ -908,7 +908,7 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
             : ''}
           ${this._slottedItems.length === 0 && (this.mode === 'creatable' || this.mode === 'tags') && this._query.trim() && !this._optionsList.some(o => o.label.toLowerCase() === this._query.trim().toLowerCase() || o.value.toLowerCase() === this._query.trim().toLowerCase())
             ? html`
-                <div part="option" class="combobox-option is-active" @click=${this._handleCreate}>
+                <div role="option" aria-selected="false" aria-disabled="false" part="option" class="combobox-option" @click=${this._handleCreate}>
                   ${this.renderCreateOption
                     ? this.renderCreateOption(this._query)
                     : html`<span>${this.createText.replace('{query}', this._query)}</span>`}
