@@ -140,6 +140,7 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
    * Registers itself via Lit's ReactiveController lifecycle.
    */
   private _infiniteScrollController = new InfiniteScrollController(this, {
+    enabled: () => this.open,
     listbox: () => this._listboxEl,
     sentinelTop: () => this._sentinelTopEl,
     sentinelBottom: () => this._sentinelBottomEl,
