@@ -806,7 +806,6 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
                         removable
                         ?disabled=${this.disabled}
                         @vialiq-remove=${(e: Event) => this._removeTag(val, e)}
-                        @vi-remove=${(e: Event) => this._removeTag(val, e)}
                       >
                         ${label}
                       </vi-chip>
