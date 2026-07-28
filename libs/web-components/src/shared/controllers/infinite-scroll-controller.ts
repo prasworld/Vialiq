@@ -1,6 +1,7 @@
 import { ReactiveController, ReactiveControllerHost } from 'lit';
 
 export interface InfiniteScrollControllerOptions {
+  enabled?: () => boolean;
   listbox: () => HTMLElement | null;
   sentinelTop: () => HTMLElement | null;
   sentinelBottom: () => HTMLElement | null;
