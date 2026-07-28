@@ -895,6 +895,7 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
           class="combobox-listbox ${this.open ? 'is-open' : ''}"
           ?open=${this.open}
           role="listbox"
+          aria-multiselectable="${this.mode === 'multi' || this.mode === 'tags' ? 'true' : 'false'}"
           aria-busy="${this.loading ? 'true' : 'false'}"
         >
           <div class="combobox-sentinel-top" style="height: 1px; width: 100%;"></div>
