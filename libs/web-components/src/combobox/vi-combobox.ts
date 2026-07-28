@@ -59,10 +59,10 @@ import type {
  * @fires vi-search - Search query typed ({ query })
  * @fires vi-create - New option created ({ value })
  * @fires vi-remove - Tag removed ({ value, data })
+ * @fires vi-clear  - Selection cleared ({ previousValue })
  * @fires vi-open   - Listbox opened
  * @fires vi-close  - Listbox closed
- * @fires vi-filter - Filter completed ({ query, results })
- */
+ * @fires vi-filter - Filter completed ({ query, results, matchedValues })
 @customElement('vi-combobox')
 export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
   static override styles = css`${unsafeCSS(comboboxStyles)}`;
