@@ -16,7 +16,7 @@ import { ListboxKeyboardController } from '../shared/controllers/keyboard-contro
 import '@lit-labs/virtualizer';
 import comboboxStyles from './vi-combobox.scss?inline';
 
-import { chevronDownIcon, checkIcon, xIcon as closeIcon, minusIcon } from '@vialiq/icons';
+import { checkIcon, chevronDownIcon, minusIcon, xIcon as closeIcon } from '@vialiq/icons';
 
 registerIcons([chevronDownIcon, checkIcon, closeIcon, minusIcon]);
 
@@ -213,6 +213,16 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
 
   // Custom data payload mapping: value -> data
   private _optionDataMap = new Map<string, unknown>();
+  
+  // Maps option value to a unique ID for aria-activedescendant
+  private _optionIdMap = new Map<string, string>();
+  
+  private _getOptionId(value: string): string {
+    if (!this._optionIdMap.has(value)) {
+      this._optionIdMap.set(value, `opt-${Math.random().toString(36).substring(2, 11)}`);
+    }
+    return this._optionIdMap.get(value) ?? '';
+  }
 
   @state() private accessor _activeIndex = -1;
   @state() private accessor _slottedItems: ViComboboxItem[] = [];
@@ -306,7 +316,7 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
         // Assign stable IDs for aria-activedescendant cross-shadow reference
         items.forEach((item) => {
           if (item.value && !item.id) {
-            item.id = `opt-${item.value}`;
+            item.id = this._getOptionId(item.value);
           }
         });
 
@@ -661,7 +671,7 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
     const isActive = idx === this._activeIndex;
     return html`
       <li
-        id="opt-${opt.value}"
+        id="${this._getOptionId(opt.value)}"
         part="option"
         role="option"
         aria-selected="${isSelected ? 'true' : 'false'}"
@@ -833,10 +843,10 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
                   aria-haspopup="listbox"
                   aria-activedescendant="${this._slottedItems.length > 0
                     ? (this._activeIndex >= 0 && this._visibleSlottedItems[this._activeIndex]
-                        ? `opt-${this._visibleSlottedItems[this._activeIndex].value}`
+                        ? this._getOptionId(this._visibleSlottedItems[this._activeIndex].value)
                         : '')
                     : (this._activeIndex >= 0 && filtered[this._activeIndex]
-                        ? `opt-${filtered[this._activeIndex].value}`
+                        ? this._getOptionId(filtered[this._activeIndex].value)
                         : '')}"
                   @input=${this._handleInput}
                   @focus=${this._handleInputFocus}
@@ -874,7 +884,7 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
                     this.clearValue();
                   }}
                 >
-                  <vi-icon name="close"></vi-icon>
+                  <vi-icon name="x"></vi-icon>
                 </button>
               `
             : ''}

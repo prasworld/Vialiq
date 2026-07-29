@@ -45,47 +45,15 @@ export class ListboxKeyboardController<TData = unknown> implements ReactiveContr
     const activeIndex = this.config.getActiveIndex();
 
     switch (e.key) {
-      case 'ArrowDown': {
+      case 'ArrowDown':
         e.preventDefault();
         if (!this.host.open) this.config.openDropdown();
-
-        const visible = isSlotted ? this.config.getVisibleSlottedItems() : [];
-        const len = isSlotted ? visible.length : options.length;
-        const isDisabled = (i: number) => (isSlotted ? visible[i]?.disabled : options[i]?.disabled) ?? true;
-
-        if (len === 0) {
-          this.config.setActiveIndex(-1);
-          if (isSlotted) this.config.updateSlottedActiveState(-1);
-          break;
-        }
-
-        let next = activeIndex;
-        for (let step = 0; step < len; step++) {
-          next = (next + 1 + len) % len;
-          if (!isDisabled(next)) break;
-        }
-
-        if (isDisabled(next)) next = -1;
-        this.config.setActiveIndex(next);
-        if (isSlotted) this.config.updateSlottedActiveState(next);
-        this.config.scrollToActiveIndex();
+        this._navigate(1);
         break;
-      }
 
       case 'ArrowUp':
         e.preventDefault();
-        if (this.host.open) {
-          if (isSlotted) {
-            const visible = this.config.getVisibleSlottedItems();
-            const prev = activeIndex > 0 ? activeIndex - 1 : visible.length - 1;
-            this.config.setActiveIndex(prev);
-            this.config.updateSlottedActiveState(prev);
-          } else {
-            const prev = activeIndex > 0 ? activeIndex - 1 : options.length - 1;
-            this.config.setActiveIndex(prev);
-          }
-          this.config.scrollToActiveIndex();
-        }
+        if (this.host.open) this._navigate(-1);
         break;
 
       case 'Enter':
@@ -146,24 +114,16 @@ export class ListboxKeyboardController<TData = unknown> implements ReactiveContr
       case 'Home':
         if (this.host.open) {
           e.preventDefault();
-          this.config.setActiveIndex(0);
-          if (isSlotted) this.config.updateSlottedActiveState(0);
-          this.config.scrollToActiveIndex();
+          const len = isSlotted ? this.config.getVisibleSlottedItems().length : options.length;
+          if (len > 0) this._navigate(1, 0);
         }
         break;
 
       case 'End':
         if (this.host.open) {
           e.preventDefault();
-          if (isSlotted) {
-            const last = this.config.getVisibleSlottedItems().length - 1;
-            this.config.setActiveIndex(last);
-            this.config.updateSlottedActiveState(last);
-          } else {
-            const last = options.length - 1;
-            this.config.setActiveIndex(last);
-          }
-          this.config.scrollToActiveIndex();
+          const len = isSlotted ? this.config.getVisibleSlottedItems().length : options.length;
+          if (len > 0) this._navigate(-1, len - 1);
         }
         break;
 
@@ -174,5 +134,43 @@ export class ListboxKeyboardController<TData = unknown> implements ReactiveContr
         }
         break;
     }
+  }
+
+  private _navigate(direction: 1 | -1, startFrom?: number): void {
+    const options = this.config.getFilteredOptions();
+    const isSlotted = this.config.getSlottedItems().length > 0;
+    const visible = isSlotted ? this.config.getVisibleSlottedItems() : [];
+    const len = isSlotted ? visible.length : options.length;
+    const isDisabled = (i: number) => (isSlotted ? visible[i]?.disabled : options[i]?.disabled) ?? false;
+
+    if (len === 0) {
+      this.config.setActiveIndex(-1);
+      if (isSlotted) this.config.updateSlottedActiveState(-1);
+      return;
+    }
+
+    let next = startFrom !== undefined ? startFrom : this.config.getActiveIndex();
+
+    if (startFrom === undefined && next === -1) {
+      next = direction === 1 ? -1 : 0;
+    } else if (startFrom !== undefined) {
+      if (!isDisabled(next)) {
+        this.config.setActiveIndex(next);
+        if (isSlotted) this.config.updateSlottedActiveState(next);
+        this.config.scrollToActiveIndex();
+        return;
+      }
+    }
+
+    for (let step = 0; step < len; step++) {
+      next = (next + direction + len) % len;
+      if (!isDisabled(next)) break;
+    }
+
+    if (isDisabled(next)) next = -1;
+
+    this.config.setActiveIndex(next);
+    if (isSlotted) this.config.updateSlottedActiveState(next);
+    this.config.scrollToActiveIndex();
   }
 }

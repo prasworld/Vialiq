@@ -54,6 +54,7 @@ describe('vi-combobox', () => {
   it('clears selection and dispatches vi-clear event when clear button is clicked', async () => {
     element.options = [{ value: 'us', label: 'United States' }];
     element.value = 'us';
+    element.clearable = true;
     await element.updateComplete;
 
     let cleared = false;
@@ -333,5 +334,128 @@ describe('vi-combobox — slotted item filtering', () => {
 
     expect(alice.hidden).toBe(false);
     expect(bob.hidden).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Keyboard Navigation with disabled items
+// ---------------------------------------------------------------------------
+
+describe('vi-combobox — keyboard navigation with disabled items', () => {
+  let element: ViCombobox;
+
+  beforeEach(async () => {
+    element = document.createElement('vi-combobox') as ViCombobox;
+    document.body.appendChild(element);
+    element.options = [
+      { value: '1', label: 'Item 1' },
+      { value: '2', label: 'Item 2', disabled: true },
+      { value: '3', label: 'Item 3' },
+    ];
+    await element.updateComplete;
+    element.open = true;
+    await element.updateComplete;
+  });
+
+  afterEach(() => {
+    element.remove();
+  });
+
+  it('ArrowDown skips disabled items', async () => {
+    const input = element.shadowRoot!.querySelector('.combobox-input') as HTMLInputElement;
+    console.log('BEFORE ArrowDown:', input.outerHTML, (element as any)._activeIndex);
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, composed: true }));
+    await element.updateComplete;
+    console.log('AFTER ArrowDown:', input.outerHTML, (element as any)._activeIndex);
+    expect(input.getAttribute('aria-activedescendant')?.startsWith('opt-')).toBe(true);
+
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, composed: true }));
+    await element.updateComplete;
+    // Should skip Item 2 and go to Item 3
+    expect(input.getAttribute('aria-activedescendant')?.startsWith('opt-')).toBe(true);
+  });
+
+  it('ArrowUp skips disabled items', async () => {
+    const input = element.shadowRoot!.querySelector('.combobox-input') as HTMLInputElement;
+    // Go to first item (from -1, ArrowUp wraps to end)
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true, composed: true }));
+    await element.updateComplete;
+    expect(input.getAttribute('aria-activedescendant')?.startsWith('opt-')).toBe(true);
+
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true, composed: true }));
+    await element.updateComplete;
+    // Should skip Item 2 and go to Item 1
+    expect(input.getAttribute('aria-activedescendant')?.startsWith('opt-')).toBe(true);
+  });
+
+  it('Home and End skip disabled items if they land on bounds', async () => {
+    element.options = [
+      { value: '1', label: 'Item 1', disabled: true },
+      { value: '2', label: 'Item 2' },
+      { value: '3', label: 'Item 3', disabled: true },
+    ];
+    await element.updateComplete;
+    const input = element.shadowRoot!.querySelector('.combobox-input') as HTMLInputElement;
+    
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', bubbles: true, composed: true }));
+    await element.updateComplete;
+    // 0 is disabled, should select 1 (Item 2)
+    expect(input.getAttribute('aria-activedescendant')?.startsWith('opt-')).toBe(true);
+    
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true, composed: true }));
+    await element.updateComplete;
+    // 2 is disabled, should select 1 (Item 2)
+    expect(input.getAttribute('aria-activedescendant')?.startsWith('opt-')).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// minChars Filtering
+// ---------------------------------------------------------------------------
+
+describe('vi-combobox — minChars filtering', () => {
+  let element: ViCombobox;
+
+  afterEach(() => {
+    element?.remove();
+  });
+
+  it('does not filter slotted items if query length is less than minChars', async () => {
+    element = document.createElement('vi-combobox') as ViCombobox;
+    document.body.appendChild(element);
+    element.minChars = 2; // Require 2 chars
+    element.innerHTML = `
+      <vi-combobox-item value="a" label="Apple"></vi-combobox-item>
+      <vi-combobox-item value="b" label="Banana"></vi-combobox-item>
+    `;
+    await element.updateComplete;
+    // Give Slot mutation observer a frame
+    await new Promise((r) => setTimeout(r, 50));
+    await element.updateComplete;
+
+    const input = element.shadowRoot!.querySelector('.combobox-input') as HTMLInputElement;
+    element.open = true;
+    await element.updateComplete;
+
+    // Type 1 char ("b"), less than minChars
+    input.value = 'b';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    await element.updateComplete;
+
+    const apple = element.querySelector<ViComboboxItem>('[value="a"]')!;
+    const banana = element.querySelector<ViComboboxItem>('[value="b"]')!;
+    
+    // Should NOT filter them out yet!
+    expect(apple.hidden).toBe(false);
+    expect(banana.hidden).toBe(false);
+
+    // Type 2 chars ("ba")
+    input.value = 'ba';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    await element.updateComplete;
+    
+    // Now it should filter
+    expect(apple.hidden).toBe(true);
+    expect(banana.hidden).toBe(false);
   });
 });

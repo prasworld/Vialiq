@@ -19,7 +19,11 @@ export class InfiniteScrollController implements ReactiveController {
   }
 
   hostUpdated() {
-    this._connectObserver();
+    if (this.options.enabled && !this.options.enabled()) {
+      this._disconnectObserver();
+    } else {
+      this._connectObserver();
+    }
   }
 
   hostDisconnected() {
