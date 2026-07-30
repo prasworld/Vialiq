@@ -116,6 +116,7 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
   accessor searchable = true;
   @property({ type: String, attribute: 'no-options-text' }) accessor noOptionsText = 'No results found';
   @property({ type: String, attribute: 'create-text' }) accessor createText = 'Create "{query}"';
+  @property({ type: String, attribute: 'remove-custom-item-text' }) accessor removeCustomItemText = 'Remove custom item';
   @property({ type: Boolean }) accessor virtualize = false;
   @property({ type: String, attribute: 'group-sort' }) accessor groupSort: 'asc' | 'desc' | 'none' = 'none';
   @property({ type: String, attribute: 'match-from' }) accessor matchFrom: 'start' | 'any' = 'any';
@@ -725,9 +726,9 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
               
               ${opt.data?.isTemporary
                 ? html`
-                    <div class="combobox-option-action" @click=${(e: Event) => this._handleDeleteTempItem(opt, e)} title="Remove custom item">
+                    <button type="button" class="combobox-option-action" aria-label="${this.removeCustomItemText}" title="${this.removeCustomItemText}" @click=${(e: Event) => this._handleDeleteTempItem(opt, e)}>
                       <vi-icon name="minus" style="color: var(--vi-color-error, #ef4444);"></vi-icon>
-                    </div>
+                    </button>
                   `
                 : ''}
 
@@ -741,9 +742,7 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
     const hasGroups = filtered.some((opt) => opt.group);
 
     if (this.virtualize && !hasGroups) {
-      if (this._slottedItems.length > 0) {
-        console.warn('vi-combobox: Virtualization is enabled, but slotted items were provided. Slotted items cannot be virtualized. Use the `renderOption` property to provide a template reference instead.');
-      } else {
+      if (this._slottedItems.length === 0) {
         return html`
           <lit-virtualizer
             part="list"

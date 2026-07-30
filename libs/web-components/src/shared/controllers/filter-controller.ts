@@ -105,27 +105,40 @@ export class FilterController<TData = unknown> implements ReactiveController {
     }
 
     const q = query.toLowerCase().trim();
-    let results: ListboxOption<TData>[];
+    let results: ListboxOption<TData>[] = [];
+    const matchedValues = new Set<string>();
     
-    // Ensure we are operating on the correct static array if not a loader
-    const optionsList = typeof this.host.options === 'function' ? [] : (this.host.options as ListboxOption<TData>[]);
-
     const filterFn = this.host.filterFn;
-    if (filterFn) {
-      results = optionsList.filter((opt) => filterFn(opt, query));
-    } else {
-      results = optionsList.filter((opt) => {
-        const corpus = opt.searchText
-          ? opt.searchText.toLowerCase()
-          : [opt.label, opt.description].filter(Boolean).join(' ').toLowerCase();
-        return this.host.matchFrom === 'start' ? corpus.startsWith(q) : corpus.includes(q);
-      });
-    }
-
-    const matchedValues = new Set(results.map((r) => r.value));
 
     for (const item of slottedItems) {
-      item.hidden = !matchedValues.has(item.value);
+      let isMatch = false;
+      const optData: ListboxOption<TData> = {
+        value: item.value,
+        label: item.label || item.value,
+        group: item.group,
+        disabled: item.disabled,
+        icon: item.icon,
+        description: item.description,
+        searchText: (item as any).searchText,
+        data: item.data as TData,
+      };
+
+      if (filterFn) {
+        isMatch = filterFn(optData, query);
+      } else {
+        const searchText = (item as any).searchText;
+        const corpus = searchText
+          ? searchText.toLowerCase()
+          : [item.label || item.value, item.description].filter(Boolean).join(' ').toLowerCase();
+        isMatch = this.host.matchFrom === 'start' ? corpus.startsWith(q) : corpus.includes(q);
+      }
+      
+      item.hidden = !isMatch;
+      
+      if (isMatch) {
+        results.push(optData);
+        matchedValues.add(item.value);
+      }
     }
 
     const visibleItems = this.config.getVisibleSlottedItems();
