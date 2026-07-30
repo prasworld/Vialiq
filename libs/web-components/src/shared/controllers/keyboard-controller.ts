@@ -53,7 +53,8 @@ export class ListboxKeyboardController<TData = unknown> implements ReactiveContr
 
       case 'ArrowUp':
         e.preventDefault();
-        if (this.host.open) this._navigate(-1);
+        if (!this.host.open) this.config.openDropdown();
+        this._navigate(-1);
         break;
 
       case 'Enter':

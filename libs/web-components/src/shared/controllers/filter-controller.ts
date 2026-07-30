@@ -29,6 +29,7 @@ export interface FilterControllerOptions<TData = unknown> {
 export class FilterController<TData = unknown> implements ReactiveController {
   public query = '';
   private _debounceTimer: ReturnType<typeof setTimeout> | null = null;
+  private _loadId = 0;
 
   constructor(
     private host: FilterControllerHost<TData>,
@@ -76,18 +77,22 @@ export class FilterController<TData = unknown> implements ReactiveController {
         const loader = typeof this.host.options === 'function' ? this.host.options : null;
         if (loader) {
           this.config.setLoading(true);
+          const currentLoadId = ++this._loadId;
           loader(this.query)
             .then((opts) => {
+              if (this._loadId !== currentLoadId) return;
               this.config.setOptionsList(opts);
               this.config.rebuildOptionDataMap();
               this.host.requestUpdate();
             })
             .catch(() => {
+              if (this._loadId !== currentLoadId) return;
               this.config.setOptionsList([]);
               this.config.rebuildOptionDataMap();
               this.host.requestUpdate();
             })
             .finally(() => {
+              if (this._loadId !== currentLoadId) return;
               this.config.setLoading(false);
             });
         }
