@@ -279,6 +279,8 @@ describe('vi-animation', () => {
     }, anim);
 
     expect(customKfUsed).toBe(true);
+  });
+
   it('supports stagger-direction "reverse", "center", and "random"', async () => {
     render(
       html`
