@@ -1,7 +1,7 @@
 // AUTO-GENERATED — do not edit by hand.
 // Source: tools/icons-src/hi-heart-organ.svg
 // Regenerate with: node libs/icons/tools/generate-icons.mjs
-import type { SvgIconDef } from './types.js';
+import type { SvgIconDef } from './types';
 
 export const hiHeartOrganIcon: SvgIconDef = {
   name: 'hi-heart-organ',

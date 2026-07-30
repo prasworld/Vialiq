@@ -1,7 +1,7 @@
 // AUTO-GENERATED — do not edit by hand.
 // Source: tools/icons-src/hi-intensity-concentration-bioassays.svg
 // Regenerate with: node libs/icons/tools/generate-icons.mjs
-import type { SvgIconDef } from './types.js';
+import type { SvgIconDef } from './types';
 
 export const hiIntensityConcentrationBioassaysIcon: SvgIconDef = {
   name: 'hi-intensity-concentration-bioassays',

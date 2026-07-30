@@ -1,7 +1,7 @@
 // AUTO-GENERATED — do not edit by hand.
 // Source: tools/icons-src/hi-coronary-care-unit.svg
 // Regenerate with: node libs/icons/tools/generate-icons.mjs
-import type { SvgIconDef } from './types.js';
+import type { SvgIconDef } from './types';
 
 export const hiCoronaryCareUnitIcon: SvgIconDef = {
   name: 'hi-coronary-care-unit',

@@ -258,6 +258,32 @@ describe('vi-textarea', () => {
     });
   });
 
+  describe('Missing Branch Coverage', () => {
+    it('syncs value to textarea before validating if out of sync', async () => {
+      render(html`<vi-textarea required></vi-textarea>`, container);
+      const host = document.querySelector('vi-textarea') as any;
+      await host.updateComplete;
+
+      const textarea = host.shadowRoot.querySelector('textarea');
+      textarea.value = 'typed';
+      host.value = '';
+
+      const isValid = host.checkValidity();
+      expect(isValid).toBe(false);
+      expect(textarea.value).toBe('');
+    });
+
+    it('validates without a textarea element', () => {
+      const host = document.createElement('vi-textarea') as any;
+      host.required = true;
+      host.value = '';
+
+      const isValid = host.checkValidity();
+      expect(isValid).toBe(false);
+      expect(host.validityMessage).not.toBe('');
+    });
+  });
+
   describe('Accessibility (A11y)', () => {
     it('should pass axe accessibility audits', async () => {
       container.style.backgroundColor = '#ffffff';

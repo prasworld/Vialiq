@@ -7,21 +7,35 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const workspaceRoot = path.resolve(__dirname, '../..');
 
-export const config: Options.Testrunner & Capabilities.WithRequestedTestrunnerCapabilities = {
+export const config: Options.Testrunner &
+  Capabilities.WithRequestedTestrunnerCapabilities = {
   runner: [
     'browser',
     {
       preset: 'lit',
       rootDir: __dirname,
       headless: true,
+      coverage: {
+        enabled: true,
+        reportsDirectory: path.join(workspaceRoot, 'coverage/web-components'),
+        reporter: ['text', 'html', 'json'],
+        include: ['src/**/*.ts'],
+        exclude: ['**/*.test.ts', '**/*.stories.ts'],
+      },
       viteConfig: {
+        optimizeDeps: {
+          exclude: ['@vialiq/icons'],
+        },
         esbuild: false,
         server: {
           fs: {
             allow: [
               __dirname,
               path.resolve(__dirname, '../../'),
-              path.resolve(__dirname, '../../node_modules/@wdio/browser-runner/node_modules'),
+              path.resolve(
+                __dirname,
+                '../../node_modules/@wdio/browser-runner/node_modules',
+              ),
             ],
           },
         },
@@ -38,7 +52,12 @@ export const config: Options.Testrunner & Capabilities.WithRequestedTestrunnerCa
               if (!code.includes('@vialiq/')) return null;
               const result = code.replace(
                 /@(use|forward)\s+['"]@vialiq\/([^/'"]+)\/([^'"]+)['"]/g,
-                (_match, directive: string, libName: string, subpath: string) => {
+                (
+                  _match,
+                  directive: string,
+                  libName: string,
+                  subpath: string,
+                ) => {
                   const absPath = path
                     .resolve(workspaceRoot, 'libs', libName, subpath)
                     .replace(/\\/g, '/');

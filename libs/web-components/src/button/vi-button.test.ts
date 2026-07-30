@@ -439,6 +439,40 @@ describe('vi-button', () => {
       await browser.waitUntil(async () => (await iconSlot.getAttribute('hidden')) === null);
       await expect(iconSlot).not.toHaveAttribute('hidden');
     });
+
+    it('should prevent default and stop propagation when clicked while disabled', async () => {
+      render(html`<vi-button disabled>Disabled</vi-button>`, container);
+      const host = await $('vi-button');
+      
+      const result = await browser.execute((el: any) => {
+        let prevented = false;
+        let stopped = false;
+        
+        const event = new MouseEvent('click', { cancelable: true, bubbles: true });
+        
+        const originalPreventDefault = event.preventDefault.bind(event);
+        const originalStopImmediatePropagation = event.stopImmediatePropagation.bind(event);
+        
+        event.preventDefault = () => {
+          prevented = true;
+          originalPreventDefault();
+        };
+        
+        event.stopImmediatePropagation = () => {
+          stopped = true;
+          originalStopImmediatePropagation();
+        };
+        
+        // Dispatch on the button inside the shadow DOM to trigger onClick properly
+        const internalBtn = el.shadowRoot.querySelector('button');
+        internalBtn.dispatchEvent(event);
+        
+        return { prevented, stopped };
+      }, await host);
+
+      expect(result.prevented).toBe(true);
+      expect(result.stopped).toBe(true);
+    });
   });
 
   describe('Accessibility (A11y)', () => {

@@ -35,7 +35,7 @@ export class ViIcon extends ViElement {
       width: 100%;
       height: 100%;
       fill: none;
-      stroke: currentColor;
+      stroke: var(--vi-icon-color, currentColor);
       stroke-width: 2;
       stroke-linecap: round;
       stroke-linejoin: round;

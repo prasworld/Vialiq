@@ -102,6 +102,7 @@
     "verdaccio": "^6.0.5",
     "vite": "^7.0.0",
     "vite-plugin-dts": "^5.0.3",
+    "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.0.8"
   },
   "nx": {

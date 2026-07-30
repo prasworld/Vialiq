@@ -1,0 +1,10 @@
+@use '@vialiq/flux-ui/styles/variables' as tokens;
+@use '@vialiq/flux-ui/components/combobox';
+
+:host {
+  display: block;
+}
+
+:host([hidden]) {
+  display: none !important;
+}
