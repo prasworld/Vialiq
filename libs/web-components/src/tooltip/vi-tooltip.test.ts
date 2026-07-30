@@ -295,11 +295,13 @@ describe('vi-tooltip', () => {
 
       const panel = host.shadowRoot!.querySelector('.tooltip-panel') as HTMLElement;
       
-      host.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }));
+      const targetBtn = host.querySelector('button') as HTMLButtonElement;
+      
+      targetBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }));
       await host.updateComplete;
       expect(panel.matches(':popover-open')).toBe(true);
 
-      host.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }));
+      targetBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }));
       await host.updateComplete;
       expect(panel.matches(':popover-open')).toBe(false);
     });
@@ -346,12 +348,13 @@ describe('vi-tooltip', () => {
       await host.updateComplete;
 
       const panel = host.shadowRoot!.querySelector('.tooltip-panel') as HTMLElement;
+      const targetBtn = host.querySelector('button') as HTMLButtonElement;
       
-      host.dispatchEvent(new FocusEvent('focusin', { bubbles: true, composed: true }));
+      targetBtn.dispatchEvent(new FocusEvent('focusin', { bubbles: true, composed: true }));
       await host.updateComplete;
       expect(panel.matches(':popover-open')).toBe(true);
 
-      host.dispatchEvent(new FocusEvent('focusout', { bubbles: true, composed: true }));
+      targetBtn.dispatchEvent(new FocusEvent('focusout', { bubbles: true, composed: true }));
       await host.updateComplete;
       expect(panel.matches(':popover-open')).toBe(false);
     });

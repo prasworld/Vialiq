@@ -105,7 +105,7 @@ export class FilterController<TData = unknown> implements ReactiveController {
     }
 
     const q = query.toLowerCase().trim();
-    let results: ListboxOption[];
+    let results: ListboxOption<TData>[];
     
     // Ensure we are operating on the correct static array if not a loader
     const optionsList = typeof this.host.options === 'function' ? [] : (this.host.options as ListboxOption<TData>[]);

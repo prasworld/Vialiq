@@ -206,6 +206,7 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
       this._optionsList = Array.isArray(val) ? [...val] : [];
       this._rebuildOptionDataMap();
     }
+    this.requestUpdate('options');
   }
 
   get options(): ComboboxOption[] | ComboboxOptionsLoader {
@@ -235,7 +236,6 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
   @query('.combobox-listbox') private accessor _listboxEl!: HTMLDivElement | null;
   @query('.combobox-control') private accessor _controlEl!: HTMLDivElement | null;
 
-  private _debounceTimer: ReturnType<typeof setTimeout> | null = null;
   private _slotMutationObserver: MutationObserver | null = null;
 
   protected override get _focusableElement(): HTMLElement | null {
@@ -405,27 +405,46 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
     //   – query is empty
     //   – query is shorter than minChars (avoids premature filtering)
     //   – an async loader is driving results (loader handles its own filtering)
-    if (!this.isSearchable || !this._query || this._query.length < this.minChars || this._optionsLoader) {
-      return this._optionsList;
-    }
-
-    if (this._slottedItems.length > 0) {
-      return this._optionsList;
-    }
-
-    const q = this._query.toLowerCase();
     let results: ComboboxOption[];
 
-    const filterFn = this.filterFn;
-    if (filterFn) {
-      results = this._optionsList.filter((opt) => filterFn(opt, this._query));
+    if (!this.isSearchable || !this._query || this._query.length < this.minChars || this._optionsLoader) {
+      results = this._optionsList;
+    } else if (this._slottedItems.length > 0) {
+      results = this._optionsList;
     } else {
-      results = this._optionsList.filter((opt) => {
-        const corpus = opt.searchText
-          ? opt.searchText.toLowerCase()
-          : [opt.label, opt.description].filter(Boolean).join(' ').toLowerCase();
-        return this.matchFrom === 'start' ? corpus.startsWith(q) : corpus.includes(q);
-      });
+      const q = this._query.toLowerCase();
+      const filterFn = this.filterFn;
+      if (filterFn) {
+        results = this._optionsList.filter((opt) => filterFn(opt, this._query));
+      } else {
+        results = this._optionsList.filter((opt) => {
+          const corpus = opt.searchText
+            ? opt.searchText.toLowerCase()
+            : [opt.label, opt.description].filter(Boolean).join(' ').toLowerCase();
+          return this.matchFrom === 'start' ? corpus.startsWith(q) : corpus.includes(q);
+        });
+      }
+    }
+
+    if (this.groupSort !== 'none') {
+      const groupsMap = new Map<string, ComboboxOption[]>();
+      for (const opt of results) {
+        const g = opt.group || '';
+        let groupArr = groupsMap.get(g);
+        if (!groupArr) {
+          groupArr = [];
+          groupsMap.set(g, groupArr);
+        }
+        groupArr.push(opt);
+      }
+
+      const groupEntries = Array.from(groupsMap.entries());
+      if (this.groupSort === 'asc') {
+        groupEntries.sort(([a], [b]) => a.localeCompare(b));
+      } else if (this.groupSort === 'desc') {
+        groupEntries.sort(([a], [b]) => b.localeCompare(a));
+      }
+      results = groupEntries.flatMap(([, opts]) => opts);
     }
 
     return results;
@@ -758,12 +777,6 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
 
     const groupEntries = Array.from(groupsMap.entries());
 
-    if (this.groupSort === 'asc') {
-      groupEntries.sort(([a], [b]) => a.localeCompare(b));
-    } else if (this.groupSort === 'desc') {
-      groupEntries.sort(([a], [b]) => b.localeCompare(a));
-    }
-
     let globalIndex = 0;
 
     return html`
@@ -773,7 +786,7 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
           return html`
             <div role="group" aria-labelledby=${groupName ? groupId : undefined}>
               ${groupName
-                ? html`<li id=${groupId} part="group-header" class="combobox-group-header" role="presentation">${groupName}</li>`
+                ? html`<div id=${groupId} part="group-header" class="combobox-group-header" role="presentation">${groupName}</div>`
                 : ''}
               <ul class="combobox-list">
                 ${opts.map((opt) => {
