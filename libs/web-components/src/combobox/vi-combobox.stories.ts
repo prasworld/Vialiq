@@ -406,12 +406,12 @@ export const DynamicFlipping: StoryObj = {
   `,
 };
 
-export const PortalingWithHoist: StoryObj = {
+export const Hoisting: StoryObj = {
   parameters: {
     docs: {
       description: {
         story:
-          'When `hoist="true"`, the listbox is appended to `document.body` and uses `position: fixed`. This escapes tight `overflow: hidden` containers.',
+          'When `hoist="true"`, the listbox uses `position: fixed` via Floating UI. This helps it escape tight `overflow: hidden` containers without needing to move the DOM node.',
       },
     },
   },

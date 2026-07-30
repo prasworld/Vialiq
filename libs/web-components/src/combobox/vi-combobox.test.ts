@@ -364,10 +364,8 @@ describe('vi-combobox — keyboard navigation with disabled items', () => {
 
   it('ArrowDown skips disabled items', async () => {
     const input = element.shadowRoot!.querySelector('.combobox-input') as HTMLInputElement;
-    console.log('BEFORE ArrowDown:', input.outerHTML, (element as any)._activeIndex);
     input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, composed: true }));
     await element.updateComplete;
-    console.log('AFTER ArrowDown:', input.outerHTML, (element as any)._activeIndex);
     expect(input.getAttribute('aria-activedescendant')?.startsWith('opt-')).toBe(true);
 
     input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, composed: true }));

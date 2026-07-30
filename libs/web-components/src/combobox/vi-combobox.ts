@@ -180,6 +180,9 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
   set _query(val: string) { 
     if (this._filterController.query !== val) {
       this._filterController.query = val; 
+      if (this._slottedItems?.length > 0) {
+        this._filterController.applySlottedFilter(val, this._slottedItems);
+      }
       this.requestUpdate(); 
     }
   }
@@ -315,8 +318,12 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
       if (items.length > 0) {
         // Assign stable IDs for aria-activedescendant cross-shadow reference
         items.forEach((item) => {
-          if (item.value && !item.id) {
-            item.id = this._getOptionId(item.value);
+          if (item.value) {
+            if (item.id) {
+              this._optionIdMap.set(item.value, item.id);
+            } else {
+              item.id = this._getOptionId(item.value);
+            }
           }
         });
 
@@ -616,9 +623,6 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
     const prev = this.value;
     this.value = this.mode === 'multi' || this.mode === 'tags' ? [] : '';
     this._query = '';
-    if (this._slottedItems.length > 0) {
-      this._filterController.resetSlottedVisibility(this._slottedItems);
-    }
     this._dispatch('vi-clear', { previousValue: prev });
     this._dispatch('vi-change', { value: this.value });
   }

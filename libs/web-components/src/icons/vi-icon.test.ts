@@ -52,11 +52,10 @@ describe('vi-icon', () => {
     expect(style).toContain('--vi-icon-size: 32px');
 
     // Remove the attribute to test the removeProperty branch
-    await browser.execute((el: ViIcon) => {
+    await browser.execute(async (el: ViIcon) => {
       el.removeAttribute('size');
+      await el.updateComplete;
     }, await icon as unknown as ViIcon);
-
-    await browser.pause(50); // wait for Lit update
     
     style = await icon.getAttribute('style');
     expect(style).not.toContain('--vi-icon-size');
