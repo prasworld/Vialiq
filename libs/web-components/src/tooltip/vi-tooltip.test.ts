@@ -280,6 +280,83 @@ describe('vi-tooltip', () => {
     expect(host.popperOptions).toEqual({});
   });
 
+  describe('Missing Branch Coverage', () => {
+    it('handles click trigger to show and hide', async () => {
+      render(
+        html`
+          <vi-tooltip content="Click" trigger="click" .delay=${0}>
+            <button id="btn">Target</button>
+          </vi-tooltip>
+        `,
+        container
+      );
+      const host = document.querySelector('vi-tooltip') as any;
+      await host.updateComplete;
+
+      const panel = host.shadowRoot!.querySelector('.tooltip-panel') as HTMLElement;
+      
+      host.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }));
+      await host.updateComplete;
+      expect(panel.matches(':popover-open')).toBe(true);
+
+      host.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }));
+      await host.updateComplete;
+      expect(panel.matches(':popover-open')).toBe(false);
+    });
+
+    it('handles document click outside to close', async () => {
+      render(
+        html`
+          <div>
+            <vi-tooltip content="DocClick" trigger="click" .delay=${0} open>
+              <button>Target</button>
+            </vi-tooltip>
+            <div id="outside">Outside</div>
+          </div>
+        `,
+        container
+      );
+      const host = document.querySelector('vi-tooltip') as any;
+      await host.updateComplete;
+      
+      const panel = host.shadowRoot!.querySelector('.tooltip-panel') as HTMLElement;
+      
+      // Force it open if 'open' attribute isn't enough (since it's internal state)
+      host.show();
+      await host.updateComplete;
+      expect(panel.matches(':popover-open')).toBe(true);
+
+      // Tooltip listens to pointerdown on document for outside click
+      document.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, composed: true }));
+      
+      await host.updateComplete;
+      expect(panel.matches(':popover-open')).toBe(false);
+    });
+
+    it('handles focus and focusout trigger', async () => {
+      render(
+        html`
+          <vi-tooltip content="Focus" trigger="focus" .delay=${0}>
+            <button id="btn">Target</button>
+          </vi-tooltip>
+        `,
+        container
+      );
+      const host = document.querySelector('vi-tooltip') as any;
+      await host.updateComplete;
+
+      const panel = host.shadowRoot!.querySelector('.tooltip-panel') as HTMLElement;
+      
+      host.dispatchEvent(new FocusEvent('focusin', { bubbles: true, composed: true }));
+      await host.updateComplete;
+      expect(panel.matches(':popover-open')).toBe(true);
+
+      host.dispatchEvent(new FocusEvent('focusout', { bubbles: true, composed: true }));
+      await host.updateComplete;
+      expect(panel.matches(':popover-open')).toBe(false);
+    });
+  });
+
   describe('Accessibility (A11y)', () => {
     it('should pass axe accessibility audits', async () => {
       // Set background to pass color contrast checks

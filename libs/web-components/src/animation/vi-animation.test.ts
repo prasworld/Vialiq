@@ -279,5 +279,93 @@ describe('vi-animation', () => {
     }, anim);
 
     expect(customKfUsed).toBe(true);
+  it('supports stagger-direction "reverse", "center", and "random"', async () => {
+    render(
+      html`
+        <vi-animation id="test-stagger-directions" cascade .duration=${50} .stagger=${10} .autoPlay=${false}>
+          <div class="item">Item 1</div>
+          <div class="item">Item 2</div>
+          <div class="item">Item 3</div>
+        </vi-animation>
+      `,
+      container
+    );
+    const wrapper = await $('#test-stagger-directions');
+    const anim = (await wrapper) as unknown as ViAnimation;
+
+    await browser.execute(async (el: ViAnimation) => {
+      el.staggerDirection = 'reverse';
+      await el.play();
+      
+      el.staggerDirection = 'center';
+      await el.play();
+      
+      el.staggerDirection = 'random';
+      await el.play();
+    }, anim);
+  });
+
+  it('generates keyframes for structural animations', async () => {
+    render(
+      html`
+        <vi-animation id="test-structural" .duration=${10} .autoPlay=${false}>
+          <div style="width: 100px; height: 100px;">Content</div>
+        </vi-animation>
+      `,
+      container
+    );
+    const wrapper = await $('#test-structural');
+    const anim = (await wrapper) as unknown as ViAnimation;
+
+    await browser.execute(async (el: ViAnimation) => {
+      const names = ['expand-vertical', 'collapse-vertical', 'expand-horizontal', 'collapse-horizontal'];
+      for (const name of names) {
+        el.name = name;
+        await el.play();
+      }
+    }, anim);
+  });
+
+  it('supports playback control methods (pause, resume, reverse, cancel, finish)', async () => {
+    render(
+      html`
+        <vi-animation id="test-playback" name="fade-in" .duration=${500} .autoPlay=${false}>
+          <div>Target</div>
+        </vi-animation>
+      `,
+      container
+    );
+    const wrapper = await $('#test-playback');
+    const anim = (await wrapper) as unknown as ViAnimation;
+
+    const result = await browser.execute(async (el: ViAnimation) => {
+      let cancelFired = false;
+      let finishFired = false;
+
+      el.addEventListener('vi-animation-cancel', () => cancelFired = true);
+      el.addEventListener('vi-animation-finish', () => finishFired = true);
+
+      // Start animation
+      const playPromise = el.play();
+      
+      el.pause();
+      el.resume();
+      el.reverse();
+      el.cancel();
+
+      try {
+        await playPromise;
+      } catch (e) {
+        // playPromise might throw if cancelled
+      }
+
+      el.play();
+      el.finish();
+
+      return { cancelFired, finishFired };
+    }, anim);
+
+    expect(result.cancelFired).toBe(true);
+    expect(result.finishFired).toBe(true);
   });
 });

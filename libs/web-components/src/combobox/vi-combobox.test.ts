@@ -1,4 +1,5 @@
 import { expect } from '@wdio/globals';
+import axe from 'axe-core';
 import './vi-combobox.js';
 import './vi-combobox-item.js';
 import type { ViCombobox } from './vi-combobox.js';
@@ -457,5 +458,117 @@ describe('vi-combobox — minChars filtering', () => {
     // Now it should filter
     expect(apple.hidden).toBe(true);
     expect(banana.hidden).toBe(false);
+  });
+  describe('Accessibility (A11y)', () => {
+    it('sets correct ARIA listbox wiring (aria-controls, aria-owns, aria-label)', async () => {
+      element.options = [
+        { value: '1', label: 'One' },
+        { value: '2', label: 'Two' }
+      ];
+      element.open = true;
+      await element.updateComplete;
+
+      const input = element.shadowRoot?.querySelector('.combobox-input');
+      const listbox = element.shadowRoot?.querySelector('#listbox');
+
+      expect(input?.getAttribute('aria-controls')).toBe('listbox');
+      expect(input?.getAttribute('role')).toBe('combobox');
+      expect(input?.getAttribute('aria-expanded')).toBe('true');
+      expect(listbox?.getAttribute('role')).toBe('listbox');
+    });
+
+    it('sets correct cross-shadow DOM ARIA semantics on slotted items', async () => {
+      element.innerHTML = `
+        <vi-combobox-item value="1" label="One"></vi-combobox-item>
+        <vi-combobox-item value="2" label="Two" disabled></vi-combobox-item>
+      `;
+      await element.updateComplete;
+      await new Promise((r) => setTimeout(r, 50));
+      await element.updateComplete;
+
+      const item1 = element.querySelector<ViComboboxItem>('[value="1"]')!;
+      const item2 = element.querySelector<ViComboboxItem>('[value="2"]')!;
+
+      expect(item1.getAttribute('role')).toBe('option');
+      expect(item1.getAttribute('aria-selected')).toBe('false');
+      expect(item1.getAttribute('aria-disabled')).toBe('false');
+
+      expect(item2.getAttribute('role')).toBe('option');
+      expect(item2.getAttribute('aria-disabled')).toBe('true');
+
+      // The listbox should aria-own the slotted items
+      const listbox = element.shadowRoot?.querySelector('#listbox');
+      const owns = listbox?.getAttribute('aria-owns');
+      expect(owns).toContain(item1.id);
+      expect(owns).toContain(item2.id);
+    });
+
+    it('correctly maps aria-activedescendant to the Create option', async () => {
+      element.mode = 'creatable';
+      element.options = [{ value: 'exist', label: 'Existing' }];
+      await element.updateComplete;
+
+      element.open = true;
+      const input = element.shadowRoot?.querySelector('.combobox-input') as HTMLInputElement;
+      
+      // Type something that doesn't exist
+      input.value = 'new';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      await element.updateComplete;
+
+      const createOption = element.shadowRoot?.querySelector('#create-option');
+      expect(createOption).not.toBeNull();
+      expect(createOption?.getAttribute('role')).toBe('option');
+      expect(createOption?.classList.contains('is-active')).toBe(true);
+      expect(input.getAttribute('aria-activedescendant')).toBe('create-option');
+    });
+
+    it('should pass axe accessibility audits', async () => {
+      const container = document.createElement('div');
+      container.style.backgroundColor = '#ffffff';
+      container.style.color = '#111827';
+      container.style.padding = '20px';
+      document.body.appendChild(container);
+
+      const host = document.createElement('vi-combobox');
+      host.setAttribute('aria-label', 'Select an option');
+      host.options = [
+        { value: '1', label: 'One' },
+        { value: '2', label: 'Two' }
+      ];
+      container.appendChild(host);
+      await host.updateComplete;
+
+      const results = await axe.run(container, {
+        rules: {
+          'document-title': { enabled: false },
+          'html-has-lang': { enabled: false },
+          'page-has-heading-one': { enabled: false },
+          'landmark-one-main': { enabled: false },
+          region: { enabled: false },
+          'color-contrast': { enabled: false }, 
+        },
+      });
+
+      expect(results.violations).toEqual([]);
+      
+      host.open = true;
+      await host.updateComplete;
+      await new Promise((r) => setTimeout(r, 50)); // let floating UI settle
+
+      const openResults = await axe.run(container, {
+        rules: {
+          'document-title': { enabled: false },
+          'html-has-lang': { enabled: false },
+          'page-has-heading-one': { enabled: false },
+          'landmark-one-main': { enabled: false },
+          region: { enabled: false },
+          'color-contrast': { enabled: false },
+        },
+      });
+
+      expect(openResults.violations).toEqual([]);
+      container.remove();
+    });
   });
 });

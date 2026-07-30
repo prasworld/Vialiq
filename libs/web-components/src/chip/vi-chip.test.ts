@@ -106,4 +106,57 @@ describe('vi-chip', () => {
 
     expect(avatarSlotHidden).toBe(false);
   });
+
+  it('does not emit vialiq-select or vialiq-remove when disabled', async () => {
+    render(html`<vi-chip disabled removable>Disabled</vi-chip>`, container);
+    const chip = await $('vi-chip');
+    
+    const result = await browser.execute((elem: any) => {
+      let selectFired = false;
+      let removeFired = false;
+      elem.addEventListener('vialiq-select', () => selectFired = true);
+      elem.addEventListener('vialiq-remove', () => removeFired = true);
+      
+      const button = elem.shadowRoot.querySelector('button');
+      button.click();
+      
+      const removeBtn = elem.shadowRoot.querySelector('vi-button[part="remove-btn"]');
+      if (removeBtn) removeBtn.click();
+      
+      // also verify disabled short-circuits keyboard
+      button.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+      
+      return { selectFired, removeFired };
+    }, await chip);
+    
+    expect(result.selectFired).toBe(false);
+    expect(result.removeFired).toBe(false);
+  });
+
+  it('handles keyboard selection (Enter/Space) and removal (Backspace/Delete)', async () => {
+    render(html`<vi-chip removable>Keyboard</vi-chip>`, container);
+    const chip = await $('vi-chip');
+    
+    const result = await browser.execute((elem: any) => {
+      let selectFired = 0;
+      let removeFired = 0;
+      elem.addEventListener('vialiq-select', () => selectFired++);
+      elem.addEventListener('vialiq-remove', () => removeFired++);
+      
+      const button = elem.shadowRoot.querySelector('button');
+      
+      button.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+      button.dispatchEvent(new KeyboardEvent('keydown', { key: ' ' }));
+      
+      button.dispatchEvent(new KeyboardEvent('keydown', { key: 'Backspace' }));
+      button.dispatchEvent(new KeyboardEvent('keydown', { key: 'Delete' }));
+      
+      button.dispatchEvent(new KeyboardEvent('keydown', { key: 'A' }));
+      
+      return { selectFired, removeFired };
+    }, await chip);
+    
+    expect(result.selectFired).toBe(2);
+    expect(result.removeFired).toBe(2);
+  });
 });

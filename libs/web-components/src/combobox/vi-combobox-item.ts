@@ -1,4 +1,4 @@
-import { css, html, unsafeCSS, type TemplateResult } from 'lit';
+import { css, html, unsafeCSS, type PropertyValues, type TemplateResult } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { ViElement } from '../base/vi-element.js';
 import { registerIcons } from '../icons/registry.js';
@@ -67,12 +67,28 @@ export class ViComboboxItem extends ViElement {
 
   override connectedCallback(): void {
     super.connectedCallback();
+    // Expose ARIA semantics on the host element so AT can see them across the
+    // shadow boundary. role="option" on the inner <li> (shadow DOM) is invisible
+    // to the accessibility tree when the element is slotted into another component.
+    this.setAttribute('role', 'option');
+    this.setAttribute('aria-selected', this.selected ? 'true' : 'false');
+    this.setAttribute('aria-disabled', this.disabled ? 'true' : 'false');
     this.addEventListener('click', this._handleClick);
   }
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     this.removeEventListener('click', this._handleClick);
+  }
+
+  protected override updated(changedProperties: PropertyValues): void {
+    super.updated(changedProperties);
+    // Keep host-level ARIA attributes in sync with reactive properties so they
+    // always reflect the current selected/disabled state for AT.
+    if (changedProperties.has('selected') || changedProperties.has('disabled')) {
+      this.setAttribute('aria-selected', this.selected ? 'true' : 'false');
+      this.setAttribute('aria-disabled', this.disabled ? 'true' : 'false');
+    }
   }
 
   private _handleClick = (e: Event) => {
@@ -106,10 +122,7 @@ export class ViComboboxItem extends ViElement {
     return html`
       <li
         part="item"
-        role="option"
-        aria-selected="${this.selected ? 'true' : 'false'}"
-        aria-disabled="${this.disabled ? 'true' : 'false'}"
-        aria-label="${this.label}"
+        role="presentation"
         class="combobox-option ${this.selected ? 'is-selected' : ''} ${this
           .active
           ? 'is-active'

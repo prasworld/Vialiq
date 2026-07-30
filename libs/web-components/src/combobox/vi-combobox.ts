@@ -1,4 +1,4 @@
-import { css, html, unsafeCSS, type PropertyValues, type TemplateResult } from 'lit';
+import { css, html, nothing, unsafeCSS, type PropertyValues, type TemplateResult } from 'lit';
 import { customElement, property, state, query } from 'lit/decorators.js';
 import { FocusableMixin } from '../base/focusable-mixin.js';
 import { ValidityMixin } from '../base/validity-mixin.js';
@@ -393,7 +393,12 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
   // --- Filter & Search Logic ---
 
   get filteredOptions(): ComboboxOption[] {
-    if (!this.isSearchable || !this._query || this._optionsLoader) {
+    // Return the full list when:
+    //   – not searchable
+    //   – query is empty
+    //   – query is shorter than minChars (avoids premature filtering)
+    //   – an async loader is driving results (loader handles its own filtering)
+    if (!this.isSearchable || !this._query || this._query.length < this.minChars || this._optionsLoader) {
       return this._optionsList;
     }
 
@@ -796,6 +801,16 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
       this._query.length > 0 &&
       this._slottedItems.every((i) => i.hidden);
 
+    const showCreateOption =
+      this._slottedItems.length === 0 &&
+      (this.mode === 'creatable' || this.mode === 'tags') &&
+      this._query.trim() &&
+      !this._optionsList.some(
+        (o) =>
+          o.label.toLowerCase() === this._query.trim().toLowerCase() ||
+          o.value.toLowerCase() === this._query.trim().toLowerCase(),
+      );
+
     return html`
       <div part="field" class="combobox-field">
         <div
@@ -841,13 +856,14 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
                   aria-expanded="${this.open ? 'true' : 'false'}"
                   aria-autocomplete="list"
                   aria-haspopup="listbox"
+                  aria-controls="listbox"
                   aria-activedescendant="${this._slottedItems.length > 0
                     ? (this._activeIndex >= 0 && this._visibleSlottedItems[this._activeIndex]
                         ? this._getOptionId(this._visibleSlottedItems[this._activeIndex].value)
                         : '')
                     : (this._activeIndex >= 0 && filtered[this._activeIndex]
                         ? this._getOptionId(filtered[this._activeIndex].value)
-                        : '')}"
+                        : (showCreateOption && this._activeIndex === -1 ? 'create-option' : ''))}"
                   @input=${this._handleInput}
                   @focus=${this._handleInputFocus}
                 />
@@ -862,6 +878,7 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
                   role="combobox"
                   aria-expanded="${this.open ? 'true' : 'false'}"
                   aria-haspopup="listbox"
+                  aria-controls="listbox"
                   @focus=${this._handleInputFocus}
                 >
                   ${this._getDisplayLabel()}
@@ -902,12 +919,17 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
 
         <!-- Listbox Dropdown -->
         <div
+          id="listbox"
           part="listbox"
           class="combobox-listbox ${this.open ? 'is-open' : ''}"
           ?open=${this.open}
           role="listbox"
           aria-multiselectable="${this.mode === 'multi' || this.mode === 'tags' ? 'true' : 'false'}"
           aria-busy="${this.loading ? 'true' : 'false'}"
+          aria-label="${this.placeholder}"
+          aria-owns=${this._slottedItems.length > 0
+            ? this._visibleSlottedItems.map(i => this._getOptionId(i.value)).join(' ')
+            : nothing}
         >
           <div class="combobox-sentinel-top" style="height: 1px; width: 100%;"></div>
           <slot></slot>
@@ -917,9 +939,17 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
           ${this._slottedItems.length === 0 && this.loading
             ? html`<div part="loading-indicator" class="combobox-loading"><slot name="loading">Loading...</slot></div>`
             : ''}
-          ${this._slottedItems.length === 0 && (this.mode === 'creatable' || this.mode === 'tags') && this._query.trim() && !this._optionsList.some(o => o.label.toLowerCase() === this._query.trim().toLowerCase() || o.value.toLowerCase() === this._query.trim().toLowerCase())
+          ${showCreateOption
             ? html`
-                <div role="option" aria-selected="false" aria-disabled="false" part="option" class="combobox-option" @click=${this._handleCreate}>
+                <div
+                  id="create-option"
+                  role="option"
+                  aria-selected="false"
+                  aria-disabled="false"
+                  part="option"
+                  class="combobox-option ${this._activeIndex === -1 ? 'is-active' : ''}"
+                  @click=${this._handleCreate}
+                >
                   ${this.renderCreateOption
                     ? this.renderCreateOption(this._query)
                     : html`<span>${this.createText.replace('{query}', this._query)}</span>`}

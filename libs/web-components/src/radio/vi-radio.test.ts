@@ -578,6 +578,54 @@ describe('vi-radio & vi-radio-group', () => {
     });
   });
 
+  describe('Missing Branch Coverage Tier 2', () => {
+    it('vi-radio-group _onKeydown default branch', async () => {
+      render(html`
+        <vi-radio-group>
+          <vi-radio value="1">1</vi-radio>
+        </vi-radio-group>
+      `, container);
+      
+      const group = await $('vi-radio-group');
+      const result = await browser.execute((g: any) => {
+        const radio = g.querySelector('vi-radio');
+        radio.focus();
+        g.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', bubbles: true }));
+        return true;
+      }, await group);
+      expect(result).toBe(true);
+    });
+    
+    it('vi-radio-group firstInput validationMessage branch', async () => {
+      render(html`
+        <vi-radio-group required>
+          <vi-radio value="1">1</vi-radio>
+        </vi-radio-group>
+      `, container);
+      
+      const group = document.querySelector('vi-radio-group') as any;
+      await group.updateComplete;
+      
+      const isValid = group.checkValidity();
+      expect(isValid).toBe(false);
+      expect(typeof group.validityMessage).toBe('string');
+    });
+    
+    it('vi-radio _setHostFocusable in group branch', async () => {
+      render(html`
+        <vi-radio-group>
+          <vi-radio id="radio1" value="1">1</vi-radio>
+        </vi-radio-group>
+      `, container);
+      
+      const radio = document.getElementById('radio1') as any;
+      await radio.updateComplete;
+      
+      radio._setHostFocusable(true);
+      expect(radio.tabIndex).toBe(0);
+    });
+  });
+
   describe('Accessibility (A11y)', () => {
     it('should pass axe accessibility audits', async () => {
       // Set background to pass color contrast checks

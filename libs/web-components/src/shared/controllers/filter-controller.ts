@@ -55,8 +55,14 @@ export class FilterController<TData = unknown> implements ReactiveController {
     if (this._debounceTimer) clearTimeout(this._debounceTimer);
 
     const slottedItems = this.config.getSlottedItems();
-    if (slottedItems.length > 0 && (this.query.length === 0 || this.query.length >= this.host.minChars)) {
-      this.applySlottedFilter(this.query, slottedItems);
+    if (slottedItems.length > 0) {
+      if (this.query.length === 0 || this.query.length >= this.host.minChars) {
+        this.applySlottedFilter(this.query, slottedItems);
+      } else {
+        // Query exists but is below the minChars threshold – show all items without
+        // filtering so users can see their options before the search kicks in.
+        this.resetSlottedVisibility(slottedItems);
+      }
     }
 
     if (this.query.length >= this.host.minChars) {

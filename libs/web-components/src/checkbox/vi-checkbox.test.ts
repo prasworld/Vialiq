@@ -303,6 +303,32 @@ describe('vi-checkbox', () => {
     });
   });
 
+  describe('Missing Branch Coverage', () => {
+    it('syncs checked state to input before validating if out of sync', async () => {
+      render(html`<vi-checkbox required></vi-checkbox>`, container);
+      const checkbox = document.querySelector('vi-checkbox') as any;
+      await checkbox.updateComplete;
+
+      const input = checkbox.shadowRoot.querySelector('input');
+      input.checked = true;
+      checkbox.checked = false;
+
+      const isValid = checkbox.checkValidity();
+      expect(isValid).toBe(false);
+      expect(input.checked).toBe(false);
+    });
+
+    it('validates without an input element', () => {
+      const checkbox = document.createElement('vi-checkbox') as any;
+      checkbox.required = true;
+      checkbox.checked = false;
+
+      const isValid = checkbox.checkValidity();
+      expect(isValid).toBe(false);
+      expect(checkbox.validationMessage).not.toBe('');
+    });
+  });
+
   describe('Accessibility (A11y)', () => {
     it('should pass axe accessibility audits', async () => {
       // Set background to pass color contrast checks
