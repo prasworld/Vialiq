@@ -5,7 +5,6 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { createRequire } from 'module';
 
-
 import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -31,8 +30,8 @@ function resolvePackageDir(pkgName: string): string {
 
     throw new Error(
       `Failed to resolve package "${pkgName}" from workspace root "${workspaceRoot}". ` +
-      `require.resolve error: ${(error as Error).message}. ` +
-      `Fallback directory "${fallbackDir}" does not exist.`
+        `require.resolve error: ${(error as Error).message}. ` +
+        `Fallback directory "${fallbackDir}" does not exist.`,
     );
   }
 }
@@ -55,13 +54,16 @@ const config: StorybookConfig = {
         alias: {
           '@vialiq/flux-ui/styles/_index.scss': path.resolve(
             __dirname,
-            '../../flux-ui/styles/_index.scss'
+            '../../flux-ui/styles/_index.scss',
           ),
-          '@vialiq/icons': path.resolve(workspaceRoot, 'libs/icons/src/index.ts'),
-          'lit': resolvePackageDir('lit'),
-          'lit-html': resolvePackageDir('lit-html'),
-          'lit-element': resolvePackageDir('lit-element'),
+          '@vialiq/icons': path.resolve(
+            workspaceRoot,
+            'libs/icons/src/index.ts',
+          ),
         },
+      },
+      optimizeDeps: {
+        exclude: ['@vialiq/icons'],
       },
       plugins: [
         swc.vite({

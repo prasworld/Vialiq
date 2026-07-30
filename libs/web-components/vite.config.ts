@@ -4,6 +4,7 @@ import { pathToFileURL } from 'url';
 import fs from 'node:fs';
 import dts from 'vite-plugin-dts';
 import swc from 'unplugin-swc';
+import tsconfigPaths from 'vite-tsconfig-paths';
 
 const workspaceRoot = path.resolve(__dirname, '../..');
 
@@ -14,6 +15,9 @@ export default defineConfig({
   // place output two levels above the workspace root.
   root: __dirname,
   esbuild: false,
+  optimizeDeps: {
+    exclude: ['@vialiq/icons'],
+  },
   plugins: [
     swc.vite({
       jsc: {
@@ -28,6 +32,7 @@ export default defineConfig({
       tsconfigPath: path.join(__dirname, 'tsconfig.lib.json'),
       pathsToAliases: false,
     }),
+    tsconfigPaths(),
   ],
   css: {
     preprocessorOptions: {
