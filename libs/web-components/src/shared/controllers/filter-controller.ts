@@ -105,7 +105,7 @@ export class FilterController<TData = unknown> implements ReactiveController {
     }
 
     const q = query.toLowerCase().trim();
-    let results: ListboxOption<TData>[] = [];
+    const results: ListboxOption<TData>[] = [];
     const matchedValues = new Set<string>();
     
     const filterFn = this.host.filterFn;
@@ -119,14 +119,14 @@ export class FilterController<TData = unknown> implements ReactiveController {
         disabled: item.disabled,
         icon: item.icon,
         description: item.description,
-        searchText: (item as any).searchText,
+        searchText: item.searchText?.join(' '),
         data: item.data as TData,
       };
 
       if (filterFn) {
         isMatch = filterFn(optData, query);
       } else {
-        const searchText = (item as any).searchText;
+        const searchText = item.searchText?.join(' ');
         const corpus = searchText
           ? searchText.toLowerCase()
           : [item.label || item.value, item.description].filter(Boolean).join(' ').toLowerCase();

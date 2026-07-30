@@ -357,7 +357,7 @@ describe('vi-animation', () => {
 
       try {
         await playPromise;
-      } catch (e) {
+      } catch (_e) {
         // playPromise might throw if cancelled
       }
 
