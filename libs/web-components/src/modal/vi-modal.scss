@@ -1,0 +1,40 @@
+@use '../../../../libs/flux-ui/components/modal';
+
+:host {
+  display: block;
+  /* Ensure the host doesn't create unwanted layout bounds unless needed,
+     although the native dialog is fixed and escapes host bounds visually. */
+}
+
+/* Map the parts to the base classes we defined in flux-ui */
+
+[part="dialog"] {
+  @extend .modal-dialog;
+}
+
+[part="header"] {
+  @extend .modal-header;
+}
+
+[part="title"] {
+  @extend .modal-title;
+}
+
+[part="body"] {
+  @extend .modal-body;
+}
+
+[part="footer"] {
+  @extend .modal-footer;
+}
+
+/* Variant mappings are handled via host classes or direct attributes in Lit,
+   but we can map the specific structures here too */
+
+.modal-alert-icon {
+  @extend .modal-alert-icon;
+}
+
+.modal-alert-content {
+  @extend .modal-alert-content;
+}
