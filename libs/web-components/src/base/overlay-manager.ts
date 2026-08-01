@@ -18,8 +18,9 @@ interface OverlayRegistryItem {
  * when a modal is active.
  */
 class OverlayManagerService {
-  private baseZIndex = 1000;
+  private baseZIndex = 1040;
   private overlays: OverlayRegistryItem[] = [];
+  private _previousOverflow: string | null = null;
 
   /**
    * Registers an element as an active overlay.
@@ -92,11 +93,19 @@ class OverlayManagerService {
       // Prevent double-setting if already locked
       if (!document.body.classList.contains('vi-scroll-locked')) {
         document.body.classList.add('vi-scroll-locked');
+        this._previousOverflow = document.body.style.getPropertyValue('overflow') || null;
         document.body.style.setProperty('overflow', 'hidden', 'important');
       }
     } else {
-      document.body.classList.remove('vi-scroll-locked');
-      document.body.style.removeProperty('overflow');
+      if (document.body.classList.contains('vi-scroll-locked')) {
+        document.body.classList.remove('vi-scroll-locked');
+        if (this._previousOverflow !== null) {
+          document.body.style.setProperty('overflow', this._previousOverflow);
+        } else {
+          document.body.style.removeProperty('overflow');
+        }
+        this._previousOverflow = null;
+      }
     }
   }
 }

@@ -79,7 +79,7 @@ describe('vi-modal', () => {
     let requestCloseFired = false;
     let closeFired = false;
 
-    el.addEventListener('vialiq-request-close', (e: Event) => {
+    el.addEventListener('vialiq-request-close', () => {
       requestCloseFired = true;
       // Let it continue to actual close
     });
@@ -108,7 +108,7 @@ describe('vi-modal', () => {
       e.preventDefault();
     });
 
-    el.addEventListener('vialiq-close', (e: Event) => {
+    el.addEventListener('vialiq-close', () => {
       closeFired = true;
     });
 
@@ -252,6 +252,63 @@ describe('vi-modal', () => {
     expect(dialog.classList.contains('modal-variant-drawer')).toBe(true);
     expect(dialog.classList.contains('placement-left')).toBe(true);
     
+    el.remove();
+  });
+
+  it('returns focus to element specified by returnFocusSelector on close', async () => {
+    const targetBtn = document.createElement('button');
+    targetBtn.id = 'custom-return-target';
+    container.appendChild(targetBtn);
+
+    render(html`<vi-modal open return-focus="#custom-return-target"></vi-modal>`, container);
+    const el = getModal() as ViModal;
+    await el.updateComplete;
+
+    el.close();
+    await el.updateComplete;
+
+    expect(document.activeElement).toBe(targetBtn);
+    targetBtn.remove();
+  });
+
+  it('maintains valid aria-labelledby even when custom slot="header" is provided', async () => {
+    render(html`<vi-modal open><h2 slot="header">Custom Title</h2></vi-modal>`, container);
+    const el = getModal() as ViModal;
+    await el.updateComplete;
+
+    const dialog = el.shadowRoot!.querySelector('dialog') as HTMLDialogElement;
+    const labelledBy = dialog.getAttribute('aria-labelledby');
+    expect(labelledBy).toBe('modal-header');
+
+    const header = el.shadowRoot!.querySelector('#modal-header');
+    expect(header).not.toBeNull();
+
+    el.remove();
+  });
+
+  it('respects aria-label set on host modal', async () => {
+    render(html`<vi-modal open aria-label="Accessible Modal"></vi-modal>`, container);
+    const el = getModal() as ViModal;
+    await el.updateComplete;
+
+    const dialog = el.shadowRoot!.querySelector('dialog') as HTMLDialogElement;
+    expect(dialog.getAttribute('aria-label')).toBe('Accessible Modal');
+    expect(dialog.hasAttribute('aria-labelledby')).toBe(false);
+
+    el.remove();
+  });
+
+  it('maintains valid aria-labelledby for alert variant when custom slot="header" is provided', async () => {
+    render(html`<vi-modal open variant="alert"><h3 slot="header">Warning Title</h3></vi-modal>`, container);
+    const el = getModal() as ViModal;
+    await el.updateComplete;
+
+    const dialog = el.shadowRoot!.querySelector('dialog') as HTMLDialogElement;
+    expect(dialog.getAttribute('aria-labelledby')).toBe('modal-header');
+
+    const header = el.shadowRoot!.querySelector('#modal-header');
+    expect(header).not.toBeNull();
+
     el.remove();
   });
 });

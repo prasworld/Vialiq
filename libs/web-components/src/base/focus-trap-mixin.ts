@@ -26,10 +26,10 @@ export declare class FocusTrapInterface {
 
   /**
    * Deactivates the focus trap.
-   * Removes the Tab intercept and restores focus to the element that was
-   * focused immediately before `_activateFocusTrap()` was called.
+   * Removes the Tab intercept and restores focus to the specified returnFocus
+   * element, or falls back to the element that was focused before activation.
    */
-  protected _deactivateFocusTrap(): void;
+  protected _deactivateFocusTrap(returnFocus?: HTMLElement | null): void;
 }
 
 /**
@@ -320,16 +320,22 @@ export function FocusTrapMixin<T extends Constructor<LitElement>>(
       }
     }
 
-    protected _deactivateFocusTrap(): void {
+    protected _deactivateFocusTrap(returnFocus?: HTMLElement | null): void {
       this.removeEventListener('keydown', this._boundHandleKeydown);
 
-      // Restore focus to the pre-trap element.
+      // Restore focus to returnFocus element or pre-trap element.
       // Dereference WeakRef — the element may have been removed from the DOM.
-      const previous = this._preTrapFocus?.deref();
+      let target: HTMLElement | null = returnFocus ?? null;
+      if (!target) {
+        const previous = this._preTrapFocus?.deref();
+        if (previous && document.contains(previous)) {
+          target = previous as HTMLElement;
+        }
+      }
       this._preTrapFocus = null;
 
-      if (previous && document.contains(previous)) {
-        (previous as HTMLElement).focus?.();
+      if (target && document.contains(target)) {
+        target.focus?.();
       }
     }
 

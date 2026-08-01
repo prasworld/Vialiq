@@ -1,6 +1,7 @@
 import { css, html, unsafeCSS, type TemplateResult } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
+import { ifDefined } from 'lit/directives/if-defined.js';
 import { ViElement } from '../base/vi-element.js';
 import { FocusTrapMixin } from '../base/focus-trap-mixin.js';
 import { DraggableMixin } from '../base/draggable-mixin.js';
@@ -72,8 +73,8 @@ export class ViModal extends DraggableMixin(FocusTrapMixin(ViElement)) {
   /** Icon+colour for alert variant */
   @property({ type: String, attribute: 'alert-variant' }) accessor alertVariant: AlertDialogVariant = 'info';
 
-  /** Element to return focus to on close */
-  @property({ attribute: false }) accessor returnFocusSelector: string | HTMLElement | undefined = undefined;
+  /** Element or CSS selector to return focus to on close */
+  @property({ attribute: 'return-focus' }) accessor returnFocusSelector: string | HTMLElement | undefined = undefined;
 
   @query('dialog') private accessor _dialog!: HTMLDialogElement;
   @query('.modal-header') private accessor _headerEl!: HTMLElement;
@@ -128,7 +129,15 @@ export class ViModal extends DraggableMixin(FocusTrapMixin(ViElement)) {
         this.dispatchEvent(new CustomEvent('vialiq-open', { bubbles: true, composed: true }));
       } else {
         OverlayManager.unregister(this);
-        this._deactivateFocusTrap();
+
+        let returnTarget: HTMLElement | null = null;
+        if (typeof this.returnFocusSelector === 'string' && this.returnFocusSelector) {
+          returnTarget = document.querySelector<HTMLElement>(this.returnFocusSelector);
+        } else if (this.returnFocusSelector instanceof HTMLElement) {
+          returnTarget = this.returnFocusSelector;
+        }
+
+        this._deactivateFocusTrap(returnTarget);
 
         // Restore original DOM position
         if (this._originalParent && this.parentElement === document.body) {
@@ -254,7 +263,8 @@ export class ViModal extends DraggableMixin(FocusTrapMixin(ViElement)) {
         role=${this._role}
         ?open=${this.open}
         aria-modal="true"
-        aria-labelledby="modal-title"
+        aria-label=${ifDefined(this.getAttribute('aria-label') || undefined)}
+        aria-labelledby=${ifDefined(this.getAttribute('aria-labelledby') || (this.hasAttribute('aria-label') ? undefined : 'modal-header'))}
         style="z-index: ${this._overlayZIndex}"
         @cancel=${this._handleDialogCancel}
       >
@@ -265,7 +275,7 @@ export class ViModal extends DraggableMixin(FocusTrapMixin(ViElement)) {
 
   private _renderDefault(): TemplateResult {
     return html`
-      <header part="header" class="modal-header">
+      <header part="header" id="modal-header" class="modal-header">
         <slot name="header">
           <span part="title" id="modal-title" aria-live="assertive"></span>
         </slot>
@@ -322,17 +332,17 @@ export class ViModal extends DraggableMixin(FocusTrapMixin(ViElement)) {
 
       <div part="alert-content" class="modal-alert-content">
         <!-- Alert variant uses standard body and footer conceptually for layout flexibility -->
-        <header part="header" class="modal-header" style="padding: 0; margin-bottom: 8px;">
+        <header part="header" id="modal-header" class="modal-header">
           <slot name="header">
             <span part="title" id="modal-title" class="modal-title" aria-live="assertive"></span>
           </slot>
         </header>
 
-        <div part="body" class="modal-body" style="padding: 0; margin-bottom: 16px;">
+        <div part="body" class="modal-body">
           <slot></slot>
         </div>
 
-        <footer part="footer" class="modal-footer" style="padding: 0; background: transparent; border-top: none; margin-top: auto;" ?hidden=${!this._hasFooterSlot}>
+        <footer part="footer" class="modal-footer" ?hidden=${!this._hasFooterSlot}>
           <slot name="footer" @slotchange=${this._handleFooterSlotChange}></slot>
         </footer>
       </div>
