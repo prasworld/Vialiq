@@ -98,11 +98,11 @@ export class FloatingController implements ReactiveController {
     }
 
     const floating = this.options.floating();
-    if (floating) {
+    if (floating && this._overlayZIndex !== null) {
       OverlayManager.unregister(floating);
       this._overlayZIndex = null;
       
-      // Remove inline z-index
+      // Remove inline z-index only if we managed it
       floating.style.removeProperty('z-index');
     }
   }
