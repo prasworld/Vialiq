@@ -12,10 +12,14 @@ describe('vi-modal', () => {
   });
 
   afterEach(() => {
-    document.body.removeChild(container);
+    if (container.parentNode) {
+      document.body.removeChild(container);
+    }
+    // Clean up any teleported modals
+    document.body.querySelectorAll('vi-modal').forEach(m => m.remove());
   });
 
-  const getModal = () => container.querySelector('vi-modal') as ViModal;
+  const getModal = () => document.body.querySelector('vi-modal') || container.querySelector('vi-modal') as ViModal;
 
   it('renders closed by default', async () => {
     render(html`<vi-modal></vi-modal>`, container);
@@ -75,7 +79,7 @@ describe('vi-modal', () => {
     let requestCloseFired = false;
     let closeFired = false;
 
-    el.addEventListener('vialiq-request-close', (e: Event) => {
+    el.addEventListener('vialiq-request-close', () => {
       requestCloseFired = true;
       // Let it continue to actual close
     });
@@ -104,7 +108,7 @@ describe('vi-modal', () => {
       e.preventDefault();
     });
 
-    el.addEventListener('vialiq-close', (e: Event) => {
+    el.addEventListener('vialiq-close', () => {
       closeFired = true;
     });
 
@@ -128,7 +132,7 @@ describe('vi-modal', () => {
     const closeBtn = el.shadowRoot!.querySelector('[part="close-btn"]') as HTMLElement;
     expect(closeBtn).toBeTruthy();
 
-    closeBtn.click();
+    closeBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
     await el.updateComplete;
 
     expect(closeReason).toBe('button');
@@ -136,12 +140,8 @@ describe('vi-modal', () => {
   });
 
   it('handles backdrop clicks depending on persistence', async () => {
-    // We cannot fully simulate a native backdrop click easily in JSDOM/lit tests
-    // due to bounding client rect behavior of the native dialog,
-    // but we can test the mouse event handling logic.
-
     render(html`<vi-modal open persistent></vi-modal>`, container);
-    const el = getModal();
+    const el = getModal() as ViModal;
     await el.updateComplete;
 
     let requestCloseFired = false;
@@ -149,16 +149,13 @@ describe('vi-modal', () => {
         requestCloseFired = true;
     });
 
-    const dialog = el.shadowRoot!.querySelector('dialog') as HTMLDialogElement;
+    const backdrop = el.shadowRoot!.querySelector('.modal-backdrop') as HTMLDivElement;
+    expect(backdrop).toBeTruthy();
 
-    // Stub bounding rect to mimic a click OUTSIDE the dialog
-    dialog.getBoundingClientRect = () => ({
-        top: 100, bottom: 200, left: 100, right: 200, width: 100, height: 100, x: 100, y: 100, toJSON: () => {}
-    });
-
-    // Dispatch a click on the dialog element but at coordinates outside the mocked rect
-    const clickEvent = new MouseEvent('click', { clientX: 10, clientY: 10 });
-    dialog.dispatchEvent(clickEvent);
+    // Dispatch a click on the backdrop div
+    const clickEvent = new MouseEvent('click', { bubbles: true, cancelable: true });
+    Object.defineProperty(clickEvent, 'target', { value: backdrop });
+    backdrop.dispatchEvent(clickEvent);
 
     await el.updateComplete;
 
@@ -175,11 +172,143 @@ describe('vi-modal', () => {
       closeReason = (e as CustomEvent).detail.reason;
     });
 
-    dialog.dispatchEvent(new MouseEvent('click', { clientX: 10, clientY: 10 }));
+    const clickEvent2 = new MouseEvent('click', { bubbles: true, cancelable: true });
+    Object.defineProperty(clickEvent2, 'target', { value: backdrop });
+    backdrop.dispatchEvent(clickEvent2);
     await el.updateComplete;
 
     // Now it should close automatically with reason 'backdrop'
     expect(closeReason).toBe('backdrop');
     expect(el.open).toBe(false);
+  });
+
+  it('teleports to document.body when rendered and cleans up', async () => {
+    render(html`<vi-modal open></vi-modal>`, container);
+    const el = getModal() as ViModal;
+    await el.updateComplete;
+
+    // Wait a tick for teleportation if it happens in updated
+    await new Promise(r => setTimeout(r, 0));
+
+    expect(el.parentElement).toBe(document.body);
+    
+    // Test cleanup
+    el.remove();
+    // Modal should be removed from body
+    expect(document.body.querySelector('vi-modal')).toBeFalsy();
+  });
+
+  it('can be maximized and minimized', async () => {
+    render(html`<vi-modal open maximizable></vi-modal>`, container);
+    const el = getModal() as ViModal;
+    await el.updateComplete;
+
+    const dialog = el.shadowRoot!.querySelector('dialog') as HTMLDialogElement;
+    expect(dialog.classList.contains('modal-size-fullscreen')).toBe(false);
+
+    const maxBtn = el.shadowRoot!.querySelector('[part="maximize-btn"]') as HTMLElement;
+    maxBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    await el.updateComplete;
+
+    expect(dialog.classList.contains('modal-size-fullscreen')).toBe(true);
+
+    // clicking again should minimize
+    maxBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    await el.updateComplete;
+
+    expect(dialog.classList.contains('modal-size-fullscreen')).toBe(false);
+    
+    el.remove();
+  });
+  
+  it('supports full-width size', async () => {
+    render(html`<vi-modal open size="full-width"></vi-modal>`, container);
+    const el = getModal() as ViModal;
+    await el.updateComplete;
+
+    const dialog = el.shadowRoot!.querySelector('dialog') as HTMLDialogElement;
+    expect(dialog.classList.contains('modal-size-full-width')).toBe(true);
+    
+    el.remove();
+  });
+  
+  it('supports position sizes', async () => {
+    render(html`<vi-modal open position="top"></vi-modal>`, container);
+    const el = getModal() as ViModal;
+    await el.updateComplete;
+
+    const dialog = el.shadowRoot!.querySelector('dialog') as HTMLDialogElement;
+    expect(dialog.classList.contains('modal-position-top')).toBe(true);
+    
+    el.remove();
+  });
+
+  it('supports drawer variant', async () => {
+    render(html`<vi-modal open variant="drawer" drawer-placement="left"></vi-modal>`, container);
+    const el = getModal() as ViModal;
+    await el.updateComplete;
+
+    const dialog = el.shadowRoot!.querySelector('dialog') as HTMLDialogElement;
+    expect(dialog.classList.contains('modal-variant-drawer')).toBe(true);
+    expect(dialog.classList.contains('placement-left')).toBe(true);
+    
+    el.remove();
+  });
+
+  it('returns focus to element specified by returnFocusSelector on close', async () => {
+    const targetBtn = document.createElement('button');
+    targetBtn.id = 'custom-return-target';
+    container.appendChild(targetBtn);
+
+    render(html`<vi-modal open return-focus="#custom-return-target"></vi-modal>`, container);
+    const el = getModal() as ViModal;
+    await el.updateComplete;
+
+    el.close();
+    await el.updateComplete;
+
+    expect(document.activeElement).toBe(targetBtn);
+    targetBtn.remove();
+  });
+
+  it('maintains valid aria-labelledby even when custom slot="header" is provided', async () => {
+    render(html`<vi-modal open><h2 slot="header">Custom Title</h2></vi-modal>`, container);
+    const el = getModal() as ViModal;
+    await el.updateComplete;
+
+    const dialog = el.shadowRoot!.querySelector('dialog') as HTMLDialogElement;
+    const labelledBy = dialog.getAttribute('aria-labelledby');
+    expect(labelledBy).toBe('modal-header');
+
+    const header = el.shadowRoot!.querySelector('#modal-header');
+    expect(header).not.toBeNull();
+
+    el.remove();
+  });
+
+  it('respects aria-label set on host modal', async () => {
+    render(html`<vi-modal open aria-label="Accessible Modal"></vi-modal>`, container);
+    const el = getModal() as ViModal;
+    await el.updateComplete;
+
+    const dialog = el.shadowRoot!.querySelector('dialog') as HTMLDialogElement;
+    expect(dialog.getAttribute('aria-label')).toBe('Accessible Modal');
+    expect(dialog.hasAttribute('aria-labelledby')).toBe(false);
+
+    el.remove();
+  });
+
+  it('maintains valid aria-labelledby for alert variant when custom slot="header" is provided', async () => {
+    render(html`<vi-modal open variant="alert"><h3 slot="header">Warning Title</h3></vi-modal>`, container);
+    const el = getModal() as ViModal;
+    await el.updateComplete;
+
+    const dialog = el.shadowRoot!.querySelector('dialog') as HTMLDialogElement;
+    expect(dialog.getAttribute('aria-labelledby')).toBe('modal-header');
+
+    const header = el.shadowRoot!.querySelector('#modal-header');
+    expect(header).not.toBeNull();
+
+    el.remove();
   });
 });

@@ -130,6 +130,23 @@
       flex-grow: 1;
       display: flex;
       flex-direction: column;
+
+      .modal-header {
+        padding: 0;
+        margin-bottom: tokens.$spacing-xs;
+      }
+
+      .modal-body {
+        padding: 0;
+        margin-bottom: tokens.$spacing-sm;
+      }
+
+      .modal-footer {
+        padding: 0;
+        background: transparent;
+        border-top: none;
+        margin-top: auto;
+      }
     }
 
     &[open] {
@@ -153,6 +170,15 @@
     height: 100dvh;
     border-radius: 0;
     margin: 0;
+  }
+
+  .modal-size-full-width {
+    max-width: none;
+    width: 100vw;
+    width: 100dvw;
+    border-radius: 0;
+    margin-left: 0;
+    margin-right: 0;
   }
 
   /* Scrollable constraint */

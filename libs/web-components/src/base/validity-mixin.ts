@@ -148,7 +148,7 @@ export function ValidityMixin<
      * Per spec, disabled controls return false (they are not candidates).
      */
     get willValidate(): boolean {
-      return this._internals.willValidate;
+      return !(this as unknown as { disabled?: boolean }).disabled && this._internals.willValidate;
     }
 
     // ── Extension hooks for subclasses ────────────────────────────────────────
