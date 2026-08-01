@@ -19,7 +19,10 @@ export declare class FocusTrapInterface {
    * @param initialFocus - Optional element to focus first. Defaults to the
    *   first focusable element found in the shadow root.
    */
-  protected _activateFocusTrap(initialFocus?: HTMLElement): void;
+  protected _activateFocusTrap(
+    initialFocus?: HTMLElement | null,
+    autofocus?: boolean,
+  ): void;
 
   /**
    * Deactivates the focus trap.
@@ -124,7 +127,7 @@ export declare class FocusTrapInterface {
  *     class ViPanel extends FocusTrapMixin(FocusableMixin(ViElement)) { ... }
  */
 export function FocusTrapMixin<T extends Constructor<LitElement>>(
-  Base: T
+  Base: T,
 ): T & Constructor<FocusTrapInterface> {
   class FocusTrapMixinClass extends Base {
     /**
@@ -150,7 +153,8 @@ export function FocusTrapMixin<T extends Constructor<LitElement>>(
       if (element.closest('[aria-hidden="true"]')) return false;
 
       // Exclude elements inside an inert subtree
-      if (element.hasAttribute('inert') || element.closest('[inert]')) return false;
+      if (element.hasAttribute('inert') || element.closest('[inert]'))
+        return false;
 
       // Exclude elements with no rendered box (covers display:none, visibility:hidden, etc.)
       if (element.getClientRects().length === 0) return false;
@@ -174,7 +178,7 @@ export function FocusTrapMixin<T extends Constructor<LitElement>>(
 
       // 1. Shadow DOM: native elements + vi-* hosts
       const shadowFocusable = Array.from(
-        this.shadowRoot.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)
+        this.shadowRoot.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
       ).filter((el) => this._isActuallyFocusable(el));
 
       // 2. Slotted light-DOM content
@@ -183,8 +187,21 @@ export function FocusTrapMixin<T extends Constructor<LitElement>>(
         (slotEl as HTMLSlotElement)
           .assignedElements({ flatten: true })
           .forEach((el) => {
-            if (el.matches(FOCUSABLE_SELECTOR) && this._isActuallyFocusable(el as HTMLElement)) {
-              slottedFocusable.push(el as HTMLElement);
+            if (el.nodeType === Node.ELEMENT_NODE) {
+              const element = el as HTMLElement;
+              if (
+                element.matches(FOCUSABLE_SELECTOR) &&
+                this._isActuallyFocusable(element)
+              ) {
+                slottedFocusable.push(element);
+              }
+              element
+                .querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)
+                .forEach((descendant) => {
+                  if (this._isActuallyFocusable(descendant)) {
+                    slottedFocusable.push(descendant);
+                  }
+                });
             }
           });
       });
@@ -192,7 +209,27 @@ export function FocusTrapMixin<T extends Constructor<LitElement>>(
       // Merge: shadow first (DOM order), then slotted.
       // De-dupe via Set in case an element appears in both (shouldn't happen,
       // but be defensive).
-      return [...new Set([...shadowFocusable, ...slottedFocusable])].filter((el) => this._isActuallyFocusable(el));
+      const allFocusable = [
+        ...new Set([...shadowFocusable, ...slottedFocusable]),
+      ];
+
+      // Sort by tabIndex. Browsers order: tabIndex > 0 (ascending), then tabIndex == 0 (DOM order).
+      return allFocusable.sort((a, b) => {
+        const aIndex = a.tabIndex;
+        const bIndex = b.tabIndex;
+
+        const aIsPos = aIndex > 0;
+        const bIsPos = bIndex > 0;
+
+        if (aIsPos && bIsPos) {
+          if (aIndex === bIndex) return 0;
+          return aIndex - bIndex;
+        }
+        if (aIsPos) return -1;
+        if (bIsPos) return 1;
+
+        return 0; // maintain original relative order for tabIndex <= 0
+      });
     }
 
     /**
@@ -228,26 +265,35 @@ export function FocusTrapMixin<T extends Constructor<LitElement>>(
       const focusable = this._getFocusableElements();
       if (focusable.length === 0) return;
 
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
       const active = this._getActiveElement();
+      const currentIndex = focusable.indexOf(active as HTMLElement);
+
+      // Intercept ALL tab events to strictly enforce our sorted order,
+      // as browsers often struggle with native tab order across shadow boundaries
+      // and mixed slot assignments.
+      event.preventDefault();
 
       if (event.shiftKey) {
-        // Shift+Tab: if focus is on (or before) the first element, wrap to last.
-        if (active === first || !focusable.includes(active as HTMLElement)) {
-          event.preventDefault();
-          last.focus();
+        // Shift+Tab: move to previous, or wrap to last if at beginning (or not found)
+        if (currentIndex <= 0) {
+          focusable[focusable.length - 1].focus();
+        } else {
+          focusable[currentIndex - 1].focus();
         }
       } else {
-        // Tab: if focus is on (or past) the last element, wrap to first.
-        if (active === last || !focusable.includes(active as HTMLElement)) {
-          event.preventDefault();
-          first.focus();
+        // Tab: move to next, or wrap to first if at end (or not found)
+        if (currentIndex === -1 || currentIndex === focusable.length - 1) {
+          focusable[0].focus();
+        } else {
+          focusable[currentIndex + 1].focus();
         }
       }
     }
 
-    protected _activateFocusTrap(initialFocus?: HTMLElement): void {
+    protected _activateFocusTrap(
+      initialFocus?: HTMLElement | null,
+      autofocus = true,
+    ): void {
       // Snapshot focus BEFORE we move it — this is what we restore on deactivate.
       // Use document.activeElement here (not shadowRoot) — we want the element
       // in the full document that currently has focus, which may be outside
@@ -266,10 +312,12 @@ export function FocusTrapMixin<T extends Constructor<LitElement>>(
       // Focus the initial element after the current call stack clears.
       // requestAnimationFrame ensures Lit has finished rendering the opened state
       // (e.g. display:none removed) before we attempt to focus.
-      requestAnimationFrame(() => {
-        const target = initialFocus ?? this._getFocusableElements()[0];
-        target?.focus();
-      });
+      if (autofocus) {
+        requestAnimationFrame(() => {
+          const target = initialFocus ?? this._getFocusableElements()[0];
+          target?.focus();
+        });
+      }
     }
 
     protected _deactivateFocusTrap(): void {

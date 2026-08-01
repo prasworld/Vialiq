@@ -7,7 +7,7 @@ import type { ViIcon } from './vi-icon.js';
 describe('vi-icon', () => {
   let container: HTMLElement;
 
-  beforeAll(() => {
+  before(() => {
     registerIcons({ name: 'test-icon', data: '<svg><path d="M0,0 H1"></path></svg>' });
   });
 

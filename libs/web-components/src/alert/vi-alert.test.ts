@@ -45,7 +45,7 @@ describe('vi-alert', () => {
     expect(el.getAttribute('role')).toBe('alert');
 
     const icon = el.shadowRoot!.querySelector('vi-icon');
-    expect(icon!.getAttribute('name')).toBe('alert-triangle');
+    expect(icon!.getAttribute('name')).toBe('triangle-warning');
   });
 
   it('removes role when variant is neutral', async () => {

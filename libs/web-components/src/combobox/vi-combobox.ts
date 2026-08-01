@@ -312,6 +312,10 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
     if (!slot) return;
 
     const updateItems = () => {
+      if (this._slotMutationObserver) {
+        this._slotMutationObserver.disconnect();
+      }
+
       const assigned = slot.assignedElements({ flatten: true });
       const items = assigned.filter((el): el is ViComboboxItem => el.tagName.toLowerCase() === 'vi-combobox-item');
       this._slottedItems = items;
@@ -345,6 +349,15 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
         if (this._query && this.open) {
           this._filterController.applySlottedFilter(this._query, this._slottedItems);
         }
+      }
+
+      if (this._slotMutationObserver) {
+        this._slotMutationObserver.observe(this, {
+          childList: true,
+          subtree: true,
+          attributes: true,
+          attributeFilter: ['value', 'label', 'search-text', 'group', 'disabled', 'icon', 'description'],
+        });
       }
     };
 
