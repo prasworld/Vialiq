@@ -408,9 +408,7 @@ $modal-footer-bg:              var(--vi-modal-footer-bg,              $layer-02)
 $modal-footer-border-color:    var(--vi-modal-footer-border-color,    $border-02);
 $modal-backdrop-bg:            var(--vi-modal-backdrop-bg,            rgba(0, 0, 0, 0.5));
 $modal-drawer-width:           var(--vi-modal-drawer-width,           480px);
-$modal-z-index:                var(--vi-modal-z-index,                $z-index-modal);
-$tooltip-z-index:              var(--vi-tooltip-z-index,              $z-index-tooltip);
-$alert-floating-z-index:       var(--vi-alert-floating-z-index,       1080);
+$modal-z-index:                var(--vi-modal-z-index,                8000);
 $modal-animation-duration:     var(--vi-modal-animation-duration,     200ms);
 
 $modal-max-width-xs:           var(--vi-modal-max-width-xs,           320px);

@@ -1,8 +1,6 @@
 // AUTO-GENERATED EXPORTS
 export * from './add-circle';
 export * from './alarm-clock';
-export * from './arrows-maximize';
-export * from './arrows-minimize';
 export * from './bed-pulse';
 export * from './blood-test-tube-alt';
 export * from './bookmark';

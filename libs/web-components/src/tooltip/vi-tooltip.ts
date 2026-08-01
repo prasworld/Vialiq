@@ -11,7 +11,6 @@ import {
   type ComputePositionConfig,
 } from '@floating-ui/dom';
 import tooltipStyles from './vi-tooltip.scss?inline';
-import { OverlayManager } from '../base/overlay-manager.js';
 
 export type TooltipPlacement =
   | 'top' | 'top-start' | 'top-end'
@@ -22,14 +21,7 @@ export type TooltipTrigger = 'hover focus' | 'hover' | 'focus' | 'click';
 
 /**
  * vi-tooltip
- * 
  * A floating hint providing supplementary info on hover or focus using Floating UI.
- * 
- * **Developer Notes & Architecture:**
- * - **Positioning Strategy**: Tooltips always use `strategy: absolute` natively, but users can override this via the `popper-options` property if they need `fixed` hoisting to escape tight containers.
- * - **Z-Index**: `OverlayManager` guarantees tooltips render above modals and dropdowns. 
- * - **Accessibility**: Automatically calculates whether its slotted content is interactive (contains links/buttons). If so, it uses `aria-details`; if plain text, it uses `aria-describedby`.
- * - **Teleportation**: `vi-tooltip` does **not** teleport its floating panel to `document.body`. This is an explicit design choice to preserve Shadow DOM encapsulation for the `<slot name="content">` and scoped styling.
  *
  * @element vi-tooltip
  * @attr content - Plain text tooltip content
@@ -99,7 +91,6 @@ export class ViTooltip extends ViElement {
   private _hideTimeout?: number;
   private _triggerElement: HTMLElement | null = null;
   private _cleanupAutoUpdate?: () => void;
-  private _overlayZIndex: number | null = null;
   
   private _panelId = `vi-tooltip-panel-${Math.random().toString(36).substring(2, 9)}`;
 
@@ -125,19 +116,14 @@ override disconnectedCallback(): void {
 }
 
   protected override firstUpdated(): void {
-    // Defer initialization to avoid Lit's "change in update" warning
-    Promise.resolve().then(() => {
-      this._updateTriggerElement();
-    });
+    this._updateTriggerElement();
   }
 
   override updated(changed: PropertyValues): void {
     super.updated(changed);
 
     if (changed.has('disabled') && this.disabled && this._open) {
-      Promise.resolve().then(() => {
-        this._closeTooltip();
-      });
+      this._closeTooltip();
     }
     if (changed.has('maxWidth') && this._tooltipPanel) {
       this._tooltipPanel.style.setProperty('--vi-tooltip-max-width', `${this.maxWidth}px`);
@@ -193,10 +179,6 @@ hide(immediate = false): void {
         panel.style.display = 'block';
       }
 
-      // Register with OverlayManager
-      this._overlayZIndex = OverlayManager.register(panel, 'tooltip');
-      panel.style.zIndex = this._overlayZIndex.toString();
-
       this._positionTooltip();
       
       // Start autoUpdate monitoring for bounds changes
@@ -223,11 +205,6 @@ hide(immediate = false): void {
       } catch {
         panel.style.display = 'none';
       }
-      
-      OverlayManager.unregister(panel);
-      panel.style.removeProperty('z-index');
-      this._overlayZIndex = null;
-
       if (this._cleanupAutoUpdate) {
         this._cleanupAutoUpdate();
         this._cleanupAutoUpdate = undefined;
@@ -400,9 +377,6 @@ const config: ComputePositionConfig = {
         position: strategy,
         left: `${x}px`,
         top: `${y}px`,
-        right: 'auto',
-        bottom: 'auto',
-        margin: '0',
       });
 
       // Update data-placement attribute to trigger arrow CSS styles
@@ -451,11 +425,11 @@ const config: ComputePositionConfig = {
       </span>
 
       <div
+        popover="manual"
         id=${_panelId}
         class="tooltip-panel"
         part="tooltip"
         role=${this._isInteractive ? 'dialog' : 'tooltip'}
-        popover="manual"
         aria-modal=${this._isInteractive ? 'false' : nothing}
         aria-label=${this._isInteractive ? (content || 'Tooltip') : nothing}
         placement=${placement}

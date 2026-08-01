@@ -1,5 +1,4 @@
-@use '@vialiq/flux-ui/components/modal';
-@use '@vialiq/flux-ui/styles/variables' as tokens;
+@use '../../../../libs/flux-ui/components/modal';
 
 :host {
   display: block;
@@ -8,22 +7,6 @@
 }
 
 /* Map the parts to the base classes we defined in flux-ui */
-
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background: var(--vi-modal-backdrop-bg, tokens.$modal-backdrop-bg);
-  backdrop-filter: blur(2px);
-  pointer-events: auto; /* Ensure it captures clicks */
-}
-
-/* Because we are no longer using showModal() (Top Layer), we must explicitly fix the dialog */
-[part="dialog"][open] {
-  position: fixed;
-  inset: 0;
-  margin: auto;
-  /* Use flux-ui modal class properties implicitly via @extend, but enforce layout */
-}
 
 [part="dialog"] {
   @extend .modal-dialog;
@@ -54,60 +37,4 @@
 
 .modal-alert-content {
   @extend .modal-alert-content;
-}
-
-/* ============================================================================
-   Positioning
-   ============================================================================ */
-
-/* Native dialogs center themselves with margin: auto. We override the margins for positions. */
-.modal-position-top {
-  margin-top: 5vh;
-  margin-bottom: auto;
-}
-
-.modal-position-bottom {
-  margin-top: auto;
-  margin-bottom: 5vh;
-}
-
-.modal-position-left {
-  margin-left: 5vw;
-  margin-right: auto;
-}
-
-.modal-position-right {
-  margin-left: auto;
-  margin-right: 5vw;
-}
-
-.modal-position-top-left {
-  margin: 5vh auto auto 5vw;
-}
-
-.modal-position-top-right {
-  margin: 5vh 5vw auto auto;
-}
-
-.modal-position-bottom-left {
-  margin: auto auto 5vh 5vw;
-}
-
-.modal-position-bottom-right {
-  margin: auto 5vw 5vh auto;
-}
-
-/* ============================================================================
-   Maximize & Fullscreen
-   ============================================================================ */
-
-/* When maximized, dialog takes full viewport, overwriting any positioning */
-.is-maximized {
-  margin: 0 !important;
-  max-width: 100vw !important;
-  max-height: 100vh !important;
-  width: 100vw !important;
-  height: 100vh !important;
-  border-radius: 0 !important;
-  transform: none !important; /* Disables drag transform when maximized */
 }

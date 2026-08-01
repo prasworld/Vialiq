@@ -7,7 +7,7 @@ $vi-tooltip-border-radius: var(--vi-tooltip-border-radius, 4px);
 $vi-tooltip-padding: var(--vi-tooltip-padding, 6px 10px);
 $vi-tooltip-max-width: var(--vi-tooltip-max-width, 240px);
 $vi-tooltip-arrow-size: var(--vi-tooltip-arrow-size, 6px);
-$vi-tooltip-z-index: var(--vi-tooltip-z-index, tokens.$tooltip-z-index);
+$vi-tooltip-z-index: var(--vi-tooltip-z-index, 9999);
 $vi-tooltip-shadow: var(--vi-tooltip-shadow, tokens.$shadow-md);
 
 .tooltip-panel {

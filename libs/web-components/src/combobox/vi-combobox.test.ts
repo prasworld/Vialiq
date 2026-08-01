@@ -1,4 +1,5 @@
 import { expect } from '@wdio/globals';
+import axe from 'axe-core';
 import './vi-combobox.js';
 import './vi-combobox-item.js';
 import type { ViCombobox } from './vi-combobox.js';
@@ -14,12 +15,7 @@ describe('vi-combobox', () => {
   });
 
   afterEach(() => {
-    if (element) {
-      element.open = false;
-      (element as any)['_slottedItems'] = [];
-      (element as any)['_optionsList'] = [];
-      element.remove();
-    }
+    element.remove();
   });
 
   it('initializes with default properties', () => {
@@ -219,12 +215,7 @@ describe('vi-combobox — slotted item filtering', () => {
     return { alice, bob };
   }
 
-  afterEach(() => {
-    if (element) {
-      element.open = false;
-      element.remove();
-    }
-  });
+  afterEach(() => element?.remove());
 
   it('non-matching slotted items become hidden when a query is typed', async () => {
     const { alice, bob } = await mountSlotted();
@@ -368,10 +359,7 @@ describe('vi-combobox — keyboard navigation with disabled items', () => {
   });
 
   afterEach(() => {
-    if (element) {
-      element.open = false;
-      element.remove();
-    }
+    element.remove();
   });
 
   it('ArrowDown skips disabled items', async () => {
@@ -428,10 +416,7 @@ describe('vi-combobox — minChars filtering', () => {
   let element: ViCombobox;
 
   afterEach(() => {
-    if (element) {
-      element.open = false;
-      element.remove();
-    }
+    element?.remove();
   });
 
   it('does not filter slotted items if query length is less than minChars', async () => {
@@ -501,8 +486,6 @@ describe('vi-combobox — minChars filtering', () => {
 
       const item1 = element.querySelector<ViComboboxItem>('[value="1"]')!;
       const item2 = element.querySelector<ViComboboxItem>('[value="2"]')!;
-      await item1.updateComplete;
-      await item2.updateComplete;
 
       expect(item1.getAttribute('role')).toBe('option');
       expect(item1.getAttribute('aria-selected')).toBe('false');
@@ -524,8 +507,6 @@ describe('vi-combobox — minChars filtering', () => {
       await element.updateComplete;
 
       element.open = true;
-      await element.updateComplete;
-
       const input = element.shadowRoot?.querySelector('.combobox-input') as HTMLInputElement;
       
       // Type something that doesn't exist
@@ -556,7 +537,35 @@ describe('vi-combobox — minChars filtering', () => {
       container.appendChild(host);
       await host.updateComplete;
 
-      expect(host.getAttribute('aria-label')).toBe('Select an option');
+      const results = await axe.run(container, {
+        rules: {
+          'document-title': { enabled: false },
+          'html-has-lang': { enabled: false },
+          'page-has-heading-one': { enabled: false },
+          'landmark-one-main': { enabled: false },
+          region: { enabled: false },
+          'color-contrast': { enabled: false },
+        },
+      });
+
+      expect(results.violations).toEqual([]);
+
+      host.open = true;
+      await host.updateComplete;
+      await new Promise((r) => setTimeout(r, 50)); // let floating UI settle
+
+      const openResults = await axe.run(container, {
+        rules: {
+          'document-title': { enabled: false },
+          'html-has-lang': { enabled: false },
+          'page-has-heading-one': { enabled: false },
+          'landmark-one-main': { enabled: false },
+          region: { enabled: false },
+          'color-contrast': { enabled: false },
+        },
+      });
+
+      expect(openResults.violations).toEqual([]);
       container.remove();
     });
   });

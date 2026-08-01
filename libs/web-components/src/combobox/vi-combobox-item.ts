@@ -67,6 +67,12 @@ export class ViComboboxItem extends ViElement {
 
   override connectedCallback(): void {
     super.connectedCallback();
+    // Expose ARIA semantics on the host element so AT can see them across the
+    // shadow boundary. role="option" on the inner <li> (shadow DOM) is invisible
+    // to the accessibility tree when the element is slotted into another component.
+    this.setAttribute('role', 'option');
+    this.setAttribute('aria-selected', this.selected ? 'true' : 'false');
+    this.setAttribute('aria-disabled', this.disabled ? 'true' : 'false');
     this.addEventListener('click', this._handleClick);
   }
 
@@ -74,14 +80,6 @@ export class ViComboboxItem extends ViElement {
     super.disconnectedCallback();
     this.removeEventListener('click', this._handleClick);
   }
-
-  protected override firstUpdated(changedProperties: PropertyValues): void {
-    super.firstUpdated(changedProperties);
-    this.setAttribute('role', 'option');
-    this.setAttribute('aria-selected', this.selected ? 'true' : 'false');
-    this.setAttribute('aria-disabled', this.disabled ? 'true' : 'false');
-  }
-
 
   protected override updated(changedProperties: PropertyValues): void {
     super.updated(changedProperties);
@@ -116,10 +114,8 @@ export class ViComboboxItem extends ViElement {
           n.nodeType === Node.ELEMENT_NODE ||
           (n.nodeType === Node.TEXT_NODE && n.textContent?.trim()),
       );
-    const hasContent = nodes.length > 0;
-    if (this._hasSlotContent !== hasContent) {
-      this._hasSlotContent = hasContent;
-    }
+    this._hasSlotContent = nodes.length > 0;
+    this.requestUpdate();
   }
 
   override render(): TemplateResult {

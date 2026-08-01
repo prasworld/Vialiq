@@ -85,8 +85,8 @@ const NATIVE_FOCUSABLE = [
 // Add each component here when it ships. Keep commented until shipped.
 const PHASE_1_VI_COMPONENTS = [
   'vi-button:not([disabled])',
-  'vi-input:not([disabled])',
-  'vi-checkbox:not([disabled])',
+  // 'vi-input:not([disabled])',    — uncomment when vi-input ships
+  // 'vi-checkbox:not([disabled])', — uncomment when vi-checkbox ships
   // 'vi-switch:not([disabled])',   — uncomment when vi-switch ships
   // 'vi-link:not([disabled])',     — uncomment when vi-link ships
 ];

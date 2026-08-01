@@ -11,7 +11,7 @@
   top: 0;
   left: 0;
   right: 0;
-  z-index: var(--vi-alert-floating-z-index, tokens.$alert-floating-z-index);
+  z-index: var(--vi-alert-floating-z-index, 10);
   box-shadow: var(
     --vi-alert-floating-shadow,
     0 4px 12px rgba(0, 0, 0, 0.12)

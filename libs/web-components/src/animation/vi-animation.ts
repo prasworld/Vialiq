@@ -1,6 +1,7 @@
-import { type PropertyValues } from 'lit';
+import { css, html, unsafeCSS, type PropertyValues } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { ViElement } from '../base/vi-element.js';
+import animationStyles from './vi-animation.scss?inline';
 
 export type AnimationPreset =
   | 'fade-in'
@@ -324,9 +325,7 @@ function shuffleIndices(length: number): number[] {
  */
 @customElement('vi-animation')
 export class ViAnimation extends ViElement {
-  protected override createRenderRoot() {
-    return this;
-  }
+  static override styles = css`${unsafeCSS(animationStyles)}`;
 
   @property({ type: String, reflect: true }) accessor name: AnimationPreset | string = 'fade-in';
   @property({ type: String, reflect: true }) accessor enter: AnimationPreset | string = '';
@@ -557,13 +556,16 @@ export class ViAnimation extends ViElement {
   }
 
   private _getTargetElements(): HTMLElement[] {
-    const childNodes = Array.from(this.children) as HTMLElement[];
-    if (childNodes.length === 0) return [this];
+    const slot = this.shadowRoot?.querySelector('slot');
+    if (!slot) return [this];
 
-    if (!this.cascade) return childNodes;
+    const assignedNodes = slot.assignedElements({ flatten: true }) as HTMLElement[];
+    if (assignedNodes.length === 0) return [this];
+
+    if (!this.cascade) return assignedNodes;
 
     const targetElements: HTMLElement[] = [];
-    for (const node of childNodes) {
+    for (const node of assignedNodes) {
       let matched = false;
       try {
         if (node.matches(this.staggerSelector)) {
@@ -576,12 +578,12 @@ export class ViAnimation extends ViElement {
           matched = true;
         }
       } catch {
-        return childNodes; // graceful fallback to all child nodes
+        return assignedNodes; // graceful fallback to all assigned nodes
       }
       if (!matched) targetElements.push(node);
     }
 
-    return targetElements.length > 0 ? targetElements : childNodes;
+    return targetElements.length > 0 ? targetElements : assignedNodes;
   }
 
   /**
@@ -751,6 +753,9 @@ export class ViAnimation extends ViElement {
     return !event.defaultPrevented;
   }
 
+  override render() {
+    return html`<slot></slot>`;
+  }
 }
 
 declare global {

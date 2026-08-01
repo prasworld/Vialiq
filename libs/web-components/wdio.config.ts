@@ -2,7 +2,6 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Options, Capabilities } from '@wdio/types';
 import swc from 'unplugin-swc';
-import tsconfigPaths from 'vite-tsconfig-paths';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -41,7 +40,6 @@ export const config: Options.Testrunner &
           },
         },
         plugins: [
-          tsconfigPaths({ root: workspaceRoot }),
           // Rewrite @vialiq/<lib>/<path> in SCSS @use/@forward statements to
           // the workspace source path. This runs before Sass processes the file,
           // so wdio's Vite server can find partials (like components/input) that
@@ -88,7 +86,7 @@ export const config: Options.Testrunner &
   reporters: ['spec'],
   mochaOpts: {
     ui: 'bdd',
-    timeout: 240000,
+    timeout: 120000,
   },
   capabilities: [
     {
