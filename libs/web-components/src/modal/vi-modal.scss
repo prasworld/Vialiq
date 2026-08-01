@@ -57,44 +57,60 @@
 }
 
 /* ============================================================================
+   Variants Override (Specificity Fixes)
+   ============================================================================ */
+
+[part="dialog"].modal-variant-drawer {
+  margin: 0;
+  
+  &.placement-right {
+    margin-left: auto;
+  }
+  
+  &.placement-left {
+    margin-right: auto;
+  }
+}
+
+/* ============================================================================
    Positioning
    ============================================================================ */
 
 /* Native dialogs center themselves with margin: auto. We override the margins for positions. */
-.modal-position-top {
-  margin-top: 5vh;
+[part="dialog"].modal-position-top {
+  margin-top: var(--vi-modal-offset-y, 5vh);
   margin-bottom: auto;
 }
 
-.modal-position-bottom {
+[part="dialog"].modal-position-bottom {
   margin-top: auto;
-  margin-bottom: 5vh;
+  margin-bottom: var(--vi-modal-offset-y, 5vh);
 }
 
-.modal-position-left {
-  margin-left: 5vw;
+[part="dialog"].modal-position-left {
+  margin-left: var(--vi-modal-offset-x, 5vw);
   margin-right: auto;
 }
 
-.modal-position-right {
+[part="dialog"].modal-position-right {
   margin-left: auto;
-  margin-right: 5vw;
+  margin-right: var(--vi-modal-offset-x, 5vw);
 }
 
-.modal-position-top-left {
-  margin: 5vh auto auto 5vw;
+[part="dialog"].modal-position-top-left {
+  margin: var(--vi-modal-offset-y, 5vh) auto auto var(--vi-modal-offset-x, 5vw);
 }
 
-.modal-position-top-right {
-  margin: 5vh 5vw auto auto;
+[part="dialog"].modal-position-top-right {
+  margin: var(--vi-modal-offset-y, 5vh) var(--vi-modal-offset-x, 5vw) auto auto;
 }
 
-.modal-position-bottom-left {
-  margin: auto auto 5vh 5vw;
+[part="dialog"].modal-position-bottom-left {
+  margin: auto auto var(--vi-modal-offset-y, 5vh) var(--vi-modal-offset-x, 5vw);
 }
 
-.modal-position-bottom-right {
-  margin: auto 5vw 5vh auto;
+[part="dialog"].modal-position-bottom-right {
+  margin: auto var(--vi-modal-offset-x, 5vw) var(--vi-modal-offset-y, 5vh) auto;
 }
 
 /* ============================================================================

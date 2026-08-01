@@ -8,25 +8,69 @@ import { DraggableMixin } from '../base/draggable-mixin.js';
 import modalStyles from './vi-modal.scss?inline';
 import '../icons/vi-icon.js';
 import '../button/vi-button.js';
-import { registerIcons } from '../icons/registry.js';
 import { OverlayManager } from '../base/overlay-manager.js';
-import { checkCircleIcon, triangleWarningIcon, infoIcon, xIcon, lockIcon, arrowsMaximizeIcon, arrowsMinimizeIcon } from '@vialiq/icons';
+import {
+  checkCircleIcon,
+  triangleWarningIcon,
+  infoIcon,
+  xIcon,
+  lockIcon,
+  arrowsMaximizeIcon,
+  arrowsMinimizeIcon,
+} from '@vialiq/icons';
 
-registerIcons([checkCircleIcon, triangleWarningIcon, infoIcon, xIcon, lockIcon, arrowsMaximizeIcon, arrowsMinimizeIcon]);
+import {
+  PRESET_KEYFRAMES,
+  EXIT_COUNTERPART,
+} from '../animation/animation-constants.js';
+import { registerIcons } from '../icons/registry.js';
+
+export type ModalEnterAnimation =
+  | 'fade-in'
+  | 'fade-in-up'
+  | 'fade-in-down'
+  | 'zoom-in'
+  | 'scale-up'
+  | 'pop-in'
+  | 'slide-in-top'
+  | 'slide-in-bottom'
+  | 'slide-in-left'
+  | 'slide-in-right'
+  | 'none';
+
+const prefersReducedMotion = () =>
+  typeof window !== 'undefined' &&
+  window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 export type ModalVariant = 'default' | 'drawer' | 'alert';
-export type ModalSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'full-width' | 'fullscreen';
-export type ModalPosition = 'center' | 'top' | 'bottom' | 'left' | 'right' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+export type ModalSize =
+  | 'xs'
+  | 'sm'
+  | 'md'
+  | 'lg'
+  | 'xl'
+  | 'full-width'
+  | 'fullscreen';
+export type ModalPosition =
+  | 'center'
+  | 'top'
+  | 'bottom'
+  | 'left'
+  | 'right'
+  | 'top-left'
+  | 'top-right'
+  | 'bottom-left'
+  | 'bottom-right';
 export type DrawerPlacement = 'right' | 'left';
 export type AlertDialogVariant = 'info' | 'success' | 'warning' | 'danger';
 
 /**
  * vi-modal
- * 
+ *
  * A focus-trapping dialog that blocks interaction with the page behind it.
- * 
+ *
  * **Developer Notes & Architecture:**
- * - **Stacking Context**: To guarantee the modal renders above everything else, `vi-modal` dynamically teleports itself to `document.body` when opened (`open = true`). It restores itself to its original DOM position when closed. 
+ * - **Stacking Context**: To guarantee the modal renders above everything else, `vi-modal` dynamically teleports itself to `document.body` when opened (`open = true`). It restores itself to its original DOM position when closed.
  * - **Z-Index**: Relies on `OverlayManager` to dynamically assign an escalating `z-index`, allowing for infinite nested modals.
  * - **Focus Trap**: Uses `FocusTrapMixin` to ensure keyboard accessibility.
  * - **Dragging**: Uses `DraggableMixin`. Be aware that teleporting the modal triggers `disconnectedCallback`, which requires `DraggableMixin` to smartly re-attach pointer event listeners in `connectedCallback`.
@@ -44,13 +88,15 @@ export class ViModal extends DraggableMixin(FocusTrapMixin(ViElement)) {
   @property({ type: Boolean, reflect: true }) accessor open = false;
 
   /** Layout variant */
-  @property({ type: String, reflect: true }) accessor variant: ModalVariant = 'default';
+  @property({ type: String, reflect: true }) accessor variant: ModalVariant =
+    'default';
 
   /** Dialog dimensions */
   @property({ type: String, reflect: true }) accessor size: ModalSize = 'md';
 
   /** Position of the modal */
-  @property({ type: String, reflect: true }) accessor position: ModalPosition = 'center';
+  @property({ type: String, reflect: true }) accessor position: ModalPosition =
+    'center';
 
   /** Show × button in header */
   @property({ type: Boolean }) accessor closable = true;
@@ -68,23 +114,63 @@ export class ViModal extends DraggableMixin(FocusTrapMixin(ViElement)) {
   @property({ type: Boolean }) accessor scrollable = true;
 
   /** Side for drawer variant */
-  @property({ type: String, attribute: 'drawer-placement' }) accessor drawerPlacement: DrawerPlacement = 'right';
+  @property({ type: String, attribute: 'drawer-placement' })
+  accessor drawerPlacement: DrawerPlacement = 'right';
 
   /** Icon+colour for alert variant */
-  @property({ type: String, attribute: 'alert-variant' }) accessor alertVariant: AlertDialogVariant = 'info';
+  @property({ type: String, attribute: 'alert-variant' })
+  accessor alertVariant: AlertDialogVariant = 'info';
 
   /** Element or CSS selector to return focus to on close */
-  @property({ attribute: 'return-focus' }) accessor returnFocusSelector: string | HTMLElement | undefined = undefined;
+  @property({ attribute: 'return-focus' }) accessor returnFocusSelector:
+    | string
+    | HTMLElement
+    | undefined = undefined;
+
+  /** Initial element or CSS selector to focus when opened */
+  @property({ attribute: 'initial-focus' }) accessor initialFocusSelector:
+    | string
+    | undefined = undefined;
+
+  /** Accessible label for the close button */
+  @property({ attribute: 'close-label' }) accessor closeLabel = 'Close';
+
+  /** Accessible label for the maximize button */
+  @property({ attribute: 'maximize-label' }) accessor maximizeLabel =
+    'Maximize';
+
+  /** Accessible label for the restore (un-maximize) button */
+  @property({ attribute: 'restore-label' }) accessor restoreLabel = 'Restore';
+
+  /**
+   * Enter animation preset. Defaults to 'zoom-in' for default/alert, 'slide-in-right' for right drawer,
+   * 'slide-in-left' for left drawer. Set to 'none' to disable.
+   */
+  @property({ attribute: 'enter-animation' }) accessor enterAnimation:
+    | ModalEnterAnimation
+    | '' = '';
+
+  /** Exit animation preset. Auto-derived from enterAnimation if not set. Set to 'none' to disable. */
+  @property({ attribute: 'exit-animation' }) accessor exitAnimation:
+    | ModalEnterAnimation
+    | '' = '';
+
+  /** Duration of enter/exit animations in milliseconds. */
+  @property({ type: Number, attribute: 'animation-duration' })
+  accessor animationDuration = 250;
 
   @query('dialog') private accessor _dialog!: HTMLDialogElement;
+  @query('.modal-backdrop') private accessor _backdropEl!: HTMLDivElement;
   @query('.modal-header') private accessor _headerEl!: HTMLElement;
 
   @state() private accessor _hasFooterSlot = false;
   @state() private accessor _maximized = false;
-  @state() private accessor _overlayZIndex = -1;
+  @state() private accessor _overlayZIndex: number | null = null;
 
   private _originalParent: ParentNode | null = null;
   private _originalNextSibling: Node | null = null;
+  private _inertedElements: Element[] = [];
+  private _activeAnimation: Animation | null = null;
 
   protected override get _dragTarget(): HTMLElement | null {
     return this._dialog;
@@ -96,6 +182,15 @@ export class ViModal extends DraggableMixin(FocusTrapMixin(ViElement)) {
 
   override connectedCallback(): void {
     super.connectedCallback();
+    registerIcons([
+      checkCircleIcon,
+      triangleWarningIcon,
+      infoIcon,
+      xIcon,
+      lockIcon,
+      arrowsMaximizeIcon,
+      arrowsMinimizeIcon,
+    ]);
     this._hasFooterSlot = this.querySelectorAll('[slot="footer"]').length > 0;
   }
 
@@ -104,7 +199,9 @@ export class ViModal extends DraggableMixin(FocusTrapMixin(ViElement)) {
     this._hasFooterSlot = slot.assignedNodes({ flatten: true }).length > 0;
   }
 
-  override updated(changedProperties: Map<string | number | symbol, unknown>): void {
+  override updated(
+    changedProperties: Map<string | number | symbol, unknown>,
+  ): void {
     super.updated(changedProperties);
 
     if (changedProperties.has('open')) {
@@ -119,34 +216,198 @@ export class ViModal extends DraggableMixin(FocusTrapMixin(ViElement)) {
         // Register with OverlayManager to get a proper z-index
         this._overlayZIndex = OverlayManager.register(this, 'modal');
 
+        // Apply inert to background content (must happen after teleport)
+        this._applyInert();
+
         // Reset drag/maximize state on open
         this._maximized = false;
         this._resetDrag();
 
-        const initialFocus: HTMLElement | undefined = undefined;
+        // Activate focus trap immediately (concurrent with animation)
+        let initialFocus: HTMLElement | undefined;
+        if (
+          typeof this.initialFocusSelector === 'string' &&
+          this.initialFocusSelector
+        ) {
+          initialFocus =
+            document.querySelector<HTMLElement>(this.initialFocusSelector) ??
+            undefined;
+        }
         this._activateFocusTrap(initialFocus, this.autofocus);
-        
-        this.dispatchEvent(new CustomEvent('vialiq-open', { bubbles: true, composed: true }));
+
+        // Play enter animation after first render
+        this.updateComplete.then(() => this._runEnterAnimation());
+
+        this.dispatchEvent(
+          new CustomEvent('vialiq-open', { bubbles: true, composed: true }),
+        );
       } else {
-        OverlayManager.unregister(this);
+        // Run exit animation, then tear down
+        this._runExitAnimation().then(() => {
+          OverlayManager.unregister(this);
+          this._stopDrag();
+          this._removeInert();
 
-        let returnTarget: HTMLElement | null = null;
-        if (typeof this.returnFocusSelector === 'string' && this.returnFocusSelector) {
-          returnTarget = document.querySelector<HTMLElement>(this.returnFocusSelector);
-        } else if (this.returnFocusSelector instanceof HTMLElement) {
-          returnTarget = this.returnFocusSelector;
-        }
+          let returnTarget: HTMLElement | null = null;
+          if (
+            typeof this.returnFocusSelector === 'string' &&
+            this.returnFocusSelector
+          ) {
+            returnTarget = document.querySelector<HTMLElement>(
+              this.returnFocusSelector,
+            );
+          } else if (this.returnFocusSelector instanceof HTMLElement) {
+            returnTarget = this.returnFocusSelector;
+          }
 
-        this._deactivateFocusTrap(returnTarget);
+          this._deactivateFocusTrap(returnTarget);
 
-        // Restore original DOM position
-        if (this._originalParent && this.parentElement === document.body) {
-          this._originalParent.insertBefore(this, this._originalNextSibling);
-        }
-        this._originalParent = null;
-        this._originalNextSibling = null;
+          // Restore original DOM position
+          if (this._originalParent && this.parentElement === document.body) {
+            this._originalParent.insertBefore(this, this._originalNextSibling);
+          }
+          this._originalParent = null;
+          this._originalNextSibling = null;
+
+          this.dispatchEvent(
+            new CustomEvent('vialiq-close', {
+              bubbles: true,
+              composed: true,
+              detail: { reason: this._closeReason },
+            }),
+          );
+          this._closeReason = 'programmatic';
+        });
       }
     }
+  }
+
+  private _closeReason: 'escape' | 'backdrop' | 'button' | 'programmatic' =
+    'programmatic';
+
+  // ─── Inert Management ────────────────────────────────────────────────────
+
+  /** Mark all `document.body` direct children as `inert`, except this modal host. */
+  private _applyInert(): void {
+    this._inertedElements = [];
+    Array.from(document.body.children).forEach((child) => {
+      if (child === this) return; // Skip the modal itself
+      if ((child as HTMLElement).inert) return; // Already inert — don't touch
+      (child as HTMLElement).inert = true;
+      this._inertedElements.push(child);
+    });
+  }
+
+  /** Remove `inert` only from elements we added it to. */
+  private _removeInert(): void {
+    this._inertedElements.forEach((el) => {
+      (el as HTMLElement).inert = false;
+    });
+    this._inertedElements = [];
+  }
+
+  // ─── Animation Helpers ───────────────────────────────────────────────────
+
+  /** Returns the effective enter animation preset based on variant/placement if not overridden. */
+  private get _resolvedEnterAnimation(): string {
+    if (this.enterAnimation) return this.enterAnimation;
+    if (this.variant === 'drawer') {
+      return this.drawerPlacement === 'left'
+        ? 'slide-in-left'
+        : 'slide-in-right';
+    }
+    return 'zoom-in'; // default and alert variants
+  }
+
+  private get _resolvedExitAnimation(): string {
+    if (this.exitAnimation) return this.exitAnimation;
+    return EXIT_COUNTERPART[this._resolvedEnterAnimation] ?? 'fade-out';
+  }
+
+  private _runEnterAnimation(): void {
+    const animName = this._resolvedEnterAnimation;
+    if (animName === 'none' || !this._dialog) return;
+
+    const reduced = prefersReducedMotion();
+    const kf = reduced
+      ? PRESET_KEYFRAMES['fade-in']
+      : PRESET_KEYFRAMES[animName];
+    const dur = reduced
+      ? Math.min(this.animationDuration, 100)
+      : this.animationDuration;
+    if (!kf) return;
+
+    // Cancel any leftover animation
+    this._activeAnimation?.cancel();
+    this._activeAnimation = this._dialog.animate(kf, {
+      duration: dur,
+      easing: 'cubic-bezier(0.2, 0, 0, 1)',
+      fill: 'forwards',
+    });
+
+    // Animate backdrop concurrently (simple fade)
+    this._backdropEl?.animate(PRESET_KEYFRAMES['fade-in'], {
+      duration: dur,
+      easing: 'ease',
+      fill: 'forwards',
+    });
+  }
+
+  private async _runExitAnimation(): Promise<void> {
+    const animName = this._resolvedExitAnimation;
+    if (animName === 'none' || !this._dialog) return;
+
+    const reduced = prefersReducedMotion();
+    const kf = reduced
+      ? PRESET_KEYFRAMES['fade-out']
+      : PRESET_KEYFRAMES[animName];
+    const dur = reduced
+      ? Math.min(this.animationDuration, 100)
+      : this.animationDuration;
+    if (!kf) return;
+
+    // Animate dialog and backdrop concurrently, await both
+    const dialogAnim = this._dialog.animate(kf, {
+      duration: dur,
+      easing: 'cubic-bezier(0.2, 0, 0, 1)',
+      fill: 'forwards',
+    });
+    const backdropAnim = this._backdropEl?.animate(
+      PRESET_KEYFRAMES['fade-out'],
+      {
+        duration: dur,
+        easing: 'ease',
+        fill: 'forwards',
+      },
+    );
+
+    await Promise.allSettled([
+      dialogAnim.finished,
+      backdropAnim?.finished ?? Promise.resolve(),
+    ]);
+
+    // Clear fill so CSS can take over
+    try {
+      dialogAnim.cancel();
+    } catch {
+      /* already finished */
+    }
+    try {
+      backdropAnim?.cancel();
+    } catch {
+      /* already finished */
+    }
+  }
+
+  /** Play a shake animation on the dialog to signal a blocked close attempt. */
+  private _shakeDialog(): void {
+    if (!this._dialog) return;
+    const reduced = prefersReducedMotion();
+    const dur = reduced ? 0 : 380;
+    this._dialog.animate(PRESET_KEYFRAMES['shake'], {
+      duration: dur,
+      easing: 'ease-in-out',
+    });
   }
 
   /** Open the modal */
@@ -155,22 +416,21 @@ export class ViModal extends DraggableMixin(FocusTrapMixin(ViElement)) {
   }
 
   /** Close the modal with an optional reason */
-  public close(reason: 'escape' | 'backdrop' | 'button' | 'programmatic' = 'programmatic'): void {
+  public close(
+    reason: 'escape' | 'backdrop' | 'button' | 'programmatic' = 'programmatic',
+  ): void {
     const requestCloseEvent = new CustomEvent('vialiq-request-close', {
       bubbles: true,
       composed: true,
       cancelable: true,
+      detail: { reason },
     });
 
     this.dispatchEvent(requestCloseEvent);
 
     if (!requestCloseEvent.defaultPrevented) {
+      this._closeReason = reason;
       this.open = false;
-      this.dispatchEvent(new CustomEvent('vialiq-close', {
-        bubbles: true,
-        composed: true,
-        detail: { reason }
-      }));
     }
   }
 
@@ -179,7 +439,9 @@ export class ViModal extends DraggableMixin(FocusTrapMixin(ViElement)) {
     if (this.open) {
       // FocusTrapMixin has _getFocusableElements which we can't easily access from public,
       // but we can query standard focusable elements. Let's just focus the dialog itself or first button.
-      const firstFocusable = this.shadowRoot?.querySelector('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])') as HTMLElement;
+      const firstFocusable = this.shadowRoot?.querySelector(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      ) as HTMLElement;
       if (firstFocusable) {
         firstFocusable.focus();
       } else {
@@ -190,46 +452,63 @@ export class ViModal extends DraggableMixin(FocusTrapMixin(ViElement)) {
 
   private _handleDialogCancel(e: Event): void {
     e.preventDefault(); // prevent native close so we can handle logic
+    this._handleKeydown(new KeyboardEvent('keydown', { key: 'Escape' }));
+  }
 
-    if (this.persistent) {
-      this.dispatchEvent(new CustomEvent('vialiq-request-close', {
-        bubbles: true,
-        composed: true,
-        cancelable: true,
-      }));
-      // Does not close
-    } else {
-      this.close('escape');
+  private _handleKeydown(e: KeyboardEvent): void {
+    if (e.key === 'Escape' && this.open) {
+      e.preventDefault();
+      if (this.persistent) {
+        this._shakeDialog();
+        this.dispatchEvent(
+          new CustomEvent('vialiq-request-close', {
+            bubbles: true,
+            composed: true,
+            cancelable: true,
+            detail: { reason: 'escape' },
+          }),
+        );
+      } else {
+        this.close('escape');
+      }
     }
   }
 
   private _handleBackdropClick(e: MouseEvent): void {
-    // If the click is on the custom backdrop div itself
-    if (e.target === e.currentTarget) {
-      if (!this.persistent) {
-        this.close('backdrop');
-      } else {
-        this.dispatchEvent(new CustomEvent('vialiq-request-close', {
+    // Bound directly to the custom backdrop div, so we don't need target check
+    if (!this.persistent) {
+      this.close('backdrop');
+    } else {
+      this._shakeDialog();
+      this.dispatchEvent(
+        new CustomEvent('vialiq-request-close', {
           bubbles: true,
           composed: true,
           cancelable: true,
-        }));
-      }
+          detail: { reason: 'backdrop' },
+        }),
+      );
     }
   }
 
   private get _defaultIcon(): string {
     switch (this.alertVariant) {
-      case 'success': return 'check-circle';
+      case 'success':
+        return 'check-circle';
       case 'warning':
-      case 'danger': return 'triangle-warning';
+      case 'danger':
+        return 'triangle-warning';
       case 'info':
-      default: return 'info';
+      default:
+        return 'info';
     }
   }
 
   private get _role(): string {
-    if (this.variant === 'alert' && (this.alertVariant === 'warning' || this.alertVariant === 'danger')) {
+    if (
+      this.variant === 'alert' &&
+      (this.alertVariant === 'warning' || this.alertVariant === 'danger')
+    ) {
       return 'alertdialog';
     }
     return 'dialog';
@@ -237,26 +516,33 @@ export class ViModal extends DraggableMixin(FocusTrapMixin(ViElement)) {
 
   override render(): TemplateResult {
     const activeSize = this._maximized ? 'fullscreen' : this.size;
-    
+
     const dialogClasses = {
       'modal-variant-drawer': this.variant === 'drawer',
       [`placement-${this.drawerPlacement}`]: this.variant === 'drawer',
       'modal-variant-alert': this.variant === 'alert',
       [`modal-size-${activeSize}`]: this.variant === 'default',
-      [`modal-position-${this.position}`]: this.position !== 'center' && this.variant === 'default',
+      [`modal-position-${this.position}`]:
+        this.position !== 'center' && this.variant === 'default',
       'modal-scrollable-false': !this.scrollable,
       'is-maximized': this._maximized,
-      'is-draggable': this.draggable
+      'is-draggable': this.draggable,
     };
 
     return html`
-      ${this.open ? html`
-        <div 
-          class="modal-backdrop" 
-          @click=${this._handleBackdropClick} 
-          style="z-index: ${this._overlayZIndex - 1}"
-        ></div>
-      ` : ''}
+      ${this.open
+        ? html`
+            <div
+              class="modal-backdrop"
+              @click=${this._handleBackdropClick}
+              style=${ifDefined(
+                this._overlayZIndex !== null
+                  ? `z-index: ${this._overlayZIndex - 1}`
+                  : undefined,
+              )}
+            ></div>
+          `
+        : ''}
       <dialog
         part="dialog"
         class=${classMap(dialogClasses)}
@@ -264,11 +550,22 @@ export class ViModal extends DraggableMixin(FocusTrapMixin(ViElement)) {
         ?open=${this.open}
         aria-modal="true"
         aria-label=${ifDefined(this.getAttribute('aria-label') || undefined)}
-        aria-labelledby=${ifDefined(this.getAttribute('aria-labelledby') || (this.hasAttribute('aria-label') ? undefined : 'modal-header'))}
-        style="z-index: ${this._overlayZIndex}"
+        aria-labelledby=${ifDefined(
+          this.hasAttribute('aria-label')
+            ? undefined
+            : this.getAttribute('aria-labelledby') || 'modal-header',
+        )}
+        style=${ifDefined(
+          this._overlayZIndex !== null
+            ? `z-index: ${this._overlayZIndex}`
+            : undefined,
+        )}
         @cancel=${this._handleDialogCancel}
+        @keydown=${this._handleKeydown}
       >
-        ${this.variant === 'alert' ? this._renderAlert() : this._renderDefault()}
+        ${this.variant === 'alert'
+          ? this._renderAlert()
+          : this._renderDefault()}
       </dialog>
     `;
   }
@@ -277,38 +574,53 @@ export class ViModal extends DraggableMixin(FocusTrapMixin(ViElement)) {
     return html`
       <header part="header" id="modal-header" class="modal-header">
         <slot name="header">
-          <span part="title" id="modal-title" aria-live="assertive"></span>
+          <span part="title" id="modal-title"></span>
         </slot>
 
         <div class="modal-header-actions">
           <slot name="header-actions"></slot>
-          ${this.maximizable ? html`
-            <vi-button
-              part="maximize-btn"
-              variant="ghost"
-              size="sm"
-              icon-only
-              title=${this._maximized ? 'Restore' : 'Maximize'}
-              @click=${() => {
-                this._maximized = !this._maximized;
-                if (this._maximized) this._resetDrag(); // Clear drag state when maximized
-              }}
-            >
-              <vi-icon name=${this._maximized ? 'arrows-minimize' : 'arrows-maximize'} slot="icon"></vi-icon>
-            </vi-button>
-          ` : ''}
-          ${this.closable ? html`
-            <vi-button
-              part="close-btn"
-              variant="ghost"
-              size="sm"
-              icon-only
-              title="Close"
-              @click=${() => this.close('button')}
-            >
-              <vi-icon name="x" slot="icon"></vi-icon>
-            </vi-button>
-          ` : ''}
+          ${this.maximizable
+            ? html`
+                <vi-button
+                  part="maximize-btn"
+                  variant="ghost"
+                  size="sm"
+                  icon-only
+                  title=${this._maximized
+                    ? this.restoreLabel
+                    : this.maximizeLabel}
+                  aria-label=${this._maximized
+                    ? this.restoreLabel
+                    : this.maximizeLabel}
+                  @click=${() => {
+                    this._maximized = !this._maximized;
+                    if (this._maximized) this._resetDrag(); // Clear drag state when maximized
+                  }}
+                >
+                  <vi-icon
+                    name=${this._maximized
+                      ? 'arrows-minimize'
+                      : 'arrows-maximize'}
+                    slot="icon"
+                  ></vi-icon>
+                </vi-button>
+              `
+            : ''}
+          ${this.closable
+            ? html`
+                <vi-button
+                  part="close-btn"
+                  variant="ghost"
+                  size="sm"
+                  icon-only
+                  title=${this.closeLabel}
+                  aria-label=${this.closeLabel}
+                  @click=${() => this.close('button')}
+                >
+                  <vi-icon name="x" slot="icon"></vi-icon>
+                </vi-button>
+              `
+            : ''}
         </div>
       </header>
 
@@ -316,7 +628,11 @@ export class ViModal extends DraggableMixin(FocusTrapMixin(ViElement)) {
         <slot></slot>
       </div>
 
-      <footer part="footer" class="modal-footer" ?hidden=${!this._hasFooterSlot}>
+      <footer
+        part="footer"
+        class="modal-footer"
+        ?hidden=${!this._hasFooterSlot}
+      >
         <slot name="footer" @slotchange=${this._handleFooterSlotChange}></slot>
       </footer>
     `;
@@ -334,7 +650,7 @@ export class ViModal extends DraggableMixin(FocusTrapMixin(ViElement)) {
         <!-- Alert variant uses standard body and footer conceptually for layout flexibility -->
         <header part="header" id="modal-header" class="modal-header">
           <slot name="header">
-            <span part="title" id="modal-title" class="modal-title" aria-live="assertive"></span>
+            <span part="title" id="modal-title" class="modal-title"></span>
           </slot>
         </header>
 
@@ -342,14 +658,24 @@ export class ViModal extends DraggableMixin(FocusTrapMixin(ViElement)) {
           <slot></slot>
         </div>
 
-        <footer part="footer" class="modal-footer" ?hidden=${!this._hasFooterSlot}>
-          <slot name="footer" @slotchange=${this._handleFooterSlotChange}></slot>
+        <footer
+          part="footer"
+          class="modal-footer"
+          ?hidden=${!this._hasFooterSlot}
+        >
+          <slot
+            name="footer"
+            @slotchange=${this._handleFooterSlotChange}
+          ></slot>
         </footer>
       </div>
     `;
   }
   override disconnectedCallback(): void {
     OverlayManager.unregister(this);
+    this._removeInert();
+    this._activeAnimation?.cancel();
+    this._activeAnimation = null;
     super.disconnectedCallback();
   }
 }

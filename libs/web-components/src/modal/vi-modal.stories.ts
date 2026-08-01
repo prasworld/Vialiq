@@ -326,3 +326,139 @@ export const ZIndexStacking: Story = {
     `;
   },
 };
+
+export const PersistentWithShake: Story = {
+  name: 'Persistent Modal (Shake on Dismiss)',
+  parameters: {
+    docs: {
+      description: {
+        story: `
+Demonstrates the **shake animation** on a persistent modal.
+When \`persistent\` is \`true\`, pressing **Escape** or clicking the **backdrop**
+will not close the modal. Instead, the dialog shakes to signal "blocked" — 
+matching the macOS alert dialog and MUI Dialog patterns.
+
+The modal also dispatches a \`vialiq-request-close\` event with \`detail.reason\`
+so consumers can show a custom in-modal warning message instead.
+        `,
+      },
+    },
+  },
+  render: () => {
+    let warningVisible = false;
+
+    const handleRequestClose = (e: Event) => {
+      const modal = document.getElementById('modal-persistent-shake') as ViModal | null;
+      const warning = modal?.querySelector<HTMLElement>('.shake-warning');
+      if (!warning) return;
+
+      // Show the warning message on first attempt, escalate on repeated attempts
+      warningVisible = true;
+      warning.style.display = 'block';
+      warning.animate(
+        [{ opacity: 0, transform: 'translateY(-4px)' }, { opacity: 1, transform: 'translateY(0)' }],
+        { duration: 200, fill: 'forwards' }
+      );
+    };
+
+    return html`
+      <vi-button variant="danger" @click=${() => openModal('modal-persistent-shake')}>
+        Open Persistent Modal
+      </vi-button>
+
+      <vi-modal
+        id="modal-persistent-shake"
+        persistent
+        closable=${false}
+        size="sm"
+        @vialiq-request-close=${handleRequestClose}
+      >
+        <span slot="header">⚠️ Action Required</span>
+        <div>
+          <p>You <strong>must</strong> make a choice before dismissing this dialog.</p>
+          <p style="color: #888; font-size: 0.875rem; margin-top: 0.5rem;">
+            Try pressing <kbd style="background:#eee;padding:2px 6px;border-radius:4px;border:1px solid #ccc">Escape</kbd>
+            or clicking the backdrop — the modal will shake instead of closing.
+          </p>
+          <p
+            class="shake-warning"
+            style="display: none; margin-top: 1rem; padding: 0.75rem; background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; font-size: 0.875rem; color: #856404;"
+          >
+            ⚠️ Please select an option below before closing.
+          </p>
+        </div>
+        <div slot="footer" style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+          <vi-button variant="ghost" @click=${() => closeModal('modal-persistent-shake')}>
+            Decline
+          </vi-button>
+          <vi-button variant="primary" @click=${() => closeModal('modal-persistent-shake')}>
+            Accept & Continue
+          </vi-button>
+        </div>
+      </vi-modal>
+    `;
+  },
+};
+
+export const CustomAnimations: Story = {
+  name: 'Custom Animations',
+  parameters: {
+    docs: {
+      description: {
+        story: `
+Demonstrates how to customize the **enter** and **exit** animations using the \`enter-animation\` and \`exit-animation\` properties.
+You can also adjust the animation duration with \`animation-duration\`.
+        `,
+      },
+    },
+  },
+  args: {
+    enterAnimation: 'pop-in',
+    exitAnimation: 'pop-out',
+    animationDuration: 400,
+  },
+  argTypes: {
+    enterAnimation: {
+      name: 'enter-animation',
+      control: 'select',
+      options: ['fade-in', 'fade-in-up', 'fade-in-down', 'zoom-in', 'scale-up', 'pop-in', 'slide-in-top', 'slide-in-bottom', 'slide-in-left', 'slide-in-right', 'none'],
+    },
+    exitAnimation: {
+      name: 'exit-animation',
+      control: 'select',
+      options: ['fade-out', 'fade-out-down', 'fade-out-up', 'zoom-out', 'scale-down', 'pop-out', 'slide-out-top', 'slide-out-bottom', 'slide-out-left', 'slide-out-right', 'none'],
+    },
+    animationDuration: {
+      name: 'animation-duration',
+      control: { type: 'range', min: 100, max: 2000, step: 100 },
+    },
+  },
+  render: (args) => html`
+    <vi-button @click=${() => openModal('modal-custom-animation')}>
+      Open Animated Modal
+    </vi-button>
+
+    <vi-modal
+      id="modal-custom-animation"
+      enter-animation=${args.enterAnimation}
+      exit-animation=${args.exitAnimation}
+      animation-duration=${args.animationDuration}
+    >
+      <span slot="header">Custom Animation</span>
+      <div>
+        <p>This modal is using custom enter and exit animations.</p>
+        <ul style="margin-top: 1rem; margin-bottom: 1rem;">
+          <li><strong>Enter:</strong> ${args.enterAnimation}</li>
+          <li><strong>Exit:</strong> ${args.exitAnimation}</li>
+          <li><strong>Duration:</strong> ${args.animationDuration}ms</li>
+        </ul>
+        <p>Try changing the controls below to see different effects!</p>
+      </div>
+      <div slot="footer">
+        <vi-button @click=${() => closeModal('modal-custom-animation')}>
+          Close
+        </vi-button>
+      </div>
+    </vi-modal>
+  `,
+};

@@ -9,6 +9,7 @@ export declare class DraggableInterface {
   protected get _dragTarget(): HTMLElement | null;
   protected get _dragHandle(): HTMLElement | null;
   protected _resetDrag(): void;
+  protected _stopDrag(): void;
 }
 
 /**
@@ -43,6 +44,7 @@ export function DraggableMixin<T extends Constructor<LitElement>>(
     @property({ type: Boolean, reflect: true }) accessor draggable = false;
 
     private _isDragging = false;
+    private _previousUserSelect: string | null = null;
     private _dragStartX = 0;
     private _dragStartY = 0;
     private _initialTranslateX = 0;
@@ -82,7 +84,7 @@ export function DraggableMixin<T extends Constructor<LitElement>>(
     }
 
     /**
-     * Ensures event listeners are attached or detached whenever the `draggable` property changes.
+     * Ensures event listeners are attached or detached whenever the `movable` property changes.
      */
     override updated(changedProperties: PropertyValues) {
       super.updated(changedProperties);
@@ -93,7 +95,7 @@ export function DraggableMixin<T extends Constructor<LitElement>>(
     }
 
     /**
-     * Centralized method to apply or remove drag event listeners based on the `draggable` state.
+     * Centralized method to apply or remove drag event listeners based on the `movable` state.
      */
     private _updateDragState() {
       const handle = this._dragHandle;
@@ -157,7 +159,8 @@ export function DraggableMixin<T extends Constructor<LitElement>>(
       window.addEventListener('pointercancel', this._boundOnPointerUp);
       
       // Prevent text selection while dragging
-      document.body.style.userSelect = 'none';
+      this._previousUserSelect = document.body.style.getPropertyValue('user-select') || null;
+      document.body.style.setProperty('user-select', 'none', 'important');
       
       // Capture pointer so we don't lose it if moving too fast
       const handle = this._dragHandle;
@@ -194,7 +197,12 @@ export function DraggableMixin<T extends Constructor<LitElement>>(
 
       this._removeWindowListeners();
       
-      document.body.style.userSelect = '';
+      if (this._previousUserSelect !== null) {
+        document.body.style.setProperty('user-select', this._previousUserSelect);
+      } else {
+        document.body.style.removeProperty('user-select');
+      }
+      this._previousUserSelect = null;
       
       const target = this._dragTarget;
       if (target) {
@@ -223,6 +231,28 @@ export function DraggableMixin<T extends Constructor<LitElement>>(
       const target = this._dragTarget;
       if (target) {
         target.style.transform = '';
+      }
+    }
+
+    /**
+     * Stops the drag operation forcefully and cleans up state and listeners.
+     */
+    protected _stopDrag() {
+      if (!this._isDragging) return;
+      this._isDragging = false;
+
+      this._removeWindowListeners();
+      
+      if (this._previousUserSelect !== null) {
+        document.body.style.setProperty('user-select', this._previousUserSelect);
+      } else {
+        document.body.style.removeProperty('user-select');
+      }
+      this._previousUserSelect = null;
+      
+      const target = this._dragTarget;
+      if (target) {
+        target.style.transition = ''; // Restore transition
       }
     }
   }

@@ -18,7 +18,21 @@ interface OverlayRegistryItem {
  * when a modal is active.
  */
 class OverlayManagerService {
-  private baseZIndex = 1040;
+  private _baseZIndexCache?: number;
+  private get baseZIndex(): number {
+    if (this._baseZIndexCache !== undefined) return this._baseZIndexCache;
+    
+    if (typeof document !== 'undefined' && typeof getComputedStyle !== 'undefined') {
+      // Derive base stacking context from the modal z-index token (minus 10 to start slightly below it)
+      const cssVar = getComputedStyle(document.documentElement).getPropertyValue('--vi-modal-z-index').trim();
+      const parsed = parseInt(cssVar, 10);
+      this._baseZIndexCache = !isNaN(parsed) ? parsed - 10 : 1040;
+    } else {
+      this._baseZIndexCache = 1040;
+    }
+    
+    return this._baseZIndexCache;
+  }
   private overlays: OverlayRegistryItem[] = [];
   private _previousOverflow: string | null = null;
 

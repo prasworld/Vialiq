@@ -311,4 +311,76 @@ describe('vi-modal', () => {
 
     el.remove();
   });
+  it('cleans up original parent and sibling references when closed', async () => {
+    const wrapper = document.createElement('div');
+    container.appendChild(wrapper);
+    render(html`<vi-modal open></vi-modal>`, wrapper);
+    const el = document.body.querySelector('vi-modal') as ViModal;
+    await el.updateComplete;
+    
+    // Close it so it returns to wrapper
+    el.close();
+    // Wait for exit animation to finish (default is 250ms)
+    await new Promise(resolve => setTimeout(resolve, 350));
+    
+    expect(el.parentElement).toBe(wrapper);
+  });
+
+  it('manages inert attribute on background elements', async () => {
+    const sibling1 = document.createElement('div');
+    const sibling2 = document.createElement('div');
+    sibling1.id = 'sib1';
+    sibling2.id = 'sib2';
+    document.body.appendChild(sibling1);
+    document.body.appendChild(sibling2);
+
+    render(html`<vi-modal></vi-modal>`, container);
+    const el = getModal() as ViModal;
+    await el.updateComplete;
+
+    expect(sibling1.inert).toBeFalsy();
+
+    el.show();
+    await el.updateComplete;
+    // Wait a tick for teleport and inert application
+    await new Promise(r => setTimeout(r, 0));
+
+    expect(sibling1.inert).toBe(true);
+    expect(sibling2.inert).toBe(true);
+
+    el.close();
+    // Wait for exit animation
+    await new Promise(r => setTimeout(r, 350));
+
+    expect(sibling1.inert).toBe(false);
+    expect(sibling2.inert).toBe(false);
+
+    sibling1.remove();
+    sibling2.remove();
+  });
+
+  it('triggers shake animation instead of closing when persistent on Escape', async () => {
+    render(html`<vi-modal open persistent></vi-modal>`, container);
+    const el = getModal() as ViModal;
+    await el.updateComplete;
+
+    const dialog = el.shadowRoot!.querySelector('dialog') as HTMLDialogElement;
+    
+    const originalAnimate = dialog.animate;
+    let animateCalled = false;
+    dialog.animate = function(keyframes: any, options: any) {
+      animateCalled = true;
+      return originalAnimate.call(this, keyframes, options);
+    };
+
+    const escEvent = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true });
+    el.dispatchEvent(escEvent);
+    
+    await el.updateComplete;
+
+    expect(el.open).toBe(true);
+    expect(animateCalled).toBe(true);
+    
+    dialog.animate = originalAnimate;
+  });
 });

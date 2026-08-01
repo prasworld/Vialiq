@@ -144,6 +144,13 @@ export function FocusTrapMixin<T extends Constructor<LitElement>>(
     private readonly _boundHandleKeydown = (e: KeyboardEvent) =>
       this._handleTrapKeydown(e);
 
+    private _focusableElementsCache: HTMLElement[] | null = null;
+    private _trapMutationObserver: MutationObserver | null = null;
+
+    private _clearFocusableCache = () => {
+      this._focusableElementsCache = null;
+    };
+
     private _isActuallyFocusable(element: HTMLElement): boolean {
       // Exclude elements that are hidden via the `hidden` attribute
       if (element.hasAttribute('hidden')) return false;
@@ -174,6 +181,10 @@ export function FocusTrapMixin<T extends Constructor<LitElement>>(
      * <slot> itself.
      */
     private _getFocusableElements(): HTMLElement[] {
+      if (this._focusableElementsCache) {
+        return this._focusableElementsCache;
+      }
+
       if (!this.shadowRoot) return [];
 
       // 1. Shadow DOM: native elements + vi-* hosts
@@ -213,23 +224,14 @@ export function FocusTrapMixin<T extends Constructor<LitElement>>(
         ...new Set([...shadowFocusable, ...slottedFocusable]),
       ];
 
-      // Sort by tabIndex. Browsers order: tabIndex > 0 (ascending), then tabIndex == 0 (DOM order).
-      return allFocusable.sort((a, b) => {
-        const aIndex = a.tabIndex;
-        const bIndex = b.tabIndex;
+      // Browsers order: tabIndex > 0 (ascending), then tabIndex <= 0 (DOM order).
+      const positiveTabIndex = allFocusable.filter(el => el.tabIndex > 0);
+      const defaultTabIndex = allFocusable.filter(el => el.tabIndex <= 0);
 
-        const aIsPos = aIndex > 0;
-        const bIsPos = bIndex > 0;
+      positiveTabIndex.sort((a, b) => a.tabIndex - b.tabIndex);
 
-        if (aIsPos && bIsPos) {
-          if (aIndex === bIndex) return 0;
-          return aIndex - bIndex;
-        }
-        if (aIsPos) return -1;
-        if (bIsPos) return 1;
-
-        return 0; // maintain original relative order for tabIndex <= 0
-      });
+      this._focusableElementsCache = [...positiveTabIndex, ...defaultTabIndex];
+      return this._focusableElementsCache;
     }
 
     /**
@@ -308,6 +310,13 @@ export function FocusTrapMixin<T extends Constructor<LitElement>>(
       // Attaching to the host (rather than a global document listener) means the
       // handler is automatically inactive when focus leaves the component entirely.
       this.addEventListener('keydown', this._boundHandleKeydown);
+      
+      this._clearFocusableCache();
+      this._trapMutationObserver = new MutationObserver(this._clearFocusableCache);
+      this._trapMutationObserver.observe(this, { childList: true, subtree: true, attributes: true, attributeFilter: ['tabindex', 'disabled', 'hidden', 'inert'] });
+      if (this.shadowRoot) {
+        this._trapMutationObserver.observe(this.shadowRoot, { childList: true, subtree: true, attributes: true, attributeFilter: ['tabindex', 'disabled', 'hidden', 'inert'] });
+      }
 
       // Focus the initial element after the current call stack clears.
       // requestAnimationFrame ensures Lit has finished rendering the opened state
@@ -321,7 +330,16 @@ export function FocusTrapMixin<T extends Constructor<LitElement>>(
     }
 
     protected _deactivateFocusTrap(returnFocus?: HTMLElement | null): void {
-      this.removeEventListener('keydown', this._boundHandleKeydown);
+      this.removeEventListener(
+        'keydown',
+        this._boundHandleKeydown,
+      );
+      
+      if (this._trapMutationObserver) {
+        this._trapMutationObserver.disconnect();
+        this._trapMutationObserver = null;
+      }
+      this._clearFocusableCache();
 
       // Restore focus to returnFocus element or pre-trap element.
       // Dereference WeakRef — the element may have been removed from the DOM.
@@ -342,6 +360,11 @@ export function FocusTrapMixin<T extends Constructor<LitElement>>(
     override disconnectedCallback(): void {
       // Safety: always clean up if the element is removed while trap is active.
       this.removeEventListener('keydown', this._boundHandleKeydown);
+      if (this._trapMutationObserver) {
+        this._trapMutationObserver.disconnect();
+        this._trapMutationObserver = null;
+      }
+      this._focusableElementsCache = null;
       this._preTrapFocus = null;
       super.disconnectedCallback();
     }
