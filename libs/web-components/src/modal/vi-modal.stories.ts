@@ -345,15 +345,15 @@ so consumers can show a custom in-modal warning message instead.
     },
   },
   render: () => {
-    let warningVisible = false;
+    let _warningVisible = false;
 
-    const handleRequestClose = (e: Event) => {
+    const handleRequestClose = (_e: Event) => {
       const modal = document.getElementById('modal-persistent-shake') as ViModal | null;
       const warning = modal?.querySelector<HTMLElement>('.shake-warning');
       if (!warning) return;
 
       // Show the warning message on first attempt, escalate on repeated attempts
-      warningVisible = true;
+      _warningVisible = true;
       warning.style.display = 'block';
       warning.animate(
         [{ opacity: 0, transform: 'translateY(-4px)' }, { opacity: 1, transform: 'translateY(0)' }],

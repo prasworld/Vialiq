@@ -1,5 +1,5 @@
 import { expect } from '@wdio/globals';
-import { html, render, LitElement, type PropertyValues } from 'lit';
+import { html, render, LitElement } from 'lit';
 import { customElement, query } from 'lit/decorators.js';
 import { DraggableMixin } from './draggable-mixin.js';
 

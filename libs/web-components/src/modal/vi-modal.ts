@@ -476,7 +476,7 @@ export class ViModal extends DraggableMixin(FocusTrapMixin(ViElement)) {
     }
   }
 
-  private _handleBackdropClick(e: MouseEvent): void {
+  private _handleBackdropClick(_e: MouseEvent): void {
     // Bound directly to the custom backdrop div, so we don't need target check
     if (!this.persistent) {
       this.close('backdrop');

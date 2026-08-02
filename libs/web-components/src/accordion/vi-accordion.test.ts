@@ -398,7 +398,7 @@ describe('vi-accordion & vi-accordion-item', () => {
       await accordion.updateComplete;
       await item.updateComplete;
 
-      const button = item.shadowRoot?.querySelector('button')!;
+      const button = item.shadowRoot!.querySelector('button')!;
       button.focus();
       accordion.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', bubbles: true, composed: true }));
 
