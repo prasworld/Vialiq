@@ -90,8 +90,8 @@ export class ViAccordionItem extends ViElement {
 
     const targetState = !this.open;
     const beforeEventName = targetState
-      ? 'vialiq-accordion-before-open'
-      : 'vialiq-accordion-before-close';
+      ? 'vi-accordion-before-open'
+      : 'vi-accordion-before-close';
 
     const beforeEvent = new CustomEvent(beforeEventName, {
       detail: { itemId: this.itemId },
@@ -107,8 +107,8 @@ export class ViAccordionItem extends ViElement {
 
     this.open = targetState;
     const finalEventName = this.open
-      ? 'vialiq-accordion-open'
-      : 'vialiq-accordion-close';
+      ? 'vi-accordion-open'
+      : 'vi-accordion-close';
 
     this.dispatchEvent(
       new CustomEvent(finalEventName, {

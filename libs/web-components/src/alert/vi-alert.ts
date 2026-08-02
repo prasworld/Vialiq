@@ -43,8 +43,8 @@ export type AlertVariant =
  * @csspart actions - Actions slot wrapper
  * @csspart close-btn - × dismiss button
  *
- * @fires vialiq-alert-show - Fired when the alert is shown
- * @fires vialiq-alert-close - Fired when the alert is dismissed
+ * @fires vi-alert-show - Fired when the alert is shown
+ * @fires vi-alert-close - Fired when the alert is dismissed
  */
 @customElement('vi-alert')
 export class ViAlert extends ViElement {
@@ -224,7 +224,7 @@ export class ViAlert extends ViElement {
     }
 
     this.dispatchEvent(
-      new CustomEvent('vialiq-alert-show', {
+      new CustomEvent('vi-alert-show', {
         bubbles: true,
         composed: true,
         detail: { id: this.id },
@@ -274,7 +274,7 @@ export class ViAlert extends ViElement {
       this.open = false;
 
       this.dispatchEvent(
-        new CustomEvent('vialiq-alert-close', {
+        new CustomEvent('vi-alert-close', {
           bubbles: true,
           composed: true,
           detail: { id: this.id },

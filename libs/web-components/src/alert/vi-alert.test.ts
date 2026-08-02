@@ -87,7 +87,7 @@ describe('vi-alert', () => {
     expect(icon!.getAttribute('name')).toBe('settings');
   });
 
-  it('fires vialiq-alert-close and sets hidden on dismiss button click', async () => {
+  it('fires vi-alert-close and sets hidden on dismiss button click', async () => {
     render(html`<vi-alert id="test-alert-1" dismissible>Dismissible message</vi-alert>`, container);
     const el = getAlert();
     await el.updateComplete;
@@ -97,7 +97,7 @@ describe('vi-alert', () => {
 
     let eventFired = false;
     let eventDetail: any = null;
-    el.addEventListener('vialiq-alert-close', (e: Event) => {
+    el.addEventListener('vi-alert-close', (e: Event) => {
       eventFired = true;
       eventDetail = (e as CustomEvent).detail;
     });
@@ -130,7 +130,7 @@ describe('vi-alert', () => {
     const closeBtn = el.shadowRoot!.querySelector('vi-button[part="close-btn"]') as HTMLElement;
     let eventFired = false;
     let eventDetail: any = null;
-    el.addEventListener('vialiq-alert-close', (e: Event) => {
+    el.addEventListener('vi-alert-close', (e: Event) => {
       eventFired = true;
       eventDetail = (e as CustomEvent).detail;
     });
@@ -165,7 +165,7 @@ describe('vi-alert', () => {
 
     let showFired = false;
     let showDetail: any = null;
-    el.addEventListener('vialiq-alert-show', (e: Event) => {
+    el.addEventListener('vi-alert-show', (e: Event) => {
       showFired = true;
       showDetail = (e as CustomEvent).detail;
     });
@@ -186,7 +186,7 @@ describe('vi-alert', () => {
     expect(el.open).toBe(true);
 
     let closeFired = false;
-    el.addEventListener('vialiq-alert-close', () => {
+    el.addEventListener('vi-alert-close', () => {
       closeFired = true;
     });
 
@@ -198,7 +198,7 @@ describe('vi-alert', () => {
     expect(closeFired).toBe(true);
 
     let showFired = false;
-    el.addEventListener('vialiq-alert-show', () => {
+    el.addEventListener('vi-alert-show', () => {
       showFired = true;
     });
 

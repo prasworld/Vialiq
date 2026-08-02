@@ -161,13 +161,13 @@ describe('vi-radio & vi-radio-group', () => {
   });
 
   describe('Step 3: User interactions and state changes', () => {
-    it('should check the clicked radio and fire vialiq-change event', async () => {
+    it('should check the clicked radio and fire vi-radio-group-change event', async () => {
       let changeEventDetail: string | null = null;
       render(
         html`
           <vi-radio-group
             name="feedback"
-            @vialiq-change=${(e: CustomEvent<{ value: string }>) => {
+            @vi-radio-group-change=${(e: CustomEvent<{ value: string }>) => {
               changeEventDetail = e.detail.value;
             }}
           >
@@ -198,7 +198,7 @@ describe('vi-radio & vi-radio-group', () => {
       let changeFired = false;
       render(
         html`
-          <vi-radio-group name="test" @vialiq-change=${() => (changeFired = true)}>
+          <vi-radio-group name="test" @vi-radio-group-change=${() => (changeFired = true)}>
             <vi-radio value="a">A</vi-radio>
             <vi-radio value="b" disabled>B</vi-radio>
           </vi-radio-group>

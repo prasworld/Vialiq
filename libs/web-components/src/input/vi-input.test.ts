@@ -89,11 +89,11 @@ describe('vi-input', () => {
   });
 
   describe('Events', () => {
-    it('should emit vialiq-input on every keystroke', async () => {
+    it('should emit vi-input-input on every keystroke', async () => {
       let lastValue: string | undefined;
       render(
         html`<vi-input
-          @vialiq-input=${(e: CustomEvent<{ value: string }>) => (lastValue = e.detail.value)}
+          @vi-input-input=${(e: CustomEvent<{ value: string }>) => (lastValue = e.detail.value)}
         ></vi-input>`,
         container,
       );
@@ -107,11 +107,11 @@ describe('vi-input', () => {
       expect(lastValue).toBe('hello');
     });
 
-    it('should emit vialiq-change when the value is committed', async () => {
+    it('should emit vi-input-change when the value is committed', async () => {
       let lastValue: string | undefined;
       render(
         html`<vi-input
-          @vialiq-change=${(e: CustomEvent<{ value: string }>) => (lastValue = e.detail.value)}
+          @vi-input-change=${(e: CustomEvent<{ value: string }>) => (lastValue = e.detail.value)}
         ></vi-input>`,
         container,
       );
@@ -125,9 +125,9 @@ describe('vi-input', () => {
       expect(lastValue).toBe('committed');
     });
 
-    it('vialiq-input should bubble and be composed', async () => {
+    it('vi-input-input should bubble and be composed', async () => {
       let received = false;
-      container.addEventListener('vialiq-input', () => (received = true));
+      container.addEventListener('vi-input-input', () => (received = true));
 
       render(html`<vi-input></vi-input>`, container);
       const el = document.querySelector('vi-input') as ViInput;

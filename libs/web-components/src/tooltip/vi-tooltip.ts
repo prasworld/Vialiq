@@ -215,7 +215,7 @@ hide(immediate = false): void {
       }
     }
     
-    this.dispatchEvent(new CustomEvent('vialiq-show', { bubbles: true, composed: true }));
+    this.dispatchEvent(new CustomEvent('vi-tooltip-show', { bubbles: true, composed: true }));
   }
 
   private _closeTooltip(): void {
@@ -241,7 +241,7 @@ hide(immediate = false): void {
       document.removeEventListener('pointerdown', this._handleDocumentClick);
     }
 
-    this.dispatchEvent(new CustomEvent('vialiq-hide', { bubbles: true, composed: true }));
+    this.dispatchEvent(new CustomEvent('vi-tooltip-hide', { bubbles: true, composed: true }));
   }
 
   private _clearTimeouts(): void {

@@ -28,7 +28,7 @@ export type RadioGroupOrientation = 'vertical' | 'horizontal';
  * @slot label - Text displayed above the group.
  * @slot helper - Helper text displayed below the group.
  *
- * @fires {CustomEvent<{value: string}>} vialiq-change - Dispatched when selection changes. Bubbles, composed.
+ * @fires {CustomEvent<{value: string}>} vi-radio-group-change - Dispatched when selection changes. Bubbles, composed.
  * @fires {Event}                        invalid       - Fired when validation check fails.
  */
 @customElement('vi-radio-group')
@@ -213,7 +213,7 @@ export class ViRadioGroup extends ValidityMixin(ViElement) {
 
     if (this.value !== oldValue) {
       this.dispatchEvent(
-        new CustomEvent<{ value: string }>('vialiq-change', {
+        new CustomEvent<{ value: string }>('vi-radio-group-change', {
           detail: { value: this.value },
           bubbles: true,
           composed: true,
@@ -270,7 +270,7 @@ export class ViRadioGroup extends ValidityMixin(ViElement) {
 
       if (this.value !== oldValue) {
         this.dispatchEvent(
-          new CustomEvent<{ value: string }>('vialiq-change', {
+          new CustomEvent<{ value: string }>('vi-radio-group-change', {
             detail: { value: this.value },
             bubbles: true,
             composed: true,
@@ -293,7 +293,7 @@ export class ViRadioGroup extends ValidityMixin(ViElement) {
 
       if (this.value !== oldValue) {
         this.dispatchEvent(
-          new CustomEvent<{ value: string }>('vialiq-change', {
+          new CustomEvent<{ value: string }>('vi-radio-group-change', {
             detail: { value: this.value },
             bubbles: true,
             composed: true,

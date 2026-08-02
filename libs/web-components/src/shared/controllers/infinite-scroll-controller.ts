@@ -43,7 +43,7 @@ export class InfiniteScrollController implements ReactiveController {
               // Usually the sentinels might have a class to distinguish, but object identity works best
               const direction = entry.target === top ? 'up' : 'down';
               this.host.dispatchEvent(
-                new CustomEvent('vi-load-more', {
+                new CustomEvent('vi-combobox-load-more', {
                   bubbles: true,
                   composed: true,
                   detail: { id: this.host.id || '', direction },

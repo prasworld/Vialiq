@@ -36,8 +36,8 @@ export type TextareaResize = 'none' | 'vertical' | 'both';
  *
  * @slot helper - Helper text shown below the textarea
  *
- * @fires {CustomEvent<{value:string}>} vialiq-textarea-input  - Triggered on every keystroke. Bubbles, composed.
- * @fires {CustomEvent<{value:string}>} vialiq-textarea-change - Triggered on blur (committed value). Bubbles, composed.
+ * @fires {CustomEvent<{value:string}>} vi-textarea-input  - Triggered on every keystroke. Bubbles, composed.
+ * @fires {CustomEvent<{value:string}>} vi-textarea-change - Triggered on blur (committed value). Bubbles, composed.
  * @fires {Event}                       invalid        - Fired when checkValidity() fails.
  *
  * @csspart field        - The outer `<div>` wrapper
@@ -166,7 +166,7 @@ export class ViTextarea extends ValidityMixin(FocusableMixin(ViElement)) {
     const textarea = e.target as HTMLTextAreaElement;
     this.value = textarea.value;
     this.dispatchEvent(
-      new CustomEvent<{ value: string }>('vialiq-textarea-input', {
+      new CustomEvent<{ value: string }>('vi-textarea-input', {
         detail: { value: this.value },
         bubbles: true,
         composed: true,
@@ -179,7 +179,7 @@ export class ViTextarea extends ValidityMixin(FocusableMixin(ViElement)) {
     const textarea = e.target as HTMLTextAreaElement;
     this.value = textarea.value;
     this.dispatchEvent(
-      new CustomEvent<{ value: string }>('vialiq-textarea-change', {
+      new CustomEvent<{ value: string }>('vi-textarea-change', {
         detail: { value: this.value },
         bubbles: true,
         composed: true,

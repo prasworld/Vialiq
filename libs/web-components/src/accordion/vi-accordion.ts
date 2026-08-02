@@ -26,7 +26,7 @@ export type AccordionSize = 'sm' | 'md' | 'lg';
  *
  * @slot - Default slot for vi-accordion-item elements
  *
- * @fires {CustomEvent<{itemId: string; open: boolean}>} vialiq-accordion-change - Fired when any accordion item toggles
+ * @fires {CustomEvent<{itemId: string; open: boolean}>} vi-accordion-change - Fired when any accordion item toggles
  */
 @customElement('vi-accordion')
 export class ViAccordion extends ViElement {
@@ -45,9 +45,9 @@ export class ViAccordion extends ViElement {
 
   constructor() {
     super();
-    this.addEventListener('vialiq-accordion-before-open', this._handleBeforeItemOpen);
-    this.addEventListener('vialiq-accordion-open', this._handleItemOpen);
-    this.addEventListener('vialiq-accordion-close', this._handleItemClose);
+    this.addEventListener('vi-accordion-before-open', this._handleBeforeItemOpen);
+    this.addEventListener('vi-accordion-open', this._handleItemOpen);
+    this.addEventListener('vi-accordion-close', this._handleItemClose);
   }
 
   override updated(changed: PropertyValues): void {
@@ -74,6 +74,8 @@ export class ViAccordion extends ViElement {
   }
 
   private _handleBeforeItemOpen(e: Event): void {
+    if (this.multi) return;
+
     const target = e.target as ViAccordionItem;
     const targetId = target.itemId;
 
@@ -81,7 +83,7 @@ export class ViAccordion extends ViElement {
     const openItems = items.filter(item => item.open && item.itemId !== targetId);
 
     for (const openItem of openItems) {
-      const beforeCloseEvent = new CustomEvent('vialiq-accordion-before-close', {
+      const beforeCloseEvent = new CustomEvent('vi-accordion-before-close', {
         detail: { itemId: targetId }, // Emit the ID of the clicked item that is triggering the check
         bubbles: true,
         composed: true,
@@ -106,7 +108,7 @@ export class ViAccordion extends ViElement {
         if (item.itemId !== targetId && item.open) {
           item.open = false;
           item.dispatchEvent(
-            new CustomEvent('vialiq-accordion-close', {
+            new CustomEvent('vi-accordion-close', {
               detail: { itemId: item.itemId },
               bubbles: true,
               composed: true,
@@ -126,7 +128,7 @@ export class ViAccordion extends ViElement {
 
   private _dispatchChangeEvent(itemId: string, open: boolean): void {
     this.dispatchEvent(
-      new CustomEvent('vialiq-accordion-change', {
+      new CustomEvent('vi-accordion-change', {
         detail: { itemId, open },
         bubbles: true,
         composed: true,

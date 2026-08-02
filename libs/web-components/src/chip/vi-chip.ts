@@ -137,7 +137,7 @@ export class ViChip extends FocusableMixin(ViElement) {
       return;
     }
     this.dispatchEvent(
-      new CustomEvent('vialiq-select', {
+      new CustomEvent('vi-chip-select', {
         detail: { value: this.value, selected: !this.selected },
         bubbles: true,
         composed: true,
@@ -153,7 +153,7 @@ export class ViChip extends FocusableMixin(ViElement) {
     }
     e.stopPropagation();
     this.dispatchEvent(
-      new CustomEvent('vialiq-remove', {
+      new CustomEvent('vi-chip-remove', {
         detail: { value: this.value },
         bubbles: true,
         composed: true,

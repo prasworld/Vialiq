@@ -86,7 +86,7 @@ export const SlottedCustomItemsWithDataPayload: StoryObj = {
       <vi-combobox
         mode="single"
         placeholder="Select team member..."
-        @vi-change=${(e: CustomEvent) => {
+        @vi-combobox-change=${(e: CustomEvent) => {
           console.log('Selected value:', e.detail.value);
           console.log('Payload data:', e.detail.data);
         }}
@@ -263,12 +263,12 @@ export const SlottedItemsWithSearch: StoryObj = {
         <vi-combobox
           mode="single"
           placeholder="Search team members..."
-          @vi-change=${(e: CustomEvent) => {
-            console.log('[vi-change]', e.detail);
+          @vi-combobox-change=${(e: CustomEvent) => {
+            console.log('[vi-combobox-change]', e.detail);
           }}
-          @vi-filter=${(e: CustomEvent) => {
+          @vi-combobox-filter=${(e: CustomEvent) => {
             console.log(
-              '[vi-filter] query:',
+              '[vi-combobox-filter] query:',
               e.detail.query,
               '| matched:',
               e.detail.matchedValues,
@@ -504,9 +504,9 @@ export const VirtualizationAndInfiniteScroll: StoryObj = {
               </div>
             </div>
           `}
-          @vi-load-more=${(e: CustomEvent) => {
+          @vi-combobox-load-more=${(e: CustomEvent) => {
             console.log(
-              '[vi-load-more] Reached the bottom! Event payload:',
+              '[vi-combobox-load-more] Reached the bottom! Event payload:',
               e.detail,
             );
           }}
@@ -604,7 +604,7 @@ class InfiniteScrollDemo extends LitElement {
               </div>
             </div>
           `}
-          @vi-load-more=${(e: CustomEvent) => { if (e.detail.direction === 'down') this._loadMore(); }}
+          @vi-combobox-load-more=${(e: CustomEvent) => { if (e.detail.direction === 'down') this._loadMore(); }}
         ></vi-combobox>
       </div>
     `;

@@ -22,7 +22,7 @@ import groupStyles from './vi-chip-group.scss?inline';
  *
  * @csspart group  - The <div> role="listbox" wrapper
  *
- * @fires vialiq-change - Fired when the selection changes
+ * @fires vi-chip-group-change - Fired when the selection changes
  * @fires invalid       - Fired when checkValidity() fails (cancelable)
  */
 @customElement('vi-chip-group')
@@ -133,13 +133,13 @@ export class ViChipGroup extends ValidityMixin<string[]>(ViElement) {
   selectAll(): void {
     if (!this.multi) return;
     this.value = this._chips.map(chip => chip.value).filter(val => val !== undefined);
-    this.dispatchEvent(new CustomEvent('vialiq-change', { detail: { value: this.value }, bubbles: true, composed: true }));
+    this.dispatchEvent(new CustomEvent('vi-chip-group-change', { detail: { value: this.value }, bubbles: true, composed: true }));
   }
 
   /** Deselects all child chips */
   clearAll(): void {
     this.value = [];
-    this.dispatchEvent(new CustomEvent('vialiq-change', { detail: { value: this.value }, bubbles: true, composed: true }));
+    this.dispatchEvent(new CustomEvent('vi-chip-group-change', { detail: { value: this.value }, bubbles: true, composed: true }));
   }
 
   private _syncInternals(): void {
@@ -210,7 +210,7 @@ export class ViChipGroup extends ValidityMixin<string[]>(ViElement) {
     }
 
     this.value = newValue;
-    this.dispatchEvent(new CustomEvent('vialiq-change', { detail: { value: this.value }, bubbles: true, composed: true }));
+    this.dispatchEvent(new CustomEvent('vi-chip-group-change', { detail: { value: this.value }, bubbles: true, composed: true }));
   }
 
   private _handleKeyDown(e: KeyboardEvent): void {

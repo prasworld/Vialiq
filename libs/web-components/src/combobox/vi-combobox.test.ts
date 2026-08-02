@@ -40,7 +40,7 @@ describe('vi-combobox', function () {
 
   it('supports programmatic open property with attribute reflection', async () => {
     let opened = false;
-    element.addEventListener('vi-open', () => {
+    element.addEventListener('vi-combobox-open', () => {
       opened = true;
     });
 
@@ -52,7 +52,7 @@ describe('vi-combobox', function () {
     expect(opened).toBe(true);
 
     let closed = false;
-    element.addEventListener('vi-close', () => {
+    element.addEventListener('vi-combobox-close', () => {
       closed = true;
     });
 
@@ -64,14 +64,14 @@ describe('vi-combobox', function () {
     expect(closed).toBe(true);
   });
 
-  it('clears selection and dispatches vi-clear event when clear button is clicked', async () => {
+  it('clears selection and dispatches vi-combobox-clear event when clear button is clicked', async () => {
     element.options = [{ value: 'us', label: 'United States' }];
     element.value = 'us';
     element.clearable = true;
     await element.updateComplete;
 
     let cleared = false;
-    element.addEventListener('vi-clear', () => {
+    element.addEventListener('vi-combobox-clear', () => {
       cleared = true;
     });
 
@@ -94,7 +94,7 @@ describe('vi-combobox', function () {
     await element.updateComplete;
 
     let changeDetail: any = null;
-    element.addEventListener('vi-change', (e: any) => {
+    element.addEventListener('vi-combobox-change', (e: any) => {
       changeDetail = e.detail;
     });
 
@@ -130,7 +130,7 @@ describe('vi-combobox', function () {
     item.data = { code: 'S1' };
 
     let changeDetail: any = null;
-    element.addEventListener('vi-change', (e: any) => {
+    element.addEventListener('vi-combobox-change', (e: any) => {
       changeDetail = e.detail;
     });
 
@@ -282,11 +282,11 @@ describe('vi-combobox — slotted item filtering', () => {
     expect(bob.hidden).toBe(false);
   });
 
-  it('vi-filter event carries matchedValues when filtering slotted items', async () => {
+  it('vi-combobox-filter event carries matchedValues when filtering slotted items', async () => {
     await mountSlotted();
 
     let filterDetail: any = null;
-    element.addEventListener('vi-filter', (e: any) => {
+    element.addEventListener('vi-combobox-filter', (e: any) => {
       filterDetail = e.detail;
     });
 
