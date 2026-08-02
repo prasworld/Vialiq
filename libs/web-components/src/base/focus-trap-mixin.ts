@@ -19,14 +19,17 @@ export declare class FocusTrapInterface {
    * @param initialFocus - Optional element to focus first. Defaults to the
    *   first focusable element found in the shadow root.
    */
-  protected _activateFocusTrap(initialFocus?: HTMLElement): void;
+  protected _activateFocusTrap(
+    initialFocus?: HTMLElement | null,
+    autofocus?: boolean,
+  ): void;
 
   /**
    * Deactivates the focus trap.
-   * Removes the Tab intercept and restores focus to the element that was
-   * focused immediately before `_activateFocusTrap()` was called.
+   * Removes the Tab intercept and restores focus to the specified returnFocus
+   * element, or falls back to the element that was focused before activation.
    */
-  protected _deactivateFocusTrap(): void;
+  protected _deactivateFocusTrap(returnFocus?: HTMLElement | null): void;
 }
 
 /**
@@ -124,7 +127,7 @@ export declare class FocusTrapInterface {
  *     class ViPanel extends FocusTrapMixin(FocusableMixin(ViElement)) { ... }
  */
 export function FocusTrapMixin<T extends Constructor<LitElement>>(
-  Base: T
+  Base: T,
 ): T & Constructor<FocusTrapInterface> {
   class FocusTrapMixinClass extends Base {
     /**
@@ -141,6 +144,13 @@ export function FocusTrapMixin<T extends Constructor<LitElement>>(
     private readonly _boundHandleKeydown = (e: KeyboardEvent) =>
       this._handleTrapKeydown(e);
 
+    private _focusableElementsCache: HTMLElement[] | null = null;
+    private _trapMutationObserver: MutationObserver | null = null;
+
+    private _clearFocusableCache = () => {
+      this._focusableElementsCache = null;
+    };
+
     private _isActuallyFocusable(element: HTMLElement): boolean {
       // Exclude elements that are hidden via the `hidden` attribute
       if (element.hasAttribute('hidden')) return false;
@@ -150,7 +160,8 @@ export function FocusTrapMixin<T extends Constructor<LitElement>>(
       if (element.closest('[aria-hidden="true"]')) return false;
 
       // Exclude elements inside an inert subtree
-      if (element.hasAttribute('inert') || element.closest('[inert]')) return false;
+      if (element.hasAttribute('inert') || element.closest('[inert]'))
+        return false;
 
       // Exclude elements with no rendered box (covers display:none, visibility:hidden, etc.)
       if (element.getClientRects().length === 0) return false;
@@ -170,11 +181,15 @@ export function FocusTrapMixin<T extends Constructor<LitElement>>(
      * <slot> itself.
      */
     private _getFocusableElements(): HTMLElement[] {
+      if (this._focusableElementsCache) {
+        return this._focusableElementsCache;
+      }
+
       if (!this.shadowRoot) return [];
 
       // 1. Shadow DOM: native elements + vi-* hosts
       const shadowFocusable = Array.from(
-        this.shadowRoot.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)
+        this.shadowRoot.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
       ).filter((el) => this._isActuallyFocusable(el));
 
       // 2. Slotted light-DOM content
@@ -183,8 +198,21 @@ export function FocusTrapMixin<T extends Constructor<LitElement>>(
         (slotEl as HTMLSlotElement)
           .assignedElements({ flatten: true })
           .forEach((el) => {
-            if (el.matches(FOCUSABLE_SELECTOR) && this._isActuallyFocusable(el as HTMLElement)) {
-              slottedFocusable.push(el as HTMLElement);
+            if (el.nodeType === Node.ELEMENT_NODE) {
+              const element = el as HTMLElement;
+              if (
+                element.matches(FOCUSABLE_SELECTOR) &&
+                this._isActuallyFocusable(element)
+              ) {
+                slottedFocusable.push(element);
+              }
+              element
+                .querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)
+                .forEach((descendant) => {
+                  if (this._isActuallyFocusable(descendant)) {
+                    slottedFocusable.push(descendant);
+                  }
+                });
             }
           });
       });
@@ -192,7 +220,18 @@ export function FocusTrapMixin<T extends Constructor<LitElement>>(
       // Merge: shadow first (DOM order), then slotted.
       // De-dupe via Set in case an element appears in both (shouldn't happen,
       // but be defensive).
-      return [...new Set([...shadowFocusable, ...slottedFocusable])].filter((el) => this._isActuallyFocusable(el));
+      const allFocusable = [
+        ...new Set([...shadowFocusable, ...slottedFocusable]),
+      ];
+
+      // Browsers order: tabIndex > 0 (ascending), then tabIndex <= 0 (DOM order).
+      const positiveTabIndex = allFocusable.filter(el => el.tabIndex > 0);
+      const defaultTabIndex = allFocusable.filter(el => el.tabIndex <= 0);
+
+      positiveTabIndex.sort((a, b) => a.tabIndex - b.tabIndex);
+
+      this._focusableElementsCache = [...positiveTabIndex, ...defaultTabIndex];
+      return this._focusableElementsCache;
     }
 
     /**
@@ -228,26 +267,35 @@ export function FocusTrapMixin<T extends Constructor<LitElement>>(
       const focusable = this._getFocusableElements();
       if (focusable.length === 0) return;
 
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
       const active = this._getActiveElement();
+      const currentIndex = focusable.indexOf(active as HTMLElement);
+
+      // Intercept ALL tab events to strictly enforce our sorted order,
+      // as browsers often struggle with native tab order across shadow boundaries
+      // and mixed slot assignments.
+      event.preventDefault();
 
       if (event.shiftKey) {
-        // Shift+Tab: if focus is on (or before) the first element, wrap to last.
-        if (active === first || !focusable.includes(active as HTMLElement)) {
-          event.preventDefault();
-          last.focus();
+        // Shift+Tab: move to previous, or wrap to last if at beginning (or not found)
+        if (currentIndex <= 0) {
+          focusable[focusable.length - 1].focus();
+        } else {
+          focusable[currentIndex - 1].focus();
         }
       } else {
-        // Tab: if focus is on (or past) the last element, wrap to first.
-        if (active === last || !focusable.includes(active as HTMLElement)) {
-          event.preventDefault();
-          first.focus();
+        // Tab: move to next, or wrap to first if at end (or not found)
+        if (currentIndex === -1 || currentIndex === focusable.length - 1) {
+          focusable[0].focus();
+        } else {
+          focusable[currentIndex + 1].focus();
         }
       }
     }
 
-    protected _activateFocusTrap(initialFocus?: HTMLElement): void {
+    protected _activateFocusTrap(
+      initialFocus?: HTMLElement | null,
+      autofocus = true,
+    ): void {
       // Snapshot focus BEFORE we move it — this is what we restore on deactivate.
       // Use document.activeElement here (not shadowRoot) — we want the element
       // in the full document that currently has focus, which may be outside
@@ -262,32 +310,61 @@ export function FocusTrapMixin<T extends Constructor<LitElement>>(
       // Attaching to the host (rather than a global document listener) means the
       // handler is automatically inactive when focus leaves the component entirely.
       this.addEventListener('keydown', this._boundHandleKeydown);
+      
+      this._clearFocusableCache();
+      this._trapMutationObserver = new MutationObserver(this._clearFocusableCache);
+      this._trapMutationObserver.observe(this, { childList: true, subtree: true, attributes: true, attributeFilter: ['tabindex', 'disabled', 'hidden', 'inert'] });
+      if (this.shadowRoot) {
+        this._trapMutationObserver.observe(this.shadowRoot, { childList: true, subtree: true, attributes: true, attributeFilter: ['tabindex', 'disabled', 'hidden', 'inert'] });
+      }
 
       // Focus the initial element after the current call stack clears.
       // requestAnimationFrame ensures Lit has finished rendering the opened state
       // (e.g. display:none removed) before we attempt to focus.
-      requestAnimationFrame(() => {
-        const target = initialFocus ?? this._getFocusableElements()[0];
-        target?.focus();
-      });
+      if (autofocus) {
+        requestAnimationFrame(() => {
+          const target = initialFocus ?? this._getFocusableElements()[0];
+          target?.focus();
+        });
+      }
     }
 
-    protected _deactivateFocusTrap(): void {
-      this.removeEventListener('keydown', this._boundHandleKeydown);
+    protected _deactivateFocusTrap(returnFocus?: HTMLElement | null): void {
+      this.removeEventListener(
+        'keydown',
+        this._boundHandleKeydown,
+      );
+      
+      if (this._trapMutationObserver) {
+        this._trapMutationObserver.disconnect();
+        this._trapMutationObserver = null;
+      }
+      this._clearFocusableCache();
 
-      // Restore focus to the pre-trap element.
+      // Restore focus to returnFocus element or pre-trap element.
       // Dereference WeakRef — the element may have been removed from the DOM.
-      const previous = this._preTrapFocus?.deref();
+      let target: HTMLElement | null = returnFocus ?? null;
+      if (!target) {
+        const previous = this._preTrapFocus?.deref();
+        if (previous && document.contains(previous)) {
+          target = previous as HTMLElement;
+        }
+      }
       this._preTrapFocus = null;
 
-      if (previous && document.contains(previous)) {
-        (previous as HTMLElement).focus?.();
+      if (target && document.contains(target)) {
+        target.focus?.();
       }
     }
 
     override disconnectedCallback(): void {
       // Safety: always clean up if the element is removed while trap is active.
       this.removeEventListener('keydown', this._boundHandleKeydown);
+      if (this._trapMutationObserver) {
+        this._trapMutationObserver.disconnect();
+        this._trapMutationObserver = null;
+      }
+      this._focusableElementsCache = null;
       this._preTrapFocus = null;
       super.disconnectedCallback();
     }

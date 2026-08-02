@@ -89,9 +89,33 @@ export class ViChipGroup extends ValidityMixin<string[]>(ViElement) {
   }
 
   formResetCallback(): void {
-    this.value = [];
+    const initialValue = this.getAttribute('value');
+    if (initialValue) {
+      try {
+        const parsed = JSON.parse(initialValue);
+        this.value = Array.isArray(parsed) ? parsed : [initialValue];
+      } catch {
+        this.value = [initialValue];
+      }
+    } else {
+      this.value = [];
+    }
     this.status = 'default';
     this.validityMessage = '';
+  }
+
+  formStateRestoreCallback(state: string | File | FormData | null, _mode: 'restore' | 'autocomplete'): void {
+    if (typeof state === 'string') {
+      try {
+        const parsed = JSON.parse(state);
+        this.value = Array.isArray(parsed) ? parsed : [state];
+      } catch {
+        this.value = [state];
+      }
+    } else if (state instanceof FormData) {
+      const values = state.getAll(this.name);
+      this.value = values.map(v => v.toString());
+    }
   }
 
   formDisabledCallback(disabled: boolean): void {

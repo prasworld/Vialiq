@@ -1,0 +1,129 @@
+@use '@vialiq/flux-ui/components/modal';
+@use '@vialiq/flux-ui/styles/variables' as tokens;
+
+:host {
+  display: block;
+  /* Ensure the host doesn't create unwanted layout bounds unless needed,
+     although the native dialog is fixed and escapes host bounds visually. */
+}
+
+/* Map the parts to the base classes we defined in flux-ui */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: var(--vi-modal-backdrop-bg, tokens.$modal-backdrop-bg);
+  backdrop-filter: blur(2px);
+  pointer-events: auto; /* Ensure it captures clicks */
+}
+
+/* Because we are no longer using showModal() (Top Layer), we must explicitly fix the dialog */
+[part="dialog"][open] {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  /* Use flux-ui modal class properties implicitly via @extend, but enforce layout */
+}
+
+[part="dialog"] {
+  @extend .modal-dialog;
+}
+
+[part="header"] {
+  @extend .modal-header;
+}
+
+[part="title"] {
+  @extend .modal-title;
+}
+
+[part="body"] {
+  @extend .modal-body;
+}
+
+[part="footer"] {
+  @extend .modal-footer;
+}
+
+/* Variant mappings are handled via host classes or direct attributes in Lit,
+   but we can map the specific structures here too */
+
+.modal-alert-icon {
+  @extend .modal-alert-icon;
+}
+
+.modal-alert-content {
+  @extend .modal-alert-content;
+}
+
+/* ============================================================================
+   Variants Override (Specificity Fixes)
+   ============================================================================ */
+
+[part="dialog"].modal-variant-drawer {
+  margin: 0;
+  
+  &.placement-right {
+    margin-left: auto;
+  }
+  
+  &.placement-left {
+    margin-right: auto;
+  }
+}
+
+/* ============================================================================
+   Positioning
+   ============================================================================ */
+
+/* Native dialogs center themselves with margin: auto. We override the margins for positions. */
+[part="dialog"].modal-position-top {
+  margin-top: var(--vi-modal-offset-y, 5vh);
+  margin-bottom: auto;
+}
+
+[part="dialog"].modal-position-bottom {
+  margin-top: auto;
+  margin-bottom: var(--vi-modal-offset-y, 5vh);
+}
+
+[part="dialog"].modal-position-left {
+  margin-left: var(--vi-modal-offset-x, 5vw);
+  margin-right: auto;
+}
+
+[part="dialog"].modal-position-right {
+  margin-left: auto;
+  margin-right: var(--vi-modal-offset-x, 5vw);
+}
+
+[part="dialog"].modal-position-top-left {
+  margin: var(--vi-modal-offset-y, 5vh) auto auto var(--vi-modal-offset-x, 5vw);
+}
+
+[part="dialog"].modal-position-top-right {
+  margin: var(--vi-modal-offset-y, 5vh) var(--vi-modal-offset-x, 5vw) auto auto;
+}
+
+[part="dialog"].modal-position-bottom-left {
+  margin: auto auto var(--vi-modal-offset-y, 5vh) var(--vi-modal-offset-x, 5vw);
+}
+
+[part="dialog"].modal-position-bottom-right {
+  margin: auto var(--vi-modal-offset-x, 5vw) var(--vi-modal-offset-y, 5vh) auto;
+}
+
+/* ============================================================================
+   Maximize & Fullscreen
+   ============================================================================ */
+
+/* When maximized, dialog takes full viewport, overwriting any positioning */
+.is-maximized {
+  margin: 0 !important;
+  max-width: 100vw !important;
+  max-height: 100vh !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  border-radius: 0 !important;
+  transform: none !important; /* Disables drag transform when maximized */
+}

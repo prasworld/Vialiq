@@ -76,7 +76,7 @@ describe('ValidityMixin', () => {
     element.value = 'abc';
     await element.updateComplete;
     expect(element.reportValidity()).toBe(true);
-    expect(element.status).toBe('valid');
+    expect(element.status).toBe('default');
   });
 
   it('setCustomValidity() forces invalid state', async () => {

@@ -591,6 +591,7 @@ vi-checkbox[status="invalid"] { --vi-checkbox-border-color: var(--vi-color-error
 | `--vi-alert-border-width` | `tokens.$border-width-thin` | Left accent border width |
 | `--vi-alert-icon-size` | `20px` | Status icon size |
 | `--vi-alert-gap` | `12px` | Gap: icon→content |
+| `--vi-alert-floating-z-index` | `10000` | Stacking context when floating |
 | `--vi-alert-neutral-bg` | `tokens.$layer-02` | Neutral background |
 | `--vi-alert-neutral-color` | `tokens.$color-foreground` | Neutral text |
 | `--vi-alert-neutral-border` | `tokens.$border-04` | Neutral accent border |
@@ -640,7 +641,7 @@ vi-checkbox[status="invalid"] { --vi-checkbox-border-color: var(--vi-color-error
 | `--vi-modal-max-width-lg` | `800px` | Large max-width |
 | `--vi-modal-header-border` | `var(--vi-color-border)` | Header divider |
 | `--vi-modal-footer-border` | `var(--vi-color-border)` | Footer divider |
-| `--vi-modal-z-index` | `1000` | Stacking context |
+| `--vi-modal-z-index` | `8000` | Stacking context |
 | `--vi-modal-animate-duration` | `200ms` | Open/close transition |
 
 ---

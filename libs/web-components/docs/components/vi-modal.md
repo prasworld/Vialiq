@@ -2,15 +2,15 @@
 
 **Package:** `@vialiq/web-components/modal`  
 **Element:** `<vi-modal>`  
-**Status:** 🔲 Planned — Phase 2  
+**Status:** ✅ Developed  
 **Flux UI base:** `libs/flux-ui/components/_modal.scss`  
-**Mixin:** `FocusTrapMixin`
+**Mixins:** `FocusTrapMixin`, `DraggableMixin`
 
 ---
 
 ## Purpose
 
-A focus-trapping dialog that blocks interaction with the page behind it. Built on the native `<dialog>` element for correct accessibility semantics and browser-native backdrop handling.
+A focus-trapping dialog that blocks interaction with the page behind it. Built using the native `<dialog>` element for accessibility semantics, but managed manually via an `OverlayManager` to support robust, deterministic stacking of infinite modals and tooltips.
 
 **Modal variants:**
 
@@ -39,8 +39,12 @@ A focus-trapping dialog that blocks interaction with the page behind it. Built o
 | `open` | `open` | `boolean` | `false` | ✅ | Controls visibility |
 | `variant` | `variant` | `ModalVariant` | `'default'` | ✅ | Layout variant |
 | `size` | `size` | `ModalSize` | `'md'` | ✅ | Dialog dimensions |
+| `position` | `position` | `ModalPosition` | `'center'` | ✅ | Dialog position |
 | `closable` | `closable` | `boolean` | `true` | — | Show × button in header |
+| `maximizable` | `maximizable` | `boolean` | `false` | — | Show maximize button in header |
+| `draggable` | `draggable` | `boolean` | `false` | ✅ | Allows the modal to be dragged by its header |
 | `persistent` | `persistent` | `boolean` | `false` | — | Prevent close on `Escape` and backdrop click |
+| `autofocus` | `autofocus` | `boolean` | `true` | — | Focus first element on open |
 | `scrollable` | `scrollable` | `boolean` | `true` | — | Body scrolls; header/footer stay fixed |
 | `drawerPlacement` | `drawer-placement` | `DrawerPlacement` | `'right'` | — | Side for drawer variant |
 | `alertVariant` | `alert-variant` | `AlertDialogVariant` | `'info'` | — | Icon+colour for alert variant |
@@ -48,7 +52,8 @@ A focus-trapping dialog that blocks interaction with the page behind it. Built o
 
 ```typescript
 type ModalVariant = 'default' | 'drawer' | 'alert';
-type ModalSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'fullscreen';
+type ModalSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'full-width' | 'fullscreen';
+type ModalPosition = 'center' | 'top' | 'bottom' | 'left' | 'right' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
 type DrawerPlacement = 'right' | 'left';
 type AlertDialogVariant = 'info' | 'success' | 'warning' | 'danger';
 ```
@@ -62,6 +67,7 @@ type AlertDialogVariant = 'info' | 'success' | 'warning' | 'danger';
 | `md` | 640px | 90vh |
 | `lg` | 800px | 90vh |
 | `xl` | 960px | 90vh |
+| `full-width` | 100vw | 90vh |
 | `fullscreen` | 100vw | 100vh |
 
 **Drawer dimensions:**
@@ -106,11 +112,12 @@ type AlertDialogVariant = 'info' | 'success' | 'warning' | 'danger';
 
 | Part | Element |
 |------|---------|
-| `backdrop` | `::backdrop` (native `<dialog>` backdrop) |
+| `backdrop` | The custom `<div class="modal-backdrop">` |
 | `dialog` | The `<dialog>` element |
 | `header` | Header row |
 | `title` | Title text |
 | `close-btn` | × close button |
+| `maximize-btn` | Maximize/Restore button |
 | `body` | Scrollable body |
 | `footer` | Footer row |
 | `icon` | Alert variant icon wrapper |
@@ -141,6 +148,7 @@ type AlertDialogVariant = 'info' | 'success' | 'warning' | 'danger';
 
 ```
 vi-modal
+├── div.modal-backdrop (when open)
 └── dialog[part="dialog"][open?] role="dialog" aria-modal="true" aria-labelledby="modal-title"
     │
     ├── header[part="header"] .modal-header  (default variant)
@@ -205,7 +213,7 @@ const FOCUSABLE = [
 | Modal | `aria-modal="true"` |
 | Label | `aria-labelledby` → title element id |
 | Alert dialog | `role="alertdialog"` when `variant="alert"` and `alert-variant` is warning/danger |
-| Backdrop | `::backdrop` CSS pseudo-element (native `<dialog>`) |
+| Backdrop | Custom `div` layered immediately behind the `<dialog>` |
 | Focus | First focusable element receives focus on open |
 | Focus return | Returns to trigger on close |
 | Scroll lock | `body { overflow: hidden }` while modal open |
@@ -333,11 +341,13 @@ this.modal.addEventListener('vialiq-request-close', (e: Event) => {
 
 ## Implementation Notes
 
-- Uses native `<dialog>` element. `dialog.showModal()` is called when `open` changes to `true`; `dialog.close()` when `false`. No polyfill needed (all modern browsers, 2022+).
-- Backdrop is `::backdrop` pseudo-element styled via CSS — not a separate `<div>`.
-- `scrollable` is implemented by setting `overflow-y: auto` on the body slot wrapper and `overflow: hidden` on the dialog itself (header/footer stay fixed).
-- For the drawer variant, `dialog` uses `position: fixed; inset: 0 0 0 auto; width: var(--vi-modal-drawer-width); border-radius: 0; animation: vi-modal-drawer-enter`.
-- `vialiq-request-close` is fired before any close action. The handler calls `e.preventDefault()` to cancel. After a tick (rAF), if not prevented, `close()` proceeds.
+- **Native Dialog vs. Top Layer:** We use the native `<dialog>` element for accessibility and semantics, but we do **not** use the native `.showModal()` API. Browser implementations of the Top Layer do not allow custom `z-index` coordination with other fixed elements (like tooltips or dropdowns that are not also in the Top Layer). 
+- **Teleportation & Stacking:** When `open` becomes `true`, the `<vi-modal>` DOM element detaches from its original location and teleports itself to `document.body`. This guarantees a pristine stacking context. The global `OverlayManager` singleton then assigns an escalating `z-index` to both the custom backdrop and the dialog itself, allowing for infinite modals and correctly layered popovers.
+- **Draggability:** Because teleportation disconnects the component, any event listeners added during `updated` would normally be lost. `DraggableMixin` explicitly checks for reconnection in `connectedCallback` to re-attach pointer event listeners. The drag state sets a `translate3d` transform on the dialog.
+- **Floating UI Compatibility:** When the modal is not actively being dragged, the `transform` property is explicitly cleared (set to `''`). This is a critical requirement for `Floating UI`, ensuring that hoisted child components (like `vi-combobox`'s `fixed` listbox) natively escape the modal's boundaries without being clipped.
+- **Focus Management:** Handled by `FocusTrapMixin`, which captures focus inside the modal and restores it to the original trigger element upon closure.
+- **Scroll Lock:** The `OverlayManager` automatically adds `overflow: hidden` to the body when the first modal opens and removes it when the last modal closes.
+- `vialiq-request-close` is fired before any close action. The handler calls `e.preventDefault()` to cancel. If not prevented, `close()` proceeds.
 
 ---
 

@@ -395,3 +395,26 @@ $z-index-map: (
   'popover':  $z-index-popover,
   'tooltip':  $z-index-tooltip,
 );
+
+// -- Component: Modal --------------------------------------------------------
+
+$modal-bg:                     var(--vi-modal-bg,                     $color-background);
+$modal-border-radius:          var(--vi-modal-border-radius,          $border-radius-lg);
+$modal-shadow:                 var(--vi-modal-shadow,                 $shadow-xl);
+$modal-header-padding:         var(--vi-modal-header-padding,         20px 24px);
+$modal-body-padding:           var(--vi-modal-body-padding,           24px);
+$modal-footer-padding:         var(--vi-modal-footer-padding,         16px 24px);
+$modal-footer-bg:              var(--vi-modal-footer-bg,              $layer-02);
+$modal-footer-border-color:    var(--vi-modal-footer-border-color,    $border-02);
+$modal-backdrop-bg:            var(--vi-modal-backdrop-bg,            rgba(0, 0, 0, 0.5));
+$modal-drawer-width:           var(--vi-modal-drawer-width,           480px);
+$modal-z-index:                var(--vi-modal-z-index,                $z-index-modal);
+$tooltip-z-index:              var(--vi-tooltip-z-index,              $z-index-tooltip);
+$alert-floating-z-index:       var(--vi-alert-floating-z-index,       1080);
+$modal-animation-duration:     var(--vi-modal-animation-duration,     200ms);
+
+$modal-max-width-xs:           var(--vi-modal-max-width-xs,           320px);
+$modal-max-width-sm:           var(--vi-modal-max-width-sm,           480px);
+$modal-max-width-md:           var(--vi-modal-max-width-md,           640px);
+$modal-max-width-lg:           var(--vi-modal-max-width-lg,           800px);
+$modal-max-width-xl:           var(--vi-modal-max-width-xl,           960px);

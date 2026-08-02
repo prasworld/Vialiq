@@ -185,17 +185,17 @@ describe('vi-chip-group', () => {
 
   describe('Missing Branch Coverage', () => {
     it('handles form reset, state restore, and keydown default', async () => {
-      render(html`<form><vi-chip-group name="cg" value="1"><vi-chip value="1">1</vi-chip></vi-chip-group></form>`, container);
+      render(html`<form><vi-chip-group name="cg" value='["1"]'><vi-chip value="1">1</vi-chip></vi-chip-group></form>`, container);
       const form = document.querySelector('form')!;
       const group = document.querySelector('vi-chip-group') as any;
       await group.updateComplete;
 
-      group.value = '2';
+      group.value = ['2'];
       form.reset();
-      expect(group.value).toBe('1'); 
+      expect(group.value).toEqual(['1']); 
 
       group.formStateRestoreCallback('3', 'restore');
-      expect(group.value).toBe('3');
+      expect(group.value).toEqual(['3']);
 
       const result = await browser.execute((g: any) => {
         const listbox = g.shadowRoot!.querySelector('[role="listbox"]') as HTMLElement;
@@ -242,7 +242,7 @@ describe('vi-chip-group', () => {
 
       const isValid = group.checkValidity();
       expect(isValid).toBe(false);
-      expect(group.validityMessage).not.toBe('');
+      expect(group.validationMessage).not.toBe('');
     });
   });
 });
