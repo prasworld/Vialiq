@@ -65,6 +65,10 @@ export class FloatingController implements ReactiveController {
     const floating = this.options.floating();
     if (!ref || !floating) return;
 
+    // autoUpdate automatically cleans up previous listeners if called multiple times,
+    // but it's safer to just track and call cleanup manually.
+    if (this._cleanup) this.stop();
+
     const hoist = this.options.hoist?.() ?? false;
 
     // Register with OverlayManager if hoisted
@@ -72,10 +76,6 @@ export class FloatingController implements ReactiveController {
       this._overlayZIndex = OverlayManager.register(floating, 'dropdown');
       floating.style.zIndex = this._overlayZIndex.toString();
     }
-
-    // autoUpdate automatically cleans up previous listeners if called multiple times,
-    // but it's safer to just track and call cleanup manually.
-    if (this._cleanup) this.stop();
 
     this._cleanup = autoUpdate(
       ref,

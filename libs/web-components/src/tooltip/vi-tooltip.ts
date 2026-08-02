@@ -112,17 +112,23 @@ export class ViTooltip extends ViElement {
     super.connectedCallback();
   }
 
-override disconnectedCallback(): void {
-  this._clearTimeouts();
-  document.removeEventListener('pointerdown', this._handleDocumentClick);
+  override disconnectedCallback(): void {
+    this._clearTimeouts();
+    document.removeEventListener('pointerdown', this._handleDocumentClick);
 
-  if (this._cleanupAutoUpdate) {
-    this._cleanupAutoUpdate();
-    this._cleanupAutoUpdate = undefined;
+    if (this._cleanupAutoUpdate) {
+      this._cleanupAutoUpdate();
+      this._cleanupAutoUpdate = undefined;
+    }
+    
+    if (this._tooltipPanel && this._overlayZIndex !== null) {
+      OverlayManager.unregister(this._tooltipPanel);
+      this._overlayZIndex = null;
+    }
+
+    this._removeTriggerAria();
+    super.disconnectedCallback();
   }
-  this._removeTriggerAria();
-  super.disconnectedCallback();
-}
 
   protected override firstUpdated(): void {
     // Defer initialization to avoid Lit's "change in update" warning

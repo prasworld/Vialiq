@@ -90,7 +90,7 @@ describe('vi-modal', () => {
     });
 
     el.close();
-    await el.updateComplete;
+    await new Promise(r => setTimeout(r, 350));
 
     expect(requestCloseFired).toBe(true);
     expect(closeFired).toBe(true);
@@ -113,7 +113,7 @@ describe('vi-modal', () => {
     });
 
     el.close();
-    await el.updateComplete;
+    await new Promise(r => setTimeout(r, 350));
 
     expect(closeFired).toBe(false);
     expect(el.open).toBe(true); // Should still be open
@@ -133,7 +133,7 @@ describe('vi-modal', () => {
     expect(closeBtn).toBeTruthy();
 
     closeBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
-    await el.updateComplete;
+    await new Promise(r => setTimeout(r, 350));
 
     expect(closeReason).toBe('button');
     expect(el.open).toBe(false);
@@ -175,7 +175,7 @@ describe('vi-modal', () => {
     const clickEvent2 = new MouseEvent('click', { bubbles: true, cancelable: true });
     Object.defineProperty(clickEvent2, 'target', { value: backdrop });
     backdrop.dispatchEvent(clickEvent2);
-    await el.updateComplete;
+    await new Promise(r => setTimeout(r, 350));
 
     // Now it should close automatically with reason 'backdrop'
     expect(closeReason).toBe('backdrop');
@@ -265,7 +265,7 @@ describe('vi-modal', () => {
     await el.updateComplete;
 
     el.close();
-    await el.updateComplete;
+    await new Promise(r => setTimeout(r, 350));
 
     expect(document.activeElement).toBe(targetBtn);
     targetBtn.remove();

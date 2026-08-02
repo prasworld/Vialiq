@@ -244,6 +244,8 @@ export class ViModal extends DraggableMixin(FocusTrapMixin(ViElement)) {
       } else {
         // Run exit animation, then tear down
         this._runExitAnimation().then(() => {
+          if (this.open) return;
+
           OverlayManager.unregister(this);
           this._stopDrag();
           this._removeInert();
