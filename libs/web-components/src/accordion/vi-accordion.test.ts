@@ -449,14 +449,21 @@ describe('vi-accordion & vi-accordion-item', () => {
       const accordion = document.querySelector('vi-accordion') as ViAccordion;
       await accordion.updateComplete;
 
+      let changeFired = false;
+      accordion.addEventListener('vi-accordion-change', () => {
+        changeFired = true;
+      });
+
       const untrackedItem = document.createElement('div');
+      accordion.appendChild(untrackedItem);
+
       const event = new CustomEvent('vi-accordion-open', {
         bubbles: true,
         composed: true
       });
       untrackedItem.dispatchEvent(event);
       
-      expect(accordion).toBeTruthy();
+      expect(changeFired).toBe(false);
     });
   });
 

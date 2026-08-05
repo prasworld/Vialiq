@@ -34,8 +34,8 @@ export type ChipSize = 'sm' | 'md' | 'lg';
  * @csspart remove-btn    - × remove button
  * @csspart check-icon    - Checkmark when selected
  *
- * @fires vialiq-select - Fired when the chip is clicked / activated
- * @fires vialiq-remove - Fired when the × remove button is clicked
+ * @fires vi-chip-select - Fired when the chip is clicked / activated
+ * @fires vi-chip-remove - Fired when the × remove button is clicked
  */
 @customElement('vi-chip')
 export class ViChip extends FocusableMixin(ViElement) {

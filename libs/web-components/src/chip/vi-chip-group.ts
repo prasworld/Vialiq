@@ -62,7 +62,7 @@ export class ViChipGroup extends ValidityMixin<string[]>(ViElement) {
   constructor() {
     super();
     this._mutationObserver = new MutationObserver(() => this._syncChips());
-    this.addEventListener('vialiq-select', this._handleChipSelect as EventListener);
+    this.addEventListener('vi-chip-select', this._handleChipSelect as EventListener);
   }
 
   override connectedCallback(): void {

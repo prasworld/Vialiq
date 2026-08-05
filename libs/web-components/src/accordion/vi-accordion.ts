@@ -76,8 +76,9 @@ export class ViAccordion extends ViElement {
   private _handleBeforeItemOpen(e: Event): void {
     if (this.multi) return;
 
-    const target = e.target as ViAccordionItem;
-    const targetId = target.itemId;
+    const target = e.target as HTMLElement;
+    if (target.tagName.toLowerCase() !== 'vi-accordion-item') return;
+    const targetId = (target as ViAccordionItem).itemId;
 
     const items = this._getAccordionItems();
     const openItems = items.filter(item => item.open && item.itemId !== targetId);
@@ -99,8 +100,9 @@ export class ViAccordion extends ViElement {
   }
 
   private _handleItemOpen(e: Event): void {
-    const target = e.target as ViAccordionItem;
-    const targetId = target.itemId;
+    const target = e.target as HTMLElement;
+    if (target.tagName.toLowerCase() !== 'vi-accordion-item') return;
+    const targetId = (target as ViAccordionItem).itemId;
 
     if (!this.multi) {
       const items = this._getAccordionItems();
@@ -122,8 +124,9 @@ export class ViAccordion extends ViElement {
   }
 
   private _handleItemClose(e: Event): void {
-    const target = e.target as ViAccordionItem;
-    this._dispatchChangeEvent(target.itemId, false);
+    const target = e.target as HTMLElement;
+    if (target.tagName.toLowerCase() !== 'vi-accordion-item') return;
+    this._dispatchChangeEvent((target as ViAccordionItem).itemId, false);
   }
 
   private _dispatchChangeEvent(itemId: string, open: boolean): void {
