@@ -33,7 +33,7 @@ export type CheckboxSize = 'xs' | 'sm' | 'md' | 'lg';
  *
  * @slot - Label text/content.
  *
- * @fires {CustomEvent<{checked:boolean; value:string}>} vialiq-change - Fires when user toggles checked state.
+ * @fires {CustomEvent<{checked:boolean; value:string}>} vi-checkbox-change - Fires when user toggles checked state.
  *
  * @csspart box   - The visual checkbox square (custom-drawn box).
  * @csspart check - The SVG checkmark/indeterminate dash container.
@@ -154,7 +154,7 @@ export class ViCheckbox extends ValidityMixin(FocusableMixin(ViElement)) {
     this.indeterminate = input.indeterminate;
 
     this.dispatchEvent(
-      new CustomEvent<{ checked: boolean; value: string }>('vialiq-change', {
+      new CustomEvent<{ checked: boolean; value: string }>('vi-checkbox-change', {
         detail: { checked: this.checked, value: this.value },
         bubbles: true,
         composed: true,

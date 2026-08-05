@@ -99,7 +99,7 @@ export class ViComboboxItem extends ViElement {
       return;
     }
     this.dispatchEvent(
-      new CustomEvent('vi-item-select', {
+      new CustomEvent('vi-combobox-item-select', {
         detail: { item: this },
         bubbles: true,
         composed: true,

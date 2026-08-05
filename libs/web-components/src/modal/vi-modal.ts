@@ -239,7 +239,7 @@ export class ViModal extends DraggableMixin(FocusTrapMixin(ViElement)) {
         this.updateComplete.then(() => this._runEnterAnimation());
 
         this.dispatchEvent(
-          new CustomEvent('vialiq-open', { bubbles: true, composed: true }),
+          new CustomEvent('vi-modal-open', { bubbles: true, composed: true }),
         );
       } else {
         // Run exit animation, then tear down
@@ -272,7 +272,7 @@ export class ViModal extends DraggableMixin(FocusTrapMixin(ViElement)) {
           this._originalNextSibling = null;
 
           this.dispatchEvent(
-            new CustomEvent('vialiq-close', {
+            new CustomEvent('vi-modal-close', {
               bubbles: true,
               composed: true,
               detail: { reason: this._closeReason },
@@ -421,7 +421,7 @@ export class ViModal extends DraggableMixin(FocusTrapMixin(ViElement)) {
   public close(
     reason: 'escape' | 'backdrop' | 'button' | 'programmatic' = 'programmatic',
   ): void {
-    const requestCloseEvent = new CustomEvent('vialiq-request-close', {
+    const requestCloseEvent = new CustomEvent('vi-modal-request-close', {
       bubbles: true,
       composed: true,
       cancelable: true,
@@ -463,7 +463,7 @@ export class ViModal extends DraggableMixin(FocusTrapMixin(ViElement)) {
       if (this.persistent) {
         this._shakeDialog();
         this.dispatchEvent(
-          new CustomEvent('vialiq-request-close', {
+          new CustomEvent('vi-modal-request-close', {
             bubbles: true,
             composed: true,
             cancelable: true,
@@ -476,14 +476,14 @@ export class ViModal extends DraggableMixin(FocusTrapMixin(ViElement)) {
     }
   }
 
-  private _handleBackdropClick(e: MouseEvent): void {
+  private _handleBackdropClick(_e: MouseEvent): void {
     // Bound directly to the custom backdrop div, so we don't need target check
     if (!this.persistent) {
       this.close('backdrop');
     } else {
       this._shakeDialog();
       this.dispatchEvent(
-        new CustomEvent('vialiq-request-close', {
+        new CustomEvent('vi-modal-request-close', {
           bubbles: true,
           composed: true,
           cancelable: true,

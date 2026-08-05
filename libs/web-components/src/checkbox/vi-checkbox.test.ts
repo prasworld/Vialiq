@@ -88,7 +88,7 @@ describe('vi-checkbox', () => {
   });
 
   describe('Interactions and Events', () => {
-    it('should toggle checked state and emit vialiq-change on click', async () => {
+    it('should toggle checked state and emit vi-checkbox-change on click', async () => {
       let changeFired = false;
       let lastChecked = false;
       let lastValue = '';
@@ -97,7 +97,7 @@ describe('vi-checkbox', () => {
         html`
           <vi-checkbox
             value="agree"
-            @vialiq-change=${(e: CustomEvent<{ checked: boolean; value: string }>) => {
+            @vi-checkbox-change=${(e: CustomEvent<{ checked: boolean; value: string }>) => {
               changeFired = true;
               lastChecked = e.detail.checked;
               lastValue = e.detail.value;
@@ -129,7 +129,7 @@ describe('vi-checkbox', () => {
         html`
           <vi-checkbox
             disabled
-            @vialiq-change=${() => (changeFired = true)}
+            @vi-checkbox-change=${() => (changeFired = true)}
           >
             Agree
           </vi-checkbox>

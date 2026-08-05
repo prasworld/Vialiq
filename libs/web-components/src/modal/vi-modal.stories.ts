@@ -203,7 +203,7 @@ export const ProgrammaticGuard: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Demonstrates listening to `vialiq-request-close` to prevent the modal from closing if there are unsaved changes. Cancel the event via `e.preventDefault()`.',
+        story: 'Demonstrates listening to `vi-modal-request-close` to prevent the modal from closing if there are unsaved changes. Cancel the event via `e.preventDefault()`.',
       },
     },
   },
@@ -221,7 +221,7 @@ export const ProgrammaticGuard: Story = {
       <vi-modal
         id="modal-guard"
         size="sm"
-        @vialiq-request-close=${handleRequestClose}
+        @vi-modal-request-close=${handleRequestClose}
       >
         <span slot="header">Edit Record</span>
         <vi-input placeholder="Type something..."></vi-input>
@@ -338,22 +338,22 @@ When \`persistent\` is \`true\`, pressing **Escape** or clicking the **backdrop*
 will not close the modal. Instead, the dialog shakes to signal "blocked" — 
 matching the macOS alert dialog and MUI Dialog patterns.
 
-The modal also dispatches a \`vialiq-request-close\` event with \`detail.reason\`
+The modal also dispatches a \`vi-modal-request-close\` event with \`detail.reason\`
 so consumers can show a custom in-modal warning message instead.
         `,
       },
     },
   },
   render: () => {
-    let warningVisible = false;
+    let _warningVisible = false;
 
-    const handleRequestClose = (e: Event) => {
+    const handleRequestClose = (_e: Event) => {
       const modal = document.getElementById('modal-persistent-shake') as ViModal | null;
       const warning = modal?.querySelector<HTMLElement>('.shake-warning');
       if (!warning) return;
 
       // Show the warning message on first attempt, escalate on repeated attempts
-      warningVisible = true;
+      _warningVisible = true;
       warning.style.display = 'block';
       warning.animate(
         [{ opacity: 0, transform: 'translateY(-4px)' }, { opacity: 1, transform: 'translateY(0)' }],
@@ -371,7 +371,7 @@ so consumers can show a custom in-modal warning message instead.
         persistent
         closable=${false}
         size="sm"
-        @vialiq-request-close=${handleRequestClose}
+        @vi-modal-request-close=${handleRequestClose}
       >
         <span slot="header">⚠️ Action Required</span>
         <div>

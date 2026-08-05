@@ -46,8 +46,8 @@ export type InputSize = 'xs' | 'sm' | 'md' | 'lg';
  *
  * @slot helper - Helper text shown below the input.
  *
- * @fires {CustomEvent<{value:string}>} vialiq-input  - Every keystroke. Bubbles, composed.
- * @fires {CustomEvent<{value:string}>} vialiq-change - Value committed (blur). Bubbles, composed.
+ * @fires {CustomEvent<{value:string}>} vi-input-input  - Every keystroke. Bubbles, composed.
+ * @fires {CustomEvent<{value:string}>} vi-input-change - Value committed (blur). Bubbles, composed.
  * @fires {Event}                       invalid        - Cancelable; fires when checkValidity() fails.
  *
  * @csspart field      - The outer `<div>` wrapper
@@ -184,7 +184,7 @@ export class ViInput extends ValidityMixin(FocusableMixin(ViElement)) {
     const input = e.target as HTMLInputElement;
     this.value = input.value;
     this.dispatchEvent(
-      new CustomEvent<{ value: string }>('vialiq-input', {
+      new CustomEvent<{ value: string }>('vi-input-input', {
         detail: { value: this.value },
         bubbles: true,
         composed: true,
@@ -197,7 +197,7 @@ export class ViInput extends ValidityMixin(FocusableMixin(ViElement)) {
     const input = e.target as HTMLInputElement;
     this.value = input.value;
     this.dispatchEvent(
-      new CustomEvent<{ value: string }>('vialiq-change', {
+      new CustomEvent<{ value: string }>('vi-input-change', {
         detail: { value: this.value },
         bubbles: true,
         composed: true,

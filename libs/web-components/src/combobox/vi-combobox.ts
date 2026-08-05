@@ -55,14 +55,14 @@ import type {
  * @attr {boolean} highlight-match     - Wrap matched substring in <mark> (default: true)
  * @attr {boolean} open-on-focus       - Open listbox on input focus
  *
- * @fires vi-change - Selection changes ({ value, label, option, data })
- * @fires vi-search - Search query typed ({ query })
- * @fires vi-create - New option created ({ value })
- * @fires vi-remove - Tag removed ({ value, data })
- * @fires vi-clear  - Selection cleared ({ previousValue })
- * @fires vi-open   - Listbox opened
- * @fires vi-close  - Listbox closed
- * @fires vi-filter - Filter completed ({ query, results, matchedValues })
+ * @fires vi-combobox-change - Selection changes ({ value, label, option, data })
+ * @fires vi-combobox-search - Search query typed ({ query })
+ * @fires vi-combobox-create - New option created ({ value })
+ * @fires vi-combobox-remove - Tag removed ({ value, data })
+ * @fires vi-combobox-clear  - Selection cleared ({ previousValue })
+ * @fires vi-combobox-open   - Listbox opened
+ * @fires vi-combobox-close  - Listbox closed
+ * @fires vi-combobox-filter - Filter completed ({ query, results, matchedValues })
  */
 @customElement('vi-combobox')
 export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
@@ -82,7 +82,7 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
   override connectedCallback(): void {
     super.connectedCallback();
     this.addEventListener('keydown', this._handleKeyDown);
-    this.addEventListener('vi-item-select', this._handleSlottedItemSelect as EventListener);
+    this.addEventListener('vi-combobox-item-select', this._handleSlottedItemSelect as EventListener);
     document.addEventListener('click', this._handleOutsideClick);
   }
 
@@ -251,7 +251,7 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     this.removeEventListener('keydown', this._handleKeyDown);
-    this.removeEventListener('vi-item-select', this._handleSlottedItemSelect as EventListener);
+    this.removeEventListener('vi-combobox-item-select', this._handleSlottedItemSelect as EventListener);
     document.removeEventListener('click', this._handleOutsideClick);
     if (this._slotMutationObserver) {
       this._slotMutationObserver.disconnect();
@@ -279,7 +279,7 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
           return;
         }
         this._floatingController.start();
-        this._dispatch('vi-open');
+        this._dispatch('vi-combobox-open');
 
         // Set active index to first selected item if it exists
         const selected = this._getSelectedValues();
@@ -302,7 +302,7 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
           this._filterController.resetSlottedVisibility(this._slottedItems);
         }
         this._floatingController.stop();
-        this._dispatch('vi-close');
+        this._dispatch('vi-combobox-close');
       }
     }
   }
@@ -494,7 +494,7 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
 
     const payloadData = opt.data !== undefined ? opt.data : this._optionDataMap.get(opt.value);
 
-    this._dispatch('vi-change', {
+    this._dispatch('vi-combobox-change', {
       value: nextValue,
       label: opt.label,
       option: opt,
@@ -509,8 +509,8 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
     this.value = updated;
 
     const tagData = this._optionDataMap.get(val);
-    this._dispatch('vi-remove', { value: val, data: tagData });
-    this._dispatch('vi-change', { value: updated });
+    this._dispatch('vi-combobox-remove', { value: val, data: tagData });
+    this._dispatch('vi-combobox-change', { value: updated });
   }
 
   private _handleCreate(): void {
@@ -532,14 +532,14 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
       if (!current.includes(val)) {
         const next = [...current, val];
         this.value = next;
-        this._dispatch('vi-create', { value: val });
-        this._dispatch('vi-change', { value: next });
+        this._dispatch('vi-combobox-create', { value: val });
+        this._dispatch('vi-combobox-change', { value: next });
       }
       this._query = '';
     } else if (this.mode === 'creatable') {
       this.value = val;
-      this._dispatch('vi-create', { value: val });
-      this._dispatch('vi-change', { value: val, label: val });
+      this._dispatch('vi-combobox-create', { value: val });
+      this._dispatch('vi-combobox-change', { value: val, label: val });
       this.close();
       this._query = '';
     }
@@ -557,10 +557,10 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
       if (this.mode === 'multi' || this.mode === 'tags') {
         const next = currentValues.filter((v) => v !== opt.value);
         this.value = next;
-        this._dispatch('vi-change', { value: next });
+        this._dispatch('vi-combobox-change', { value: next });
       } else {
         this.value = '';
-        this._dispatch('vi-change', { value: '' });
+        this._dispatch('vi-combobox-change', { value: '' });
       }
     }
   }
@@ -656,8 +656,8 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
     const prev = this.value;
     this.value = this.mode === 'multi' || this.mode === 'tags' ? [] : '';
     this._query = '';
-    this._dispatch('vi-clear', { previousValue: prev });
-    this._dispatch('vi-change', { value: this.value });
+    this._dispatch('vi-combobox-clear', { previousValue: prev });
+    this._dispatch('vi-combobox-change', { value: this.value });
   }
 
   override focus(options?: FocusOptions): void {

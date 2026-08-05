@@ -47,7 +47,7 @@ describe('vi-chip', () => {
     expect(await removeBtn.getAttribute('aria-label')).toBe('Delete chip');
   });
 
-  it('emits vialiq-select when clicked', async () => {
+  it('emits vi-chip-select when clicked', async () => {
     let selectFired = false;
     let selectDetail: any = null;
 
@@ -56,7 +56,7 @@ describe('vi-chip', () => {
       selectDetail = e.detail;
     };
 
-    render(html`<vi-chip value="val1" @vialiq-select=${onSelect}>Click me</vi-chip>`, container);
+    render(html`<vi-chip value="val1" @vi-chip-select=${onSelect}>Click me</vi-chip>`, container);
     const chip = await $('vi-chip');
 
     // Trigger keyboard/mouse events on host itself as wdio shadow click can be flaky
@@ -69,14 +69,14 @@ describe('vi-chip', () => {
     expect(selectDetail.selected).toBe(true);
   });
 
-  it('emits vialiq-remove when remove button is clicked', async () => {
+  it('emits vi-chip-remove when remove button is clicked', async () => {
     let removeFired = false;
 
     const onRemove = () => {
       removeFired = true;
     };
 
-    render(html`<vi-chip value="val1" removable @vialiq-remove=${onRemove}>Remove me</vi-chip>`, container);
+    render(html`<vi-chip value="val1" removable @vi-chip-remove=${onRemove}>Remove me</vi-chip>`, container);
     const chip = await $('vi-chip');
 
     // Trigger keyboard event on the host as defined
@@ -107,15 +107,15 @@ describe('vi-chip', () => {
     expect(avatarSlotHidden).toBe(false);
   });
 
-  it('does not emit vialiq-select or vialiq-remove when disabled', async () => {
+  it('does not emit vi-chip-select or vi-chip-remove when disabled', async () => {
     render(html`<vi-chip disabled removable>Disabled</vi-chip>`, container);
     const chip = await $('vi-chip');
     
     const result = await browser.execute((elem: any) => {
       let selectFired = false;
       let removeFired = false;
-      elem.addEventListener('vialiq-select', () => selectFired = true);
-      elem.addEventListener('vialiq-remove', () => removeFired = true);
+      elem.addEventListener('vi-chip-select', () => selectFired = true);
+      elem.addEventListener('vi-chip-remove', () => removeFired = true);
       
       const button = elem.shadowRoot.querySelector('button');
       button.click();
@@ -140,8 +140,8 @@ describe('vi-chip', () => {
     const result = await browser.execute((elem: any) => {
       let selectFired = 0;
       let removeFired = 0;
-      elem.addEventListener('vialiq-select', () => selectFired++);
-      elem.addEventListener('vialiq-remove', () => removeFired++);
+      elem.addEventListener('vi-chip-select', () => selectFired++);
+      elem.addEventListener('vi-chip-remove', () => removeFired++);
       
       const button = elem.shadowRoot.querySelector('button');
       

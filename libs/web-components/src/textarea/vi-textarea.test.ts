@@ -89,11 +89,11 @@ describe('vi-textarea', () => {
   });
 
   describe('Value binding and events', () => {
-    it('should emit vialiq-textarea-input event on text entry', async () => {
+    it('should emit vi-textarea-input event on text entry', async () => {
       let inputVal = '';
       render(
         html`<vi-textarea
-          @vialiq-textarea-input=${(e: CustomEvent<{ value: string }>) =>
+          @vi-textarea-input=${(e: CustomEvent<{ value: string }>) =>
             (inputVal = e.detail.value)}
         ></vi-textarea>`,
         container,
@@ -114,11 +114,11 @@ describe('vi-textarea', () => {
       expect(host.value).toBe('hello');
     });
 
-    it('should emit vialiq-textarea-change event on blur', async () => {
+    it('should emit vi-textarea-change event on blur', async () => {
       let changeVal = '';
       render(
         html`<vi-textarea
-          @vialiq-textarea-change=${(e: CustomEvent<{ value: string }>) =>
+          @vi-textarea-change=${(e: CustomEvent<{ value: string }>) =>
             (changeVal = e.detail.value)}
         ></vi-textarea>`,
         container,

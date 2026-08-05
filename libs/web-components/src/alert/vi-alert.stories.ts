@@ -153,7 +153,7 @@ export const SuccessAutoHide: Story = {
           auto-hide-duration=${ifDefined(args.autoHideDuration)}
           icon=${ifDefined(args.icon)}
           ?no-icon=${args.noIcon}
-          @vialiq-alert-close=${(e: CustomEvent<{ id: string }>) => {
+          @vi-alert-close=${(e: CustomEvent<{ id: string }>) => {
             const alert = e.target as HTMLElement;
             // The actual removal needs to be handled by the host to mimic angular/react host removing it.
             // Using a simple timeout to remove from DOM since standard alert handles its own opacity collapse.

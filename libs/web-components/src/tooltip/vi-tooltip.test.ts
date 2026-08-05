@@ -120,8 +120,8 @@ describe('vi-tooltip', () => {
     let showEventFired = false;
     let hideEventFired = false;
 
-    host.addEventListener('vialiq-show', () => { showEventFired = true; });
-    host.addEventListener('vialiq-hide', () => { hideEventFired = true; });
+    host.addEventListener('vi-tooltip-show', () => { showEventFired = true; });
+    host.addEventListener('vi-tooltip-hide', () => { hideEventFired = true; });
 
     // Initially closed
     expect(panel.matches(':popover-open')).toBe(false);

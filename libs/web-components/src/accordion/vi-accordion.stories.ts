@@ -157,11 +157,11 @@ export const EventCancellation: Story = {
         <vi-accordion style="max-width: 600px;">
           <vi-accordion-item
             label="Conditional Accordion Section"
-            @vialiq-accordion-before-open=${handleBeforeOpen}
-            @vialiq-accordion-before-close=${handleBeforeClose}
+            @vi-accordion-before-open=${handleBeforeOpen}
+            @vi-accordion-before-close=${handleBeforeClose}
           >
             <p style="margin: 0; line-height: 1.5; color: #4b5563; font-size: 0.875rem;">
-              Try toggling this section with the checkboxes enabled. This demonstrates how parent applications can dynamically inspect conditions (such as unsaved forms or missing validation states) and intercept the <code>vialiq-accordion-before-open</code> and <code>vialiq-accordion-before-close</code> events.
+              Try toggling this section with the checkboxes enabled. This demonstrates how parent applications can dynamically inspect conditions (such as unsaved forms or missing validation states) and intercept the <code>vi-accordion-before-open</code> and <code>vi-accordion-before-close</code> events.
             </p>
           </vi-accordion-item>
         </vi-accordion>
@@ -209,7 +209,7 @@ export const CoordinatedCancellation: Story = {
             item-id="sec-1"
             label="Section 1: Required Form Inputs (Open by default)"
             open
-            @vialiq-accordion-before-close=${handleBeforeCloseSection1}
+            @vi-accordion-before-close=${handleBeforeCloseSection1}
           >
             <p style="margin: 0; line-height: 1.5; color: #4b5563; font-size: 0.875rem;">
               This section is configured to prevent closure when the checkbox above is checked. In single-open mode (multi=false), attempting to open any other section will trigger a close check on Section 1. Since Section 1 prevents closing, the other sections will remain closed. In multi-open mode (multi=true), you can open other sections freely alongside Section 1.

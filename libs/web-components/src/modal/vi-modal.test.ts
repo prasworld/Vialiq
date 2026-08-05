@@ -79,12 +79,12 @@ describe('vi-modal', () => {
     let requestCloseFired = false;
     let closeFired = false;
 
-    el.addEventListener('vialiq-request-close', () => {
+    el.addEventListener('vi-modal-request-close', () => {
       requestCloseFired = true;
       // Let it continue to actual close
     });
 
-    el.addEventListener('vialiq-close', (e: Event) => {
+    el.addEventListener('vi-modal-close', (e: Event) => {
       closeFired = true;
       expect((e as CustomEvent).detail.reason).toBe('programmatic');
     });
@@ -104,11 +104,11 @@ describe('vi-modal', () => {
 
     let closeFired = false;
 
-    el.addEventListener('vialiq-request-close', (e: Event) => {
+    el.addEventListener('vi-modal-request-close', (e: Event) => {
       e.preventDefault();
     });
 
-    el.addEventListener('vialiq-close', () => {
+    el.addEventListener('vi-modal-close', () => {
       closeFired = true;
     });
 
@@ -125,7 +125,7 @@ describe('vi-modal', () => {
     await el.updateComplete;
 
     let closeReason = '';
-    el.addEventListener('vialiq-close', (e: Event) => {
+    el.addEventListener('vi-modal-close', (e: Event) => {
       closeReason = (e as CustomEvent).detail.reason;
     });
 
@@ -145,7 +145,7 @@ describe('vi-modal', () => {
     await el.updateComplete;
 
     let requestCloseFired = false;
-    el.addEventListener('vialiq-request-close', () => {
+    el.addEventListener('vi-modal-request-close', () => {
         requestCloseFired = true;
     });
 
@@ -168,7 +168,7 @@ describe('vi-modal', () => {
     await el.updateComplete;
 
     let closeReason = '';
-    el.addEventListener('vialiq-close', (e: Event) => {
+    el.addEventListener('vi-modal-close', (e: Event) => {
       closeReason = (e as CustomEvent).detail.reason;
     });
 

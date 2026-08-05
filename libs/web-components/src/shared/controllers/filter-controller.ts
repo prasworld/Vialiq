@@ -68,7 +68,7 @@ export class FilterController<TData = unknown> implements ReactiveController {
 
     if (this.query.length >= this.host.minChars) {
       this._debounceTimer = setTimeout(() => {
-        this.host.dispatchEvent(new CustomEvent('vi-search', { 
+        this.host.dispatchEvent(new CustomEvent('vi-combobox-search', { 
           detail: { query: this.query },
           bubbles: true, 
           composed: true 
@@ -157,7 +157,7 @@ export class FilterController<TData = unknown> implements ReactiveController {
 
     this.host.requestUpdate();
 
-    this.host.dispatchEvent(new CustomEvent('vi-filter', {
+    this.host.dispatchEvent(new CustomEvent('vi-combobox-filter', {
       detail: {
         query: query,
         results,

@@ -49,7 +49,7 @@ export class ViRadio extends LitElement {
     );
 
     this.dispatchEvent(
-      new CustomEvent('vialiq-change', {
+      new CustomEvent('vi-radio-group-change', {
         detail: { value: this.value },
         bubbles: true,
         composed: true,
