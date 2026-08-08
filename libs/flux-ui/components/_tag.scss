@@ -1,0 +1,142 @@
+@use '../styles/variables' as tokens;
+
+@layer components {
+  :root {
+    --vi-tag-height: 24px;
+    --vi-tag-padding: 0 10px;
+    --vi-tag-border-radius: 4px;
+    --vi-tag-font-size: 12px;
+    --vi-tag-font-weight: var(--vi-font-weight-medium, #{tokens.$font-weight-medium});
+    --vi-tag-gap: 4px;
+    --vi-tag-remove-size: 16px;
+    --vi-tag-transition: 120ms ease;
+    --vi-tag-disabled-opacity: 0.5;
+  }
+
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    box-sizing: border-box;
+    height: var(--vi-tag-height);
+    padding: var(--vi-tag-padding);
+    border-radius: var(--vi-tag-border-radius);
+    font-size: var(--vi-tag-font-size);
+    font-weight: var(--vi-tag-font-weight);
+    gap: var(--vi-tag-gap);
+    transition: var(--vi-tag-transition);
+    user-select: none;
+    border: #{tokens.$border-width-thin} solid transparent;
+    cursor: default;
+
+    /* Base variant setup (neutral) */
+    background-color: var(--vi-tag-bg, #{tokens.$layer-02});
+    color: var(--vi-tag-color, #{tokens.$text-primary});
+    border-color: var(--vi-tag-border-color, #{tokens.$border-03});
+
+    &.tag-clickable {
+      cursor: pointer;
+      &:hover {
+        background-color: var(--vi-tag-bg-hover, #{tokens.$layer-03});
+      }
+    }
+
+    &.tag-selected {
+      background-color: var(--vi-tag-bg-selected, #{tokens.$layer-03});
+      border-color: var(--vi-tag-border-color-selected, #{tokens.$border-04});
+    }
+
+    /* Primary variant */
+    &.variant-primary {
+      background-color: var(--vi-tag-primary-bg, #{tokens.$bg-info});
+      color: var(--vi-tag-primary-color, #{tokens.$text-info});
+      border-color: var(--vi-tag-primary-border, #{tokens.$color-info});
+
+      &.tag-clickable:hover, &.tag-selected {
+        background-color: var(--vi-tag-primary-bg-hover, #{tokens.$layer-02});
+        border-color: var(--vi-tag-primary-border-hover, #{tokens.$color-primary});
+      }
+    }
+
+    /* Success variant */
+    &.variant-success {
+      background-color: var(--vi-tag-success-bg, #{tokens.$bg-success});
+      color: var(--vi-tag-success-color, #{tokens.$text-success});
+      border-color: var(--vi-tag-success-border, #{tokens.$color-success});
+
+      &.tag-clickable:hover, &.tag-selected {
+        background-color: var(--vi-tag-success-bg-hover, #{tokens.$layer-02});
+        border-color: var(--vi-tag-success-border-hover, #{tokens.$color-success});
+      }
+    }
+
+    /* Warning variant */
+    &.variant-warning {
+      background-color: var(--vi-tag-warning-bg, #{tokens.$bg-warning});
+      color: var(--vi-tag-warning-color, #{tokens.$text-warning});
+      border-color: var(--vi-tag-warning-border, #{tokens.$color-warning});
+
+      &.tag-clickable:hover, &.tag-selected {
+        background-color: var(--vi-tag-warning-bg-hover, #{tokens.$layer-02});
+        border-color: var(--vi-tag-warning-border-hover, #{tokens.$color-warning});
+      }
+    }
+
+    /* Danger variant */
+    &.variant-danger {
+      background-color: var(--vi-tag-danger-bg, #{tokens.$bg-error});
+      color: var(--vi-tag-danger-color, #{tokens.$text-error});
+      border-color: var(--vi-tag-danger-border, #{tokens.$color-error});
+
+      &.tag-clickable:hover, &.tag-selected {
+        background-color: var(--vi-tag-danger-bg-hover, #{tokens.$layer-02});
+        border-color: var(--vi-tag-danger-border-hover, #{tokens.$color-error});
+      }
+    }
+
+    /* Sizes */
+    &.size-sm {
+      --vi-tag-height: 20px;
+      --vi-tag-font-size: 11px;
+      --vi-tag-padding: 0 8px;
+      --vi-tag-remove-size: 14px;
+    }
+
+    &.size-lg {
+      --vi-tag-height: 28px;
+      --vi-tag-font-size: 14px;
+      --vi-tag-padding: 0 12px;
+      --vi-tag-remove-size: 18px;
+    }
+
+    &.is-disabled {
+      opacity: var(--vi-tag-disabled-opacity);
+      pointer-events: none;
+      cursor: not-allowed;
+    }
+  }
+
+  .tag-remove-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--vi-tag-remove-size);
+    height: var(--vi-tag-remove-size);
+    border-radius: 50%;
+    margin-right: -4px;
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    color: inherit;
+    padding: 0;
+    transition: var(--vi-tag-transition);
+    outline-offset: 2px;
+
+    &:hover {
+      background-color: rgba(0, 0, 0, 0.08);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--vi-focus, #{tokens.$focus});
+    }
+  }
+}
