@@ -1,0 +1,124 @@
+@use '../styles/variables' as tokens;
+
+@layer components {
+  .switch-wrapper {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--vi-switch-label-gap, 8px);
+    cursor: pointer;
+    font-family: #{tokens.$font-family-base};
+    font-size: var(--vi-switch-label-font-size, #{tokens.$font-size-base});
+    line-height: #{tokens.$line-height-normal};
+    color: var(--vi-switch-label-color, #{tokens.$text-primary});
+    position: relative;
+    user-select: none;
+  }
+
+  // Visually hide the native input but keep it keyboard accessible
+  .switch-input {
+    position: absolute !important;
+    clip-path: inset(50%) !important;
+    overflow: hidden !important;
+    width: 1px !important;
+    height: 1px !important;
+    margin: -1px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    white-space: nowrap !important;
+  }
+
+  .switch-track {
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    position: relative;
+    width: var(--vi-switch-track-width, 44px);
+    height: var(--vi-switch-track-height, 24px);
+    background-color: var(--vi-switch-track-color-off, #{tokens.$border-03});
+    border-radius: var(--vi-border-radius-full, 9999px);
+    transition: background-color var(--vi-switch-transition-duration, 150ms) ease;
+    flex-shrink: 0;
+  }
+
+  .switch-on-label,
+  .switch-off-label {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 10px;
+    font-weight: 600;
+    color: #{tokens.$text-primary-inverse};
+    pointer-events: none;
+  }
+
+  .switch-on-label {
+    left: 8px;
+    opacity: 0;
+    transition: opacity var(--vi-switch-transition-duration, 150ms) ease;
+  }
+
+  .switch-off-label {
+    right: 8px;
+    opacity: 1;
+    transition: opacity var(--vi-switch-transition-duration, 150ms) ease;
+  }
+
+  .switch-thumb {
+    position: absolute;
+    top: 50%;
+    left: 2px;
+    transform: translateY(-50%);
+    width: var(--vi-switch-thumb-size, 18px);
+    height: var(--vi-switch-thumb-size, 18px);
+    background-color: var(--vi-switch-thumb-color, #{tokens.$text-primary-inverse});
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0,0,0,.2);
+    transition: transform var(--vi-switch-transition-duration, 150ms) ease;
+  }
+
+  // Checked state
+  .switch-input:checked ~ .switch-track {
+    background-color: var(--vi-switch-track-color-on, #{tokens.$color-primary});
+
+    .switch-thumb {
+      transform: translate(calc(var(--vi-switch-track-width, 44px) - var(--vi-switch-thumb-size, 18px) - 4px), -50%);
+    }
+
+    .switch-on-label {
+      opacity: 1;
+    }
+
+    .switch-off-label {
+      opacity: 0;
+    }
+  }
+
+  // Focus ring
+  .switch-input:focus-visible ~ .switch-track {
+    outline: #{tokens.$border-width-base} solid var(--vi-switch-focus-ring-color, #{tokens.$focus});
+    outline-offset: 2px;
+  }
+
+  // Disabled state
+  .switch-wrapper--disabled {
+    cursor: not-allowed;
+    opacity: var(--vi-switch-disabled-opacity, 0.5);
+
+    .switch-track {
+      background-color: #{tokens.$border-03};
+    }
+
+    .switch-input:checked ~ .switch-track {
+      background-color: #{tokens.$text-disabled};
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .switch-track,
+    .switch-thumb,
+    .switch-on-label,
+    .switch-off-label {
+      transition: none;
+    }
+  }
+}
