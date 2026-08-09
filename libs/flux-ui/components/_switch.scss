@@ -1,0 +1,126 @@
+@use '../styles/variables' as tokens;
+
+@layer components {
+  // ── Wrapper ──────────────────────────────────────────────────────────────────
+  // Uses flex-start so the track top-aligns with the first line when the label
+  // wraps across multiple lines. The track itself is nudged down by half the
+  // difference between one line-height and its own height so it optically sits
+  // on the cap-height of the first text line.
+
+  .switch-wrapper {
+    display: inline-flex;
+    align-items: flex-start;
+    gap: var(--vi-switch-label-gap, 8px);
+    cursor: pointer;
+    font-family: #{tokens.$font-family-base};
+    font-size: var(--vi-switch-label-font-size, #{tokens.$font-size-base});
+    line-height: #{tokens.$line-height-normal};
+    color: var(--vi-switch-label-color, #{tokens.$text-primary});
+    user-select: none;
+  }
+
+  // ── Label text ────────────────────────────────────────────────────────────────
+  // flex: 1 lets it grow past the fixed-width track; min-width: 0 is required on
+  // a flex child so that word-break / overflow-wrap actually take effect.
+
+  .switch-label {
+    flex: 1 1 auto;
+    min-width: 0;
+    word-break: break-word;
+    overflow-wrap: break-word;
+  }
+
+  // ── Hidden native input ────────────────────────────────────────────────────────
+  // Visually hidden but still a full keyboard / AT participant.
+
+  .switch-input {
+    position: absolute !important;
+    clip-path: inset(50%) !important;
+    overflow: hidden !important;
+    width: 1px !important;
+    height: 1px !important;
+    margin: -1px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    white-space: nowrap !important;
+  }
+
+  // ── Track ─────────────────────────────────────────────────────────────────────
+  // margin-top offsets the track downward so its visual centre aligns with the
+  // cap-height of the first text line.
+
+  .switch-track {
+    box-sizing: border-box;
+    position: relative;
+    width: var(--vi-switch-track-width, 44px);
+    height: var(--vi-switch-track-height, 24px);
+    background-color: var(--vi-switch-track-color-off, #{tokens.$border-03});
+    border-radius: var(--vi-border-radius-full, 9999px);
+    transition: background-color var(--vi-switch-transition-duration, 150ms) ease;
+    flex-shrink: 0;
+    // Align track centre with first-line cap-height
+    margin-top: calc(
+      (1em * #{tokens.$line-height-normal} - var(--vi-switch-track-height, 24px)) / 2
+    );
+  }
+
+  // ── Thumb ─────────────────────────────────────────────────────────────────────
+
+  .switch-thumb {
+    position: absolute;
+    top: 50%;
+    left: var(--vi-switch-thumb-offset, 2px);
+    transform: translateY(-50%);
+    width: var(--vi-switch-thumb-size, 18px);
+    height: var(--vi-switch-thumb-size, 18px);
+    background-color: var(--vi-switch-thumb-color, #{tokens.$text-primary-inverse});
+    border-radius: 50%;
+    box-shadow: var(--vi-switch-thumb-shadow, 0 1px 3px rgba(0, 0, 0, 0.2));
+    transition: left var(--vi-switch-transition-duration, 150ms) ease;
+  }
+
+  // ── Checked state ─────────────────────────────────────────────────────────────
+
+  .switch-input:checked ~ .switch-track {
+    background-color: var(--vi-switch-track-color-on, #{tokens.$color-primary});
+
+    .switch-thumb {
+      left: calc(
+        100% - var(--vi-switch-thumb-size, 18px) - var(--vi-switch-thumb-offset, 2px)
+      );
+    }
+  }
+
+  // ── Focus ring ────────────────────────────────────────────────────────────────
+
+  .switch-input:focus-visible ~ .switch-track {
+    outline: #{tokens.$border-width-base} solid
+      var(--vi-switch-focus-ring-color, #{tokens.$focus});
+    outline-offset: 2px;
+    box-shadow: 0 0 0 3px var(--vi-switch-focus-ring-glow, #{tokens.$color-blue-200});
+  }
+
+  // ── Disabled state ────────────────────────────────────────────────────────────
+
+  .switch-wrapper--disabled {
+    cursor: not-allowed;
+    opacity: var(--vi-switch-disabled-opacity, 0.5);
+
+    .switch-track {
+      background-color: #{tokens.$border-03};
+    }
+
+    .switch-input:checked ~ .switch-track {
+      background-color: #{tokens.$text-disabled};
+    }
+  }
+
+  // ── Reduced motion ────────────────────────────────────────────────────────────
+
+  @media (prefers-reduced-motion: reduce) {
+    .switch-track,
+    .switch-thumb {
+      transition: none;
+    }
+  }
+}
