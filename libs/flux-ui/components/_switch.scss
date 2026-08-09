@@ -1,20 +1,38 @@
 @use '../styles/variables' as tokens;
 
 @layer components {
+  // ── Wrapper ──────────────────────────────────────────────────────────────────
+  // Uses flex-start so the track top-aligns with the first line when the label
+  // wraps across multiple lines. The track itself is nudged down by half the
+  // difference between one line-height and its own height so it optically sits
+  // on the cap-height of the first text line.
+
   .switch-wrapper {
     display: inline-flex;
-    align-items: center;
+    align-items: flex-start;
     gap: var(--vi-switch-label-gap, 8px);
     cursor: pointer;
     font-family: #{tokens.$font-family-base};
     font-size: var(--vi-switch-label-font-size, #{tokens.$font-size-base});
     line-height: #{tokens.$line-height-normal};
     color: var(--vi-switch-label-color, #{tokens.$text-primary});
-    position: relative;
     user-select: none;
   }
 
-  // Visually hide the native input but keep it keyboard accessible
+  // ── Label text ────────────────────────────────────────────────────────────────
+  // flex: 1 lets it grow past the fixed-width track; min-width: 0 is required on
+  // a flex child so that word-break / overflow-wrap actually take effect.
+
+  .switch-label {
+    flex: 1 1 auto;
+    min-width: 0;
+    word-break: break-word;
+    overflow-wrap: break-word;
+  }
+
+  // ── Hidden native input ────────────────────────────────────────────────────────
+  // Visually hidden but still a full keyboard / AT participant.
+
   .switch-input {
     position: absolute !important;
     clip-path: inset(50%) !important;
@@ -27,10 +45,15 @@
     white-space: nowrap !important;
   }
 
+  // ── Track ─────────────────────────────────────────────────────────────────────
+  // margin-top offsets the track downward so its visual centre aligns with the
+  // cap-height of the first text line.  The formula is:
+  //   (one-line-height − track-height) / 2
+  // Because line-height-normal is a CSS custom property (not a unitless SCSS
+  // number), we keep the expression entirely in calc().
+
   .switch-track {
     box-sizing: border-box;
-    display: inline-flex;
-    align-items: center;
     position: relative;
     width: var(--vi-switch-track-width, 44px);
     height: var(--vi-switch-track-height, 24px);
@@ -38,68 +61,50 @@
     border-radius: var(--vi-border-radius-full, 9999px);
     transition: background-color var(--vi-switch-transition-duration, 150ms) ease;
     flex-shrink: 0;
+    // Align track centre with first-line cap-height
+    margin-top: calc(
+      (1em * #{tokens.$line-height-normal} - var(--vi-switch-track-height, 24px)) / 2
+    );
   }
 
-  .switch-on-label,
-  .switch-off-label {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 10px;
-    font-weight: 600;
-    color: #{tokens.$text-primary-inverse};
-    pointer-events: none;
-  }
-
-  .switch-on-label {
-    left: 8px;
-    opacity: 0;
-    transition: opacity var(--vi-switch-transition-duration, 150ms) ease;
-  }
-
-  .switch-off-label {
-    right: 8px;
-    opacity: 1;
-    transition: opacity var(--vi-switch-transition-duration, 150ms) ease;
-  }
+  // ── Thumb ─────────────────────────────────────────────────────────────────────
 
   .switch-thumb {
     position: absolute;
     top: 50%;
-    left: 2px;
+    left: var(--vi-switch-thumb-offset, 2px);
     transform: translateY(-50%);
     width: var(--vi-switch-thumb-size, 18px);
     height: var(--vi-switch-thumb-size, 18px);
     background-color: var(--vi-switch-thumb-color, #{tokens.$text-primary-inverse});
     border-radius: 50%;
-    box-shadow: 0 1px 3px rgba(0,0,0,.2);
-    transition: transform var(--vi-switch-transition-duration, 150ms) ease;
+    box-shadow: var(--vi-switch-thumb-shadow, 0 1px 3px rgba(0, 0, 0, 0.2));
+    transition: left var(--vi-switch-transition-duration, 150ms) ease;
   }
 
-  // Checked state
+  // ── Checked state ─────────────────────────────────────────────────────────────
+
   .switch-input:checked ~ .switch-track {
     background-color: var(--vi-switch-track-color-on, #{tokens.$color-primary});
 
     .switch-thumb {
-      transform: translate(calc(var(--vi-switch-track-width, 44px) - var(--vi-switch-thumb-size, 18px) - 4px), -50%);
-    }
-
-    .switch-on-label {
-      opacity: 1;
-    }
-
-    .switch-off-label {
-      opacity: 0;
+      left: calc(
+        100% - var(--vi-switch-thumb-size, 18px) - var(--vi-switch-thumb-offset, 2px)
+      );
     }
   }
 
-  // Focus ring
+  // ── Focus ring ────────────────────────────────────────────────────────────────
+
   .switch-input:focus-visible ~ .switch-track {
-    outline: #{tokens.$border-width-base} solid var(--vi-switch-focus-ring-color, #{tokens.$focus});
+    outline: #{tokens.$border-width-base} solid
+      var(--vi-switch-focus-ring-color, #{tokens.$focus});
     outline-offset: 2px;
+    box-shadow: 0 0 0 3px var(--vi-switch-focus-ring-glow, #{tokens.$color-blue-200});
   }
 
-  // Disabled state
+  // ── Disabled state ────────────────────────────────────────────────────────────
+
   .switch-wrapper--disabled {
     cursor: not-allowed;
     opacity: var(--vi-switch-disabled-opacity, 0.5);
@@ -113,11 +118,11 @@
     }
   }
 
+  // ── Reduced motion ────────────────────────────────────────────────────────────
+
   @media (prefers-reduced-motion: reduce) {
     .switch-track,
-    .switch-thumb,
-    .switch-on-label,
-    .switch-off-label {
+    .switch-thumb {
       transition: none;
     }
   }

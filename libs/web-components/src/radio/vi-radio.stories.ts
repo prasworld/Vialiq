@@ -195,4 +195,26 @@ export const Sizes: Story = {
   `,
 };
 
-
+/**
+ * The radio circle stays top-aligned with the first line of text when the
+ * label wraps across multiple lines. Representative clinical study labels.
+ */
+export const LongLabel: Story = {
+  name: 'Long / Wrapping Label',
+  render: () => html`
+    <div style="max-width: 380px;">
+      <vi-radio-group name="consent-type" orientation="vertical">
+        <span slot="label">Select the applicable consent type:</span>
+        <vi-radio value="initial">
+          Initial written informed consent obtained prior to any study procedures and screening assessments
+        </vi-radio>
+        <vi-radio value="reconsent">
+          Re-consent obtained following a protocol amendment that materially changes risk to the participant
+        </vi-radio>
+        <vi-radio value="assent">
+          Paediatric assent obtained in addition to parent/guardian consent per local IRB requirements
+        </vi-radio>
+      </vi-radio-group>
+    </div>
+  `,
+};

@@ -122,3 +122,26 @@ export const Sizes: Story = {
   `,
 };
 
+/**
+ * The checkbox box stays top-aligned with the first line of text when the
+ * label wraps to multiple lines. These are representative clinical EDC labels.
+ */
+export const LongLabel: Story = {
+  name: 'Long / Wrapping Label',
+  render: () => html`
+    <div style="display: flex; flex-direction: column; gap: 16px; max-width: 380px;">
+      <vi-checkbox>
+        I confirm that the subject has provided written informed consent prior to any study-related procedures.
+      </vi-checkbox>
+      <vi-checkbox checked>
+        I acknowledge that this deviation from the protocol has been reviewed and documented in the site's deviation log.
+      </vi-checkbox>
+      <vi-checkbox size="sm">
+        Concomitant medication reported and confirmed within the 30-day retrospective window.
+      </vi-checkbox>
+      <vi-checkbox size="lg">
+        All data fields have been verified against source documents and are accurate to the best of my knowledge.
+      </vi-checkbox>
+    </div>
+  `,
+};

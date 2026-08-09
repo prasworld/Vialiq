@@ -75,7 +75,7 @@
   // -------------------------------------------------------------------------
   .radio-wrapper {
     display: inline-flex;
-    align-items: center;
+    align-items: flex-start;
     gap: var(--vi-radio-label-gap, 8px);
     cursor: pointer;
     font-family: #{tokens.$font-family-base};
@@ -84,6 +84,13 @@
     color: var(--vi-radio-label-color, #{tokens.$text-primary});
     position: relative;
     user-select: none;
+  }
+
+  .radio-label {
+    flex: 1 1 auto;
+    min-width: 0;
+    word-break: break-word;
+    overflow-wrap: break-word;
   }
 
   // Visually hide the native input but keep it keyboard accessible
@@ -111,6 +118,7 @@
     background-color: var(--vi-radio-background-color, #{tokens.$color-background});
     transition: border-color 150ms ease, box-shadow 150ms ease;
     flex-shrink: 0;
+    margin-top: calc((1em * #{tokens.$line-height-normal} - var(--vi-radio-size, 18px)) / 2);
   }
 
   .radio-dot {

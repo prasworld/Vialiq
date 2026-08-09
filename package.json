@@ -23,6 +23,9 @@
     "generate:icons": "node libs/icons/tools/generate-icons.mjs"
   },
   "private": true,
+  "overrides": {
+    "ws": "^8.21.0"
+  },
   "dependencies": {
     "@angular/common": "~21.1.0",
     "@angular/compiler": "~21.1.0",

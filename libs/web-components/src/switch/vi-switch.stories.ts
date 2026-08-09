@@ -69,12 +69,23 @@ export const Placement: Story = {
   `,
 };
 
-export const WithLabels: Story = {
+/**
+ * The switch track stays top-aligned with the first line of text when the
+ * label wraps across multiple lines.  The track never floats to the middle
+ * of the paragraph.
+ */
+export const LongLabel: Story = {
   render: () => html`
-    <vi-switch size="lg">
-      <span slot="on-label">ON</span>
-      <span slot="off-label">OFF</span>
-      Dual Data Entry Required
-    </vi-switch>
+    <div style="display: flex; flex-direction: column; gap: 1.5rem; max-width: 320px;">
+      <vi-switch>
+        Allow this site to use offline data entry when network connectivity is unavailable
+      </vi-switch>
+      <vi-switch checked>
+        Require dual data entry for all primary endpoints — both operators must independently enter values before submission
+      </vi-switch>
+      <vi-switch label-placement="start">
+        21 CFR Part 11 compliant electronic audit trail (cannot be disabled once activated)
+      </vi-switch>
+    </div>
   `,
 };

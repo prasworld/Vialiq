@@ -11,9 +11,12 @@
   pointer-events: none;
 }
 
+// Slotted label content inherits the host's typography tokens.
+// Only the default slot (label text) gets these — not named slots.
 ::slotted(*) {
   font-family: inherit;
   font-size: inherit;
+  line-height: inherit;
   color: inherit;
 }
 
