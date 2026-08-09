@@ -87,7 +87,7 @@ const PHASE_1_VI_COMPONENTS = [
   'vi-button:not([disabled])',
   'vi-input:not([disabled])',
   'vi-checkbox:not([disabled])',
-  // 'vi-switch:not([disabled])',   — uncomment when vi-switch ships
+  'vi-switch:not([disabled])',
   // 'vi-link:not([disabled])',     — uncomment when vi-link ships
 ];
 
