@@ -30,8 +30,10 @@ export type LabelPlacement = 'start' | 'end';
  * @attr {string} label-placement - Label position relative to switch ('start' | 'end')
  *
  * @slot - Label text/content.
+ * @slot on-label - Optional text inside the track when on
+ * @slot off-label - Optional text inside the track when off
  *
- * @fires {CustomEvent<{checked:boolean}>} vi-switch-change - Fires when user toggles checked state.
+ * @fires {CustomEvent<{checked:boolean}>} vialiq-change - Fires when user toggles checked state.
  *
  * @csspart track - The pill-shaped background
  * @csspart thumb - The sliding circle
@@ -83,9 +85,6 @@ export class ViSwitch extends ValidityMixin(FocusableMixin(ViElement)) {
       if (input.checked !== this.checked) {
         input.checked = this.checked;
       }
-      if (input.required !== this.required) {
-        input.required = this.required;
-      }
       const validity = input.validity;
       if (!validity.valid) {
         this.validityMessage = input.validationMessage;
@@ -94,14 +93,7 @@ export class ViSwitch extends ValidityMixin(FocusableMixin(ViElement)) {
           customError: validity.customError,
         };
       }
-    } else if (this.required && !this.checked) {
-      const temp = document.createElement('input');
-      temp.type = 'checkbox';
-      temp.required = true;
-      this.validityMessage = temp.validationMessage;
-      return { valueMissing: true };
     }
-    this.validityMessage = '';
     return {};
   }
 
@@ -123,6 +115,12 @@ export class ViSwitch extends ValidityMixin(FocusableMixin(ViElement)) {
     // Centralize host focusability via FocusableMixin
     if (changed.has('disabled')) {
       this._setHostFocusable(!this.disabled);
+    }
+
+    // Sync inner input's tabindex with host's tabIndex (which is managed by FocusableMixin)
+    const input = this._focusableElement;
+    if (input && input.tabIndex !== this.tabIndex) {
+      input.tabIndex = this.tabIndex;
     }
   }
 
@@ -148,7 +146,7 @@ export class ViSwitch extends ValidityMixin(FocusableMixin(ViElement)) {
     this.checked = input.checked;
 
     this.dispatchEvent(
-      new CustomEvent<{ checked: boolean }>('vi-switch-change', {
+      new CustomEvent<{ checked: boolean }>('vialiq-change', {
         detail: { checked: this.checked },
         bubbles: true,
         composed: true,
@@ -184,12 +182,12 @@ export class ViSwitch extends ValidityMixin(FocusableMixin(ViElement)) {
           .value=${this.value}
           ?checked=${this.checked}
           ?disabled=${isValDisabled}
-          ?required=${this.required}
-          aria-required=${this.required ? 'true' : 'false'}
           aria-checked=${this.checked ? 'true' : 'false'}
           @change=${this._onChange}
         />
         <span part="track" class="switch-track" aria-hidden="true">
+          <slot name="on-label" class="switch-on-label"></slot>
+          <slot name="off-label" class="switch-off-label"></slot>
           <span part="thumb" class="switch-thumb"></span>
         </span>
 

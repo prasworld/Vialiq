@@ -35,7 +35,7 @@ describe('vi-switch', () => {
     expect(input.checked).toBe(true);
   });
 
-  it('dispatches vi-switch-change event on click', async () => {
+  it('dispatches vialiq-change event on click', async () => {
     render(html`<vi-switch></vi-switch>`, container);
     const el = container.querySelector('vi-switch') as ViSwitch;
     await el.updateComplete;
@@ -43,7 +43,7 @@ describe('vi-switch', () => {
     let eventFired = false;
     let detailChecked = false;
 
-    el.addEventListener('vi-switch-change', (e: Event) => {
+    el.addEventListener('vialiq-change', (e: Event) => {
       eventFired = true;
       detailChecked = (e as CustomEvent).detail.checked;
     });
@@ -63,7 +63,7 @@ describe('vi-switch', () => {
 
     let eventFired = false;
 
-    el.addEventListener('vi-switch-change', () => {
+    el.addEventListener('vialiq-change', () => {
       eventFired = true;
     });
 
@@ -72,34 +72,6 @@ describe('vi-switch', () => {
 
     expect(eventFired).toBe(false);
     expect(el.checked).toBe(false);
-  });
-
-  it('reports valueMissing when required is true and switch is unchecked', async () => {
-    render(html`<vi-switch required></vi-switch>`, container);
-    const el = container.querySelector('vi-switch') as ViSwitch;
-    await el.updateComplete;
-
-    const isValid = el.checkValidity();
-    expect(isValid).toBe(false);
-    expect(el.validityMessage).toBeTruthy();
-
-    const input = el.shadowRoot?.querySelector('input') as HTMLInputElement;
-    expect(input.required).toBe(true);
-    expect(input.getAttribute('aria-required')).toBe('true');
-  });
-
-  it('clears validityMessage when control becomes valid', async () => {
-    render(html`<vi-switch required></vi-switch>`, container);
-    const el = container.querySelector('vi-switch') as ViSwitch;
-    await el.updateComplete;
-
-    el.checkValidity();
-    expect(el.validityMessage).toBeTruthy();
-
-    el.checked = true;
-    await el.updateComplete;
-    el.checkValidity();
-    expect(el.validityMessage).toBe('');
   });
 
   it('handles label placement correctly', async () => {

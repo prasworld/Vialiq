@@ -53,7 +53,9 @@ type LabelPlacement = 'start' | 'end';
 
 | Slot | Description |
 |------|-------------|
-| *(default)* | Label text. Wraps naturally for long descriptions; the track stays top-aligned with the first line. |
+| *(default)* | Label text |
+| `on-label` | Optional text inside the track when on (e.g. "ON") |
+| `off-label` | Optional text inside the track when off (e.g. "OFF") |
 
 ---
 
@@ -61,7 +63,7 @@ type LabelPlacement = 'start' | 'end';
 
 | Event | Type | Bubbles | Composed | Fires when |
 |-------|------|---------|---------|-----------|
-| `vi-switch-change` | `CustomEvent<{checked: boolean}>` | ✅ | ✅ | Toggle state changes |
+| `vialiq-change` | `CustomEvent<{checked: boolean}>` | ✅ | ✅ | Toggle state changes |
 
 ---
 
@@ -85,12 +87,11 @@ type LabelPlacement = 'start' | 'end';
 | `--vi-switch-track-color-on` | `var(--vi-color-primary)` | Track colour when on |
 | `--vi-switch-thumb-size` | `18px` | Thumb diameter |
 | `--vi-switch-thumb-color` | `#ffffff` | Thumb fill |
-| `--vi-switch-thumb-offset` | `2px` | Gap between thumb and track edge |
 | `--vi-switch-thumb-shadow` | `0 1px 3px rgba(0,0,0,.2)` | Thumb shadow |
-| `--vi-switch-focus-ring-color` | `var(--vi-color-primary)` | Focus outline colour |
-| `--vi-switch-focus-ring-glow` | `var(--vi-color-blue-200)` | Focus glow halo |
-| `--vi-switch-label-gap` | `8px` | Gap between track and label |
-| `--vi-switch-transition-duration` | `150ms` | Animation speed |
+| `--vi-switch-thumb-translate-x` | `calc(var(--vi-switch-track-width) - var(--vi-switch-thumb-size) - 4px)` | Thumb X when on |
+| `--vi-switch-focus-ring-color` | `var(--vi-color-primary)` | Focus outline |
+| `--vi-switch-label-gap` | `8px` | Gap: track → label |
+| `--vi-switch-transition` | `150ms ease` | Animation speed |
 | `--vi-switch-disabled-opacity` | `0.5` | Disabled opacity |
 
 Size variants (set automatically via `:host([size="sm"])`):
@@ -107,7 +108,7 @@ Size variants (set automatically via `:host([size="sm"])`):
 
 ```html
 <label class="switch-wrapper" data-placement=${labelPlacement}>
-  <!-- Label can appear before or after the track (label-placement) -->
+  <!-- Label can appear before or after the track -->
   ${labelPlacement === 'start' ? html`
     <span part="label" class="switch-label"><slot></slot></span>
   ` : nothing}
@@ -121,14 +122,14 @@ Size variants (set automatically via `:host([size="sm"])`):
     .value=${this.value}
     ?checked=${this.checked}
     ?disabled=${this.disabled}
-    ?required=${this.required}
-    aria-required=${this.required ? 'true' : 'false'}
-    aria-checked=${this.checked ? 'true' : 'false'}
+    aria-checked=${this.checked}
     @change=${this._onChange}
   />
 
   <!-- Visual track + thumb -->
   <span part="track" class="switch-track" aria-hidden="true">
+    <slot name="on-label" class="switch-on-label"></slot>
+    <slot name="off-label" class="switch-off-label"></slot>
     <span part="thumb" class="switch-thumb"></span>
   </span>
 
@@ -176,18 +177,19 @@ Size variants (set automatically via `:host([size="sm"])`):
 <vi-switch
   name="offlineMode"
   [checked]="settings.offlineMode"
-  (vi-switch-change)="settings.offlineMode = $event.detail.checked"
+  (vialiq-change)="settings.offlineMode = $event.detail.checked"
 >
   Enable offline data entry
 </vi-switch>
 ```
 
-### With long descriptive label
+### With on/off labels inside track
 
 ```html
-<!-- The track top-aligns with the first text line when the label wraps -->
-<vi-switch name="offlineMode" style="max-width: 320px;">
-  Allow offline data entry when network connectivity is unavailable
+<vi-switch name="dde" size="lg">
+  <span slot="on-label">ON</span>
+  <span slot="off-label">OFF</span>
+  Dual Data Entry Required
 </vi-switch>
 ```
 

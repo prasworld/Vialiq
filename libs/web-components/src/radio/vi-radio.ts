@@ -65,6 +65,12 @@ export class ViRadio extends FocusableMixin(ViElement) {
     if (!this._group && changed.has('disabled')) {
       this._setHostFocusable(!this.disabled);
     }
+
+    // Sync inner input's tabindex with host's tabIndex (which is managed by parent vi-radio-group or FocusableMixin)
+    const input = this._focusableElement;
+    if (input && input.tabIndex !== this.tabIndex) {
+      input.tabIndex = this.tabIndex;
+    }
   }
 
   protected override _setHostFocusable(enabled: boolean): void {
@@ -96,6 +102,7 @@ export class ViRadio extends FocusableMixin(ViElement) {
         <input
           type="radio"
           class="radio-input"
+          tabindex="0"
           .name=${this.name}
           .value=${this.value}
           .checked=${this.checked}

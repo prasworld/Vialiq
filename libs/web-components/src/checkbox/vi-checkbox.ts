@@ -122,6 +122,12 @@ export class ViCheckbox extends ValidityMixin(FocusableMixin(ViElement)) {
     if (changed.has('disabled')) {
       this._setHostFocusable(!this.disabled);
     }
+
+    // Sync inner input's tabindex with host's tabIndex (which is managed by FocusableMixin)
+    const input = this._focusableElement;
+    if (input && input.tabIndex !== this.tabIndex) {
+      input.tabIndex = this.tabIndex;
+    }
   }
 
   /** Resets value and validation state when the associated form resets. */
