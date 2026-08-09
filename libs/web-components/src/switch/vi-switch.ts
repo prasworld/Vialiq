@@ -89,11 +89,11 @@ export class ViSwitch extends ValidityMixin(FocusableMixin(ViElement)) {
       if (!validity.valid) {
         this.validityMessage = input.validationMessage;
         return {
-          valueMissing: validity.valueMissing,
           customError: validity.customError,
         };
       }
     }
+    this.validityMessage = '';
     return {};
   }
 
@@ -115,12 +115,6 @@ export class ViSwitch extends ValidityMixin(FocusableMixin(ViElement)) {
     // Centralize host focusability via FocusableMixin
     if (changed.has('disabled')) {
       this._setHostFocusable(!this.disabled);
-    }
-
-    // Sync inner input's tabindex with host's tabIndex (which is managed by FocusableMixin)
-    const input = this._focusableElement;
-    if (input && input.tabIndex !== this.tabIndex) {
-      input.tabIndex = this.tabIndex;
     }
   }
 
@@ -146,7 +140,7 @@ export class ViSwitch extends ValidityMixin(FocusableMixin(ViElement)) {
     this.checked = input.checked;
 
     this.dispatchEvent(
-      new CustomEvent<{ checked: boolean }>('vialiq-change', {
+      new CustomEvent<{ checked: boolean }>('vi-switch-change', {
         detail: { checked: this.checked },
         bubbles: true,
         composed: true,
@@ -186,8 +180,6 @@ export class ViSwitch extends ValidityMixin(FocusableMixin(ViElement)) {
           @change=${this._onChange}
         />
         <span part="track" class="switch-track" aria-hidden="true">
-          <slot name="on-label" class="switch-on-label"></slot>
-          <slot name="off-label" class="switch-off-label"></slot>
           <span part="thumb" class="switch-thumb"></span>
         </span>
 

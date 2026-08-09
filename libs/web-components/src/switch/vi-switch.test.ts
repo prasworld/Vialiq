@@ -35,7 +35,7 @@ describe('vi-switch', () => {
     expect(input.checked).toBe(true);
   });
 
-  it('dispatches vialiq-change event on click', async () => {
+  it('dispatches vi-switch-change event on click', async () => {
     render(html`<vi-switch></vi-switch>`, container);
     const el = container.querySelector('vi-switch') as ViSwitch;
     await el.updateComplete;
@@ -43,7 +43,7 @@ describe('vi-switch', () => {
     let eventFired = false;
     let detailChecked = false;
 
-    el.addEventListener('vialiq-change', (e: Event) => {
+    el.addEventListener('vi-switch-change', (e: Event) => {
       eventFired = true;
       detailChecked = (e as CustomEvent).detail.checked;
     });
@@ -63,7 +63,7 @@ describe('vi-switch', () => {
 
     let eventFired = false;
 
-    el.addEventListener('vialiq-change', () => {
+    el.addEventListener('vi-switch-change', () => {
       eventFired = true;
     });
 
@@ -84,5 +84,51 @@ describe('vi-switch', () => {
 
     const wrapper = el.shadowRoot?.querySelector('.switch-wrapper');
     expect(wrapper?.getAttribute('data-placement')).toBe('start');
+  });
+
+  it('resets to initial checked state on form reset', async () => {
+    render(
+      html`
+        <form id="switch-form">
+          <vi-switch checked name="notify">Notify</vi-switch>
+        </form>
+      `,
+      container
+    );
+    const form = container.querySelector('form') as HTMLFormElement;
+    const el = container.querySelector('vi-switch') as ViSwitch;
+    await el.updateComplete;
+
+    expect(el.checked).toBe(true);
+
+    el.checked = false;
+    await el.updateComplete;
+    expect(el.checked).toBe(false);
+
+    form.reset();
+    await el.updateComplete;
+    expect(el.checked).toBe(true);
+  });
+
+  it('delegates focus to inner input', async () => {
+    render(html`<vi-switch>Focus Switch</vi-switch>`, container);
+    const el = container.querySelector('vi-switch') as ViSwitch;
+    await el.updateComplete;
+
+    el.focus();
+    const input = el.shadowRoot?.querySelector('input');
+    expect(el.shadowRoot?.activeElement).toBe(input);
+  });
+
+  it('updates host tabIndex when disabled', async () => {
+    render(html`<vi-switch disabled>Disabled Switch</vi-switch>`, container);
+    const el = container.querySelector('vi-switch') as ViSwitch;
+    await el.updateComplete;
+
+    expect(el.tabIndex).toBe(-1);
+
+    el.disabled = false;
+    await el.updateComplete;
+    expect(el.tabIndex).toBe(0);
   });
 });
