@@ -1,5 +1,28 @@
-@use '@vialiq/flux-ui/components' as *;
+@use '@vialiq/flux-ui/styles/variables' as tokens;
+@use '@vialiq/flux-ui/components/tag';
 
 :host {
-  display: inline-block;
+  display: inline-flex;
+  vertical-align: middle;
+  margin-inline-end: var(--vi-tag-margin-end, 6px);
+  margin-block: var(--vi-tag-margin-block, 2px);
+  outline: none;
+}
+
+:host([disabled]) {
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+::slotted(vi-icon),
+::slotted(svg) {
+  display: block;
+}
+
+::slotted(img) {
+  display: block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  object-fit: cover;
 }

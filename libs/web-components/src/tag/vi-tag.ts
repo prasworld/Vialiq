@@ -1,32 +1,59 @@
-import { css, html, unsafeCSS, type TemplateResult } from 'lit';
+import { css, html, nothing, unsafeCSS, type TemplateResult } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { ViElement } from '../base/vi-element.js';
 import tagStyles from './vi-tag.scss?inline';
 import '../icons/vi-icon.js';
+import '../button/vi-button.js';
 import { registerIcons } from '../icons/registry.js';
-import { xIcon } from '@vialiq/icons';
+import { checkIcon, xIcon } from '@vialiq/icons';
 
-export type TagVariant = 'neutral' | 'primary' | 'success' | 'warning' | 'danger';
-export type TagSize = 'sm' | 'md' | 'lg';
+export type TagVariant =
+  | 'neutral'
+  | 'primary'
+  | 'success'
+  | 'warning'
+  | 'danger'
+  | 'info'
+  | 'contrast';
+
+export type TagAppearance = 'subtle' | 'outline' | 'solid';
+export type TagSize = 'xs' | 'sm' | 'md' | 'lg';
 
 /**
  * vi-tag
  *
- * An interactive label/chip that can be removed (dismissed) by the user.
+ * An interactive, highly customizable label/chip supporting status dots,
+ * avatars, selectable filter states, counts, and dismissible remove buttons.
+ * Reuses `<vi-button>` and `<vi-icon>` for design system consistency.
  *
  * @element vi-tag
  *
+ * @attr {string} variant - Colour variant ('neutral' | 'primary' | 'success' | 'warning' | 'danger' | 'info' | 'contrast')
+ * @attr {string} appearance - Visual style ('subtle' | 'outline' | 'solid')
+ * @attr {string} size - Tag size ('xs' | 'sm' | 'md' | 'lg')
+ * @attr {boolean} pill - Renders fully rounded pill shape (9999px radius)
+ * @attr {boolean} dot - Renders a status dot indicator prefix
+ * @attr {number} count - Numeric counter badge suffix
+ * @attr {boolean} removable - Shows a removable button
+ * @attr {boolean} selectable - Enables interactive selection toggle mode
+ * @attr {boolean} selected - Active selected state
+ * @attr {boolean} disabled - Disables interactions
+ *
  * @slot - Default slot for tag label text
- * @slot icon - Leading icon
+ * @slot icon - Leading icon slot
+ * @slot avatar - Avatar image/thumbnail slot
+ * @slot suffix - Suffix element slot (after label/count)
  *
- * @fires vialiq-remove - Fired when the remove button is clicked or Delete/Backspace is pressed.
- * @fires vialiq-select - Fired when the tag is clicked (toggles selected state).
+ * @fires vialiq-remove - Fired when remove button is clicked or Delete/Backspace key is pressed.
+ * @fires vialiq-select - Fired when tag is clicked in selectable mode.
  *
- * @csspart tag - The tag container \`<span>\`
+ * @csspart tag - The tag container `<span>`
  * @csspart icon - Leading icon slot wrapper
+ * @csspart avatar - Avatar slot wrapper
  * @csspart label - Label text wrapper
- * @csspart remove-btn - The × remove button
+ * @csspart count - Counter badge wrapper
+ * @csspart remove-btn - The remove button wrapper
  */
 @customElement('vi-tag')
 export class ViTag extends ViElement {
@@ -37,11 +64,26 @@ export class ViTag extends ViElement {
   /** Colour variant */
   @property({ type: String, reflect: true }) accessor variant: TagVariant = 'neutral';
 
-  /** Size */
+  /** Visual appearance mode */
+  @property({ type: String, reflect: true }) accessor appearance: TagAppearance = 'subtle';
+
+  /** Size scale */
   @property({ type: String, reflect: true }) accessor size: TagSize = 'md';
 
-  /** Show remove (×) button */
+  /** Fully rounded pill shape (9999px radius) */
+  @property({ type: Boolean, reflect: true }) accessor pill = false;
+
+  /** Status dot indicator prefix */
+  @property({ type: Boolean, reflect: true }) accessor dot = false;
+
+  /** Suffix count badge value */
+  @property({ type: Number }) accessor count: number | undefined = undefined;
+
+  /** Show remove button */
   @property({ type: Boolean }) accessor removable = false;
+
+  /** Interactive selectable filter mode */
+  @property({ type: Boolean, reflect: true }) accessor selectable = false;
 
   /** Selected/active state */
   @property({ type: Boolean, reflect: true }) accessor selected = false;
@@ -51,23 +93,22 @@ export class ViTag extends ViElement {
 
   override connectedCallback(): void {
     super.connectedCallback();
-    registerIcons([xIcon]);
+    registerIcons([xIcon, checkIcon]);
   }
 
   private _handleTagClick(_e?: Event): void {
     if (this.disabled) return;
 
-    // As per requirement: vi-tag interactive, can be selected, toggled, or removed
-    // A click on the tag toggles the selection and fires vialiq-select
-    this.selected = !this.selected;
-
-    this.dispatchEvent(
-      new CustomEvent('vialiq-select', {
-        bubbles: true,
-        composed: true,
-        detail: { selected: this.selected },
-      })
-    );
+    if (this.selectable || this.hasAttribute('selected') || this.selected) {
+      this.selected = !this.selected;
+      this.dispatchEvent(
+        new CustomEvent('vialiq-select', {
+          bubbles: true,
+          composed: true,
+          detail: { selected: this.selected },
+        })
+      );
+    }
   }
 
   private _handleRemoveClick(e: Event): void {
@@ -82,7 +123,7 @@ export class ViTag extends ViElement {
     if (this.removable && (e.key === 'Delete' || e.key === 'Backspace')) {
       e.preventDefault();
       this._fireRemoveEvent();
-    } else if (e.key === 'Enter' || e.key === ' ') {
+    } else if ((e.key === 'Enter' || e.key === ' ') && this.selectable) {
       e.preventDefault();
       this._handleTagClick();
     }
@@ -98,13 +139,16 @@ export class ViTag extends ViElement {
   }
 
   override render(): TemplateResult {
-    const isInteractive = this.hasAttribute('selected') || this.selected || this.hasAttribute('@vialiq-select');
+    const isInteractive = this.selectable || this.hasAttribute('selected') || this.selected;
     const isListitem = this.closest('[role="list"]') !== null;
 
     const classes = {
       'tag': true,
       [`variant-${this.variant}`]: true,
+      [`appearance-${this.appearance}`]: true,
       [`size-${this.size}`]: true,
+      'tag--pill': this.pill,
+      'tag--removable': this.removable,
       'tag-clickable': !this.disabled && isInteractive,
       'tag-selected': this.selected,
       'is-disabled': this.disabled,
@@ -114,37 +158,53 @@ export class ViTag extends ViElement {
       <span
         part="tag"
         class=${classMap(classes)}
-        role=${isListitem ? 'listitem' : undefined}
+        role=${isListitem ? 'listitem' : nothing}
         aria-disabled=${this.disabled ? 'true' : 'false'}
       >
         <span
           class="tag-content-wrapper"
-          role=${isInteractive ? 'button' : undefined}
-          tabindex=${this.disabled ? '-1' : (isInteractive ? '0' : undefined)}
-          aria-pressed=${isInteractive ? (this.selected ? 'true' : 'false') : undefined}
+          role=${isInteractive ? 'button' : nothing}
+          tabindex=${this.disabled ? '-1' : (isInteractive ? 0 : nothing)}
+          aria-pressed=${isInteractive ? (this.selected ? 'true' : 'false') : nothing}
           @click=${this._handleTagClick}
           @keydown=${this._handleKeyDown}
-          style=${isInteractive ? 'display: inline-flex; align-items: center; outline: none; border-radius: inherit;' : 'display: inline-flex; align-items: center;'}
         >
+          ${this.dot ? html`<span part="dot" class="tag-dot" aria-hidden="true"></span>` : ''}
+          ${this.selectable && this.selected
+            ? html`
+                <span part="checkmark" class="tag-checkmark" aria-hidden="true">
+                  <vi-icon name="check" size="12"></vi-icon>
+                </span>
+              `
+            : ''}
+          <span part="avatar" class="tag-avatar">
+            <slot name="avatar"></slot>
+          </span>
           <span part="icon" class="tag-icon">
             <slot name="icon"></slot>
           </span>
           <span part="label" class="tag-label">
             <slot></slot>
           </span>
+          ${this.count !== undefined
+            ? html`<span part="count" class="tag-count">${this.count}</span>`
+            : ''}
+          <slot name="suffix"></slot>
         </span>
         ${this.removable
           ? html`
-              <button
+              <vi-button
                 part="remove-btn"
+                exportparts="button: remove-btn-button, icon: remove-btn-icon"
                 class="tag-remove-btn"
-                aria-label="Remove ${this.textContent?.trim() || 'tag'}"
-                tabindex=${this.disabled ? '-1' : '0'}
+                variant="ghost"
+                size="xs"
+                icon-only
                 ?disabled=${this.disabled}
                 @click=${this._handleRemoveClick}
               >
-                <vi-icon name="x"></vi-icon>
-              </button>
+                <vi-icon slot="icon" name="x" size="12" label="Remove ${this.textContent?.trim() || 'tag'}"></vi-icon>
+              </vi-button>
             `
           : ''}
       </span>
