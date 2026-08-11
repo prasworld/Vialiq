@@ -98,7 +98,7 @@ describe('vi-tag', () => {
   });
 
   describe('Interactions and Events', () => {
-    it('should toggle selected state and emit vialiq-select when clicked in selectable mode', async () => {
+    it('should toggle selected state and emit vi-tag-select when clicked in selectable mode', async () => {
       let selectFired = false;
       let lastSelected = false;
 
@@ -106,7 +106,7 @@ describe('vi-tag', () => {
         html`
           <vi-tag
             selectable
-            @vialiq-select=${(e: CustomEvent<{ selected: boolean }>) => {
+            @vi-tag-select=${(e: CustomEvent<{ selected: boolean }>) => {
               selectFired = true;
               lastSelected = e.detail.selected;
             }}
@@ -128,14 +128,41 @@ describe('vi-tag', () => {
       expect(lastSelected).toBe(true);
     });
 
-    it('should emit vialiq-remove when remove button is clicked', async () => {
+    it('should not toggle selected state when clicked if selectable is false even if selected is true', async () => {
+      let selectFired = false;
+
+      render(
+        html`
+          <vi-tag
+            selected
+            @vi-tag-select=${() => {
+              selectFired = true;
+            }}
+          >
+            Static Selected Tag
+          </vi-tag>
+        `,
+        container
+      );
+
+      const host = await $('vi-tag');
+      const contentWrapper = await host.shadow$('.tag-content-wrapper');
+
+      await browser.execute((el) => (el as HTMLElement).click(), contentWrapper);
+
+      const el = document.querySelector('vi-tag') as ViTag;
+      expect(el.selected).toBe(true);
+      expect(selectFired).toBe(false);
+    });
+
+    it('should emit vi-tag-remove when remove button is clicked', async () => {
       let removeFired = false;
 
       render(
         html`
           <vi-tag
             removable
-            @vialiq-remove=${() => {
+            @vi-tag-remove=${() => {
               removeFired = true;
             }}
           >
@@ -153,14 +180,14 @@ describe('vi-tag', () => {
       expect(removeFired).toBe(true);
     });
 
-    it('should emit vialiq-remove on Delete / Backspace keydown', async () => {
+    it('should make removable-only tag tabbable and emit vi-tag-remove on Delete / Backspace keydown', async () => {
       let removeFired = false;
 
       render(
         html`
           <vi-tag
             removable
-            @vialiq-remove=${() => {
+            @vi-tag-remove=${() => {
               removeFired = true;
             }}
           >
@@ -174,6 +201,8 @@ describe('vi-tag', () => {
       await el.updateComplete;
 
       const contentWrapper = el.shadowRoot?.querySelector('.tag-content-wrapper') as HTMLElement;
+      expect(contentWrapper.getAttribute('tabindex')).toBe('0');
+
       contentWrapper.dispatchEvent(new KeyboardEvent('keydown', { key: 'Delete', bubbles: true }));
 
       expect(removeFired).toBe(true);
@@ -189,8 +218,8 @@ describe('vi-tag', () => {
             disabled
             selectable
             removable
-            @vialiq-select=${() => (selectFired = true)}
-            @vialiq-remove=${() => (removeFired = true)}
+            @vi-tag-select=${() => (selectFired = true)}
+            @vi-tag-remove=${() => (removeFired = true)}
           >
             Disabled Tag
           </vi-tag>

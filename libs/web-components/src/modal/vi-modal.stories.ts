@@ -462,3 +462,46 @@ You can also adjust the animation duration with \`animation-duration\`.
     </vi-modal>
   `,
 };
+
+export const NoBackdrop: Story = {
+  name: 'No Backdrop (Floating Tool Window)',
+  parameters: {
+    docs: {
+      description: {
+        story: 'Demonstrates a modeless floating tool window using `no-backdrop` and `draggable`. Background controls remain interactive.',
+      },
+    },
+  },
+  render: () => html`
+    <div style="padding: 1rem;">
+      <vi-button @click=${() => openModal('modal-no-backdrop')}>
+        Open Floating Window
+      </vi-button>
+      <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
+        <vi-button variant="secondary">Background Interactive Button 1</vi-button>
+        <vi-button variant="outline">Background Interactive Button 2</vi-button>
+      </div>
+    </div>
+
+    <vi-modal
+      id="modal-no-backdrop"
+      size="sm"
+      draggable
+      no-backdrop
+      position="top-right"
+    >
+      <span slot="header">Floating Inspector</span>
+      <div>
+        <p>This modal floats without a dark backdrop overlay.</p>
+        <p style="margin-top: 0.5rem; color: #666; font-size: 0.875rem;">
+          You can drag this panel around and click background controls while it is open.
+        </p>
+      </div>
+      <div slot="footer">
+        <vi-button size="sm" @click=${() => closeModal('modal-no-backdrop')}>
+          Close
+        </vi-button>
+      </div>
+    </vi-modal>
+  `,
+};

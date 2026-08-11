@@ -55,6 +55,14 @@
     flex-shrink: 0;
   }
 
+  /* Draggable Modal Header styles */
+  .modal-dialog.is-draggable {
+    .modal-header {
+      cursor: move;
+      user-select: none;
+    }
+  }
+
   .modal-title {
     font-size: tokens.$font-size-lg;
     font-weight: tokens.$font-weight-semibold;

@@ -383,4 +383,89 @@ describe('vi-modal', () => {
     
     dialog.animate = originalAnimate;
   });
+
+  describe('Draggable functionality', () => {
+    it('attaches drag pointerdown listeners to header when open with draggable=true', async () => {
+      render(html`<vi-modal draggable></vi-modal>`, container);
+      const el = getModal() as ViModal;
+      await el.updateComplete;
+
+      expect(el.open).toBe(false);
+
+      el.show();
+      await el.updateComplete;
+
+      const header = el.shadowRoot!.querySelector('.modal-header') as HTMLElement;
+      expect(header).toBeTruthy();
+      expect(header.style.cursor).toBe('move');
+
+      const dialog = el.shadowRoot!.querySelector('dialog') as HTMLDialogElement;
+
+      // Simulate pointerdown on header
+      const pointerDownEvent = new PointerEvent('pointerdown', {
+        clientX: 100,
+        clientY: 100,
+        button: 0,
+        bubbles: true,
+        composed: true,
+      });
+      header.dispatchEvent(pointerDownEvent);
+
+      // Simulate pointermove on window
+      const pointerMoveEvent = new PointerEvent('pointermove', {
+        clientX: 150,
+        clientY: 120,
+        bubbles: true,
+      });
+      window.dispatchEvent(pointerMoveEvent);
+
+      expect(dialog.style.transform).toContain('translate3d(50px, 20px');
+
+      // Simulate pointerup on window
+      const pointerUpEvent = new PointerEvent('pointerup', {
+        clientX: 150,
+        clientY: 120,
+        bubbles: true,
+      });
+      window.dispatchEvent(pointerUpEvent);
+    });
+
+    it('resets drag transform on resetDrag() or closing', async () => {
+      render(html`<vi-modal open draggable></vi-modal>`, container);
+      const el = getModal() as ViModal;
+      await el.updateComplete;
+
+      const dialog = el.shadowRoot!.querySelector('dialog') as HTMLDialogElement;
+      dialog.style.transform = 'translate3d(50px, 20px, 0)';
+
+      el.close();
+      await el.updateComplete;
+
+      expect(dialog.style.transform).toBe('');
+    });
+  });
+
+  describe('no-backdrop mode', () => {
+    it('does not render backdrop overlay when no-backdrop attribute is set', async () => {
+      render(html`<vi-modal open no-backdrop></vi-modal>`, container);
+      const el = getModal() as ViModal;
+      await el.updateComplete;
+
+      const backdrop = el.shadowRoot!.querySelector('.modal-backdrop');
+      expect(backdrop).toBeNull();
+    });
+
+    it('does not mark background elements inert when no-backdrop attribute is set', async () => {
+      const sibling = document.createElement('button');
+      sibling.textContent = 'Sibling Button';
+      container.appendChild(sibling);
+
+      render(html`<vi-modal open no-backdrop></vi-modal>`, container);
+      const el = getModal() as ViModal;
+      await el.updateComplete;
+
+      expect(sibling.inert).toBe(false);
+      sibling.remove();
+    });
+  });
 });

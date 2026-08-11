@@ -63,8 +63,8 @@ type TagSize = 'xs' | 'sm' | 'md' | 'lg';
 
 | Event | Type | Bubbles | Composed | Fires when |
 |-------|------|---------|---------|-----------|
-| `vialiq-remove` | `CustomEvent<void>` | ✅ | ✅ | Remove button clicked or `Delete`/`Backspace` key pressed |
-| `vialiq-select` | `CustomEvent<{selected: boolean}>` | ✅ | ✅ | Tag clicked in selectable mode (toggles `selected`) |
+| `vi-tag-remove` | `CustomEvent<void>` | ✅ | ✅ | Remove button clicked or `Delete`/`Backspace` key pressed |
+| `vi-tag-select` | `CustomEvent<{selected: boolean}>` | ✅ | ✅ | Tag clicked in selectable mode (toggles `selected`) |
 
 ---
 
@@ -167,13 +167,13 @@ vi-tag::part(remove-btn-button) {
 
 ```html
 <div class="active-filters" role="list" aria-label="Active filters">
-  <vi-tag removable @vialiq-remove="removeFilter('site')">
+  <vi-tag removable @vi-tag-remove="removeFilter('site')">
     Site: 001
   </vi-tag>
-  <vi-tag removable variant="info" .count=${14} @vialiq-remove="removeFilter('queries')">
+  <vi-tag removable variant="info" .count=${14} @vi-tag-remove="removeFilter('queries')">
     Open Queries
   </vi-tag>
-  <vi-tag removable variant="warning" dot @vialiq-remove="removeFilter('status')">
+  <vi-tag removable variant="warning" dot @vi-tag-remove="removeFilter('status')">
     Sync Pending
   </vi-tag>
 </div>

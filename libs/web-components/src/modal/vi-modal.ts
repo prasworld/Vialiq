@@ -18,7 +18,6 @@ import {
   arrowsMaximizeIcon,
   arrowsMinimizeIcon,
 } from '@vialiq/icons';
-
 import {
   PRESET_KEYFRAMES,
   EXIT_COUNTERPART,
@@ -107,6 +106,9 @@ export class ViModal extends DraggableMixin(FocusTrapMixin(ViElement)) {
   /** Prevent close on Escape and backdrop click */
   @property({ type: Boolean }) accessor persistent = false;
 
+  /** Hide/disable the backdrop overlay and allow background interaction */
+  @property({ type: Boolean, attribute: 'no-backdrop' }) accessor noBackdrop = false;
+
   /** Focus first element on open */
   @property({ type: Boolean }) accessor autofocus = true;
 
@@ -180,17 +182,22 @@ export class ViModal extends DraggableMixin(FocusTrapMixin(ViElement)) {
     return this._headerEl;
   }
 
+  private static _iconsRegistered = false;
+
   override connectedCallback(): void {
     super.connectedCallback();
-    registerIcons([
-      checkCircleIcon,
-      triangleWarningIcon,
-      infoIcon,
-      xIcon,
-      lockIcon,
-      arrowsMaximizeIcon,
-      arrowsMinimizeIcon,
-    ]);
+    if (!ViModal._iconsRegistered) {
+      registerIcons([
+        checkCircleIcon,
+        triangleWarningIcon,
+        infoIcon,
+        xIcon,
+        lockIcon,
+        arrowsMaximizeIcon,
+        arrowsMinimizeIcon,
+      ]);
+      ViModal._iconsRegistered = true;
+    }
     this._hasFooterSlot = this.querySelectorAll('[slot="footer"]').length > 0;
   }
 
@@ -292,6 +299,7 @@ export class ViModal extends DraggableMixin(FocusTrapMixin(ViElement)) {
   /** Mark all `document.body` direct children as `inert`, except this modal host. */
   private _applyInert(): void {
     this._inertedElements = [];
+    if (this.noBackdrop) return; // Allow background interaction when no-backdrop is set
     Array.from(document.body.children).forEach((child) => {
       if (child === this) return; // Skip the modal itself
       if ((child as HTMLElement).inert) return; // Already inert — don't touch
@@ -341,11 +349,17 @@ export class ViModal extends DraggableMixin(FocusTrapMixin(ViElement)) {
 
     // Cancel any leftover animation
     this._activeAnimation?.cancel();
-    this._activeAnimation = this._dialog.animate(kf, {
+    const anim = this._dialog.animate(kf, {
       duration: dur,
       easing: 'cubic-bezier(0.2, 0, 0, 1)',
       fill: 'forwards',
     });
+    this._activeAnimation = anim;
+    anim.onfinish = () => {
+      if (this._activeAnimation === anim) {
+        anim.cancel();
+      }
+    };
 
     // Animate backdrop concurrently (simple fade)
     this._backdropEl?.animate(PRESET_KEYFRAMES['fade-in'], {
@@ -532,7 +546,7 @@ export class ViModal extends DraggableMixin(FocusTrapMixin(ViElement)) {
     };
 
     return html`
-      ${this.open
+      ${this.open && !this.noBackdrop
         ? html`
             <div
               class="modal-backdrop"

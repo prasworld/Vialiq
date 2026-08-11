@@ -16,22 +16,11 @@ export declare class DraggableInterface {
  * DraggableMixin
  * 
  * Provides native drag-and-drop capabilities using Pointer Events to any LitElement.
- * It is primarily designed for modals and dialogs that need to be repositioned by the user.
- * 
- * By default, this applies a `transform: translate3d(x, y, 0)` to the element returned 
- * by `_dragTarget`. This is highly performant and avoids reflowing the layout.
+ * It applies performant `transform: translate3d(x, y, 0)` positioning to `_dragTarget`.
  * 
  * Subclasses MUST implement:
  * - `_dragTarget`: The HTML element that moves (usually the outer container or dialog).
  * - `_dragHandle`: The HTML element that accepts pointer events to initiate the drag (usually a header).
- * 
- * @example
- * ```typescript
- * class MyModal extends DraggableMixin(LitElement) {
- *   protected get _dragTarget() { return this.shadowRoot.querySelector('.modal'); }
- *   protected get _dragHandle() { return this.shadowRoot.querySelector('.header'); }
- * }
- * ```
  */
 export function DraggableMixin<T extends Constructor<LitElement>>(
   Base: T
@@ -39,7 +28,6 @@ export function DraggableMixin<T extends Constructor<LitElement>>(
   class DraggableMixinClass extends Base {
     /**
      * Determines whether dragging is currently enabled.
-     * When true, `cursor: move` is applied to the drag handle.
      */
     @property({ type: Boolean, reflect: true }) accessor draggable = false;
 
@@ -52,16 +40,10 @@ export function DraggableMixin<T extends Constructor<LitElement>>(
     private _currentTranslateX = 0;
     private _currentTranslateY = 0;
 
-    /**
-     * Returns the DOM element that should actually be translated on the screen.
-     */
     protected get _dragTarget(): HTMLElement | null {
       return null;
     }
 
-    /**
-     * Returns the DOM element that acts as the "handle" to initiate a drag operation.
-     */
     protected get _dragHandle(): HTMLElement | null {
       return null;
     }
@@ -70,40 +52,30 @@ export function DraggableMixin<T extends Constructor<LitElement>>(
     private _boundOnPointerMove = this._onPointerMove.bind(this);
     private _boundOnPointerUp = this._onPointerUp.bind(this);
 
-    /**
-     * Reattaches the pointerdown listener if the element is disconnected and reconnected
-     * to the DOM (e.g., when teleported to document.body).
-     */
     override connectedCallback() {
       super.connectedCallback();
-      // If the component was disconnected and reconnected (e.g. teleported),
-      // we need to re-attach the event listener since disconnectedCallback removed it.
       if (this.hasUpdated) {
         this._updateDragState();
       }
     }
 
-    /**
-     * Ensures event listeners are attached or detached whenever the `movable` property changes.
-     */
     override updated(changedProperties: PropertyValues) {
       super.updated(changedProperties);
-
-      if (changedProperties.has('draggable')) {
+      if (changedProperties.has('draggable') || this.draggable) {
         this._updateDragState();
       }
     }
 
     /**
-     * Centralized method to apply or remove drag event listeners based on the `movable` state.
+     * Centralized method to apply or remove drag event listeners based on `draggable` state.
      */
-    private _updateDragState() {
+    protected _updateDragState() {
       const handle = this._dragHandle;
       if (handle) {
         if (this.draggable) {
           handle.style.cursor = 'move';
-          handle.style.touchAction = 'none'; // Prevent scroll on touch devices
-          handle.removeEventListener('pointerdown', this._boundOnPointerDown); // prevent duplicates
+          handle.style.touchAction = 'none';
+          handle.removeEventListener('pointerdown', this._boundOnPointerDown);
           handle.addEventListener('pointerdown', this._boundOnPointerDown);
         } else {
           handle.style.cursor = '';
@@ -124,48 +96,56 @@ export function DraggableMixin<T extends Constructor<LitElement>>(
     }
 
     private _onPointerDown(e: PointerEvent) {
-      if (!this.draggable || e.button !== 0) return; // Only left click
+      if (!this.draggable || e.button !== 0) return;
 
       const target = this._dragTarget;
-      if (!target) return;
+      const handle = this._dragHandle;
+      if (!target || !handle) return;
 
-      // Check if the user is clicking on an interactive element inside the handle
+      // Ignore clicks on interactive controls inside the header handle
       const composedPath = e.composedPath();
       const isInteractive = composedPath.some((node) => {
-        if (node instanceof HTMLElement) {
+        if (node instanceof HTMLElement && node !== handle) {
           const tag = node.tagName.toLowerCase();
-          return ['button', 'a', 'input', 'select', 'textarea'].includes(tag);
+          const role = node.getAttribute('role');
+          return (
+            ['button', 'a', 'input', 'select', 'textarea', 'vi-button'].includes(tag) ||
+            role === 'button' ||
+            node.hasAttribute('data-no-drag')
+          );
         }
         return false;
       });
 
       if (isInteractive) return;
 
+      // Prevent native text selection or default drag behavior
+      e.preventDefault();
+
       this._isDragging = true;
       this._dragStartX = e.clientX;
       this._dragStartY = e.clientY;
+      this._initialTranslateX = this._currentTranslateX;
+      this._initialTranslateY = this._currentTranslateY;
 
-      // Extract current translation if any
-      const style = window.getComputedStyle(target);
-      const matrix = new DOMMatrixReadOnly(style.transform === 'none' ? undefined : style.transform);
-      this._initialTranslateX = matrix.m41;
-      this._initialTranslateY = matrix.m42;
+      // Unblock inline transform by cancelling any active Web Animations API effects
+      if (typeof target.getAnimations === 'function') {
+        target.getAnimations().forEach((anim) => anim.cancel());
+      }
 
-      // Disable transitions during drag for immediate response
       target.style.transition = 'none';
+      document.body.style.cursor = 'move';
+      this._previousUserSelect = document.body.style.getPropertyValue('user-select') || null;
+      document.body.style.setProperty('user-select', 'none', 'important');
 
       window.addEventListener('pointermove', this._boundOnPointerMove);
       window.addEventListener('pointerup', this._boundOnPointerUp);
       window.addEventListener('pointercancel', this._boundOnPointerUp);
-      
-      // Prevent text selection while dragging
-      this._previousUserSelect = document.body.style.getPropertyValue('user-select') || null;
-      document.body.style.setProperty('user-select', 'none', 'important');
-      
-      // Capture pointer so we don't lose it if moving too fast
-      const handle = this._dragHandle;
-      if (handle) {
+
+      try {
         handle.setPointerCapture(e.pointerId);
+      } catch {
+        // Fallback if pointer capture fails
       }
     }
 
@@ -190,23 +170,33 @@ export function DraggableMixin<T extends Constructor<LitElement>>(
       if (!this._isDragging) return;
       this._isDragging = false;
 
+      // Remove event listeners before releasing pointer capture to avoid synthetic event triggers
+      this._removeWindowListeners();
+
       const handle = this._dragHandle;
-      if (handle && handle.hasPointerCapture(e.pointerId)) {
-        handle.releasePointerCapture(e.pointerId);
+      if (handle) {
+        try {
+          if (handle.hasPointerCapture(e.pointerId)) {
+            handle.releasePointerCapture(e.pointerId);
+          }
+        } catch {
+          // Ignore if release fails
+        }
       }
 
-      this._removeWindowListeners();
-      
+      document.body.style.cursor = '';
+
       if (this._previousUserSelect !== null) {
         document.body.style.setProperty('user-select', this._previousUserSelect);
       } else {
         document.body.style.removeProperty('user-select');
       }
       this._previousUserSelect = null;
-      
+
       const target = this._dragTarget;
       if (target) {
-        target.style.transition = ''; // Restore transition
+        target.style.transform = `translate3d(${this._currentTranslateX}px, ${this._currentTranslateY}px, 0)`;
+        target.style.transition = 'none';
       }
     }
 
@@ -218,12 +208,6 @@ export function DraggableMixin<T extends Constructor<LitElement>>(
     
     /**
      * Resets the drag translation back to origin (0,0).
-     * Useful when the modal is closed and reopened so it doesn't appear
-     * off-screen, or when the modal is maximized.
-     * 
-     * IMPORTANT: By removing the `transform` style entirely, we ensure that the dragged 
-     * element does not accidentally establish a CSS containing block for `position: fixed`
-     * descendants when it is not actively being dragged.
      */
     protected _resetDrag() {
       this._currentTranslateX = 0;
@@ -252,7 +236,7 @@ export function DraggableMixin<T extends Constructor<LitElement>>(
       
       const target = this._dragTarget;
       if (target) {
-        target.style.transition = ''; // Restore transition
+        target.style.transition = '';
       }
     }
   }

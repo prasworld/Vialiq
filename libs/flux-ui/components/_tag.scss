@@ -1,6 +1,7 @@
 @use '../styles/variables' as tokens;
 
 @layer components {
+  :host,
   :root {
     --vi-tag-height: 24px;
     --vi-tag-padding-x: 10px;

@@ -45,8 +45,8 @@ export type TagSize = 'xs' | 'sm' | 'md' | 'lg';
  * @slot avatar - Avatar image/thumbnail slot
  * @slot suffix - Suffix element slot (after label/count)
  *
- * @fires vialiq-remove - Fired when remove button is clicked or Delete/Backspace key is pressed.
- * @fires vialiq-select - Fired when tag is clicked in selectable mode.
+ * @fires vi-tag-remove - Fired when remove button is clicked or Delete/Backspace key is pressed.
+ * @fires vi-tag-select - Fired when tag is clicked in selectable mode.
  *
  * @csspart tag - The tag container `<span>`
  * @csspart icon - Leading icon slot wrapper
@@ -91,24 +91,30 @@ export class ViTag extends ViElement {
   /** Disable interactions */
   @property({ type: Boolean, reflect: true }) accessor disabled = false;
 
+  private static _iconsRegistered = false;
+
   override connectedCallback(): void {
     super.connectedCallback();
-    registerIcons([xIcon, checkIcon]);
+    if (!ViTag._iconsRegistered) {
+      registerIcons([xIcon, checkIcon]);
+      ViTag._iconsRegistered = true;
+    }
+    if (this.closest('[role="list"]') !== null && !this.hasAttribute('role')) {
+      this.setAttribute('role', 'listitem');
+    }
   }
 
   private _handleTagClick(_e?: Event): void {
-    if (this.disabled) return;
+    if (this.disabled || !this.selectable) return;
 
-    if (this.selectable || this.hasAttribute('selected') || this.selected) {
-      this.selected = !this.selected;
-      this.dispatchEvent(
-        new CustomEvent('vialiq-select', {
-          bubbles: true,
-          composed: true,
-          detail: { selected: this.selected },
-        })
-      );
-    }
+    this.selected = !this.selected;
+    this.dispatchEvent(
+      new CustomEvent('vi-tag-select', {
+        bubbles: true,
+        composed: true,
+        detail: { selected: this.selected },
+      })
+    );
   }
 
   private _handleRemoveClick(e: Event): void {
@@ -131,7 +137,7 @@ export class ViTag extends ViElement {
 
   private _fireRemoveEvent(): void {
     this.dispatchEvent(
-      new CustomEvent('vialiq-remove', {
+      new CustomEvent('vi-tag-remove', {
         bubbles: true,
         composed: true,
       })
@@ -139,8 +145,7 @@ export class ViTag extends ViElement {
   }
 
   override render(): TemplateResult {
-    const isInteractive = this.selectable || this.hasAttribute('selected') || this.selected;
-    const isListitem = this.closest('[role="list"]') !== null;
+    const isTabbable = (this.selectable || this.removable) && !this.disabled;
 
     const classes = {
       'tag': true,
@@ -149,7 +154,7 @@ export class ViTag extends ViElement {
       [`size-${this.size}`]: true,
       'tag--pill': this.pill,
       'tag--removable': this.removable,
-      'tag-clickable': !this.disabled && isInteractive,
+      'tag-clickable': !this.disabled && this.selectable,
       'tag-selected': this.selected,
       'is-disabled': this.disabled,
     };
@@ -158,15 +163,14 @@ export class ViTag extends ViElement {
       <span
         part="tag"
         class=${classMap(classes)}
-        role=${isListitem ? 'listitem' : nothing}
         aria-disabled=${this.disabled ? 'true' : 'false'}
       >
         <span
           class="tag-content-wrapper"
-          role=${isInteractive ? 'button' : nothing}
-          tabindex=${this.disabled ? '-1' : (isInteractive ? 0 : nothing)}
-          aria-pressed=${isInteractive ? (this.selected ? 'true' : 'false') : nothing}
-          @click=${this._handleTagClick}
+          role=${this.selectable ? 'button' : nothing}
+          tabindex=${this.disabled ? '-1' : (isTabbable ? 0 : nothing)}
+          aria-pressed=${this.selectable ? (this.selected ? 'true' : 'false') : nothing}
+          @click=${this.selectable ? this._handleTagClick : nothing}
           @keydown=${this._handleKeyDown}
         >
           ${this.dot ? html`<span part="dot" class="tag-dot" aria-hidden="true"></span>` : ''}
@@ -200,10 +204,11 @@ export class ViTag extends ViElement {
                 variant="ghost"
                 size="xs"
                 icon-only
+                label="Remove ${this.textContent?.trim() || 'tag'}"
                 ?disabled=${this.disabled}
                 @click=${this._handleRemoveClick}
               >
-                <vi-icon slot="icon" name="x" size="12" label="Remove ${this.textContent?.trim() || 'tag'}"></vi-icon>
+                <vi-icon slot="icon" name="x" size="12" aria-hidden="true"></vi-icon>
               </vi-button>
             `
           : ''}
