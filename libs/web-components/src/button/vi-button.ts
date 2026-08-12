@@ -1,4 +1,4 @@
-import { css, html, unsafeCSS, type PropertyValues, type TemplateResult } from 'lit';
+import { css, html, nothing, unsafeCSS, type PropertyValues, type TemplateResult } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { FocusableMixin } from '../base/focusable-mixin.js';
 import { ViElement } from '../base/vi-element.js';
@@ -70,6 +70,9 @@ export class ViButton extends FocusableMixin(ViElement) {
   /** Disables the button. */
   @property({ type: Boolean, reflect: true }) accessor disabled = false;
 
+  /** Accessible label forwarded to the inner native button. */
+  @property({ attribute: 'aria-label' }) override accessor ariaLabel: string | null = null;
+
   @state() private accessor _hasIcon = false;
 
   override updated(changed: PropertyValues): void {
@@ -109,6 +112,7 @@ export class ViButton extends FocusableMixin(ViElement) {
         type="button"
         tabindex="0"
         ?disabled=${disabled}
+        aria-label=${this.ariaLabel ?? nothing}
         @click=${onClick}
       >
         <slot

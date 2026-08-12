@@ -545,15 +545,42 @@ vi-checkbox[status="invalid"] { --vi-checkbox-border-color: var(--vi-color-error
 
 | Property | Default | Description |
 |----------|---------|-------------|
-| `--vi-tag-height` | `28px` | Tag height |
-| `--vi-tag-padding-inline` | `10px` | Horizontal padding |
-| `--vi-tag-font-size` | `tokens.$font-size-xs` | Label font size |
-| `--vi-tag-border-radius` | `tokens.$border-radius-sm` | Corner radius |
-| `--vi-tag-gap` | `tokens.$spacing-xs` | Gap: label→remove button |
-| `--vi-tag-background-color` | `tokens.$layer-02` | Background |
-| `--vi-tag-text-color` | `tokens.$color-foreground` | Label colour |
-| `--vi-tag-border-color` | `tokens.$border-03` | Border |
-| `--vi-tag-remove-size` | `16px` | Remove button icon size |
+| `--vi-tag-height` | `24px` | Container height (md) |
+| `--vi-tag-padding-x` | `10px` | Horizontal inline padding |
+| `--vi-tag-border-radius` | `4px` | Corner radius |
+| `--vi-tag-font-size` | `12px` | Label font size |
+| `--vi-tag-font-weight` | `500` | Label font weight |
+| `--vi-tag-gap` | `6px` | Gap between internal elements |
+| `--vi-tag-remove-size` | `16px` | Remove button container size |
+| `--vi-tag-dot-size` | `6px` | Status dot indicator diameter |
+| `--vi-tag-avatar-size` | `14px` | Avatar image diameter |
+| `--vi-tag-icon-size` | `14px` | Leading icon size |
+| `--vi-tag-neutral-bg` | `tokens.$layer-02` | Neutral subtle background |
+| `--vi-tag-neutral-color` | `tokens.$text-primary` | Neutral subtle text color |
+| `--vi-tag-primary-bg` | `tokens.$bg-info` | Primary subtle background |
+| `--vi-tag-primary-color` | `tokens.$text-info` | Primary subtle text color |
+| `--vi-tag-success-bg` | `tokens.$bg-success` | Success subtle background |
+| `--vi-tag-success-color` | `tokens.$text-success` | Success subtle text color |
+| `--vi-tag-warning-bg` | `tokens.$bg-warning` | Warning subtle background |
+| `--vi-tag-warning-color` | `tokens.$text-warning` | Warning subtle text color |
+| `--vi-tag-danger-bg` | `tokens.$bg-error` | Danger subtle background |
+| `--vi-tag-danger-color` | `tokens.$text-error` | Danger subtle text color |
+| `--vi-tag-info-bg` | `tokens.$color-blue-100` | Info subtle background |
+| `--vi-tag-info-color` | `tokens.$color-blue-700` | Info subtle text color |
+
+#### Example: Creating a Custom Size Tag (e.g. Extra Large Hero Tag)
+
+```css
+.hero-tag-xl {
+  --vi-tag-height: 36px;
+  --vi-tag-padding-x: 16px;
+  --vi-tag-font-size: 15px;
+  --vi-tag-gap: 10px;
+  --vi-tag-avatar-size: 22px;
+  --vi-tag-icon-size: 20px;
+  --vi-tag-remove-size: 24px;
+}
+```
 
 ---
 

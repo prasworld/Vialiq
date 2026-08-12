@@ -29,9 +29,20 @@ export class ViIcon extends ViElement {
       justify-content: center;
       width: var(--vi-icon-size, 24px);
       height: var(--vi-icon-size, 24px);
+      line-height: 1;
+    }
+
+    span {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      line-height: 1;
     }
 
     svg {
+      display: block;
       width: 100%;
       height: 100%;
       fill: none;

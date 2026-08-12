@@ -42,5 +42,8 @@ export type {
   AnimationPhase,
   ViAnimationEventDetail,
 } from './animation/vi-animation.js';
+
+export { ViTag } from './tag/vi-tag.js';
+export type { TagVariant, TagAppearance, TagSize } from './tag/vi-tag.js';
 export { ViSwitch } from './switch/vi-switch.js';
 export type { SwitchSize, LabelPlacement } from './switch/vi-switch.js';

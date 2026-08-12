@@ -1,0 +1,448 @@
+@use '../styles/variables' as tokens;
+
+@layer components {
+  :host,
+  :root {
+    --vi-tag-height: 24px;
+    --vi-tag-padding-x: 10px;
+    --vi-tag-border-radius: 4px;
+    --vi-tag-font-size: var(--vi-font-size-xs, #{tokens.$font-size-xs});
+    --vi-tag-font-weight: var(--vi-font-weight-medium, #{tokens.$font-weight-medium});
+    --vi-tag-gap: 6px;
+    --vi-tag-remove-size: 16px;
+    --vi-tag-dot-size: 6px;
+    --vi-tag-avatar-size: 14px;
+    --vi-tag-icon-size: 14px;
+    --vi-tag-transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    --vi-tag-disabled-opacity: 0.5;
+    --vi-tag-max-width: 100%;
+  }
+
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    height: var(--vi-tag-height);
+    padding-inline: var(--vi-tag-padding-x);
+    border-radius: var(--vi-tag-border-radius);
+    font-family: #{tokens.$font-family-base};
+    font-size: var(--vi-tag-font-size);
+    font-weight: var(--vi-tag-font-weight);
+    line-height: 1;
+    gap: var(--vi-tag-gap);
+    transition: var(--vi-tag-transition);
+    user-select: none;
+    border: #{tokens.$border-width-thin} solid transparent;
+    cursor: default;
+    max-width: var(--vi-tag-max-width);
+    vertical-align: middle;
+    position: relative;
+
+    // ── Pill shape modifier ──────────────────────────────────────────────────
+    &.tag--pill {
+      border-radius: 9999px;
+    }
+
+    // ── Removable padding adjustment ──────────────────────────────────────────
+    &.tag--removable {
+      padding-inline-end: calc(var(--vi-tag-padding-x) - 4px);
+    }
+
+    // ── Content wrapper & optical vertical alignment ─────────────────────────
+    .tag-content-wrapper {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--vi-tag-gap);
+      min-width: 0;
+      flex: 1 1 auto;
+      height: 100%;
+      line-height: 1;
+      outline: none;
+      border-radius: inherit;
+    }
+
+    .tag-label {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      min-width: 0;
+      line-height: 1;
+      display: inline-block;
+    }
+
+    // ── Icon & Avatar slots ──────────────────────────────────────────────────
+    .tag-icon,
+    .tag-avatar,
+    .tag-checkmark {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .tag-avatar ::slotted(*) {
+      width: var(--vi-tag-avatar-size, calc(var(--vi-tag-height) - 10px));
+      height: var(--vi-tag-avatar-size, calc(var(--vi-tag-height) - 10px));
+      border-radius: 50%;
+      object-fit: cover;
+      display: block;
+    }
+
+    // ── Status Dot indicator ────────────────────────────────────────────────
+    .tag-dot {
+      display: inline-block;
+      width: var(--vi-tag-dot-size);
+      height: var(--vi-tag-dot-size);
+      border-radius: 50%;
+      background-color: currentColor;
+      flex-shrink: 0;
+    }
+
+    // ── Suffix Count Badge ──────────────────────────────────────────────────
+    .tag-count {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding-inline: 5px;
+      height: calc(var(--vi-tag-height) - 10px);
+      min-width: calc(var(--vi-tag-height) - 10px);
+      font-size: 10px;
+      font-weight: #{tokens.$font-weight-semibold};
+      border-radius: 9999px;
+      background-color: rgba(0, 0, 0, 0.08);
+      color: inherit;
+      line-height: 1;
+      flex-shrink: 0;
+      margin-inline-start: 2px;
+    }
+
+    // ── Interactive state styles ─────────────────────────────────────────────
+    &.tag-clickable {
+      cursor: pointer;
+
+      &:hover {
+        transform: translateY(-1px);
+      }
+
+      &:active {
+        transform: translateY(0px) scale(0.98);
+      }
+    }
+
+    // ────────────────────────────────────────────────────────────────────────
+    // APPEARANCE: Subtle (Soft background tint + subtle border)
+    // ────────────────────────────────────────────────────────────────────────
+    &.appearance-subtle {
+      &.variant-neutral {
+        background-color: var(--vi-tag-neutral-bg, #{tokens.$layer-02});
+        color: var(--vi-tag-neutral-color, #{tokens.$text-primary});
+        border-color: var(--vi-tag-neutral-border, #{tokens.$border-03});
+
+        &.tag-clickable:hover {
+          background-color: var(--vi-tag-neutral-hover-bg, #{tokens.$layer-03});
+          border-color: var(--vi-tag-neutral-hover-border, #{tokens.$border-04});
+        }
+        &.tag-selected {
+          background-color: var(--vi-tag-neutral-selected-bg, #{tokens.$layer-03});
+          border-color: var(--vi-tag-neutral-selected-border, #{tokens.$color-primary});
+          color: var(--vi-tag-neutral-selected-color, #{tokens.$color-primary});
+        }
+      }
+
+      &.variant-primary {
+        background-color: var(--vi-tag-primary-bg, #{tokens.$bg-info});
+        color: var(--vi-tag-primary-color, #{tokens.$text-info});
+        border-color: var(--vi-tag-primary-border, #{tokens.$color-blue-300});
+
+        &.tag-clickable:hover {
+          background-color: var(--vi-tag-primary-hover-bg, #{tokens.$color-blue-100});
+          border-color: var(--vi-tag-primary-hover-border, #{tokens.$color-blue-400});
+        }
+        &.tag-selected {
+          background-color: var(--vi-tag-primary-selected-bg, #{tokens.$color-blue-100});
+          border-color: var(--vi-tag-primary-selected-border, #{tokens.$color-primary});
+          color: var(--vi-tag-primary-selected-color, #{tokens.$color-blue-800});
+        }
+      }
+
+      &.variant-success {
+        background-color: var(--vi-tag-success-bg, #{tokens.$bg-success});
+        color: var(--vi-tag-success-color, #{tokens.$text-success});
+        border-color: var(--vi-tag-success-border, #{tokens.$color-green-300});
+
+        &.tag-clickable:hover {
+          background-color: var(--vi-tag-success-hover-bg, #{tokens.$color-green-100});
+          border-color: var(--vi-tag-success-hover-border, #{tokens.$color-green-400});
+        }
+        &.tag-selected {
+          background-color: var(--vi-tag-success-selected-bg, #{tokens.$color-green-100});
+          border-color: var(--vi-tag-success-selected-border, #{tokens.$color-success});
+          color: var(--vi-tag-success-selected-color, #{tokens.$color-green-800});
+        }
+      }
+
+      &.variant-warning {
+        background-color: var(--vi-tag-warning-bg, #{tokens.$bg-warning});
+        color: var(--vi-tag-warning-color, #{tokens.$text-warning});
+        border-color: var(--vi-tag-warning-border, #{tokens.$color-yellow-300});
+
+        &.tag-clickable:hover {
+          background-color: var(--vi-tag-warning-hover-bg, #{tokens.$color-yellow-100});
+          border-color: var(--vi-tag-warning-hover-border, #{tokens.$color-yellow-400});
+        }
+        &.tag-selected {
+          background-color: var(--vi-tag-warning-selected-bg, #{tokens.$color-yellow-100});
+          border-color: var(--vi-tag-warning-selected-border, #{tokens.$color-warning});
+          color: var(--vi-tag-warning-selected-color, #{tokens.$color-yellow-800});
+        }
+      }
+
+      &.variant-danger {
+        background-color: var(--vi-tag-danger-bg, #{tokens.$bg-error});
+        color: var(--vi-tag-danger-color, #{tokens.$text-error});
+        border-color: var(--vi-tag-danger-border, #{tokens.$color-red-300});
+
+        &.tag-clickable:hover {
+          background-color: var(--vi-tag-danger-hover-bg, #{tokens.$color-red-100});
+          border-color: var(--vi-tag-danger-hover-border, #{tokens.$color-red-400});
+        }
+        &.tag-selected {
+          background-color: var(--vi-tag-danger-selected-bg, #{tokens.$color-red-100});
+          border-color: var(--vi-tag-danger-selected-border, #{tokens.$color-error});
+          color: var(--vi-tag-danger-selected-color, #{tokens.$color-red-800});
+        }
+      }
+
+      &.variant-info {
+        background-color: var(--vi-tag-info-bg, #{tokens.$color-blue-100});
+        color: var(--vi-tag-info-color, #{tokens.$color-blue-700});
+        border-color: var(--vi-tag-info-border, #{tokens.$color-blue-300});
+
+        &.tag-clickable:hover {
+          background-color: var(--vi-tag-info-hover-bg, #{tokens.$color-blue-200});
+          border-color: var(--vi-tag-info-hover-border, #{tokens.$color-blue-500});
+        }
+        &.tag-selected {
+          background-color: var(--vi-tag-info-selected-bg, #{tokens.$color-blue-200});
+          border-color: var(--vi-tag-info-selected-border, #{tokens.$color-blue-700});
+          color: var(--vi-tag-info-selected-color, #{tokens.$color-blue-900});
+        }
+      }
+
+      &.variant-contrast {
+        background-color: var(--vi-tag-contrast-bg, #{tokens.$text-primary});
+        color: var(--vi-tag-contrast-color, #{tokens.$text-primary-inverse});
+        border-color: var(--vi-tag-contrast-border, #{tokens.$text-primary});
+
+        .tag-count {
+          background-color: rgba(255, 255, 255, 0.2);
+        }
+      }
+    }
+
+    // ────────────────────────────────────────────────────────────────────────
+    // APPEARANCE: Outline (Transparent bg, crisp theme border)
+    // ────────────────────────────────────────────────────────────────────────
+    &.appearance-outline {
+      background-color: transparent;
+
+      &.variant-neutral {
+        color: var(--vi-tag-outline-neutral-color, #{tokens.$text-primary});
+        border-color: var(--vi-tag-outline-neutral-border, #{tokens.$border-04});
+        &.tag-clickable:hover, &.tag-selected {
+          background-color: var(--vi-tag-outline-neutral-hover-bg, #{tokens.$layer-02});
+        }
+      }
+
+      &.variant-primary {
+        color: var(--vi-tag-outline-primary-color, #{tokens.$color-primary});
+        border-color: var(--vi-tag-outline-primary-border, #{tokens.$color-primary});
+        &.tag-clickable:hover, &.tag-selected {
+          background-color: var(--vi-tag-outline-primary-hover-bg, #{tokens.$bg-info});
+        }
+      }
+
+      &.variant-success {
+        color: var(--vi-tag-outline-success-color, #{tokens.$color-success});
+        border-color: var(--vi-tag-outline-success-border, #{tokens.$color-success});
+        &.tag-clickable:hover, &.tag-selected {
+          background-color: var(--vi-tag-outline-success-hover-bg, #{tokens.$bg-success});
+        }
+      }
+
+      &.variant-warning {
+        color: var(--vi-tag-outline-warning-color, #{tokens.$color-warning});
+        border-color: var(--vi-tag-outline-warning-border, #{tokens.$color-warning});
+        &.tag-clickable:hover, &.tag-selected {
+          background-color: var(--vi-tag-outline-warning-hover-bg, #{tokens.$bg-warning});
+        }
+      }
+
+      &.variant-danger {
+        color: var(--vi-tag-outline-danger-color, #{tokens.$color-error});
+        border-color: var(--vi-tag-outline-danger-border, #{tokens.$color-error});
+        &.tag-clickable:hover, &.tag-selected {
+          background-color: var(--vi-tag-outline-danger-hover-bg, #{tokens.$bg-error});
+        }
+      }
+
+      &.variant-info {
+        color: var(--vi-tag-outline-info-color, #{tokens.$color-blue-700});
+        border-color: var(--vi-tag-outline-info-border, #{tokens.$color-blue-500});
+        &.tag-clickable:hover, &.tag-selected {
+          background-color: var(--vi-tag-outline-info-hover-bg, #{tokens.$color-blue-100});
+        }
+      }
+
+      &.variant-contrast {
+        color: var(--vi-tag-outline-contrast-color, #{tokens.$text-primary});
+        border-color: var(--vi-tag-outline-contrast-border, #{tokens.$text-primary});
+        &.tag-clickable:hover, &.tag-selected {
+          background-color: var(--vi-tag-outline-contrast-hover-bg, #{tokens.$layer-02});
+        }
+      }
+    }
+
+    // ────────────────────────────────────────────────────────────────────────
+    // APPEARANCE: Solid (Filled theme background)
+    // ────────────────────────────────────────────────────────────────────────
+    &.appearance-solid {
+      border-color: transparent;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+
+      &.variant-neutral {
+        background-color: var(--vi-tag-solid-neutral-bg, #{tokens.$border-inverse-03});
+        color: var(--vi-tag-solid-neutral-color, #{tokens.$text-primary-inverse});
+        &.tag-clickable:hover, &.tag-selected {
+          background-color: var(--vi-tag-solid-neutral-hover-bg, #{tokens.$text-primary});
+        }
+      }
+
+      &.variant-primary {
+        background-color: var(--vi-tag-solid-primary-bg, #{tokens.$color-primary});
+        color: var(--vi-tag-solid-primary-color, #{tokens.$text-primary-inverse});
+        &.tag-clickable:hover, &.tag-selected {
+          background-color: var(--vi-tag-solid-primary-hover-bg, #{tokens.$color-blue-800});
+        }
+      }
+
+      &.variant-success {
+        background-color: var(--vi-tag-solid-success-bg, #{tokens.$color-success});
+        color: var(--vi-tag-solid-success-color, #{tokens.$text-primary-inverse});
+        &.tag-clickable:hover, &.tag-selected {
+          background-color: var(--vi-tag-solid-success-hover-bg, #{tokens.$color-green-700});
+        }
+      }
+
+      &.variant-warning {
+        background-color: var(--vi-tag-solid-warning-bg, #{tokens.$color-warning});
+        color: var(--vi-tag-solid-warning-color, #{tokens.$text-primary-inverse});
+        &.tag-clickable:hover, &.tag-selected {
+          background-color: var(--vi-tag-solid-warning-hover-bg, #{tokens.$color-yellow-700});
+        }
+      }
+
+      &.variant-danger {
+        background-color: var(--vi-tag-solid-danger-bg, #{tokens.$color-error});
+        color: var(--vi-tag-solid-danger-color, #{tokens.$text-primary-inverse});
+        &.tag-clickable:hover, &.tag-selected {
+          background-color: var(--vi-tag-solid-danger-hover-bg, #{tokens.$color-red-700});
+        }
+      }
+
+      &.variant-info {
+        background-color: var(--vi-tag-solid-info-bg, #{tokens.$color-blue-600});
+        color: var(--vi-tag-solid-info-color, #{tokens.$text-primary-inverse});
+        &.tag-clickable:hover, &.tag-selected {
+          background-color: var(--vi-tag-solid-info-hover-bg, #{tokens.$color-blue-800});
+        }
+      }
+
+      &.variant-contrast {
+        background-color: var(--vi-tag-solid-contrast-bg, #{tokens.$text-primary});
+        color: var(--vi-tag-solid-contrast-color, #{tokens.$text-primary-inverse});
+      }
+
+      .tag-count {
+        background-color: rgba(255, 255, 255, 0.25);
+      }
+    }
+
+    // ────────────────────────────────────────────────────────────────────────
+    // SIZES
+    // ────────────────────────────────────────────────────────────────────────
+    &.size-xs {
+      --vi-tag-height: 18px;
+      --vi-tag-font-size: 10px;
+      --vi-tag-padding-x: 6px;
+      --vi-tag-gap: 4px;
+      --vi-tag-remove-size: 12px;
+      --vi-tag-dot-size: 4px;
+      --vi-tag-avatar-size: 10px;
+      --vi-tag-icon-size: 10px;
+    }
+
+    &.size-sm {
+      --vi-tag-height: 20px;
+      --vi-tag-font-size: 11px;
+      --vi-tag-padding-x: 8px;
+      --vi-tag-gap: 5px;
+      --vi-tag-remove-size: 14px;
+      --vi-tag-dot-size: 5px;
+      --vi-tag-avatar-size: 12px;
+      --vi-tag-icon-size: 12px;
+    }
+
+    &.size-lg {
+      --vi-tag-height: 28px;
+      --vi-tag-font-size: 13px;
+      --vi-tag-padding-x: 12px;
+      --vi-tag-gap: 8px;
+      --vi-tag-remove-size: 18px;
+      --vi-tag-dot-size: 7px;
+      --vi-tag-avatar-size: 18px;
+      --vi-tag-icon-size: 16px;
+    }
+
+    // ── Disabled state ───────────────────────────────────────────────────────
+    &.is-disabled {
+      opacity: var(--vi-tag-disabled-opacity);
+      pointer-events: none;
+      cursor: not-allowed;
+      box-shadow: none !important;
+      transform: none !important;
+    }
+  }
+
+  // ── Remove Button styling ──────────────────────────────────────────────────
+  .tag-remove-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--vi-tag-remove-size);
+    height: var(--vi-tag-remove-size);
+    min-width: var(--vi-tag-remove-size);
+    padding: 0;
+    border-radius: 50%;
+    margin-inline-start: 2px;
+    margin-inline-end: 0;
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    color: inherit;
+    transition: var(--vi-tag-transition);
+    flex-shrink: 0;
+    line-height: 1;
+
+    &:hover {
+      background-color: rgba(0, 0, 0, 0.12);
+    }
+
+    &:active {
+      transform: scale(0.92);
+    }
+  }
+}

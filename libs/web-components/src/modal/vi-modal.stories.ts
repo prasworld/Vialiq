@@ -52,7 +52,17 @@ const meta: Meta = {
     },
     position: {
       control: 'select',
-      options: ['center', 'top', 'bottom', 'left', 'right', 'top-left', 'top-right', 'bottom-left', 'bottom-right'],
+      options: [
+        'center',
+        'top',
+        'bottom',
+        'left',
+        'right',
+        'top-left',
+        'top-right',
+        'bottom-left',
+        'bottom-right',
+      ],
       description: 'Position of the modal on the screen.',
     },
     autofocus: {
@@ -61,7 +71,8 @@ const meta: Meta = {
     },
     scrollable: {
       control: 'boolean',
-      description: 'Allows the body to scroll while keeping the header/footer fixed.',
+      description:
+        'Allows the body to scroll while keeping the header/footer fixed.',
     },
   },
 };
@@ -110,10 +121,17 @@ export const Default: Story = {
       ?scrollable=${args.scrollable}
     >
       <span slot="header">Default Modal</span>
-      <p>This is the default modal content. It acts as a standard dialog for forms and general information.</p>
+      <p>
+        This is the default modal content. It acts as a standard dialog for
+        forms and general information.
+      </p>
       <div slot="footer">
-        <vi-button variant="ghost" @click=${() => closeModal('modal-default')}>Cancel</vi-button>
-        <vi-button variant="primary" @click=${() => closeModal('modal-default')}>Save</vi-button>
+        <vi-button variant="ghost" @click=${() => closeModal('modal-default')}
+          >Cancel</vi-button
+        >
+        <vi-button variant="primary" @click=${() => closeModal('modal-default')}
+          >Save</vi-button
+        >
       </div>
     </vi-modal>
   `,
@@ -122,16 +140,22 @@ export const Default: Story = {
 export const Sizes: Story = {
   render: () => html`
     <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-      ${['xs', 'sm', 'md', 'lg', 'xl', 'full-width', 'fullscreen'].map(size => html`
-        <vi-button @click=${() => openModal(`modal-size-${size}`)}>Size: ${size}</vi-button>
-        <vi-modal id="modal-size-${size}" size=${size}>
-          <span slot="header">Modal Size: ${size}</span>
-          <p>This modal is rendered with size <strong>${size}</strong>.</p>
-          <div slot="footer">
-            <vi-button @click=${() => closeModal(`modal-size-${size}`)}>Close</vi-button>
-          </div>
-        </vi-modal>
-      `)}
+      ${['xs', 'sm', 'md', 'lg', 'xl', 'full-width', 'fullscreen'].map(
+        (size) => html`
+          <vi-button @click=${() => openModal(`modal-size-${size}`)}
+            >Size: ${size}</vi-button
+          >
+          <vi-modal id="modal-size-${size}" size=${size}>
+            <span slot="header">Modal Size: ${size}</span>
+            <p>This modal is rendered with size <strong>${size}</strong>.</p>
+            <div slot="footer">
+              <vi-button @click=${() => closeModal(`modal-size-${size}`)}
+                >Close</vi-button
+              >
+            </div>
+          </vi-modal>
+        `,
+      )}
     </div>
   `,
 };
@@ -148,10 +172,18 @@ export const Drawer: Story = {
       drawer-placement=${args.drawerPlacement}
     >
       <span slot="header">Drawer Variant</span>
-      <p>Drawers slide in from the edge of the screen and take up the full viewport height.</p>
-      <p>They are useful for detailed records, audit trails, and configuration settings.</p>
+      <p>
+        Drawers slide in from the edge of the screen and take up the full
+        viewport height.
+      </p>
+      <p>
+        They are useful for detailed records, audit trails, and configuration
+        settings.
+      </p>
       <div slot="footer">
-        <vi-button variant="primary" @click=${() => closeModal('modal-drawer')}>Submit</vi-button>
+        <vi-button variant="primary" @click=${() => closeModal('modal-drawer')}
+          >Submit</vi-button
+        >
       </div>
     </vi-modal>
   `,
@@ -163,7 +195,9 @@ export const Alert: Story = {
     persistent: true,
   },
   render: (args) => html`
-    <vi-button variant="danger" @click=${() => openModal('modal-alert')}>Lock Data</vi-button>
+    <vi-button variant="danger" @click=${() => openModal('modal-alert')}
+      >Lock Data</vi-button
+    >
     <vi-modal
       id="modal-alert"
       variant="alert"
@@ -172,11 +206,20 @@ export const Alert: Story = {
       size="sm"
     >
       <span slot="header">Lock Data</span>
-      <p>This action is <strong>irreversible</strong>. All forms will be locked for editing.</p>
+      <p>
+        This action is <strong>irreversible</strong>. All forms will be locked
+        for editing.
+      </p>
       <p>Are you sure you want to lock this subject's data?</p>
       <div slot="footer">
-        <vi-button variant="ghost" @click=${() => closeModal('modal-alert')}>Cancel</vi-button>
-        <vi-button variant=${args.alertVariant === 'danger' ? 'danger' : 'primary'} @click=${() => closeModal('modal-alert')}>Confirm Lock</vi-button>
+        <vi-button variant="ghost" @click=${() => closeModal('modal-alert')}
+          >Cancel</vi-button
+        >
+        <vi-button
+          variant=${args.alertVariant === 'danger' ? 'danger' : 'primary'}
+          @click=${() => closeModal('modal-alert')}
+          >Confirm Lock</vi-button
+        >
       </div>
     </vi-modal>
   `,
@@ -184,15 +227,21 @@ export const Alert: Story = {
 
 export const ScrollableContent: Story = {
   render: () => html`
-    <vi-button @click=${() => openModal('modal-scroll')}>Open Scrollable Modal</vi-button>
+    <vi-button @click=${() => openModal('modal-scroll')}
+      >Open Scrollable Modal</vi-button
+    >
     <vi-modal id="modal-scroll" size="md">
       <span slot="header">Terms and Conditions</span>
-      <div style="height: 1200px; padding: 1rem; background: repeating-linear-gradient(45deg, #f0f0f0, #f0f0f0 10px, #fafafa 10px, #fafafa 20px);">
+      <div
+        style="height: 1200px; padding: 1rem; background: repeating-linear-gradient(45deg, #f0f0f0, #f0f0f0 10px, #fafafa 10px, #fafafa 20px);"
+      >
         <p>Tall content that requires scrolling...</p>
         <p style="margin-top: 1100px;">End of content.</p>
       </div>
       <div slot="footer">
-        <vi-button variant="primary" @click=${() => closeModal('modal-scroll')}>I Agree</vi-button>
+        <vi-button variant="primary" @click=${() => closeModal('modal-scroll')}
+          >I Agree</vi-button
+        >
       </div>
     </vi-modal>
   `,
@@ -203,21 +252,26 @@ export const ProgrammaticGuard: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Demonstrates listening to `vi-modal-request-close` to prevent the modal from closing if there are unsaved changes. Cancel the event via `e.preventDefault()`.',
+        story:
+          'Demonstrates listening to `vi-modal-request-close` to prevent the modal from closing if there are unsaved changes. Cancel the event via `e.preventDefault()`.',
       },
     },
   },
   render: () => {
     const handleRequestClose = (e: Event) => {
       // Simulate form dirtiness
-      const confirmed = window.confirm('You have unsaved changes. Are you sure you want to discard them?');
+      const confirmed = window.confirm(
+        'You have unsaved changes. Are you sure you want to discard them?',
+      );
       if (!confirmed) {
         e.preventDefault(); // Block the modal from closing
       }
     };
-    
+
     return html`
-      <vi-button @click=${() => openModal('modal-guard')}>Open Form Modal</vi-button>
+      <vi-button @click=${() => openModal('modal-guard')}
+        >Open Form Modal</vi-button
+      >
       <vi-modal
         id="modal-guard"
         size="sm"
@@ -226,26 +280,37 @@ export const ProgrammaticGuard: Story = {
         <span slot="header">Edit Record</span>
         <vi-input placeholder="Type something..."></vi-input>
         <p style="margin-top: 1rem; color: #666; font-size: 0.875rem;">
-          Try clicking outside or pressing Escape. A browser confirm dialog will guard the close action.
+          Try clicking outside or pressing Escape. A browser confirm dialog will
+          guard the close action.
         </p>
         <div slot="footer">
-          <vi-button variant="ghost" @click=${() => closeModal('modal-guard')}>Cancel</vi-button>
-          <vi-button variant="primary" @click=${() => {
-            // Force close without firing request-close (simulates successful save)
-            const modal = document.getElementById('modal-guard') as ViModal | null;
-            if (modal) {
-              modal.open = false; // Programmatically resetting open property bypasses the guard check
-            }
-          }}>Save</vi-button>
+          <vi-button variant="ghost" @click=${() => closeModal('modal-guard')}
+            >Cancel</vi-button
+          >
+          <vi-button
+            variant="primary"
+            @click=${() => {
+              // Force close without firing request-close (simulates successful save)
+              const modal = document.getElementById(
+                'modal-guard',
+              ) as ViModal | null;
+              if (modal) {
+                modal.open = false; // Programmatically resetting open property bypasses the guard check
+              }
+            }}
+            >Save</vi-button
+          >
         </div>
       </vi-modal>
     `;
-  }
+  },
 };
 
 export const DraggableAndMaximizable: Story = {
   render: () => html`
-    <vi-button @click=${() => openModal('modal-drag-max')}>Open Draggable Modal</vi-button>
+    <vi-button @click=${() => openModal('modal-drag-max')}
+      >Open Draggable Modal</vi-button
+    >
     <vi-modal id="modal-drag-max" size="md" draggable maximizable>
       <span slot="header">Interactive Modal</span>
       <p>Drag me by the header, or click the maximize button!</p>
@@ -253,7 +318,9 @@ export const DraggableAndMaximizable: Story = {
         <vi-input placeholder="Try typing..."></vi-input>
       </div>
       <div slot="footer">
-        <vi-button @click=${() => closeModal('modal-drag-max')}>Close</vi-button>
+        <vi-button @click=${() => closeModal('modal-drag-max')}
+          >Close</vi-button
+        >
       </div>
     </vi-modal>
   `,
@@ -261,17 +328,35 @@ export const DraggableAndMaximizable: Story = {
 
 export const Positioning: Story = {
   render: () => html`
-    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; text-align: center;">
-      ${['top-left', 'top', 'top-right', 'left', 'center', 'right', 'bottom-left', 'bottom', 'bottom-right'].map(pos => html`
-        <vi-button @click=${() => openModal(`modal-pos-${pos}`)}>${pos}</vi-button>
-        <vi-modal id="modal-pos-${pos}" position=${pos} size="sm">
-          <span slot="header">Position: ${pos}</span>
-          <p>This modal appears at ${pos}.</p>
-          <div slot="footer">
-            <vi-button @click=${() => closeModal(`modal-pos-${pos}`)}>Close</vi-button>
-          </div>
-        </vi-modal>
-      `)}
+    <div
+      style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; text-align: center;"
+    >
+      ${[
+        'top-left',
+        'top',
+        'top-right',
+        'left',
+        'center',
+        'right',
+        'bottom-left',
+        'bottom',
+        'bottom-right',
+      ].map(
+        (pos) => html`
+          <vi-button @click=${() => openModal(`modal-pos-${pos}`)}
+            >${pos}</vi-button
+          >
+          <vi-modal id="modal-pos-${pos}" position=${pos} size="sm">
+            <span slot="header">Position: ${pos}</span>
+            <p>This modal appears at ${pos}.</p>
+            <div slot="footer">
+              <vi-button @click=${() => closeModal(`modal-pos-${pos}`)}
+                >Close</vi-button
+              >
+            </div>
+          </vi-modal>
+        `,
+      )}
     </div>
   `,
 };
@@ -280,31 +365,46 @@ export const ZIndexStacking: Story = {
   render: () => {
     return html`
       <div style="padding: 24px; min-height: 400px;">
-        <vi-button @click=${() => document.getElementById('stacking-modal-1')?.setAttribute('open', 'true')}>
+        <vi-button
+          @click=${() =>
+            document
+              .getElementById('stacking-modal-1')
+              ?.setAttribute('open', 'true')}
+        >
           Open Stacking Modal 1
         </vi-button>
 
         <vi-modal id="stacking-modal-1" size="lg" closable>
           <span slot="header">Stacking Modal 1 (Base)</span>
-          
+
           <div style="padding: 16px; min-height: 300px;">
             <p style="margin-bottom: 24px;">
-              This modal tests the OverlayManager. Modals are now appended to body, 
-              and their z-index is managed explicitly.
+              This modal tests the OverlayManager. Modals are now appended to
+              body, and their z-index is managed explicitly.
             </p>
-            
+
             <div style="margin-bottom: 24px;">
-              <vi-combobox 
+              <vi-combobox
                 hoist
-                placeholder="Select an option (Hoisted)" 
-                .options=${[{value: '1', label: 'Option 1'}, {value: '2', label: 'Option 2'}]}>
+                placeholder="Select an option (Hoisted)"
+                .options=${[
+                  { value: '1', label: 'Option 1' },
+                  { value: '2', label: 'Option 2' },
+                ]}
+              >
               </vi-combobox>
               <p style="font-size: 12px; color: #666; margin-top: 8px;">
-                The combobox listbox is also teleported to the body via hoist, and given a higher z-index than the modal.
+                The combobox listbox is also teleported to the body via hoist,
+                and given a higher z-index than the modal.
               </p>
             </div>
 
-            <vi-button @click=${() => document.getElementById('stacking-modal-2')?.setAttribute('open', 'true')}>
+            <vi-button
+              @click=${() =>
+                document
+                  .getElementById('stacking-modal-2')
+                  ?.setAttribute('open', 'true')}
+            >
               Open Nested Modal 2
             </vi-button>
           </div>
@@ -312,12 +412,18 @@ export const ZIndexStacking: Story = {
 
         <vi-modal id="stacking-modal-2" size="sm" closable>
           <span slot="header">Nested Modal 2</span>
-          
+
           <div style="padding: 16px;">
             <p>
-              This modal should appear <strong>above</strong> Modal 1 and its backdrop should cover Modal 1.
+              This modal should appear <strong>above</strong> Modal 1 and its
+              backdrop should cover Modal 1.
             </p>
-            <vi-button @click=${() => document.getElementById('stacking-modal-2')?.removeAttribute('open')}>
+            <vi-button
+              @click=${() =>
+                document
+                  .getElementById('stacking-modal-2')
+                  ?.removeAttribute('open')}
+            >
               Close Me
             </vi-button>
           </div>
@@ -348,7 +454,9 @@ so consumers can show a custom in-modal warning message instead.
     let _warningVisible = false;
 
     const handleRequestClose = (_e: Event) => {
-      const modal = document.getElementById('modal-persistent-shake') as ViModal | null;
+      const modal = document.getElementById(
+        'modal-persistent-shake',
+      ) as ViModal | null;
       const warning = modal?.querySelector<HTMLElement>('.shake-warning');
       if (!warning) return;
 
@@ -356,13 +464,19 @@ so consumers can show a custom in-modal warning message instead.
       _warningVisible = true;
       warning.style.display = 'block';
       warning.animate(
-        [{ opacity: 0, transform: 'translateY(-4px)' }, { opacity: 1, transform: 'translateY(0)' }],
-        { duration: 200, fill: 'forwards' }
+        [
+          { opacity: 0, transform: 'translateY(-4px)' },
+          { opacity: 1, transform: 'translateY(0)' },
+        ],
+        { duration: 200, fill: 'forwards' },
       );
     };
 
     return html`
-      <vi-button variant="danger" @click=${() => openModal('modal-persistent-shake')}>
+      <vi-button
+        variant="danger"
+        @click=${() => openModal('modal-persistent-shake')}
+      >
         Open Persistent Modal
       </vi-button>
 
@@ -375,9 +489,16 @@ so consumers can show a custom in-modal warning message instead.
       >
         <span slot="header">⚠️ Action Required</span>
         <div>
-          <p>You <strong>must</strong> make a choice before dismissing this dialog.</p>
+          <p>
+            You <strong>must</strong> make a choice before dismissing this
+            dialog.
+          </p>
           <p style="color: #888; font-size: 0.875rem; margin-top: 0.5rem;">
-            Try pressing <kbd style="background:#eee;padding:2px 6px;border-radius:4px;border:1px solid #ccc">Escape</kbd>
+            Try pressing
+            <kbd
+              style="background:#eee;padding:2px 6px;border-radius:4px;border:1px solid #ccc"
+              >Escape</kbd
+            >
             or clicking the backdrop — the modal will shake instead of closing.
           </p>
           <p
@@ -387,11 +508,20 @@ so consumers can show a custom in-modal warning message instead.
             ⚠️ Please select an option below before closing.
           </p>
         </div>
-        <div slot="footer" style="display: flex; gap: 0.5rem; justify-content: flex-end;">
-          <vi-button variant="ghost" @click=${() => closeModal('modal-persistent-shake')}>
+        <div
+          slot="footer"
+          style="display: flex; gap: 0.5rem; justify-content: flex-end;"
+        >
+          <vi-button
+            variant="ghost"
+            @click=${() => closeModal('modal-persistent-shake')}
+          >
             Decline
           </vi-button>
-          <vi-button variant="primary" @click=${() => closeModal('modal-persistent-shake')}>
+          <vi-button
+            variant="primary"
+            @click=${() => closeModal('modal-persistent-shake')}
+          >
             Accept & Continue
           </vi-button>
         </div>
@@ -421,12 +551,36 @@ You can also adjust the animation duration with \`animation-duration\`.
     enterAnimation: {
       name: 'enter-animation',
       control: 'select',
-      options: ['fade-in', 'fade-in-up', 'fade-in-down', 'zoom-in', 'scale-up', 'pop-in', 'slide-in-top', 'slide-in-bottom', 'slide-in-left', 'slide-in-right', 'none'],
+      options: [
+        'fade-in',
+        'fade-in-up',
+        'fade-in-down',
+        'zoom-in',
+        'scale-up',
+        'pop-in',
+        'slide-in-top',
+        'slide-in-bottom',
+        'slide-in-left',
+        'slide-in-right',
+        'none',
+      ],
     },
     exitAnimation: {
       name: 'exit-animation',
       control: 'select',
-      options: ['fade-out', 'fade-out-down', 'fade-out-up', 'zoom-out', 'scale-down', 'pop-out', 'slide-out-top', 'slide-out-bottom', 'slide-out-left', 'slide-out-right', 'none'],
+      options: [
+        'fade-out',
+        'fade-out-down',
+        'fade-out-up',
+        'zoom-out',
+        'scale-down',
+        'pop-out',
+        'slide-out-top',
+        'slide-out-bottom',
+        'slide-out-left',
+        'slide-out-right',
+        'none',
+      ],
     },
     animationDuration: {
       name: 'animation-duration',
@@ -457,6 +611,210 @@ You can also adjust the animation duration with \`animation-duration\`.
       <div slot="footer">
         <vi-button @click=${() => closeModal('modal-custom-animation')}>
           Close
+        </vi-button>
+      </div>
+    </vi-modal>
+  `,
+};
+
+export const NoBackdrop: Story = {
+  name: 'No Backdrop (Floating Tool Window)',
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Demonstrates a modeless floating tool window using `no-backdrop` and `draggable`. Background controls remain interactive.',
+      },
+    },
+  },
+  render: () => html`
+    <div style="padding: 1rem;">
+      <vi-button @click=${() => openModal('modal-no-backdrop')}>
+        Open Floating Window
+      </vi-button>
+      <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
+        <vi-button variant="secondary"
+          >Background Interactive Button 1</vi-button
+        >
+        <vi-button variant="outline">Background Interactive Button 2</vi-button>
+      </div>
+    </div>
+
+    <vi-modal
+      id="modal-no-backdrop"
+      size="sm"
+      draggable
+      no-backdrop
+      position="top-right"
+    >
+      <span slot="header">Floating Inspector</span>
+      <div>
+        <p>This modal floats without a dark backdrop overlay.</p>
+        <p style="margin-top: 0.5rem; color: #666; font-size: 0.875rem;">
+          You can drag this panel around and click background controls while it
+          is open.
+        </p>
+      </div>
+      <div slot="footer">
+        <vi-button size="sm" @click=${() => closeModal('modal-no-backdrop')}>
+          Close
+        </vi-button>
+      </div>
+    </vi-modal>
+  `,
+};
+
+export const MultipleFloatingWindows: Story = {
+  name: 'Multiple Floating Modeless Modals',
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Demonstrates multiple modeless floating panels (`no-backdrop` + `draggable`) open simultaneously. Each window can be dragged independently, layered on focus, and operated alongside background page controls.',
+      },
+    },
+  },
+  render: () => html`
+    <div
+      style="padding: 1.5rem; min-height: 450px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; position: relative;"
+    >
+      <div
+        style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; background: #ffffff; padding: 1rem; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);"
+      >
+        <vi-button
+          variant="primary"
+          size="sm"
+          @click=${() => openModal('modal-panel-1')}
+        >
+          Toggle Subject Inspector
+        </vi-button>
+
+        <vi-button
+          variant="secondary"
+          size="sm"
+          @click=${() => openModal('modal-panel-2')}
+        >
+          Toggle Filter Palette
+        </vi-button>
+
+        <vi-button
+          variant="info"
+          size="sm"
+          @click=${() => openModal('modal-panel-3')}
+        >
+          Toggle Live Metrics
+        </vi-button>
+      </div>
+
+      <div
+        style="background: #ffffff; padding: 1.25rem; border-radius: 6px; border: 1px solid #cbd5e1;"
+      >
+        <h4 style="margin: 0 0 0.5rem 0; font-size: 1rem; color: #0f172a;">
+          Background EDC Data Workspace
+        </h4>
+        <p style="margin: 0 0 1rem 0; color: #64748b; font-size: 0.875rem;">
+          Click the buttons above to open multiple modeless windows. Drag each
+          window by its header, interact with background inputs/buttons below,
+          or layer windows on focus.
+        </p>
+        <div style="display: flex; gap: 1rem;">
+          <vi-button variant="outline" size="sm"
+            >Background Export CSV</vi-button
+          >
+          <vi-button variant="ghost" size="sm"
+            >Background Refresh Data</vi-button
+          >
+        </div>
+      </div>
+    </div>
+
+    <!-- Window 1: Subject Inspector -->
+    <vi-modal
+      id="modal-panel-1"
+      open
+      size="xs"
+      draggable
+      no-backdrop
+      position="top-left"
+    >
+      <span slot="header">Subject Inspector</span>
+      <div>
+        <p style="margin: 0; font-size: 0.875rem; color: #334155;">
+          <strong>Subject ID:</strong> SUBJ-0042
+        </p>
+        <p style="margin: 0.5rem 0 0 0; font-size: 0.875rem; color: #64748b;">
+          Status: Enrolled (Site 101)
+        </p>
+      </div>
+      <div slot="footer">
+        <vi-button
+          size="xs"
+          variant="ghost"
+          @click=${() => closeModal('modal-panel-1')}
+        >
+          Close Inspector
+        </vi-button>
+      </div>
+    </vi-modal>
+
+    <!-- Window 2: Filter Palette -->
+    <vi-modal
+      id="modal-panel-2"
+      open
+      size="xs"
+      draggable
+      no-backdrop
+      position="center"
+    >
+      <span slot="header">Filter Palette</span>
+      <div>
+        <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: #334155;">
+          Active Filter Options:
+        </p>
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <vi-tag size="xs" selectable selected variant="primary"
+            >Screened</vi-tag
+          >
+          <vi-tag size="xs" selectable variant="warning">Pending</vi-tag>
+          <vi-tag size="xs" selectable variant="success">Completed</vi-tag>
+        </div>
+      </div>
+      <div slot="footer">
+        <vi-button
+          size="xs"
+          variant="ghost"
+          @click=${() => closeModal('modal-panel-2')}
+        >
+          Close Palette
+        </vi-button>
+      </div>
+    </vi-modal>
+
+    <!-- Window 3: Live Metrics -->
+    <vi-modal
+      id="modal-panel-3"
+      open
+      size="xs"
+      draggable
+      no-backdrop
+      position="top-right"
+    >
+      <span slot="header">Live Metrics</span>
+      <div>
+        <p style="margin: 0; font-size: 0.875rem; color: #334155;">
+          <strong>Sync Latency:</strong> 12ms
+        </p>
+        <p style="margin: 0.5rem 0 0 0; font-size: 0.875rem; color: #64748b;">
+          Queries Pending: 3
+        </p>
+      </div>
+      <div slot="footer">
+        <vi-button
+          size="xs"
+          variant="ghost"
+          @click=${() => closeModal('modal-panel-3')}
+        >
+          Close Metrics
         </vi-button>
       </div>
     </vi-modal>
