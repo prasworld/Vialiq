@@ -33,6 +33,7 @@ export function DraggableMixin<T extends Constructor<LitElement>>(
 
     private _isDragging = false;
     private _previousUserSelect: string | null = null;
+    private _previousTransition: string | null = null;
     private _dragStartX = 0;
     private _dragStartY = 0;
     private _initialTranslateX = 0;
@@ -86,7 +87,7 @@ export function DraggableMixin<T extends Constructor<LitElement>>(
       }
     }
 
-    override disconnectedCallback() {
+    override disconnectedCallback(): void {
       super.disconnectedCallback();
       const handle = this._dragHandle;
       if (handle) {
@@ -133,6 +134,7 @@ export function DraggableMixin<T extends Constructor<LitElement>>(
         target.getAnimations().forEach((anim) => anim.cancel());
       }
 
+      this._previousTransition = target.style.transition;
       target.style.transition = 'none';
       document.body.style.cursor = 'move';
       this._previousUserSelect = document.body.style.getPropertyValue('user-select') || null;
@@ -196,8 +198,13 @@ export function DraggableMixin<T extends Constructor<LitElement>>(
       const target = this._dragTarget;
       if (target) {
         target.style.transform = `translate3d(${this._currentTranslateX}px, ${this._currentTranslateY}px, 0)`;
-        target.style.transition = 'none';
+        if (this._previousTransition !== null) {
+          target.style.transition = this._previousTransition;
+        } else {
+          target.style.removeProperty('transition');
+        }
       }
+      this._previousTransition = null;
     }
 
     private _removeWindowListeners() {
@@ -236,8 +243,13 @@ export function DraggableMixin<T extends Constructor<LitElement>>(
       
       const target = this._dragTarget;
       if (target) {
-        target.style.transition = '';
+        if (this._previousTransition !== null) {
+          target.style.transition = this._previousTransition;
+        } else {
+          target.style.removeProperty('transition');
+        }
       }
+      this._previousTransition = null;
     }
   }
 

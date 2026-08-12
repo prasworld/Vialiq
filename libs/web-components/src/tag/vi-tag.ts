@@ -135,6 +135,10 @@ export class ViTag extends ViElement {
     }
   }
 
+  private _handleSlotChange(): void {
+    this.requestUpdate();
+  }
+
   private _fireRemoveEvent(): void {
     this.dispatchEvent(
       new CustomEvent('vi-tag-remove', {
@@ -142,6 +146,10 @@ export class ViTag extends ViElement {
         composed: true,
       })
     );
+  }
+
+  private get _removeLabel(): string {
+    return `Remove ${this.textContent?.trim() || 'tag'}`;
   }
 
   override render(): TemplateResult {
@@ -169,6 +177,7 @@ export class ViTag extends ViElement {
           class="tag-content-wrapper"
           role=${this.selectable ? 'button' : nothing}
           tabindex=${this.disabled ? '-1' : (isTabbable ? 0 : nothing)}
+          aria-disabled=${this.disabled ? 'true' : 'false'}
           aria-pressed=${this.selectable ? (this.selected ? 'true' : 'false') : nothing}
           @click=${this.selectable ? this._handleTagClick : nothing}
           @keydown=${this._handleKeyDown}
@@ -188,7 +197,7 @@ export class ViTag extends ViElement {
             <slot name="icon"></slot>
           </span>
           <span part="label" class="tag-label">
-            <slot></slot>
+            <slot @slotchange=${this._handleSlotChange}></slot>
           </span>
           ${this.count !== undefined
             ? html`<span part="count" class="tag-count">${this.count}</span>`
@@ -204,11 +213,11 @@ export class ViTag extends ViElement {
                 variant="ghost"
                 size="xs"
                 icon-only
-                label="Remove ${this.textContent?.trim() || 'tag'}"
                 ?disabled=${this.disabled}
                 @click=${this._handleRemoveClick}
               >
                 <vi-icon slot="icon" name="x" size="12" aria-hidden="true"></vi-icon>
+                <span class="sr-only">${this._removeLabel}</span>
               </vi-button>
             `
           : ''}

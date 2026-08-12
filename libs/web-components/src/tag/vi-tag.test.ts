@@ -237,6 +237,34 @@ describe('vi-tag', () => {
       expect(selectFired).toBe(false);
       expect(removeFired).toBe(false);
     });
+
+    it('should set accessible label on remove vi-button and update aria-disabled on tag-content-wrapper', async () => {
+      render(html`<vi-tag removable disabled>Filter Site</vi-tag>`, container);
+      const el = document.querySelector('vi-tag') as ViTag;
+      await el.updateComplete;
+
+      const srOnly = el.shadowRoot!.querySelector('.tag-remove-btn .sr-only');
+      expect(srOnly?.textContent?.trim()).toBe('Remove Filter Site');
+
+      const contentWrapper = el.shadowRoot!.querySelector('.tag-content-wrapper');
+      expect(contentWrapper?.getAttribute('aria-disabled')).toBe('true');
+    });
+
+    it('should update remove button accessible label dynamically when slot text changes', async () => {
+      render(html`<vi-tag removable>Initial Label</vi-tag>`, container);
+      const el = document.querySelector('vi-tag') as ViTag;
+      await el.updateComplete;
+
+      const srOnly = el.shadowRoot!.querySelector('.tag-remove-btn .sr-only');
+      expect(srOnly?.textContent?.trim()).toBe('Remove Initial Label');
+
+      el.textContent = 'Updated Label';
+      const slot = el.shadowRoot!.querySelector('slot:not([name])') as HTMLSlotElement;
+      slot.dispatchEvent(new Event('slotchange'));
+      await el.updateComplete;
+
+      expect(srOnly?.textContent?.trim()).toBe('Remove Updated Label');
+    });
   });
 
   describe('Accessibility (A11y)', () => {

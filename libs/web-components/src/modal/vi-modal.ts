@@ -1,4 +1,4 @@
-import { css, html, unsafeCSS, type TemplateResult } from 'lit';
+import { css, html, nothing, unsafeCSS, type TemplateResult } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
@@ -107,7 +107,8 @@ export class ViModal extends DraggableMixin(FocusTrapMixin(ViElement)) {
   @property({ type: Boolean }) accessor persistent = false;
 
   /** Hide/disable the backdrop overlay and allow background interaction */
-  @property({ type: Boolean, attribute: 'no-backdrop' }) accessor noBackdrop = false;
+  @property({ type: Boolean, attribute: 'no-backdrop' }) accessor noBackdrop =
+    false;
 
   /** Focus first element on open */
   @property({ type: Boolean }) accessor autofocus = true;
@@ -240,7 +241,9 @@ export class ViModal extends DraggableMixin(FocusTrapMixin(ViElement)) {
             document.querySelector<HTMLElement>(this.initialFocusSelector) ??
             undefined;
         }
-        this._activateFocusTrap(initialFocus, this.autofocus);
+        if (!this.noBackdrop) {
+          this._activateFocusTrap(initialFocus, this.autofocus);
+        }
 
         // Play enter animation after first render
         this.updateComplete.then(() => this._runEnterAnimation());
@@ -564,7 +567,7 @@ export class ViModal extends DraggableMixin(FocusTrapMixin(ViElement)) {
         class=${classMap(dialogClasses)}
         role=${this._role}
         ?open=${this.open}
-        aria-modal="true"
+        aria-modal=${this.noBackdrop ? nothing : 'true'}
         aria-label=${ifDefined(this.getAttribute('aria-label') || undefined)}
         aria-labelledby=${ifDefined(
           this.hasAttribute('aria-label')
