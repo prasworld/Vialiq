@@ -71,7 +71,7 @@ export class ViButton extends FocusableMixin(ViElement) {
   @property({ type: Boolean, reflect: true }) accessor disabled = false;
 
   /** Accessible label forwarded to the inner native button. */
-  @property({ attribute: 'aria-label' }) accessor ariaLabel: string | undefined;
+  @property({ attribute: 'aria-label' }) override accessor ariaLabel: string | null = null;
 
   @state() private accessor _hasIcon = false;
 
