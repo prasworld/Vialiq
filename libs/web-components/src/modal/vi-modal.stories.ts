@@ -70,9 +70,25 @@ const meta: Meta = {
       description: 'Focus first element on open.',
     },
     scrollable: {
+      name: 'scrollable',
       control: 'boolean',
       description:
         'Allows the body to scroll while keeping the header/footer fixed.',
+    },
+    scrollStrategy: {
+      control: 'radio',
+      options: ['block', 'noop'],
+      description: 'Scroll strategy when the modal is open',
+      table: {
+        defaultValue: { summary: 'block' },
+      },
+    },
+    dragContainment: {
+      name: 'drag-containment',
+      control: 'radio',
+      options: ['none', 'viewport', 'parent'],
+      description:
+        'Clamp drag movement: `none` = unconstrained, `viewport` = stays in viewport, `parent` = stays in offset parent.',
     },
   },
 };
@@ -819,4 +835,433 @@ export const MultipleFloatingWindows: Story = {
       </div>
     </vi-modal>
   `,
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Resizable & Draggable
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const ResizableModal: Story = {
+  name: 'Resizable & Draggable',
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Combine `draggable`, `resizable`, and `maximizable` for a fully window-like experience. ' +
+          'Resize from any of the 8 edge/corner handles. Handles automatically hide when maximized.',
+      },
+    },
+  },
+  render: () => html`
+    <vi-button @click=${() => openModal('modal-resizable')}
+      >Open Resizable Modal</vi-button
+    >
+    <vi-modal id="modal-resizable" size="md" draggable resizable maximizable>
+      <span slot="header">Window Panel</span>
+      <p>
+        This modal can be dragged by its header and resized from any of its 8
+        edges and corners.
+      </p>
+      <p style="color: #64748b; font-size: 0.875rem; margin-top: 0.5rem;">
+        Try dragging the bottom-right corner to resize, then click maximize —
+        resize handles will automatically hide.
+      </p>
+      <div slot="footer">
+        <vi-button variant="ghost" @click=${() => closeModal('modal-resizable')}
+          >Cancel</vi-button
+        >
+        <vi-button
+          variant="primary"
+          @click=${() => closeModal('modal-resizable')}
+          >Save</vi-button
+        >
+      </div>
+    </vi-modal>
+  `,
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Drag Containment — viewport clamping
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const ContainedDrag: Story = {
+  name: 'Drag Containment (Viewport)',
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Use `drag-containment="viewport"` to prevent the modal from being dragged off-screen. ' +
+          'The modal will be clamped to the viewport boundary on all sides.',
+      },
+    },
+  },
+  render: () => html`
+    <vi-button @click=${() => openModal('modal-contained')}
+      >Open Contained Draggable</vi-button
+    >
+    <vi-modal
+      id="modal-contained"
+      size="sm"
+      draggable
+      drag-containment="viewport"
+    >
+      <span slot="header">Contained Draggable</span>
+      <p>
+        Try dragging this modal to the edge of the viewport — it will stop at
+        the boundary and cannot go off-screen.
+      </p>
+      <p style="color: #64748b; font-size: 0.875rem; margin-top: 0.5rem;">
+        <code>drag-containment="viewport"</code>
+      </p>
+      <div slot="footer">
+        <vi-button @click=${() => closeModal('modal-contained')}
+          >Close</vi-button
+        >
+      </div>
+    </vi-modal>
+  `,
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Custom append-to container
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const CustomAppendTo: Story = {
+  name: 'Custom append-to Container',
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Use the `append-to` attribute to teleport the modal into a specific container element ' +
+          'instead of `document.body`. Useful for scoped stacking contexts (e.g., a full-screen app shell). ' +
+          'Inspect the DOM after opening — the modal will be inside `#custom-portal`, not `body`.',
+      },
+    },
+  },
+  render: () => html`
+    <div
+      id="custom-portal"
+      style="
+        position: relative;
+        min-height: 400px;
+        background: #f8fafc;
+        border: 2px dashed #94a3b8;
+        border-radius: 8px;
+        padding: 1.5rem;
+        overflow: hidden;
+      "
+    >
+      <p style="color: #64748b; font-size: 0.875rem; margin-bottom: 1rem;">
+        This <code>#custom-portal</code> div is the teleport target. Open the
+        modal and inspect the DOM — <code>vi-modal</code> will be appended here,
+        not to <code>body</code>.
+      </p>
+
+      <vi-button @click=${() => openModal('modal-append-to')}
+        >Open Modal (append-to #custom-portal)</vi-button
+      >
+
+      <vi-modal
+        id="modal-append-to"
+        size="sm"
+        append-to="#custom-portal"
+        no-backdrop
+        draggable
+      >
+        <span slot="header">Scoped Modal</span>
+        <p>
+          This modal was teleported into
+          <code>#custom-portal</code>, not <code>body</code>.
+        </p>
+        <p style="color: #64748b; font-size: 0.875rem; margin-top: 0.5rem;">
+          Useful for scoped stacking contexts or micro-frontend shells.
+        </p>
+        <div slot="footer">
+          <vi-button @click=${() => closeModal('modal-append-to')}
+            >Close</vi-button
+    </div>
+  `,
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Drag Containment
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const DragContainmentDemo: Story = {
+  name: 'Drag Containment',
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Modals with `draggable` can be clamped to boundaries using `drag-containment`.<br/>' +
+          'Options are: `none` (default), `viewport` (cannot be dragged off-screen), and `parent` (stays within its offset parent).',
+      },
+    },
+  },
+  render: () => html`
+    <div style="display: flex; gap: 1rem; margin-bottom: 2rem;">
+      <vi-button @click=${() => openModal('modal-drag-viewport')}
+        >Open (Viewport Bound)</vi-button
+      >
+      <vi-button
+        variant="secondary"
+        @click=${() => openModal('modal-drag-parent')}
+        >Open (Parent Bound)</vi-button
+      >
+    </div>
+
+    <!-- Parent container to demonstrate "parent" containment -->
+    <div
+      id="drag-parent-container"
+      style="
+        position: relative;
+        width: 100%;
+        max-width: 600px;
+        height: 400px;
+        background: #f8fafc;
+        border: 2px dashed #94a3b8;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+      "
+    >
+      <p style="color: #64748b; font-size: 0.875rem;">
+        The "Parent Bound" modal is appended here and cannot be dragged outside
+        this dashed box.
+      </p>
+
+      <vi-modal
+        id="modal-drag-parent"
+        size="xs"
+        draggable
+        drag-containment="parent"
+        append-to="#drag-parent-container"
+        no-backdrop
+      >
+        <span slot="header">Bound to Parent</span>
+        <p>I cannot be dragged outside the dashed box.</p>
+        <div slot="footer">
+          <vi-button size="sm" @click=${() => closeModal('modal-drag-parent')}
+            >Close</vi-button
+          >
+        </div>
+      </vi-modal>
+    </div>
+
+    <!-- Viewport bounded modal (appended to body by default) -->
+    <vi-modal
+      id="modal-drag-viewport"
+      size="xs"
+      draggable
+      drag-containment="viewport"
+      no-backdrop
+    >
+      <span slot="header">Bound to Viewport</span>
+      <p>I cannot be dragged off the screen. Try throwing me off the edge!</p>
+      <div slot="footer">
+        <vi-button size="sm" @click=${() => closeModal('modal-drag-viewport')}
+          >Close</vi-button
+        >
+      </div>
+    </vi-modal>
+  `,
+};
+
+export const ModelessScroll: Story = {
+  render: () => html`
+    <div
+      style="height: 150vh; padding: 2rem; border: 2px dashed #ccc; background: linear-gradient(to bottom, #f9f9f9, #eaeaea);"
+    >
+      <h2>Scroll Strategy Demonstration</h2>
+      <p>This page has a lot of content to make it scrollable.</p>
+      <vi-button @click=${() => openModal('modal-modeless-scroll')}
+        >Open Modeless Panel</vi-button
+      >
+
+      <div style="margin-top: 100vh;">
+        <p>Bottom of the page!</p>
+      </div>
+
+      <vi-modal
+        id="modal-modeless-scroll"
+        size="xs"
+        draggable
+        no-backdrop
+        scroll-strategy="noop"
+      >
+        <span slot="header">Modeless Palette</span>
+        <p>
+          Because <code>scroll-strategy="noop"</code> is set and there's no
+          backdrop, you can still scroll the background document while this is
+          open!
+        </p>
+        <div slot="footer">
+          <vi-button @click=${() => closeModal('modal-modeless-scroll')}
+            >Close</vi-button
+          >
+        </div>
+      </vi-modal>
+    </div>
+  `,
+};
+
+export const NestedScrolling: Story = {
+  render: () => html`
+    <div
+      style="height: 200vh; padding: 2rem; border: 2px dashed #999; background: linear-gradient(to bottom, #e3f2fd, #bbdefb);"
+    >
+      <h2>Nested Scrolling Demonstration</h2>
+      <p>Scroll down to open the modal.</p>
+      <div style="margin-top: 50vh;">
+        <vi-button @click=${() => openModal('modal-nested-scroll')}
+          >Open Modal with Scrollable Content</vi-button
+        >
+      </div>
+
+      <div style="margin-top: 100vh;">
+        <p>Bottom of the background page!</p>
+      </div>
+
+      <vi-modal
+        id="modal-nested-scroll"
+        size="sm"
+        scroll-strategy="noop"
+        no-backdrop
+        draggable
+      >
+        <span slot="header">Scrollable Modal</span>
+        <div style="padding-right: 1rem;">
+          <p>This modal has a lot of content, so it will scroll internally.</p>
+          ${Array.from({ length: 20 }).map(
+            (_, i) => html`<p>Modal content line ${i + 1}</p>`,
+          )}
+          <p>
+            Try scrolling here. If <code>scroll-strategy="block"</code>, the
+            background will <strong>not</strong> scroll when you reach the
+            bottom of this modal. If you change it to <code>noop</code>, the
+            background <em>will</em> scroll when the modal reaches its scroll
+            bounds (or if you scroll outside the modal).
+          </p>
+        </div>
+        <div slot="footer">
+          <vi-button @click=${() => closeModal('modal-nested-scroll')}
+            >Close</vi-button
+          >
+        </div>
+      </vi-modal>
+    </div>
+  `,
+};
+
+export const EventLifecycle: Story = {
+  render: () => {
+    let preventClose = false;
+    let logCount = 0;
+
+    const logEvent = (name: string, detail?: unknown) => {
+      const logger = document.getElementById('event-logger');
+      if (logger) {
+        logCount++;
+        const detailString = detail ? ` - ${JSON.stringify(detail)}` : '';
+        logger.innerHTML = `<div>[${logCount}] <strong>${name}</strong>${detailString}</div>` + logger.innerHTML;
+      }
+    };
+
+    const handleBeforeOpen = (e: Event) => {
+      logEvent('vi-modal-before-open');
+    };
+
+    const handleOpen = (e: Event) => {
+      logEvent('vi-modal-open');
+    };
+
+    const handleAfterOpen = (e: Event) => {
+      logEvent('vi-modal-after-open');
+    };
+
+    const handleBeforeClose = (e: Event) => {
+      logEvent('vi-modal-before-close');
+      if (preventClose) {
+        e.preventDefault();
+        logEvent('❌ Close prevented by vi-modal-before-close!');
+      }
+    };
+
+    const handleRequestClose = (e: CustomEvent) => {
+      logEvent('vi-modal-request-close', e.detail);
+    };
+
+    const handleClose = (e: CustomEvent) => {
+      logEvent('vi-modal-close', e.detail);
+    };
+
+    const handleAfterClose = (e: CustomEvent) => {
+      logEvent('vi-modal-after-close', e.detail);
+    };
+
+    return html`
+      <div style="display: flex; gap: 2rem; align-items: flex-start;">
+        <div>
+          <vi-button @click=${() => openModal('modal-events')}>Open Event Modal</vi-button>
+          
+          <div style="margin-top: 1rem;">
+            <label style="display: flex; align-items: center; gap: 0.5rem; font-family: sans-serif;">
+              <input type="checkbox" @change=${(e: Event) => { preventClose = (e.target as HTMLInputElement).checked; }}>
+              Prevent Closing (tests before-close cancellation)
+            </label>
+          </div>
+        </div>
+
+        <div style="flex: 1; min-width: 300px; max-width: 400px;">
+          <h3 style="margin-top: 0; font-family: sans-serif;">Event Log</h3>
+          <div 
+            id="event-logger" 
+            style="height: 300px; overflow-y: auto; background: #1e293b; color: #a5b4fc; padding: 1rem; border-radius: 8px; font-family: monospace; font-size: 13px;"
+          >
+            <em>Waiting for events...</em>
+          </div>
+          <vi-button variant="ghost" size="sm" style="margin-top: 0.5rem;" @click=${() => {
+            const logger = document.getElementById('event-logger');
+            if (logger) {
+              logger.innerHTML = '<em>Waiting for events...</em>';
+              logCount = 0;
+            }
+          }}>Clear Log</vi-button>
+        </div>
+      </div>
+
+      <vi-modal
+        id="modal-events"
+        size="sm"
+        @vi-modal-before-open=${handleBeforeOpen}
+        @vi-modal-open=${handleOpen}
+        @vi-modal-after-open=${handleAfterOpen}
+        @vi-modal-request-close=${handleRequestClose}
+        @vi-modal-before-close=${handleBeforeClose}
+        @vi-modal-close=${handleClose}
+        @vi-modal-after-close=${handleAfterClose}
+      >
+        <span slot="header">Lifecycle Events</span>
+        <p>Watch the event log to the right.</p>
+        <p>This modal fires events in the following order when opening:</p>
+        <ol style="font-family: sans-serif;">
+          <li><code>vi-modal-before-open</code> (cancelable)</li>
+          <li><code>vi-modal-open</code></li>
+          <li><code>vi-modal-after-open</code> (post-animation)</li>
+        </ol>
+        <p>And when closing:</p>
+        <ol style="font-family: sans-serif;">
+          <li><code>vi-modal-request-close</code> (cancelable, provides reason)</li>
+          <li><code>vi-modal-before-close</code> (cancelable)</li>
+          <li><code>vi-modal-close</code></li>
+          <li><code>vi-modal-after-close</code> (post-animation)</li>
+        </ol>
+        <div slot="footer">
+          <vi-button variant="ghost" @click=${() => closeModal('modal-events')}>Close Programmatically</vi-button>
+        </div>
+      </vi-modal>
+    `;
+  }
 };
