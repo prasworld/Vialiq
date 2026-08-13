@@ -4,8 +4,11 @@ import { property } from 'lit/decorators.js';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Constructor<T = object> = new (...args: any[]) => T;
 
+export type DragContainment = 'none' | 'viewport' | 'parent';
+
 export declare class DraggableInterface {
   draggable: boolean;
+  dragContainment: DragContainment;
   protected get _dragTarget(): HTMLElement | null;
   protected get _dragHandle(): HTMLElement | null;
   protected _resetDrag(): void;
@@ -30,6 +33,14 @@ export function DraggableMixin<T extends Constructor<LitElement>>(
      * Determines whether dragging is currently enabled.
      */
     @property({ type: Boolean, reflect: true }) accessor draggable = false;
+
+    /**
+     * Constrains the drag movement to prevent the element from leaving a boundary.
+     * - `'none'` (default): No clamping — element can be dragged anywhere.
+     * - `'viewport'`: Clamps so the dragged element stays fully within the viewport.
+     * - `'parent'`: Clamps within the bounding rect of the element's offset parent.
+     */
+    @property({ type: String, attribute: 'drag-containment' }) accessor dragContainment: DragContainment = 'none';
 
     private _isDragging = false;
     private _previousUserSelect: string | null = null;
@@ -162,10 +173,70 @@ export function DraggableMixin<T extends Constructor<LitElement>>(
       this._currentTranslateX = this._initialTranslateX + deltaX;
       this._currentTranslateY = this._initialTranslateY + deltaY;
 
+      // Apply boundary clamping if containment is set
+      if (this.dragContainment !== 'none') {
+        this._clampDrag();
+      }
+
       const target = this._dragTarget;
       if (target) {
         target.style.transform = `translate3d(${this._currentTranslateX}px, ${this._currentTranslateY}px, 0)`;
       }
+    }
+
+    /**
+     * Clamps `_currentTranslateX` / `_currentTranslateY` so the drag target
+     * stays within the configured containment boundary.
+     */
+    private _clampDrag(): void {
+      const target = this._dragTarget;
+      if (!target) return;
+
+      // Get the natural (un-transformed) position of the target
+      const savedTransform = target.style.transform;
+      target.style.transform = '';
+      const naturalRect = target.getBoundingClientRect();
+      target.style.transform = savedTransform;
+
+      let boundsLeft: number;
+      let boundsTop: number;
+      let boundsRight: number;
+      let boundsBottom: number;
+
+      if (this.dragContainment === 'viewport') {
+        boundsLeft = 0;
+        boundsTop = 0;
+        boundsRight = window.innerWidth;
+        boundsBottom = window.innerHeight;
+      } else {
+        // 'parent' — use the offsetParent's bounding rect, or fall back to the host's parentElement
+        let parent: Element | null = (target as HTMLElement).offsetParent;
+        if (!parent) {
+          parent = this.parentElement;
+        }
+
+        if (parent) {
+          const pr = parent.getBoundingClientRect();
+          boundsLeft = pr.left;
+          boundsTop = pr.top;
+          boundsRight = pr.right;
+          boundsBottom = pr.bottom;
+        } else {
+          boundsLeft = 0;
+          boundsTop = 0;
+          boundsRight = window.innerWidth;
+          boundsBottom = window.innerHeight;
+        }
+      }
+
+      // Compute allowed translate range
+      const minX = boundsLeft - naturalRect.left;
+      const maxX = boundsRight - naturalRect.right;
+      const minY = boundsTop - naturalRect.top;
+      const maxY = boundsBottom - naturalRect.bottom;
+
+      this._currentTranslateX = Math.max(minX, Math.min(this._currentTranslateX, maxX));
+      this._currentTranslateY = Math.max(minY, Math.min(this._currentTranslateY, maxY));
     }
 
     private _onPointerUp(e: PointerEvent) {

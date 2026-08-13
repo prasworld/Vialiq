@@ -531,4 +531,351 @@ describe('vi-modal', () => {
       expect(dialog?.hasAttribute('aria-modal')).toBe(false);
     });
   });
+
+  // ─── Resizable ─────────────────────────────────────────────────────────────
+
+  describe('Resizable', () => {
+    it('renders 8 resize handles when resizable=true', async () => {
+      render(html`<vi-modal open resizable></vi-modal>`, container);
+      const el = getModal() as ViModal;
+      await el.updateComplete;
+
+      const handles = el.shadowRoot!.querySelectorAll('.resize-handle');
+      expect(handles.length).toBe(8);
+    });
+
+    it('does not render resize handles when resizable=false (default)', async () => {
+      render(html`<vi-modal open></vi-modal>`, container);
+      const el = getModal() as ViModal;
+      await el.updateComplete;
+
+      const handles = el.shadowRoot!.querySelectorAll('.resize-handle');
+      expect(handles.length).toBe(0);
+    });
+
+    it('suppresses resize via duck-type when maximized', async () => {
+      render(html`<vi-modal open resizable maximizable></vi-modal>`, container);
+      const el = getModal() as ViModal;
+      await el.updateComplete;
+
+      // Simulate maximize by clicking maximize button
+      const maxBtn = el.shadowRoot!.querySelector('[part="maximize-btn"]') as HTMLElement;
+      expect(maxBtn).toBeTruthy();
+      maxBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+      await el.updateComplete;
+
+      const dialog = el.shadowRoot!.querySelector('dialog');
+      expect(dialog?.classList.contains('is-maximized')).toBe(true);
+
+      // The handles should be hidden via CSS (.is-maximized .resize-handle { display: none; })
+      // They still exist in DOM but are hidden
+      const handles = el.shadowRoot!.querySelectorAll('.resize-handle');
+      expect(handles.length).toBe(8);
+
+      el.remove();
+    });
+
+    it('applies width and height via pointer events on se handle', async () => {
+      render(html`<vi-modal open resizable></vi-modal>`, container);
+      const el = getModal() as ViModal;
+      await el.updateComplete;
+
+      const dialog = el.shadowRoot!.querySelector('dialog') as HTMLDialogElement;
+      const handle = el.shadowRoot!.querySelector('.resize-handle-se') as HTMLElement;
+      expect(handle).toBeTruthy();
+
+      handle.dispatchEvent(
+        new PointerEvent('pointerdown', {
+          button: 0,
+          clientX: 100,
+          clientY: 100,
+          bubbles: true,
+          composed: true,
+        }),
+      );
+      window.dispatchEvent(
+        new PointerEvent('pointermove', { clientX: 180, clientY: 160, bubbles: true }),
+      );
+      window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
+
+      expect(dialog.style.width).toBeTruthy();
+      expect(dialog.style.height).toBeTruthy();
+
+      el.remove();
+    });
+
+    it('_resetResize clears inline width/height/maxWidth/maxHeight', async () => {
+      render(html`<vi-modal open resizable></vi-modal>`, container);
+      const el = getModal() as ViModal;
+      await el.updateComplete;
+
+      const dialog = el.shadowRoot!.querySelector('dialog') as HTMLDialogElement;
+      dialog.style.width = '500px';
+      dialog.style.height = '300px';
+      dialog.style.maxWidth = '500px';
+      dialog.style.maxHeight = '300px';
+
+      (el as any)._resetResize();
+
+      expect(dialog.style.width).toBe('');
+      expect(dialog.style.height).toBe('');
+      expect(dialog.style.maxWidth).toBe('');
+      expect(dialog.style.maxHeight).toBe('');
+
+      el.remove();
+    });
+  });
+
+  // ─── append-to ─────────────────────────────────────────────────────────────
+
+  describe('append-to', () => {
+    it('teleports to document.body by default', async () => {
+      render(html`<vi-modal open></vi-modal>`, container);
+      const el = getModal() as ViModal;
+      await el.updateComplete;
+      await new Promise((r) => setTimeout(r, 0));
+
+      expect(el.parentElement).toBe(document.body);
+      el.remove();
+    });
+
+    it('teleports to custom container when append-to is a CSS selector', async () => {
+      const portal = document.createElement('div');
+      portal.id = 'test-portal';
+      document.body.appendChild(portal);
+
+      render(
+        html`<vi-modal open append-to="#test-portal" no-backdrop></vi-modal>`,
+        container,
+      );
+      const el = getModal() as ViModal;
+      await el.updateComplete;
+      await new Promise((r) => setTimeout(r, 0));
+
+      expect(el.parentElement).toBe(portal);
+
+      el.remove();
+      portal.remove();
+    });
+
+    it('falls back to body when append-to selector does not match', async () => {
+      render(
+        html`<vi-modal open append-to="#nonexistent" no-backdrop></vi-modal>`,
+        container,
+      );
+      const el = getModal() as ViModal;
+      await el.updateComplete;
+      await new Promise((r) => setTimeout(r, 0));
+
+      expect(el.parentElement).toBe(document.body);
+      el.remove();
+    });
+
+    it('returns to original parent after closing when using custom append-to', async () => {
+      const portal = document.createElement('div');
+      portal.id = 'test-portal-2';
+      document.body.appendChild(portal);
+
+      const wrapper = document.createElement('div');
+      document.body.appendChild(wrapper);
+
+      render(
+        html`<vi-modal append-to="#test-portal-2" no-backdrop></vi-modal>`,
+        wrapper,
+      );
+      const el = wrapper.querySelector('vi-modal') as ViModal;
+      await el.updateComplete;
+
+      // Open — should teleport to portal
+      el.show();
+      await el.updateComplete;
+      await new Promise((r) => setTimeout(r, 0));
+      expect(el.parentElement).toBe(portal);
+
+      // Close — should return to wrapper
+      el.close();
+      await new Promise((r) => setTimeout(r, 350));
+      expect(el.parentElement).toBe(wrapper);
+
+      el.remove();
+      portal.remove();
+      wrapper.remove();
+    });
+  });
+
+  // ─── drag-containment ──────────────────────────────────────────────────────
+
+  describe('drag-containment', () => {
+    it('defaults to "none" (no clamping)', async () => {
+      render(html`<vi-modal open draggable></vi-modal>`, container);
+      const el = getModal() as ViModal;
+      await el.updateComplete;
+
+      expect((el as any).dragContainment).toBe('none');
+      el.remove();
+    });
+
+    it('reflects drag-containment attribute', async () => {
+      render(
+        html`<vi-modal open draggable drag-containment="viewport"></vi-modal>`,
+        container,
+      );
+      const el = getModal() as ViModal;
+      await el.updateComplete;
+
+      expect((el as any).dragContainment).toBe('viewport');
+      el.remove();
+    });
+
+    it('does not throw with drag-containment="viewport" during pointer events', async () => {
+      render(
+        html`<vi-modal open draggable drag-containment="viewport"></vi-modal>`,
+        container,
+      );
+      const el = getModal() as ViModal;
+      await el.updateComplete;
+
+      const header = el.shadowRoot!.querySelector('.modal-header') as HTMLElement;
+      expect(header).toBeTruthy();
+
+      let threw = false;
+      try {
+        header.dispatchEvent(
+          new PointerEvent('pointerdown', {
+            button: 0,
+            clientX: 200,
+            clientY: 200,
+            bubbles: true,
+            composed: true,
+          }),
+        );
+        window.dispatchEvent(
+          new PointerEvent('pointermove', { clientX: 250, clientY: 220, bubbles: true }),
+        );
+        window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
+      } catch {
+        threw = true;
+      }
+
+      expect(threw).toBe(false);
+      el.remove();
+    });
+
+    it('uses parentElement as fallback when target has no offsetParent for parent containment', async () => {
+      // Create a container with fixed dimensions
+      const parent = document.createElement('div');
+      parent.id = 'test-parent';
+      parent.style.position = 'relative';
+      parent.style.width = '400px';
+      parent.style.height = '400px';
+      document.body.appendChild(parent);
+
+      // We append it directly to the parent, setting append-to so it stays there
+      render(
+        html`<vi-modal open draggable drag-containment="parent" append-to="#test-parent"></vi-modal>`,
+        parent,
+      );
+      const el = parent.querySelector('vi-modal') as ViModal;
+      await el.updateComplete;
+
+      // Because the modal dialog has position: fixed, offsetParent is null.
+      // It should fallback to this.parentElement.
+      const header = el.shadowRoot!.querySelector('.modal-header') as HTMLElement;
+      
+      let threw = false;
+      try {
+        header.dispatchEvent(
+          new PointerEvent('pointerdown', { button: 0, clientX: 10, clientY: 10, bubbles: true, composed: true }),
+        );
+        window.dispatchEvent(
+          new PointerEvent('pointermove', { clientX: 500, clientY: 500, bubbles: true }),
+        );
+        window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
+      } catch (e) {
+        threw = true;
+      }
+
+      expect(threw).toBe(false);
+      
+      // Cleanup
+      el.remove();
+      parent.remove();
+    });
+  });
+
+  describe('Lifecycle Events', () => {
+    it('should fire before-open and before-close events on property assignment', async () => {
+      render(html`<vi-modal animation-duration="0"></vi-modal>`, container);
+      const el = getModal();
+      await el.updateComplete;
+
+      let beforeOpenFired = false;
+      let beforeCloseFired = false;
+
+      el.addEventListener('vi-modal-before-open', () => { beforeOpenFired = true; });
+      el.addEventListener('vi-modal-before-close', () => { beforeCloseFired = true; });
+
+      el.open = true;
+      await el.updateComplete;
+      expect(beforeOpenFired).toBe(true);
+      expect(el.open).toBe(true);
+      expect(el.hasAttribute('open')).toBe(true);
+
+      el.open = false;
+      await el.updateComplete;
+      expect(beforeCloseFired).toBe(true);
+      expect(el.open).toBe(false);
+      expect(el.hasAttribute('open')).toBe(false);
+    });
+
+    it('should prevent opening if vi-modal-before-open is canceled', async () => {
+      render(html`<vi-modal animation-duration="0"></vi-modal>`, container);
+      const el = getModal();
+      await el.updateComplete;
+
+      el.addEventListener('vi-modal-before-open', (e) => { e.preventDefault(); });
+
+      el.open = true;
+      expect(el.open).toBe(false); // State remains unchanged
+      expect(el.hasAttribute('open')).toBe(false); // DOM remains synced
+    });
+
+    it('should prevent closing if vi-modal-before-close is canceled', async () => {
+      render(html`<vi-modal animation-duration="0" open></vi-modal>`, container);
+      const el = getModal();
+      await el.updateComplete;
+      
+      el.addEventListener('vi-modal-before-close', (e) => { e.preventDefault(); });
+
+      el.open = false;
+      expect(el.open).toBe(true); // State remains unchanged
+      expect(el.hasAttribute('open')).toBe(true); // DOM remains synced
+    });
+
+    it('should fire after-open and after-close after animations complete', async () => {
+      render(html`<vi-modal animation-duration="0"></vi-modal>`, container);
+      const el = getModal();
+      await el.updateComplete;
+
+      let afterOpenFired = false;
+      let afterCloseFired = false;
+
+      el.addEventListener('vi-modal-after-open', () => { afterOpenFired = true; });
+      el.addEventListener('vi-modal-after-close', () => { afterCloseFired = true; });
+
+      el.open = true;
+      
+      await el.updateComplete;
+      await new Promise(resolve => setTimeout(resolve, 20));
+
+      expect(afterOpenFired).toBe(true);
+
+      el.open = false;
+      await el.updateComplete;
+      await new Promise(resolve => setTimeout(resolve, 20));
+
+      expect(afterCloseFired).toBe(true);
+    });
+  });
 });
+

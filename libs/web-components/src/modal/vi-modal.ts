@@ -5,6 +5,7 @@ import { ifDefined } from 'lit/directives/if-defined.js';
 import { ViElement } from '../base/vi-element.js';
 import { FocusTrapMixin } from '../base/focus-trap-mixin.js';
 import { DraggableMixin } from '../base/draggable-mixin.js';
+import { ResizableMixin } from '../base/resizable-mixin.js';
 import modalStyles from './vi-modal.scss?inline';
 import '../icons/vi-icon.js';
 import '../button/vi-button.js';
@@ -78,13 +79,51 @@ export type AlertDialogVariant = 'info' | 'success' | 'warning' | 'danger';
  * @element vi-modal
  */
 @customElement('vi-modal')
-export class ViModal extends DraggableMixin(FocusTrapMixin(ViElement)) {
+export class ViModal extends ResizableMixin(
+  DraggableMixin(FocusTrapMixin(ViElement)),
+) {
   static override styles = css`
     ${unsafeCSS(modalStyles)}
   `;
 
-  /** Controls visibility */
-  @property({ type: Boolean, reflect: true }) accessor open = false;
+  static override properties = {
+    open: { type: Boolean, reflect: true }
+  };
+
+  private _open = false;
+  private _bodyId = 'vi-modal-body-' + Math.random().toString(36).substring(2, 9);
+
+  /** Whether the modal is currently open. */
+  get open(): boolean {
+    return this._open;
+  }
+
+  set open(val: boolean) {
+    const oldVal = this._open;
+    if (val === oldVal) return;
+
+    if (this.isConnected) {
+      const eventName = val ? 'vi-modal-before-open' : 'vi-modal-before-close';
+      const ev = new CustomEvent(eventName, {
+        bubbles: true,
+        composed: true,
+        cancelable: true,
+      });
+      this.dispatchEvent(ev);
+
+      if (ev.defaultPrevented) {
+        if (oldVal) {
+          this.setAttribute('open', '');
+        } else {
+          this.removeAttribute('open');
+        }
+        return;
+      }
+    }
+
+    this._open = val;
+    this.requestUpdate('open', oldVal);
+  }
 
   /** Layout variant */
   @property({ type: String, reflect: true }) accessor variant: ModalVariant =
@@ -162,6 +201,23 @@ export class ViModal extends DraggableMixin(FocusTrapMixin(ViElement)) {
   @property({ type: Number, attribute: 'animation-duration' })
   accessor animationDuration = 250;
 
+  /**
+   * Where the modal is teleported when opened. Accepts a CSS selector string
+   * or an `HTMLElement`. Defaults to `'body'`. No change from current behavior
+   * when left at default.
+   */
+  @property({ attribute: 'append-to' }) accessor appendTo:
+    | string
+    | HTMLElement = 'body';
+
+  /**
+   * Scroll strategy when the modal is open. Defaults to 'block' which prevents
+   * scrolling the document body. Set to 'noop' to allow background scrolling.
+   */
+  @property({ attribute: 'scroll-strategy' }) accessor scrollStrategy:
+    | 'block'
+    | 'noop' = 'block';
+
   @query('dialog') private accessor _dialog!: HTMLDialogElement;
   @query('.modal-backdrop') private accessor _backdropEl!: HTMLDivElement;
   @query('.modal-header') private accessor _headerEl!: HTMLElement;
@@ -176,6 +232,10 @@ export class ViModal extends DraggableMixin(FocusTrapMixin(ViElement)) {
   private _activeAnimation: Animation | null = null;
 
   protected override get _dragTarget(): HTMLElement | null {
+    return this._dialog;
+  }
+
+  protected override get _resizeTarget(): HTMLElement | null {
     return this._dialog;
   }
 
@@ -214,22 +274,36 @@ export class ViModal extends DraggableMixin(FocusTrapMixin(ViElement)) {
 
     if (changedProperties.has('open')) {
       if (this.open) {
-        // Teleport to body to ensure correct stacking context
-        if (this.parentElement !== document.body) {
+        // Resolve append-to target
+        let teleportTarget: HTMLElement = document.body;
+        if (this.appendTo instanceof HTMLElement) {
+          teleportTarget = this.appendTo;
+        } else if (typeof this.appendTo === 'string' && this.appendTo) {
+          try {
+            teleportTarget =
+              document.querySelector<HTMLElement>(this.appendTo) ?? document.body;
+          } catch {
+            teleportTarget = document.body;
+          }
+        }
+
+        // Teleport to target container to ensure correct stacking context
+        if (this.parentElement !== teleportTarget) {
           this._originalParent = this.parentNode;
           this._originalNextSibling = this.nextSibling;
-          document.body.appendChild(this);
+          teleportTarget.appendChild(this);
         }
 
         // Register with OverlayManager to get a proper z-index
-        this._overlayZIndex = OverlayManager.register(this, 'modal');
+        this._overlayZIndex = OverlayManager.register(this, 'modal', this.scrollStrategy);
 
         // Apply inert to background content (must happen after teleport)
         this._applyInert();
 
-        // Reset drag/maximize state on open
+        // Reset drag/maximize/resize state on open
         this._maximized = false;
         this._resetDrag();
+        this._resetResize();
 
         // Activate focus trap immediately (concurrent with animation)
         let initialFocus: HTMLElement | undefined;
@@ -245,13 +319,32 @@ export class ViModal extends DraggableMixin(FocusTrapMixin(ViElement)) {
           this._activateFocusTrap(initialFocus, this.autofocus);
         }
 
-        // Play enter animation after first render
-        this.updateComplete.then(() => this._runEnterAnimation());
-
         this.dispatchEvent(
           new CustomEvent('vi-modal-open', { bubbles: true, composed: true }),
         );
+
+        // Play enter animation after first render
+        this.updateComplete.then(() => {
+          if (!this.open) return;
+          this._runEnterAnimation().then(() => {
+            if (!this.open) return;
+            this.dispatchEvent(
+              new CustomEvent('vi-modal-after-open', { bubbles: true, composed: true })
+            );
+          });
+        });
       } else {
+        const finalReason = this._closeReason;
+        this._closeReason = 'programmatic';
+
+        this.dispatchEvent(
+          new CustomEvent('vi-modal-close', {
+            bubbles: true,
+            composed: true,
+            detail: { reason: finalReason },
+          }),
+        );
+
         // Run exit animation, then tear down
         this._runExitAnimation().then(() => {
           if (this.open) return;
@@ -275,20 +368,22 @@ export class ViModal extends DraggableMixin(FocusTrapMixin(ViElement)) {
           this._deactivateFocusTrap(returnTarget);
 
           // Restore original DOM position
-          if (this._originalParent && this.parentElement === document.body) {
+          if (
+            this._originalParent &&
+            this.parentElement !== this._originalParent
+          ) {
             this._originalParent.insertBefore(this, this._originalNextSibling);
           }
           this._originalParent = null;
           this._originalNextSibling = null;
 
           this.dispatchEvent(
-            new CustomEvent('vi-modal-close', {
+            new CustomEvent('vi-modal-after-close', {
               bubbles: true,
               composed: true,
-              detail: { reason: this._closeReason },
+              detail: { reason: finalReason },
             }),
           );
-          this._closeReason = 'programmatic';
         });
       }
     }
@@ -337,9 +432,9 @@ export class ViModal extends DraggableMixin(FocusTrapMixin(ViElement)) {
     return EXIT_COUNTERPART[this._resolvedEnterAnimation] ?? 'fade-out';
   }
 
-  private _runEnterAnimation(): void {
+  private async _runEnterAnimation(): Promise<void> {
     const animName = this._resolvedEnterAnimation;
-    if (animName === 'none' || !this._dialog) return;
+    if (animName === 'none' || !this._dialog || !this._dialog.animate) return;
 
     const reduced = prefersReducedMotion();
     const kf = reduced
@@ -358,23 +453,27 @@ export class ViModal extends DraggableMixin(FocusTrapMixin(ViElement)) {
       fill: 'forwards',
     });
     this._activeAnimation = anim;
-    anim.onfinish = () => {
-      if (this._activeAnimation === anim) {
-        anim.cancel();
-      }
-    };
 
     // Animate backdrop concurrently (simple fade)
-    this._backdropEl?.animate(PRESET_KEYFRAMES['fade-in'], {
+    const backdropAnim = this._backdropEl?.animate?.(PRESET_KEYFRAMES['fade-in'], {
       duration: dur,
       easing: 'ease',
       fill: 'forwards',
     });
+
+    await Promise.allSettled([
+      anim.finished,
+      backdropAnim?.finished ?? Promise.resolve(),
+    ]);
+
+    if (this._activeAnimation === anim) {
+      anim.cancel();
+    }
   }
 
   private async _runExitAnimation(): Promise<void> {
     const animName = this._resolvedExitAnimation;
-    if (animName === 'none' || !this._dialog) return;
+    if (animName === 'none' || !this._dialog || !this._dialog.animate) return;
 
     const reduced = prefersReducedMotion();
     const kf = reduced
@@ -391,7 +490,7 @@ export class ViModal extends DraggableMixin(FocusTrapMixin(ViElement)) {
       easing: 'cubic-bezier(0.2, 0, 0, 1)',
       fill: 'forwards',
     });
-    const backdropAnim = this._backdropEl?.animate(
+    const backdropAnim = this._backdropEl?.animate?.(
       PRESET_KEYFRAMES['fade-out'],
       {
         duration: dur,
@@ -420,7 +519,7 @@ export class ViModal extends DraggableMixin(FocusTrapMixin(ViElement)) {
 
   /** Play a shake animation on the dialog to signal a blocked close attempt. */
   private _shakeDialog(): void {
-    if (!this._dialog) return;
+    if (!this._dialog || !this._dialog.animate) return;
     const reduced = prefersReducedMotion();
     const dur = reduced ? 0 : 380;
     this._dialog.animate(PRESET_KEYFRAMES['shake'], {
@@ -546,6 +645,7 @@ export class ViModal extends DraggableMixin(FocusTrapMixin(ViElement)) {
       'modal-scrollable-false': !this.scrollable,
       'is-maximized': this._maximized,
       'is-draggable': this.draggable,
+      'is-resizable': this.resizable,
     };
 
     return html`
@@ -574,6 +674,9 @@ export class ViModal extends DraggableMixin(FocusTrapMixin(ViElement)) {
             ? undefined
             : this.getAttribute('aria-labelledby') || 'modal-header',
         )}
+        aria-describedby=${ifDefined(
+          this.getAttribute('aria-describedby') || this._bodyId
+        )}
         style=${ifDefined(
           this._overlayZIndex !== null
             ? `z-index: ${this._overlayZIndex}`
@@ -582,6 +685,7 @@ export class ViModal extends DraggableMixin(FocusTrapMixin(ViElement)) {
         @cancel=${this._handleDialogCancel}
         @keydown=${this._handleKeydown}
       >
+        ${this._renderResizeHandles()}
         ${this.variant === 'alert'
           ? this._renderAlert()
           : this._renderDefault()}
@@ -613,7 +717,10 @@ export class ViModal extends DraggableMixin(FocusTrapMixin(ViElement)) {
                     : this.maximizeLabel}
                   @click=${() => {
                     this._maximized = !this._maximized;
-                    if (this._maximized) this._resetDrag(); // Clear drag state when maximized
+                    if (this._maximized) {
+                      this._resetDrag(); // Clear drag state when maximized
+                      this._resetResize(); // Clear resize state when maximized
+                    }
                   }}
                 >
                   <vi-icon
@@ -643,7 +750,7 @@ export class ViModal extends DraggableMixin(FocusTrapMixin(ViElement)) {
         </div>
       </header>
 
-      <div part="body" class="modal-body">
+      <div part="body" id=${this._bodyId} class="modal-body">
         <slot></slot>
       </div>
 
@@ -673,7 +780,7 @@ export class ViModal extends DraggableMixin(FocusTrapMixin(ViElement)) {
           </slot>
         </header>
 
-        <div part="body" class="modal-body">
+        <div part="body" id=${this._bodyId} class="modal-body">
           <slot></slot>
         </div>
 
