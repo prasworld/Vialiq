@@ -229,9 +229,6 @@ export function DraggableMixin<T extends Constructor<LitElement>>(
         }
       }
 
-      const w = naturalRect.width;
-      const h = naturalRect.height;
-
       // Compute allowed translate range
       const minX = boundsLeft - naturalRect.left;
       const maxX = boundsRight - naturalRect.right;
@@ -240,8 +237,6 @@ export function DraggableMixin<T extends Constructor<LitElement>>(
 
       this._currentTranslateX = Math.max(minX, Math.min(this._currentTranslateX, maxX));
       this._currentTranslateY = Math.max(minY, Math.min(this._currentTranslateY, maxY));
-
-      void w; void h; // suppress unused warnings
     }
 
     private _onPointerUp(e: PointerEvent) {

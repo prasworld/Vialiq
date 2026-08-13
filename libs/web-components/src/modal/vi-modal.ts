@@ -1,4 +1,4 @@
-import { css, html, nothing, unsafeCSS, type TemplateResult, type PropertyValues } from 'lit';
+import { css, html, nothing, unsafeCSS, type TemplateResult } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
@@ -91,6 +91,7 @@ export class ViModal extends ResizableMixin(
   };
 
   private _open = false;
+  private _bodyId = 'vi-modal-body-' + Math.random().toString(36).substring(2, 9);
 
   /** Whether the modal is currently open. */
   get open(): boolean {
@@ -278,8 +279,12 @@ export class ViModal extends ResizableMixin(
         if (this.appendTo instanceof HTMLElement) {
           teleportTarget = this.appendTo;
         } else if (typeof this.appendTo === 'string' && this.appendTo) {
-          teleportTarget =
-            document.querySelector<HTMLElement>(this.appendTo) ?? document.body;
+          try {
+            teleportTarget =
+              document.querySelector<HTMLElement>(this.appendTo) ?? document.body;
+          } catch {
+            teleportTarget = document.body;
+          }
         }
 
         // Teleport to target container to ensure correct stacking context
@@ -320,7 +325,9 @@ export class ViModal extends ResizableMixin(
 
         // Play enter animation after first render
         this.updateComplete.then(() => {
+          if (!this.open) return;
           this._runEnterAnimation().then(() => {
+            if (!this.open) return;
             this.dispatchEvent(
               new CustomEvent('vi-modal-after-open', { bubbles: true, composed: true })
             );
@@ -668,8 +675,7 @@ export class ViModal extends ResizableMixin(
             : this.getAttribute('aria-labelledby') || 'modal-header',
         )}
         aria-describedby=${ifDefined(
-          this.getAttribute('aria-describedby') ||
-            (this.variant === 'alert' ? 'modal-body' : undefined),
+          this.getAttribute('aria-describedby') || this._bodyId
         )}
         style=${ifDefined(
           this._overlayZIndex !== null
@@ -744,7 +750,7 @@ export class ViModal extends ResizableMixin(
         </div>
       </header>
 
-      <div part="body" class="modal-body">
+      <div part="body" id=${this._bodyId} class="modal-body">
         <slot></slot>
       </div>
 
@@ -774,7 +780,7 @@ export class ViModal extends ResizableMixin(
           </slot>
         </header>
 
-        <div part="body" id="modal-body" class="modal-body">
+        <div part="body" id=${this._bodyId} class="modal-body">
           <slot></slot>
         </div>
 

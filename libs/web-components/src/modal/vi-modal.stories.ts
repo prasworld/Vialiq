@@ -977,8 +977,9 @@ export const CustomAppendTo: Story = {
           Useful for scoped stacking contexts or micro-frontend shells.
         </p>
         <div slot="footer">
-          <vi-button @click=${() => closeModal('modal-append-to')}
-            >Close</vi-button
+          <vi-button @click=${() => closeModal('modal-append-to')}>Close</vi-button>
+        </div>
+      </vi-modal>
     </div>
   `,
 };
@@ -1165,7 +1166,17 @@ export const EventLifecycle: Story = {
       if (logger) {
         logCount++;
         const detailString = detail ? ` - ${JSON.stringify(detail)}` : '';
-        logger.innerHTML = `<div>[${logCount}] <strong>${name}</strong>${detailString}</div>` + logger.innerHTML;
+        const div = document.createElement('div');
+        div.textContent = `[${logCount}] `;
+        const strong = document.createElement('strong');
+        strong.textContent = name;
+        div.appendChild(strong);
+        if (detailString) {
+          const span = document.createElement('span');
+          span.textContent = detailString;
+          div.appendChild(span);
+        }
+        logger.insertBefore(div, logger.firstChild);
       }
     };
 
