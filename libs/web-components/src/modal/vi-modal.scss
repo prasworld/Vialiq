@@ -152,3 +152,16 @@
   display: none;
 }
 
+/* ============================================================================
+   Draggable Cursor Overrides
+   ============================================================================ */
+.is-draggable [part="header"],
+.is-draggable .modal-header {
+  cursor: grab !important;
+}
+
+.is-draggable [part="header"]:active,
+.is-draggable .modal-header:active {
+  cursor: grabbing !important;
+}
+

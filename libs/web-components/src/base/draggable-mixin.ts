@@ -85,7 +85,7 @@ export function DraggableMixin<T extends Constructor<LitElement>>(
       const handle = this._dragHandle;
       if (handle) {
         if (this.draggable) {
-          handle.style.cursor = 'move';
+          handle.style.cursor = 'grab';
           handle.style.touchAction = 'none';
           handle.removeEventListener('pointerdown', this._boundOnPointerDown);
           handle.addEventListener('pointerdown', this._boundOnPointerDown);
@@ -147,7 +147,10 @@ export function DraggableMixin<T extends Constructor<LitElement>>(
 
       this._previousTransition = target.style.transition;
       target.style.transition = 'none';
-      document.body.style.cursor = 'move';
+      document.body.style.cursor = 'grabbing';
+      if (handle) {
+        handle.style.cursor = 'grabbing';
+      }
       this._previousUserSelect = document.body.style.getPropertyValue('user-select') || null;
       document.body.style.setProperty('user-select', 'none', 'important');
 
@@ -256,8 +259,11 @@ export function DraggableMixin<T extends Constructor<LitElement>>(
           // Ignore if release fails
         }
       }
-
+      
       document.body.style.cursor = '';
+      if (handle) {
+        handle.style.cursor = 'grab';
+      }
 
       if (this._previousUserSelect !== null) {
         document.body.style.setProperty('user-select', this._previousUserSelect);
