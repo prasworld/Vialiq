@@ -1,4 +1,9 @@
-import { LitElement, html, type PropertyValues, type TemplateResult } from 'lit';
+import {
+  LitElement,
+  html,
+  type PropertyValues,
+  type TemplateResult,
+} from 'lit';
 import { property } from 'lit/decorators.js';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -39,7 +44,8 @@ export function ResizableMixin<T extends Constructor<LitElement>>(
     @property({ type: Number, attribute: 'min-width' }) accessor minWidth = 200;
 
     /** Minimum height in pixels */
-    @property({ type: Number, attribute: 'min-height' }) accessor minHeight = 120;
+    @property({ type: Number, attribute: 'min-height' }) accessor minHeight =
+      120;
 
     /** Maximum width in pixels (0 = viewport width) */
     @property({ type: Number, attribute: 'max-width' }) accessor maxWidth = 0;
@@ -64,8 +70,10 @@ export function ResizableMixin<T extends Constructor<LitElement>>(
     }
 
     // Bound handlers — arrow function class fields, uniquely named
-    private readonly _rsz_onPointerMove = (e: PointerEvent) => this._rsz_handlePointerMove(e);
-    private readonly _rsz_onPointerUp = (e: PointerEvent) => this._rsz_handlePointerUp(e);
+    private readonly _rsz_onPointerMove = (e: PointerEvent) =>
+      this._rsz_handlePointerMove(e);
+    private readonly _rsz_onPointerUp = (e: PointerEvent) =>
+      this._rsz_handlePointerUp(e);
 
     override disconnectedCallback(): void {
       super.disconnectedCallback();
@@ -107,7 +115,8 @@ export function ResizableMixin<T extends Constructor<LitElement>>(
       this._rsz_prevTransition = target.style.transition;
       target.style.transition = 'none';
 
-      this._rsz_prevUserSelect = document.body.style.getPropertyValue('user-select') || null;
+      this._rsz_prevUserSelect =
+        document.body.style.getPropertyValue('user-select') || null;
       document.body.style.setProperty('user-select', 'none', 'important');
       document.body.style.cursor = `${handle}-resize`;
 
@@ -158,7 +167,10 @@ export function ResizableMixin<T extends Constructor<LitElement>>(
       const effectiveMaxHeight = this.maxHeight > 0 ? this.maxHeight : vh;
 
       newWidth = Math.max(this.minWidth, Math.min(newWidth, effectiveMaxWidth));
-      newHeight = Math.max(this.minHeight, Math.min(newHeight, effectiveMaxHeight));
+      newHeight = Math.max(
+        this.minHeight,
+        Math.min(newHeight, effectiveMaxHeight),
+      );
 
       target.style.width = `${newWidth}px`;
       target.style.height = `${newHeight}px`;
@@ -174,7 +186,10 @@ export function ResizableMixin<T extends Constructor<LitElement>>(
 
       document.body.style.cursor = '';
       if (this._rsz_prevUserSelect !== null) {
-        document.body.style.setProperty('user-select', this._rsz_prevUserSelect);
+        document.body.style.setProperty(
+          'user-select',
+          this._rsz_prevUserSelect,
+        );
       } else {
         document.body.style.removeProperty('user-select');
       }
@@ -228,7 +243,8 @@ export function ResizableMixin<T extends Constructor<LitElement>>(
           (handle) => html`
             <div
               class="resize-handle resize-handle-${handle}"
-              @pointerdown=${(e: PointerEvent) => this._rsz_onPointerDown(e, handle)}
+              @pointerdown=${(e: PointerEvent) =>
+                this._rsz_onPointerDown(e, handle)}
               aria-hidden="true"
             ></div>
           `,

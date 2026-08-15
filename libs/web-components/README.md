@@ -133,8 +133,6 @@ export class SearchFormComponent {
 </div>
 ```
 
-
-
 #### 4. Next.js (SSR / React Server Components)
 
 Custom Elements must register on the browser's `window` object. Next.js and server-side rendering environments require lazy-loading or dynamic imports to ensure registration occurs client-side.
@@ -533,15 +531,12 @@ The [ViModal](./src/modal/vi-modal.ts) is a focus-trapping dialog that dynamical
 | `variant`          | `variant`         | `'default'\|'drawer'\|'alert'`                             | `'default'` | Core layout mode.                                                         |
 | `size`             | `size`            | `'xs'\|'sm'\|'md'\|'lg'\|'xl'\|'full-width'\|'fullscreen'` | `'md'`      | Dialog dimensions.                                                        |
 | `position`         | `position`        | `'center'\|'top'\|'bottom'\|'left'\|'right'\|...`          | `'center'`  | Screen positioning for default variant.                                   |
-| `closable`         | `closable`        | `boolean`                                                  | `true`      | Show the close (×) button in the header.                                  |
-| `maximizable`      | `maximizable`     | `boolean`                                                  | `false`     | Show maximize/restore buttons.                                            |
 | `persistent`       | `persistent`      | `boolean`                                                  | `false`     | Prevent closing on backdrop click or Escape key (triggers shake instead). |
 | `no-backdrop`      | `no-backdrop`     | `boolean`                                                  | `false`     | Hides the backdrop overlay and allows background interaction (modeless).  |
 | `draggable`        | `draggable`       | `boolean`                                                  | `false`     | Allows dragging the modal by its header.                                  |
 | `resizable`        | `resizable`       | `boolean`                                                  | `false`     | Adds 8-point resize handles to the modal edges.                           |
 | `scrollable`       | `scrollable`      | `boolean`                                                  | `true`      | Body content scrolls while header/footer stay fixed.                      |
 | `drawer-placement` | `drawerPlacement` | `'left'\|'right'`                                          | `'right'`   | Edge attachment for the drawer variant.                                   |
-| `alert-variant`    | `alertVariant`    | `'info'\|'success'\|'warning'\|'danger'`                   | `'info'`    | Theme colors and default icon for alert variant.                          |
 | `append-to`        | `appendTo`        | `string\|HTMLElement`                                      | `'body'`    | Selector or Element to teleport the modal into.                           |
 
 #### Slots
@@ -567,27 +562,20 @@ The [ViModal](./src/modal/vi-modal.ts) is a focus-trapping dialog that dynamical
 **Standard Modal:**
 
 ```html
-<vi-modal id="my-modal" size="md">
-  <span slot="header">Edit Profile</span>
-
-  <form id="profile-form">
-    <vi-input name="username" placeholder="Username"></vi-input>
-  </form>
-
-  <div slot="footer">
-    <vi-button variant="ghost" onclick="document.getElementById('my-modal').open = false">Cancel</vi-button>
-    <vi-button variant="primary">Save Changes</vi-button>
-  </div>
+<vi-modal>
+  <vi-modal-header slot="header" closable>Title</vi-modal-header>
+  <p>Content</p>
+  <vi-modal-footer slot="footer">
+    <vi-button>Save</vi-button>
+  </vi-modal-footer>
 </vi-modal>
-
-<vi-button onclick="document.getElementById('my-modal').open = true">Open Modal</vi-button>
 ```
 
 **Draggable & Resizable Modeless Dialog:**
 
 ```html
 <vi-modal no-backdrop draggable resizable position="bottom-right">
-  <span slot="header">Floating Tool</span>
+  <vi-modal-header slot="header" closable>Floating Tool</vi-modal-header>
   <p>This modal doesn't block interaction with the page behind it!</p>
 </vi-modal>
 ```
@@ -596,7 +584,7 @@ The [ViModal](./src/modal/vi-modal.ts) is a focus-trapping dialog that dynamical
 
 ```html
 <vi-modal variant="drawer" drawer-placement="right" size="sm">
-  <span slot="header">Settings</span>
+  <vi-modal-header slot="header" closable>Settings</vi-modal-header>
   <p>Drawer contents here...</p>
 </vi-modal>
 ```
@@ -604,13 +592,13 @@ The [ViModal](./src/modal/vi-modal.ts) is a focus-trapping dialog that dynamical
 **Destructive Alert:**
 
 ```html
-<vi-modal variant="alert" alert-variant="danger" persistent>
-  <span slot="header">Delete Workspace?</span>
+<vi-modal variant="alert" persistent>
+  <vi-modal-header slot="header" alert-variant="danger" closable>Delete Workspace?</vi-modal-header>
   <p>This action cannot be undone. All data will be permanently lost.</p>
-  <div slot="footer">
+  <vi-modal-footer slot="footer">
     <vi-button variant="ghost">Cancel</vi-button>
     <vi-button variant="danger">Confirm Deletion</vi-button>
-  </div>
+  </vi-modal-footer>
 </vi-modal>
 ```
 
@@ -738,27 +726,31 @@ npx nx run web-components:test-wdio
 ---
 
 ### Badge ([vi-badge](./src/badge/vi-badge.ts))
+
 The `<vi-badge>` is a compact inline indicator used to communicate status, category, or count. It supports various color semantics, sizes, pill vs. square shapes, dot-only mode, and numeric count capping.
 
 #### Properties & Attributes
-| Attribute | Property | Type | Default | Description |
-| :--- | :--- | :--- | :--- | :--- |
-| `variant` | `variant` | `'neutral'\|'primary'\|'success'\|'warning'\|'danger'\|'info'` | `'neutral'` | Color semantic. |
-| `size` | `size` | `'sm'\|'md'\|'lg'` | `'md'` | Size of the badge. |
-| `dot` | `dot` | `boolean` | `false` | Renders a small colored dot instead of text. |
-| `pill` | `pill` | `boolean` | `true` | Renders fully rounded ends (pill) vs slightly rounded corners (square). |
-| `count` | `count` | `number` | `undefined` | Numeric count to display. Overrides default slot content. |
-| `show-zero` | `showZero` | `boolean` | `false` | Displays the badge even if the count is zero. |
-| `max` | `max` | `number` | `99` | Max count before showing `{max}+`. |
-| `outline` | `outline` | `boolean` | `false` | Renders the badge with an outline/ghost style. |
+
+| Attribute   | Property   | Type                                                           | Default     | Description                                                             |
+| :---------- | :--------- | :------------------------------------------------------------- | :---------- | :---------------------------------------------------------------------- |
+| `variant`   | `variant`  | `'neutral'\|'primary'\|'success'\|'warning'\|'danger'\|'info'` | `'neutral'` | Color semantic.                                                         |
+| `size`      | `size`     | `'sm'\|'md'\|'lg'`                                             | `'md'`      | Size of the badge.                                                      |
+| `dot`       | `dot`      | `boolean`                                                      | `false`     | Renders a small colored dot instead of text.                            |
+| `pill`      | `pill`     | `boolean`                                                      | `true`      | Renders fully rounded ends (pill) vs slightly rounded corners (square). |
+| `count`     | `count`    | `number`                                                       | `undefined` | Numeric count to display. Overrides default slot content.               |
+| `show-zero` | `showZero` | `boolean`                                                      | `false`     | Displays the badge even if the count is zero.                           |
+| `max`       | `max`      | `number`                                                       | `99`        | Max count before showing `{max}+`.                                      |
+| `outline`   | `outline`  | `boolean`                                                      | `false`     | Renders the badge with an outline/ghost style.                          |
 
 #### Slots
+
 - **Default Slot**: Badge text content (ignored if `count` is set).
 - **`icon` Slot**: Optional leading icon.
 
 #### Snippets
 
 **Standard Variants:**
+
 ```html
 <vi-badge variant="neutral">Draft</vi-badge>
 <vi-badge variant="primary">Submitted</vi-badge>
@@ -768,18 +760,19 @@ The `<vi-badge>` is a compact inline indicator used to communicate status, categ
 ```
 
 **Outlined & Square Styles:**
+
 ```html
-<vi-badge variant="info" outline>Outline Mode</vi-badge>
-<vi-badge variant="primary" :pill="false">Square Badge</vi-badge>
+<vi-badge variant="info" outline>Outline Mode</vi-badge> <vi-badge variant="primary" :pill="false">Square Badge</vi-badge>
 ```
 
 **Numeric Counts:**
+
 ```html
-<vi-badge count="5" variant="danger"></vi-badge>
-<vi-badge count="120" max="99" variant="danger"></vi-badge>
+<vi-badge count="5" variant="danger"></vi-badge> <vi-badge count="120" max="99" variant="danger"></vi-badge>
 ```
 
 **Dot Indicators:**
+
 ```html
 <vi-badge dot variant="success"></vi-badge>
 ```
@@ -787,42 +780,48 @@ The `<vi-badge>` is a compact inline indicator used to communicate status, categ
 ---
 
 ### Chip & Chip Group ([vi-chip](./src/chip/vi-chip.ts), [vi-chip-group](./src/chip/vi-chip-group.ts))
+
 The `<vi-chip>` is an interactive pill-shaped element used for selection, filtering, or categorisation. Chips are usually managed inside a `<vi-chip-group>`, which provides multi-select or single-select logic and arrow-key navigation.
 
 #### `<vi-chip>` Properties & Attributes
-| Attribute | Property | Type | Default | Description |
-| :--- | :--- | :--- | :--- | :--- |
-| `value` | `value` | `string` | `''` | Value used for selection tracking within a group. |
-| `selected` | `selected` | `boolean` | `false` | Sets the active/selected visual state and checkmark. |
-| `disabled` | `disabled` | `boolean` | `false` | Makes the chip non-interactive. |
-| `removable` | `removable` | `boolean` | `false` | Shows a trailing "×" remove button. |
-| `variant` | `variant` | `'neutral'\|'primary'\|'success'\|'warning'\|'danger'\|'info'` | `'neutral'` | Color semantic. |
-| `size` | `size` | `'sm'\|'md'\|'lg'` | `'md'` | Size of the chip. |
-| `remove-aria-label`| `removeAriaLabel` | `string` | `'Remove'` | Accessible label for the remove button. |
+
+| Attribute           | Property          | Type                                                           | Default     | Description                                          |
+| :------------------ | :---------------- | :------------------------------------------------------------- | :---------- | :--------------------------------------------------- |
+| `value`             | `value`           | `string`                                                       | `''`        | Value used for selection tracking within a group.    |
+| `selected`          | `selected`        | `boolean`                                                      | `false`     | Sets the active/selected visual state and checkmark. |
+| `disabled`          | `disabled`        | `boolean`                                                      | `false`     | Makes the chip non-interactive.                      |
+| `removable`         | `removable`       | `boolean`                                                      | `false`     | Shows a trailing "×" remove button.                  |
+| `variant`           | `variant`         | `'neutral'\|'primary'\|'success'\|'warning'\|'danger'\|'info'` | `'neutral'` | Color semantic.                                      |
+| `size`              | `size`            | `'sm'\|'md'\|'lg'`                                             | `'md'`      | Size of the chip.                                    |
+| `remove-aria-label` | `removeAriaLabel` | `string`                                                       | `'Remove'`  | Accessible label for the remove button.              |
 
 **`<vi-chip>` Slots:**
+
 - **Default Slot**: Label text content.
 - **`avatar` Slot**: Leading avatar image or initials.
 - **`icon` Slot**: Leading icon (used when no avatar).
 - **`trailing-icon` Slot**: Trailing icon (separate from the remove button).
 
 #### `<vi-chip-group>` Properties & Attributes
-| Attribute | Property | Type | Default | Description |
-| :--- | :--- | :--- | :--- | :--- |
-| `value` | `value` | `string[]` | `[]` | Array of currently selected chip values. |
-| `multi` | `multi` | `boolean` | `true` | Allows multiple selections vs. single selection. |
-| `name` | `name` | `string` | `''` | Form field name for native form participation. |
-| `required` | `required` | `boolean` | `false` | Requires at least one chip to be selected for form validity. |
-| `disabled` | `disabled` | `boolean` | `false` | Disables all child chips. |
-| `wrap` | `wrap` | `boolean` | `true` | Controls whether chips wrap to the next line. |
-| `gap` | `gap` | `string` | `'8px'` | Gap spacing between chips. |
+
+| Attribute  | Property   | Type       | Default | Description                                                  |
+| :--------- | :--------- | :--------- | :------ | :----------------------------------------------------------- |
+| `value`    | `value`    | `string[]` | `[]`    | Array of currently selected chip values.                     |
+| `multi`    | `multi`    | `boolean`  | `true`  | Allows multiple selections vs. single selection.             |
+| `name`     | `name`     | `string`   | `''`    | Form field name for native form participation.               |
+| `required` | `required` | `boolean`  | `false` | Requires at least one chip to be selected for form validity. |
+| `disabled` | `disabled` | `boolean`  | `false` | Disables all child chips.                                    |
+| `wrap`     | `wrap`     | `boolean`  | `true`  | Controls whether chips wrap to the next line.                |
+| `gap`      | `gap`      | `string`   | `'8px'` | Gap spacing between chips.                                   |
 
 **`<vi-chip-group>` Events:**
+
 - `vi-chip-group-change`: Fired when the selection changes (event detail contains `value: string[]`).
 
 #### Snippets
 
 **Multi-Select Group:**
+
 ```html
 <vi-chip-group multi name="grades" value='["grade-1"]'>
   <vi-chip value="grade-1">Grade 1</vi-chip>
@@ -833,6 +832,7 @@ The `<vi-chip>` is an interactive pill-shaped element used for selection, filter
 ```
 
 **Single-Select Group:**
+
 ```html
 <vi-chip-group :multi="false" name="visit">
   <vi-chip value="1" variant="primary">Visit 1</vi-chip>
@@ -847,29 +847,34 @@ The `<vi-chip>` is an interactive pill-shaped element used for selection, filter
 ---
 
 ### Switch ([vi-switch](./src/switch/vi-switch.ts))
+
 The `<vi-switch>` component is a form-associated toggle switch used for boolean settings. It supports size variants, custom label placements, and native HTML form participation.
 
 #### Properties & Attributes
-| Attribute | Property | Type | Default | Description |
-| :--- | :--- | :--- | :--- | :--- |
-| `checked` | `checked` | `boolean` | `false` | Checked state of the switch. |
-| `disabled` | `disabled` | `boolean` | `false` | Disables the switch. |
-| `size` | `size` | `'sm'\|'md'\|'lg'` | `'md'` | Visual size scale. |
-| `label-placement` | `labelPlacement` | `'start'\|'end'` | `'end'` | Placement of the label relative to the switch toggle. |
-| `name` | `name` | `string` | `''` | Form field name. |
-| `value` | `value` | `string` | `'on'` | Form submission value when checked. |
+
+| Attribute         | Property         | Type               | Default | Description                                           |
+| :---------------- | :--------------- | :----------------- | :------ | :---------------------------------------------------- |
+| `checked`         | `checked`        | `boolean`          | `false` | Checked state of the switch.                          |
+| `disabled`        | `disabled`       | `boolean`          | `false` | Disables the switch.                                  |
+| `size`            | `size`           | `'sm'\|'md'\|'lg'` | `'md'`  | Visual size scale.                                    |
+| `label-placement` | `labelPlacement` | `'start'\|'end'`   | `'end'` | Placement of the label relative to the switch toggle. |
+| `name`            | `name`           | `string`           | `''`    | Form field name.                                      |
+| `value`           | `value`          | `string`           | `'on'`  | Form submission value when checked.                   |
 
 **Slots:**
+
 - **Default Slot**: Label text/content.
 - **`on-label` Slot**: Optional text displayed inside the track when checked.
 - **`off-label` Slot**: Optional text displayed inside the track when unchecked.
 
 **Events:**
+
 - `vi-switch-change`: Fires when the user toggles the checked state. (Detail: `{ checked: boolean }`).
 
 #### Snippets
 
 **Basic Usage:**
+
 ```html
 <vi-switch>Enable Notifications</vi-switch>
 <vi-switch checked>Marketing Emails</vi-switch>
@@ -877,6 +882,7 @@ The `<vi-switch>` component is a form-associated toggle switch used for boolean 
 ```
 
 **Custom Label Placement & Sizes:**
+
 ```html
 <!-- Label to the left of the switch -->
 <vi-switch label-placement="start" size="lg">Auto-save</vi-switch>

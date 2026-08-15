@@ -1,0 +1,69 @@
+@use '@vialiq/flux-ui/components/modal';
+@use '@vialiq/flux-ui/styles/variables' as tokens;
+
+:host {
+  display: block;
+}
+
+.modal-header {
+  @extend .modal-header;
+}
+
+.modal-title {
+  @extend .modal-title;
+}
+
+.modal-header-actions {
+  @extend .modal-header-actions;
+}
+
+.modal-description {
+  margin: tokens.$spacing-xs 0 0 0;
+  font-size: tokens.$font-size-sm;
+  color: tokens.$text-secondary;
+  font-weight: tokens.$font-weight-normal;
+}
+
+.modal-header-content {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ============================================================================
+   Alert Variant Overrides
+   ============================================================================ */
+.modal-header--alert {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--vi-spacing-sm, 12px);
+}
+
+.modal-header--alert .modal-alert-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  width: var(--vi-icon-size-md, 24px);
+  height: var(--vi-icon-size-md, 24px);
+  font-size: var(--vi-icon-size-md, 24px);
+}
+
+:host([alert-variant="danger"]) .modal-alert-icon {
+  color: tokens.$color-error;
+}
+
+:host([alert-variant="warning"]) .modal-alert-icon {
+  color: tokens.$color-warning;
+}
+
+:host([alert-variant="success"]) .modal-alert-icon {
+  color: tokens.$color-success;
+}
+
+:host([alert-variant="info"]) .modal-alert-icon,
+:host(:not([alert-variant])) .modal-alert-icon {
+  color: tokens.$color-info;
+}

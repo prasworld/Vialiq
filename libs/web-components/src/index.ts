@@ -31,6 +31,11 @@ export type { BadgeVariant, BadgeSize } from './badge/vi-badge.js';
 export { ViAlert } from './alert/vi-alert.js';
 export type { AlertVariant } from './alert/vi-alert.js';
 
+export { ViModal } from './modal/vi-modal.js';
+export type { ModalVariant, DrawerPlacement, ModalSize } from './modal/vi-modal.js';
+export { ViModalHeader } from './modal/vi-modal-header.js';
+export { ViModalFooter } from './modal/vi-modal-footer.js';
+
 export { ViChip } from './chip/vi-chip.js';
 export type { ChipVariant, ChipSize } from './chip/vi-chip.js';
 export { ViChipGroup } from './chip/vi-chip-group.js';
