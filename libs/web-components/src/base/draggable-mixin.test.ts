@@ -82,7 +82,7 @@ describe('DraggableMixin', () => {
     await el.updateComplete;
 
     expect(el.draggable).toBe(true);
-    expect(el.handleEl.style.cursor).toBe('move');
+    expect(el.handleEl.style.cursor).toBe('grab');
 
     // Start drag
     el.handleEl.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, composed: true, clientX: 100, clientY: 100 }));

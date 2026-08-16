@@ -34,21 +34,29 @@ A focus-trapping dialog that blocks interaction with the page behind it. Built u
 
 ## Properties / Attributes
 
+### `<vi-modal>`
 | Property | Attribute | Type | Default | Reflects | Description |
 |----------|-----------|------|---------|---------|-------------|
 | `open` | `open` | `boolean` | `false` | ✅ | Controls visibility |
 | `variant` | `variant` | `ModalVariant` | `'default'` | ✅ | Layout variant |
 | `size` | `size` | `ModalSize` | `'md'` | ✅ | Dialog dimensions |
 | `position` | `position` | `ModalPosition` | `'center'` | ✅ | Dialog position |
-| `closable` | `closable` | `boolean` | `true` | — | Show × button in header |
-| `maximizable` | `maximizable` | `boolean` | `false` | — | Show maximize button in header |
-| `draggable` | `draggable` | `boolean` | `false` | ✅ | Allows the modal to be dragged by its header |
+| `draggable` | `draggable` | `boolean` | `false` | ✅ | Allows the modal to be dragged |
 | `persistent` | `persistent` | `boolean` | `false` | — | Prevent close on `Escape` and backdrop click |
 | `autofocus` | `autofocus` | `boolean` | `true` | — | Focus first element on open |
 | `scrollable` | `scrollable` | `boolean` | `true` | — | Body scrolls; header/footer stay fixed |
 | `drawerPlacement` | `drawer-placement` | `DrawerPlacement` | `'right'` | — | Side for drawer variant |
-| `alertVariant` | `alert-variant` | `AlertDialogVariant` | `'info'` | — | Icon+colour for alert variant |
 | `returnFocusSelector` | — | `string \| HTMLElement` | — | — | Element to return focus to on close |
+
+### `<vi-modal-header>`
+| Property | Attribute | Type | Default | Reflects | Description |
+|----------|-----------|------|---------|---------|-------------|
+| `title` | `title` | `string` | `''` | — | Header title text |
+| `description` | `description` | `string` | `''` | — | Header description text |
+| `closable` | `closable` | `boolean` | `false` | — | Show × button in header |
+| `maximizable` | `maximizable` | `boolean` | `false` | — | Show maximize button in header |
+| `alertVariant` | `alert-variant` | `AlertDialogVariant` | `undefined` | — | Icon+colour for alert variant |
+| `icon` | `icon` | `string` | `undefined` | — | Custom icon name for alert variant |
 
 ```typescript
 type ModalVariant = 'default' | 'drawer' | 'alert';
@@ -80,11 +88,9 @@ type AlertDialogVariant = 'info' | 'success' | 'warning' | 'danger';
 
 | Slot | Description |
 |------|-------------|
-| `header` | Dialog title / header row (replaces default `<header>`) |
-| `header-actions` | Actions in header (next to close button) |
+| `header` | Accepts `<vi-modal-header>` component |
 | *(default)* | Body content |
-| `footer` | Action buttons (Confirm / Cancel) |
-| `icon` | Icon for `alert` variant (default: status icon from `alert-variant`) |
+| `footer` | Accepts `<vi-modal-footer>` component |
 
 ---
 
@@ -149,22 +155,14 @@ type AlertDialogVariant = 'info' | 'success' | 'warning' | 'danger';
 ```
 vi-modal
 ├── div.modal-backdrop (when open)
-└── dialog[part="dialog"][open?] role="dialog" aria-modal="true" aria-labelledby="modal-title"
+└── dialog[part="dialog"][open?] role="dialog" aria-modal="true" aria-labelledby="vi-modal-header-slot"
     │
-    ├── header[part="header"] .modal-header  (default variant)
-    │   ├── slot[name="header"]
-    │   │   └── span[part="title"] id="modal-title"  (default)
-    │   ├── slot[name="header-actions"]
-    │   └── vi-button[part="close-btn"] icon-only ghost (if closable)
-    │
-    ├── div[part="icon"] .modal-alert-icon  (alert variant only)
-    │   └── slot[name="icon"] → vi-icon (default from alertVariant)
+    ├── slot[name="header"] id="vi-modal-header-slot"
     │
     ├── div[part="body"] .modal-body
     │   └── slot (default content)
     │
-    └── footer[part="footer"] .modal-footer  (when footer slot has content)
-        └── slot[name="footer"]
+    └── slot[name="footer"]
 ```
 
 ---
@@ -173,9 +171,9 @@ vi-modal
 
 Uses `FocusTrapMixin`:
 
-1. **On open:** `_activateFocusTrap()` is called — queries all focusable elements in shadow + slotted content, stores `document.activeElement`, moves focus to first focusable element (or modal title if no interactive elements in body).
-2. **While open:** `Tab` and `Shift+Tab` cycle within the modal; focus cannot escape.
-3. **On close:** `_deactivateFocusTrap()` restores focus to the trigger element (from `returnFocusSelector` or the previously focused element).
+1. **On open:** `_activateFocusTrap()` is called — queries all focusable elements in shadow + slotted content, stores `document.activeElement` (using `getDeepActiveElement()` to trace into nested shadow roots), moves focus to first focusable element.
+2. **While open:** `Tab` and `Shift+Tab` cycle within the modal; focus cannot escape. If multiple overlapping modals are open, the global `OverlayManager` guarantees only the topmost modal's elements are focusable by dynamically syncing the `inert` attribute on all background content.
+3. **On close:** `_deactivateFocusTrap()` restores focus to the trigger element (from `returnFocusSelector` or the deeply tracked previous focus).
 
 ```typescript
 // Focusable selector (matches elements that should be in the tab cycle)
@@ -256,13 +254,13 @@ dialog[open] { animation: vi-modal-enter var(--vi-modal-animation-duration) ease
 ### Default modal — form entry
 
 ```html
-<vi-modal #aeModal size="lg" (vialiq-close)="onModalClose($event.detail.reason)">
-  <span slot="header">Record Adverse Event</span>
+<vi-modal #aeModal size="lg" (vi-modal-close-request)="onModalClose($event.detail.reason)">
+  <vi-modal-header slot="header" closable>Record Adverse Event</vi-modal-header>
   <app-ae-form [ae]="currentAe"></app-ae-form>
-  <div slot="footer">
+  <vi-modal-footer slot="footer">
     <vi-button variant="ghost" (click)="aeModal.close('button')">Cancel</vi-button>
     <vi-button variant="primary" (click)="submitAe()">Save AE</vi-button>
-  </div>
+  </vi-modal-footer>
 </vi-modal>
 
 <vi-button (click)="aeModal.show()">Add Adverse Event</vi-button>
@@ -271,14 +269,14 @@ dialog[open] { animation: vi-modal-enter var(--vi-modal-animation-duration) ease
 ### Alert variant — destructive confirmation
 
 ```html
-<vi-modal #lockModal variant="alert" alert-variant="danger" size="sm" persistent>
-  <span slot="header">Lock Data</span>
+<vi-modal #lockModal variant="alert" size="sm" persistent>
+  <vi-modal-header slot="header" alert-variant="danger" closable>Lock Data</vi-modal-header>
   <p>This action is <strong>irreversible</strong>. All forms will be locked for editing.</p>
   <p>Are you sure you want to lock this subject's data?</p>
-  <div slot="footer">
+  <vi-modal-footer slot="footer">
     <vi-button variant="ghost" (click)="lockModal.close('button')">Cancel</vi-button>
     <vi-button variant="danger" (click)="confirmLock()">Lock Data</vi-button>
-  </div>
+  </vi-modal-footer>
 </vi-modal>
 ```
 
@@ -286,11 +284,11 @@ dialog[open] { animation: vi-modal-enter var(--vi-modal-animation-duration) ease
 
 ```html
 <vi-modal #queryDrawer variant="drawer" drawer-placement="right" size="lg">
-  <span slot="header">Query #QR-0042 — Weight</span>
+  <vi-modal-header slot="header" closable>Query #QR-0042 — Weight</vi-modal-header>
   <app-query-thread [queryId]="selectedQueryId"></app-query-thread>
-  <div slot="footer">
+  <vi-modal-footer slot="footer">
     <vi-button variant="primary" (click)="submitResponse()">Submit Response</vi-button>
-  </div>
+  </vi-modal-footer>
 </vi-modal>
 ```
 

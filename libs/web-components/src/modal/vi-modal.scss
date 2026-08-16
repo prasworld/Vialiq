@@ -3,8 +3,10 @@
 
 :host {
   display: block;
-  /* Ensure the host doesn't create unwanted layout bounds unless needed,
-     although the native dialog is fixed and escapes host bounds visually. */
+}
+
+:host(:not([open])) {
+  display: none;
 }
 
 /* Map the parts to the base classes we defined in flux-ui */
@@ -150,5 +152,58 @@
 /* Suppress handles when maximized — CSS-level guard (JS also suppresses via duck-type) */
 .is-maximized .resize-handle {
   display: none;
+}
+
+/* ============================================================================
+   Draggable Cursor Overrides
+   ============================================================================ */
+.is-draggable [part="header"],
+.is-draggable .modal-header {
+  cursor: grab !important;
+}
+
+.is-draggable [part="header"]:active,
+.is-draggable .modal-header:active {
+  cursor: grabbing !important;
+}
+
+/* ============================================================================
+   Alert Variant Overrides
+   ============================================================================ */
+[part="dialog"].modal-variant-alert {
+  /* Remove the global padding that pushes the footer in */
+  padding: 0 !important;
+  /* Revert to standard column layout */
+  flex-direction: column !important;
+}
+
+.modal-header--alert {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--vi-spacing-sm, 12px);
+}
+
+.modal-header--alert .modal-alert-icon {
+  display: flex;
+  margin: 0;
+  padding: 0;
+}
+
+:host([alert-variant="danger"]) .modal-alert-icon {
+  color: tokens.$color-error;
+}
+
+:host([alert-variant="warning"]) .modal-alert-icon {
+  color: tokens.$color-warning;
+}
+
+:host([alert-variant="success"]) .modal-alert-icon {
+  color: tokens.$color-success;
+}
+
+:host([alert-variant="info"]) .modal-alert-icon,
+:host(:not([alert-variant])) .modal-alert-icon {
+  color: tokens.$color-info;
 }
 

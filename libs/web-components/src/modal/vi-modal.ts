@@ -11,19 +11,9 @@ import '../icons/vi-icon.js';
 import '../button/vi-button.js';
 import { OverlayManager } from '../base/overlay-manager.js';
 import {
-  checkCircleIcon,
-  triangleWarningIcon,
-  infoIcon,
-  xIcon,
-  lockIcon,
-  arrowsMaximizeIcon,
-  arrowsMinimizeIcon,
-} from '@vialiq/icons';
-import {
   PRESET_KEYFRAMES,
   EXIT_COUNTERPART,
 } from '../animation/animation-constants.js';
-import { registerIcons } from '../icons/registry.js';
 
 export type ModalEnterAnimation =
   | 'fade-in'
@@ -87,11 +77,12 @@ export class ViModal extends ResizableMixin(
   `;
 
   static override properties = {
-    open: { type: Boolean, reflect: true }
+    open: { type: Boolean, reflect: true },
   };
 
   private _open = false;
-  private _bodyId = 'vi-modal-body-' + Math.random().toString(36).substring(2, 9);
+  private _bodyId =
+    'vi-modal-body-' + Math.random().toString(36).substring(2, 9);
 
   /** Whether the modal is currently open. */
   get open(): boolean {
@@ -174,16 +165,7 @@ export class ViModal extends ResizableMixin(
     | string
     | undefined = undefined;
 
-  /** Accessible label for the close button */
-  @property({ attribute: 'close-label' }) accessor closeLabel = 'Close';
-
-  /** Accessible label for the maximize button */
-  @property({ attribute: 'maximize-label' }) accessor maximizeLabel =
-    'Maximize';
-
-  /** Accessible label for the restore (un-maximize) button */
-  @property({ attribute: 'restore-label' }) accessor restoreLabel = 'Restore';
-
+  /** Header description text */
   /**
    * Enter animation preset. Defaults to 'zoom-in' for default/alert, 'slide-in-right' for right drawer,
    * 'slide-in-left' for left drawer. Set to 'none' to disable.
@@ -220,52 +202,65 @@ export class ViModal extends ResizableMixin(
 
   @query('dialog') private accessor _dialog!: HTMLDialogElement;
   @query('.modal-backdrop') private accessor _backdropEl!: HTMLDivElement;
-  @query('.modal-header') private accessor _headerEl!: HTMLElement;
 
-  @state() private accessor _hasFooterSlot = false;
   @state() private accessor _maximized = false;
   @state() private accessor _overlayZIndex: number | null = null;
 
   private _originalParent: ParentNode | null = null;
   private _originalNextSibling: Node | null = null;
-  private _inertedElements: Element[] = [];
+
   private _activeAnimation: Animation | null = null;
 
   protected override get _dragTarget(): HTMLElement | null {
     return this._dialog;
   }
 
+  protected override get _dragHandle(): HTMLElement | null {
+    // DraggableMixin queries this to know what initiates dragging
+    return this.querySelector('vi-modal-header') ?? null;
+  }
+
   protected override get _resizeTarget(): HTMLElement | null {
     return this._dialog;
   }
 
-  protected override get _dragHandle(): HTMLElement | null {
-    return this._headerEl;
-  }
-
-  private static _iconsRegistered = false;
-
   override connectedCallback(): void {
     super.connectedCallback();
-    if (!ViModal._iconsRegistered) {
-      registerIcons([
-        checkCircleIcon,
-        triangleWarningIcon,
-        infoIcon,
-        xIcon,
-        lockIcon,
-        arrowsMaximizeIcon,
-        arrowsMinimizeIcon,
-      ]);
-      ViModal._iconsRegistered = true;
-    }
-    this._hasFooterSlot = this.querySelectorAll('[slot="footer"]').length > 0;
+    this.addEventListener('vi-modal-close-request', this._handleHeaderCloseRequest);
+    this.addEventListener('vi-modal-maximize-request', this._handleHeaderMaximizeRequest);
   }
 
-  private _handleFooterSlotChange(e: Event): void {
-    const slot = e.target as HTMLSlotElement;
-    this._hasFooterSlot = slot.assignedNodes({ flatten: true }).length > 0;
+  override disconnectedCallback(): void {
+    super.disconnectedCallback();
+    this.removeEventListener('vi-modal-close-request', this._handleHeaderCloseRequest);
+    this.removeEventListener('vi-modal-maximize-request', this._handleHeaderMaximizeRequest);
+    OverlayManager.unregister(this);
+
+    this._activeAnimation?.cancel();
+    this._activeAnimation = null;
   }
+
+  private _handleHeaderCloseRequest = () => {
+    this.close('button');
+  };
+
+  private _handleHeaderMaximizeRequest = () => {
+    this._maximized = !this._maximized;
+    if (this._maximized) {
+      this._resetDrag(); // Clear drag state when maximized
+      this._resetResize(); // Clear resize state when maximized
+    }
+    this._syncHeaderState();
+  };
+
+  private _syncHeaderState() {
+    const header = this.querySelector('vi-modal-header');
+    if (header) {
+      header.maximized = this._maximized;
+    }
+  }
+
+
 
   override updated(
     changedProperties: Map<string | number | symbol, unknown>,
@@ -275,15 +270,22 @@ export class ViModal extends ResizableMixin(
     if (changedProperties.has('open')) {
       if (this.open) {
         // Resolve append-to target
+        // Blocking modals (with backdrop) MUST teleport to document.body.
+        // Otherwise, the OverlayManager's 'inert' application to body children 
+        // will make the custom container (and therefore the modal) completely inert.
         let teleportTarget: HTMLElement = document.body;
-        if (this.appendTo instanceof HTMLElement) {
-          teleportTarget = this.appendTo;
-        } else if (typeof this.appendTo === 'string' && this.appendTo) {
-          try {
-            teleportTarget =
-              document.querySelector<HTMLElement>(this.appendTo) ?? document.body;
-          } catch {
-            teleportTarget = document.body;
+        
+        if (this.noBackdrop) {
+          if (this.appendTo instanceof HTMLElement) {
+            teleportTarget = this.appendTo;
+          } else if (typeof this.appendTo === 'string' && this.appendTo) {
+            try {
+              teleportTarget =
+                document.querySelector<HTMLElement>(this.appendTo) ??
+                document.body;
+            } catch {
+              teleportTarget = document.body;
+            }
           }
         }
 
@@ -294,11 +296,16 @@ export class ViModal extends ResizableMixin(
           teleportTarget.appendChild(this);
         }
 
-        // Register with OverlayManager to get a proper z-index
-        this._overlayZIndex = OverlayManager.register(this, 'modal', this.scrollStrategy);
+        // Register overlay to calculate z-index and manage body scroll
+        this._overlayZIndex = OverlayManager.register(
+          this,
+          this.variant === 'drawer' ? 'modal' : 'modal',
+          this.noBackdrop ? 'noop' : 'block',
+          { noBackdrop: this.noBackdrop }
+        );
 
         // Apply inert to background content (must happen after teleport)
-        this._applyInert();
+        // (Handled by OverlayManager now)
 
         // Reset drag/maximize/resize state on open
         this._maximized = false;
@@ -329,7 +336,10 @@ export class ViModal extends ResizableMixin(
           this._runEnterAnimation().then(() => {
             if (!this.open) return;
             this.dispatchEvent(
-              new CustomEvent('vi-modal-after-open', { bubbles: true, composed: true })
+              new CustomEvent('vi-modal-after-open', {
+                bubbles: true,
+                composed: true,
+              }),
             );
           });
         });
@@ -351,7 +361,7 @@ export class ViModal extends ResizableMixin(
 
           OverlayManager.unregister(this);
           this._stopDrag();
-          this._removeInert();
+          // (Handled by OverlayManager now)
 
           let returnTarget: HTMLElement | null = null;
           if (
@@ -392,27 +402,7 @@ export class ViModal extends ResizableMixin(
   private _closeReason: 'escape' | 'backdrop' | 'button' | 'programmatic' =
     'programmatic';
 
-  // ─── Inert Management ────────────────────────────────────────────────────
 
-  /** Mark all `document.body` direct children as `inert`, except this modal host. */
-  private _applyInert(): void {
-    this._inertedElements = [];
-    if (this.noBackdrop) return; // Allow background interaction when no-backdrop is set
-    Array.from(document.body.children).forEach((child) => {
-      if (child === this) return; // Skip the modal itself
-      if ((child as HTMLElement).inert) return; // Already inert — don't touch
-      (child as HTMLElement).inert = true;
-      this._inertedElements.push(child);
-    });
-  }
-
-  /** Remove `inert` only from elements we added it to. */
-  private _removeInert(): void {
-    this._inertedElements.forEach((el) => {
-      (el as HTMLElement).inert = false;
-    });
-    this._inertedElements = [];
-  }
 
   // ─── Animation Helpers ───────────────────────────────────────────────────
 
@@ -455,11 +445,14 @@ export class ViModal extends ResizableMixin(
     this._activeAnimation = anim;
 
     // Animate backdrop concurrently (simple fade)
-    const backdropAnim = this._backdropEl?.animate?.(PRESET_KEYFRAMES['fade-in'], {
-      duration: dur,
-      easing: 'ease',
-      fill: 'forwards',
-    });
+    const backdropAnim = this._backdropEl?.animate?.(
+      PRESET_KEYFRAMES['fade-in'],
+      {
+        duration: dur,
+        easing: 'ease',
+        fill: 'forwards',
+      },
+    );
 
     await Promise.allSettled([
       anim.finished,
@@ -552,90 +545,64 @@ export class ViModal extends ResizableMixin(
     }
   }
 
-  /** Focus first focusable element in modal body */
-  override focus(): void {
-    if (this.open) {
-      // FocusTrapMixin has _getFocusableElements which we can't easily access from public,
-      // but we can query standard focusable elements. Let's just focus the dialog itself or first button.
-      const firstFocusable = this.shadowRoot?.querySelector(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-      ) as HTMLElement;
-      if (firstFocusable) {
-        firstFocusable.focus();
-      } else {
-        this._dialog?.focus();
-      }
-    }
-  }
+  private _requestClose(reason: 'escape' | 'backdrop'): void {
+    const requestCloseEvent = new CustomEvent('vi-modal-request-close', {
+      bubbles: true,
+      composed: true,
+      cancelable: true,
+      detail: { reason },
+    });
 
-  private _handleDialogCancel(e: Event): void {
-    e.preventDefault(); // prevent native close so we can handle logic
-    this._handleKeydown(new KeyboardEvent('keydown', { key: 'Escape' }));
-  }
+    this.dispatchEvent(requestCloseEvent);
 
-  private _handleKeydown(e: KeyboardEvent): void {
-    if (e.key === 'Escape' && this.open) {
-      e.preventDefault();
+    if (!requestCloseEvent.defaultPrevented) {
       if (this.persistent) {
         this._shakeDialog();
-        this.dispatchEvent(
-          new CustomEvent('vi-modal-request-close', {
-            bubbles: true,
-            composed: true,
-            cancelable: true,
-            detail: { reason: 'escape' },
-          }),
-        );
       } else {
-        this.close('escape');
+        // Use an internal flag or just skip dispatching request-close again inside close()
+        // For simplicity, we can just let close() dispatch it again, or we can inline the close logic.
+        // Actually, close() dispatches it too. Let's just avoid duplicate events by setting internal open directly,
+        // or bypass the public close() event dispatch.
+        // Wait, the tests expect exactly one event? Let's check `close()`.
+        this._closeReason = reason;
+        this.open = false;
       }
     }
+  }
+
+  private _handleCancel(e: Event): void {
+    e.preventDefault();
+    this._requestClose('escape');
   }
 
   private _handleBackdropClick(_e: MouseEvent): void {
-    // Bound directly to the custom backdrop div, so we don't need target check
-    if (!this.persistent) {
-      this.close('backdrop');
-    } else {
-      this._shakeDialog();
-      this.dispatchEvent(
-        new CustomEvent('vi-modal-request-close', {
-          bubbles: true,
-          composed: true,
-          cancelable: true,
-          detail: { reason: 'backdrop' },
-        }),
-      );
+    this._requestClose('backdrop');
+  }
+
+  private _handleNativeClose(): void {
+    this.open = false;
+  }
+
+  private _handleDialogMouseDown(e: MouseEvent): void {
+    if (e.target === this._dialog) {
+      this._dialog.dataset.clickedOnBackdrop = 'true';
     }
   }
 
-  private get _defaultIcon(): string {
-    switch (this.alertVariant) {
-      case 'success':
-        return 'check-circle';
-      case 'warning':
-      case 'danger':
-        return 'triangle-warning';
-      case 'info':
-      default:
-        return 'info';
-    }
-  }
-
-  private get _role(): string {
+  private _handleDialogClick(e: MouseEvent): void {
     if (
-      this.variant === 'alert' &&
-      (this.alertVariant === 'warning' || this.alertVariant === 'danger')
+      e.target === this._dialog &&
+      this._dialog.dataset.clickedOnBackdrop === 'true'
     ) {
-      return 'alertdialog';
+      this._requestClose('backdrop');
     }
-    return 'dialog';
+    delete this._dialog.dataset.clickedOnBackdrop;
   }
 
   override render(): TemplateResult {
     const activeSize = this._maximized ? 'fullscreen' : this.size;
 
-    const dialogClasses = {
+    const classes = {
       'modal-variant-drawer': this.variant === 'drawer',
       [`placement-${this.drawerPlacement}`]: this.variant === 'drawer',
       'modal-variant-alert': this.variant === 'alert',
@@ -656,7 +623,7 @@ export class ViModal extends ResizableMixin(
               @click=${this._handleBackdropClick}
               style=${ifDefined(
                 this._overlayZIndex !== null
-                  ? `z-index: ${this._overlayZIndex - 1}`
+                  ? `z-index: ${this._overlayZIndex}`
                   : undefined,
               )}
             ></div>
@@ -664,146 +631,42 @@ export class ViModal extends ResizableMixin(
         : ''}
       <dialog
         part="dialog"
-        class=${classMap(dialogClasses)}
-        role=${this._role}
+        class=${classMap(classes)}
         ?open=${this.open}
+        role=${this.variant === 'alert' ? 'alertdialog' : 'dialog'}
+        @cancel=${this._handleCancel}
+        @close=${this._handleNativeClose}
+        @mousedown=${this._handleDialogMouseDown}
+        @click=${this._handleDialogClick}
         aria-modal=${this.noBackdrop ? nothing : 'true'}
         aria-label=${ifDefined(this.getAttribute('aria-label') || undefined)}
         aria-labelledby=${ifDefined(
-          this.hasAttribute('aria-label')
+          this.getAttribute('aria-label')
             ? undefined
-            : this.getAttribute('aria-labelledby') || 'modal-header',
+            : this.getAttribute('aria-labelledby') || 'vi-modal-header-slot',
         )}
         aria-describedby=${ifDefined(
-          this.getAttribute('aria-describedby') || this._bodyId
+          this.getAttribute('aria-describedby') || this._bodyId,
         )}
         style=${ifDefined(
           this._overlayZIndex !== null
-            ? `z-index: ${this._overlayZIndex}`
+            ? `z-index: ${this._overlayZIndex + 1}`
             : undefined,
         )}
-        @cancel=${this._handleDialogCancel}
-        @keydown=${this._handleKeydown}
       >
         ${this._renderResizeHandles()}
-        ${this.variant === 'alert'
-          ? this._renderAlert()
-          : this._renderDefault()}
-      </dialog>
-    `;
-  }
-
-  private _renderDefault(): TemplateResult {
-    return html`
-      <header part="header" id="modal-header" class="modal-header">
-        <slot name="header">
-          <span part="title" id="modal-title"></span>
-        </slot>
-
-        <div class="modal-header-actions">
-          <slot name="header-actions"></slot>
-          ${this.maximizable
-            ? html`
-                <vi-button
-                  part="maximize-btn"
-                  variant="ghost"
-                  size="sm"
-                  icon-only
-                  title=${this._maximized
-                    ? this.restoreLabel
-                    : this.maximizeLabel}
-                  aria-label=${this._maximized
-                    ? this.restoreLabel
-                    : this.maximizeLabel}
-                  @click=${() => {
-                    this._maximized = !this._maximized;
-                    if (this._maximized) {
-                      this._resetDrag(); // Clear drag state when maximized
-                      this._resetResize(); // Clear resize state when maximized
-                    }
-                  }}
-                >
-                  <vi-icon
-                    name=${this._maximized
-                      ? 'arrows-minimize'
-                      : 'arrows-maximize'}
-                    slot="icon"
-                  ></vi-icon>
-                </vi-button>
-              `
-            : ''}
-          ${this.closable
-            ? html`
-                <vi-button
-                  part="close-btn"
-                  variant="ghost"
-                  size="sm"
-                  icon-only
-                  title=${this.closeLabel}
-                  aria-label=${this.closeLabel}
-                  @click=${() => this.close('button')}
-                >
-                  <vi-icon name="x" slot="icon"></vi-icon>
-                </vi-button>
-              `
-            : ''}
-        </div>
-      </header>
-
-      <div part="body" id=${this._bodyId} class="modal-body">
-        <slot></slot>
-      </div>
-
-      <footer
-        part="footer"
-        class="modal-footer"
-        ?hidden=${!this._hasFooterSlot}
-      >
-        <slot name="footer" @slotchange=${this._handleFooterSlotChange}></slot>
-      </footer>
-    `;
-  }
-
-  private _renderAlert(): TemplateResult {
-    return html`
-      <div part="icon" class="modal-alert-icon">
-        <slot name="icon">
-          <vi-icon name=${this._defaultIcon} aria-hidden="true"></vi-icon>
-        </slot>
-      </div>
-
-      <div part="alert-content" class="modal-alert-content">
-        <!-- Alert variant uses standard body and footer conceptually for layout flexibility -->
-        <header part="header" id="modal-header" class="modal-header">
-          <slot name="header">
-            <span part="title" id="modal-title" class="modal-title"></span>
-          </slot>
-        </header>
+        <slot name="header" id="vi-modal-header-slot"></slot>
 
         <div part="body" id=${this._bodyId} class="modal-body">
           <slot></slot>
         </div>
 
-        <footer
-          part="footer"
-          class="modal-footer"
-          ?hidden=${!this._hasFooterSlot}
-        >
-          <slot
-            name="footer"
-            @slotchange=${this._handleFooterSlotChange}
-          ></slot>
-        </footer>
-      </div>
+        <slot name="footer"></slot>
+      </dialog>
     `;
   }
-  override disconnectedCallback(): void {
-    OverlayManager.unregister(this);
-    this._removeInert();
-    this._activeAnimation?.cancel();
-    this._activeAnimation = null;
-    super.disconnectedCallback();
-  }
+
+
 }
 
 declare global {

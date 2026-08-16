@@ -149,6 +149,8 @@ export default defineConfig({
         'combobox/vi-combobox-item': path.resolve(__dirname, 'src/combobox/vi-combobox-item.ts'),
         'combobox/index': path.resolve(__dirname, 'src/combobox/index.ts'),
         'modal/vi-modal': path.resolve(__dirname, 'src/modal/vi-modal.ts'),
+        'modal/vi-modal-header': path.resolve(__dirname, 'src/modal/vi-modal-header.ts'),
+        'modal/vi-modal-footer': path.resolve(__dirname, 'src/modal/vi-modal-footer.ts'),
         'tag/vi-tag': path.resolve(__dirname, 'src/tag/vi-tag.ts'),
         'tag/index': path.resolve(__dirname, 'src/tag/index.ts'),
         'switch/vi-switch': path.resolve(__dirname, 'src/switch/vi-switch.ts'),

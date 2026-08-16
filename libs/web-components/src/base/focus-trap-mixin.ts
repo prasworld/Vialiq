@@ -5,6 +5,14 @@ import { FOCUSABLE_SELECTOR } from './focusable-selector.js';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Constructor<T = object> = new (...args: any[]) => T;
 
+function getDeepActiveElement(doc: Document | ShadowRoot = document): Element | null {
+  let activeElement = doc.activeElement;
+  while (activeElement && activeElement.shadowRoot && activeElement.shadowRoot.activeElement) {
+    activeElement = activeElement.shadowRoot.activeElement;
+  }
+  return activeElement;
+}
+
 /**
  * Type-only declaration of the shape FocusTrapMixin adds to a class.
  * `declare class` emits no runtime code — it is a TS-only contract.
@@ -200,19 +208,34 @@ export function FocusTrapMixin<T extends Constructor<LitElement>>(
           .forEach((el) => {
             if (el.nodeType === Node.ELEMENT_NODE) {
               const element = el as HTMLElement;
+
+              // 1. Check the assigned element itself
               if (
                 element.matches(FOCUSABLE_SELECTOR) &&
                 this._isActuallyFocusable(element)
               ) {
                 slottedFocusable.push(element);
+              } else {
+                // 2. Search its light DOM children
+                element
+                  .querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)
+                  .forEach((descendant) => {
+                    if (this._isActuallyFocusable(descendant)) {
+                      slottedFocusable.push(descendant);
+                    }
+                  });
+
+                // 3. Search its direct shadow DOM for internal focusables (e.g., vi-modal-header actions)
+                if (element.shadowRoot) {
+                  element.shadowRoot
+                    .querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)
+                    .forEach((shadowDescendant) => {
+                      if (this._isActuallyFocusable(shadowDescendant)) {
+                        slottedFocusable.push(shadowDescendant);
+                      }
+                    });
+                }
               }
-              element
-                .querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)
-                .forEach((descendant) => {
-                  if (this._isActuallyFocusable(descendant)) {
-                    slottedFocusable.push(descendant);
-                  }
-                });
             }
           });
       });
@@ -249,8 +272,23 @@ export function FocusTrapMixin<T extends Constructor<LitElement>>(
       if (shadowActive && shadowActive.tagName !== 'SLOT') {
         return shadowActive;
       }
-      // Focus is on slotted content — document.activeElement has the real element.
-      return document.activeElement;
+      
+      // Focus is on slotted content — document.activeElement has the host element.
+      let active = document.activeElement;
+      
+      // If the active element is a container (like vi-modal-header), we must pierce 
+      // its shadow root to find the actual element from our focusable list.
+      const focusable = this._focusableElementsCache || [];
+      while (active && active.shadowRoot && active.shadowRoot.activeElement) {
+        // Stop piercing if we hit a component that manages its own focus (e.g. vi-button)
+        // and is in our list.
+        if (focusable.includes(active as HTMLElement)) {
+          break;
+        }
+        active = active.shadowRoot.activeElement;
+      }
+      
+      return active;
     }
 
     /**
@@ -262,6 +300,7 @@ export function FocusTrapMixin<T extends Constructor<LitElement>>(
      *   - Shift+Tab on first element → focus last element
      */
     private _handleTrapKeydown(event: KeyboardEvent): void {
+      if (this.hasAttribute('inert')) return;
       if (event.key !== 'Tab') return;
 
       const focusable = this._getFocusableElements();
@@ -297,11 +336,9 @@ export function FocusTrapMixin<T extends Constructor<LitElement>>(
       autofocus = true,
     ): void {
       // Snapshot focus BEFORE we move it — this is what we restore on deactivate.
-      // Use document.activeElement here (not shadowRoot) — we want the element
-      // in the full document that currently has focus, which may be outside
-      // this component entirely (e.g. the button that opened the modal).
+      // Use getDeepActiveElement() to capture the exact element even inside nested shadow roots.
       if (document.activeElement) {
-        this._preTrapFocus = new WeakRef(document.activeElement);
+        this._preTrapFocus = new WeakRef(getDeepActiveElement() || document.activeElement);
       }
 
       // Attach keydown to the host element (`this`), not `shadowRoot`.

@@ -1,0 +1,13 @@
+@use '@vialiq/flux-ui/components/modal';
+@use '@vialiq/flux-ui/styles/variables' as tokens;
+
+:host {
+  display: block;
+  /* Ensure the footer takes the full width and shrinks correctly in flex parents */
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.modal-footer {
+  @extend .modal-footer;
+}
