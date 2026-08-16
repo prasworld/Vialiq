@@ -765,7 +765,7 @@ describe('vi-modal', () => {
 
       // We append it directly to the parent, setting append-to so it stays there
       render(
-        html`<vi-modal open draggable drag-containment="parent" append-to="#test-parent"><vi-modal-header slot="header"></vi-modal-header></vi-modal>`,
+        html`<vi-modal open draggable drag-containment="parent" append-to="#test-parent" no-backdrop><vi-modal-header slot="header"></vi-modal-header></vi-modal>`,
         parent,
       );
       const el = parent.querySelector('vi-modal') as ViModal;

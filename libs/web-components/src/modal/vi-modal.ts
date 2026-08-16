@@ -270,16 +270,22 @@ export class ViModal extends ResizableMixin(
     if (changedProperties.has('open')) {
       if (this.open) {
         // Resolve append-to target
+        // Blocking modals (with backdrop) MUST teleport to document.body.
+        // Otherwise, the OverlayManager's 'inert' application to body children 
+        // will make the custom container (and therefore the modal) completely inert.
         let teleportTarget: HTMLElement = document.body;
-        if (this.appendTo instanceof HTMLElement) {
-          teleportTarget = this.appendTo;
-        } else if (typeof this.appendTo === 'string' && this.appendTo) {
-          try {
-            teleportTarget =
-              document.querySelector<HTMLElement>(this.appendTo) ??
-              document.body;
-          } catch {
-            teleportTarget = document.body;
+        
+        if (this.noBackdrop) {
+          if (this.appendTo instanceof HTMLElement) {
+            teleportTarget = this.appendTo;
+          } else if (typeof this.appendTo === 'string' && this.appendTo) {
+            try {
+              teleportTarget =
+                document.querySelector<HTMLElement>(this.appendTo) ??
+                document.body;
+            } catch {
+              teleportTarget = document.body;
+            }
           }
         }
 
