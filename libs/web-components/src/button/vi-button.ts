@@ -70,6 +70,9 @@ export class ViButton extends FocusableMixin(ViElement) {
   /** Disables the button. */
   @property({ type: Boolean, reflect: true }) accessor disabled = false;
 
+  /** The button type — 'button', 'submit', or 'reset'. Forwarded to the inner native button. */
+  @property({ type: String, reflect: true }) accessor type: 'button' | 'submit' | 'reset' = 'button';
+
   /** Accessible label forwarded to the inner native button. */
   @property({ attribute: 'aria-label' }) override accessor ariaLabel: string | null = null;
 
@@ -95,10 +98,24 @@ export class ViButton extends FocusableMixin(ViElement) {
     this._hasIcon = slot.assignedElements({ flatten: true }).length > 0;
   }
 
-  private onClick(event: Event): void {
+  private onClick(event: MouseEvent): void {
     if (this.disabled) {
       event.preventDefault();
       event.stopImmediatePropagation();
+      return;
+    }
+    // Shadow DOM isolation: a <button type="reset|submit"> inside a shadow root
+    // cannot natively interact with the parent form. We must do it manually.
+    if (this.type === 'reset' || this.type === 'submit') {
+      // Walk up composed tree to find the closest <form>
+      const form = this.closest('form');
+      if (form) {
+        if (this.type === 'reset') {
+          form.reset();
+        } else {
+          form.requestSubmit();
+        }
+      }
     }
   }
 
@@ -109,7 +126,7 @@ export class ViButton extends FocusableMixin(ViElement) {
       <button
         class="button"
         part="button"
-        type="button"
+        type=${this.type}
         tabindex="0"
         ?disabled=${disabled}
         aria-label=${this.ariaLabel ?? nothing}

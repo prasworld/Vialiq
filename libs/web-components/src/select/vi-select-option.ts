@@ -2,41 +2,22 @@ import { css, html, unsafeCSS, type PropertyValues, type TemplateResult } from '
 import { customElement, property, state } from 'lit/decorators.js';
 import { ViElement } from '../base/vi-element.js';
 import { registerIcons } from '../icons/registry.js';
-import itemStyles from './vi-combobox-item.scss?inline';
-
 import { checkIcon } from '@vialiq/icons';
+import { SlottedListboxItem } from '../shared/types/listbox.types.js';
+import optionStyles from './vi-select-option.scss?inline';
 
 registerIcons([checkIcon]);
 
 /**
- * vi-combobox-item
- * Dropdown item primitive for declarative composition inside <vi-combobox>.
+ * vi-select-option
+ * Dropdown item primitive for declarative composition inside <vi-select>.
  *
- * @element vi-combobox-item
- *
- * @attr {string}  value       - Value submitted when selected (reflected)
- * @attr {string}  label       - Display text; used for search filtering (reflected)
- * @attr {string}  group       - Optgroup header text (reflected)
- * @attr {boolean} disabled    - Prevents selection (reflected)
- * @attr {string}  icon        - Icon name from icon registry (reflected)
- * @attr {string}  description - Secondary text rendered below label (reflected)
- * @attr {boolean} selected    - Selected state (reflected)
- *
- * @slot - Custom HTML template for option item layout
- *
- * @csspart item        - The <li> wrapper element
- * @csspart icon        - Leading icon wrapper
- * @csspart label       - Primary text span
- * @csspart description - Secondary text span
- * @csspart check       - Checkmark icon when selected
- * @csspart content     - Custom slot wrapper
+ * @element vi-select-option
  */
-import { SlottedListboxItem } from '../shared/types/listbox.types.js';
-
-@customElement('vi-combobox-item')
-export class ViComboboxItem extends ViElement implements SlottedListboxItem {
+@customElement('vi-select-option')
+export class ViSelectOption extends ViElement implements SlottedListboxItem {
   static override styles = css`
-    ${unsafeCSS(itemStyles)}
+    ${unsafeCSS(optionStyles)}
   `;
 
   @property({ type: String, reflect: true }) accessor value = '';
@@ -46,28 +27,23 @@ export class ViComboboxItem extends ViElement implements SlottedListboxItem {
   @property({ type: Boolean, reflect: true }) accessor disabled = false;
   @property({ type: String, reflect: true }) accessor icon = '';
   @property({ type: String, reflect: true }) accessor description = '';
-  /**
-   * Search corpus override for slotted mode. Accepts an array of search terms; joined with a
-   * space internally. Falls back to `label` when empty.
-   * HTML attribute: space-separated string — `search-text="Alice PI alice@acme.com"`
-   * JS property: string array  — `.searchText=${['Alice', 'PI', 'alice@acme.com']}`
-   */
+  
   @property({
     attribute: 'search-text',
     reflect: false,
     converter: {
-      fromAttribute: (v: string | null): string[] =>
-        v ? v.split(/\s+/).filter(Boolean) : [],
+      fromAttribute: (v: string | null): string[] => v ? v.split(/\s+/).filter(Boolean) : [],
     },
   })
   accessor searchText: string[] = [];
-  @property({ type: Boolean, reflect: true }) accessor selected = false;
 
+  @property({ type: Boolean, reflect: true }) accessor selected = false;
   @property({ type: Boolean, reflect: true }) accessor active = false;
+  @property({ type: Boolean, attribute: 'wrap-text' }) accessor wrapText = false;
 
   @property({ type: String, attribute: 'highlight-text' }) accessor highlightText = '';
 
-  @state() accessor _hasSlotContent = false;
+  @state() private accessor _hasSlotContent = false;
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -86,11 +62,8 @@ export class ViComboboxItem extends ViElement implements SlottedListboxItem {
     this.setAttribute('aria-disabled', this.disabled ? 'true' : 'false');
   }
 
-
   protected override updated(changedProperties: PropertyValues): void {
     super.updated(changedProperties);
-    // Keep host-level ARIA attributes in sync with reactive properties so they
-    // always reflect the current selected/disabled state for AT.
     if (changedProperties.has('selected') || changedProperties.has('disabled')) {
       this.setAttribute('aria-selected', this.selected ? 'true' : 'false');
       this.setAttribute('aria-disabled', this.disabled ? 'true' : 'false');
@@ -103,23 +76,19 @@ export class ViComboboxItem extends ViElement implements SlottedListboxItem {
       return;
     }
     this.dispatchEvent(
-      new CustomEvent('vi-combobox-item-select', {
+      new CustomEvent('vi-select-item-select', {
         detail: { item: this },
         bubbles: true,
         composed: true,
-      }),
+      })
     );
   };
 
   private _handleSlotChange(e: Event): void {
     const slot = e.target as HTMLSlotElement;
-    const nodes = slot
-      .assignedNodes({ flatten: true })
-      .filter(
-        (n) =>
-          n.nodeType === Node.ELEMENT_NODE ||
-          (n.nodeType === Node.TEXT_NODE && n.textContent?.trim()),
-      );
+    const nodes = slot.assignedNodes({ flatten: true }).filter(
+      (n) => n.nodeType === Node.ELEMENT_NODE || (n.nodeType === Node.TEXT_NODE && n.textContent?.trim())
+    );
     const hasContent = nodes.length > 0;
     if (this._hasSlotContent !== hasContent) {
       this._hasSlotContent = hasContent;
@@ -146,44 +115,22 @@ export class ViComboboxItem extends ViElement implements SlottedListboxItem {
       <li
         part="item"
         role="presentation"
-        class="combobox-option ${this.selected ? 'is-selected' : ''} ${this
-          .active
-          ? 'is-active'
-          : ''} ${this.disabled ? 'is-disabled' : ''}"
+        class="select-option ${this.selected ? 'is-selected' : ''} ${this.active ? 'is-active' : ''} ${this.disabled ? 'is-disabled' : ''}"
+        title=${this.label}
       >
-        ${this.icon
-          ? html`<vi-icon
-              part="icon"
-              name="${this.icon}"
-              class="combobox-option-icon"
-            ></vi-icon>`
-          : ''}
+        ${this.icon ? html`<vi-icon part="icon" name="${this.icon}" class="select-option-icon"></vi-icon>` : ''}
 
-        <div part="content" class="combobox-option-content">
+        <div part="content" class="select-option-content">
           <slot @slotchange=${this._handleSlotChange}></slot>
           ${!this._hasSlotContent
             ? html`
-                <span part="label" class="combobox-option-label"
-                  >${this._renderHighlightedLabel()}</span
-                >
-                ${this.description
-                  ? html`<span
-                      part="description"
-                      class="combobox-option-description"
-                      >${this.description}</span
-                    >`
-                  : ''}
+                <span part="label" class="select-option-label ${this.wrapText ? 'is-wrapped' : ''}">${this._renderHighlightedLabel()}</span>
+                ${this.description ? html`<span part="description" class="select-option-description">${this.description}</span>` : ''}
               `
             : ''}
         </div>
 
-        ${this.selected
-          ? html`<vi-icon
-              part="check"
-              name="check"
-              class="combobox-option-check"
-            ></vi-icon>`
-          : ''}
+        ${this.selected ? html`<vi-icon part="check" name="check" class="select-option-check"></vi-icon>` : ''}
       </li>
     `;
   }
@@ -191,6 +138,6 @@ export class ViComboboxItem extends ViElement implements SlottedListboxItem {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'vi-combobox-item': ViComboboxItem;
+    'vi-select-option': ViSelectOption;
   }
 }

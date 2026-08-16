@@ -1,0 +1,57 @@
+@use '@vialiq/flux-ui/styles/variables' as tokens;
+@use '@vialiq/flux-ui/components/select';
+
+:host {
+  display: block;
+}
+
+:host([hidden]) {
+  display: none !important;
+}
+
+:host([disabled]) {
+  pointer-events: none;
+  .select-wrapper {
+    opacity: var(--vi-select-disabled-opacity, 0.6);
+  }
+}
+
+.select-field {
+  @extend .select-field;
+}
+
+.select-wrapper {
+  @extend .select-wrapper;
+}
+
+.select-trigger {
+  @extend .select-trigger;
+}
+
+.select-label {
+  @extend .select-label;
+}
+
+.select-icons {
+  @extend .select-icons;
+}
+
+.select-chevron {
+  @extend .select-chevron;
+}
+
+.select-clear-btn {
+  @extend .select-clear-btn;
+}
+
+.select-native {
+  @extend .select-native;
+}
+
+.select-helper {
+  @extend .select-helper;
+}
+
+.select-validation {
+  @extend .select-validation;
+}

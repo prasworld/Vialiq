@@ -296,8 +296,8 @@
 
   // Highlight search match
   .combobox-mark {
-    background-color: var(--vi-combobox-mark-background, #{tokens.$bg-warning});
-    color: var(--vi-combobox-mark-color, #{tokens.$text-primary});
+    background-color: var(--vi-combobox-mark-background, #{tokens.$typeahead-highlight-bg});
+    color: var(--vi-combobox-mark-color, #{tokens.$typeahead-highlight-color});
     border-radius: #{tokens.$border-radius-sm};
     padding: 0 1px;
   }

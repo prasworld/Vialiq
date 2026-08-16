@@ -298,6 +298,130 @@ vi-input {
 
 ---
 
+### Select ([vi-select](./src/select/vi-select.ts))
+
+> [!NOTE]
+> **Performance Notice:** The `vi-select` component automatically calculates its width to perfectly fit its content by measuring all rendered options. Because it renders all options directly into the DOM without virtualization, it is **not intended for large lists** (e.g., thousands of items). For massive datasets, use a combobox with virtualization and async filtering instead.
+
+The [ViSelect](./src/select/vi-select.ts) is a custom listbox component that replaces the native `<select>` element. It supports custom templating, dynamic wrapping, form integration, and floating dropdowns using Floating UI.
+
+#### Properties & Attributes
+
+| Attribute          | Property          | Type                            | Default     | Description                                      |
+| :----------------- | :---------------- | :------------------------------ | :---------- | :----------------------------------------------- |
+| `value`            | `value`           | `string`                        | `''`        | The currently selected option's value.           |
+| `placeholder`      | `placeholder`     | `string`                        | `''`        | Text shown when no option is selected.           |
+| `name`             | `name`            | `string`                        | `''`        | Form field name.                                 |
+| `disabled`         | `disabled`        | `boolean`                       | `false`     | Disables the select component entirely.          |
+| `required`         | `required`        | `boolean`                       | `false`     | Makes selecting an option mandatory.             |
+| `clearable`        | `clearable`       | `boolean`                       | `false`     | Shows a clear button ("×") when an option is selected. |
+| `status`           | `status`          | `'default'\|'valid'\|'invalid'` | `'default'` | Controls validation visual border colors.        |
+| `validity-message` | `validityMessage` | `string`                        | `''`        | Custom error message to display in UI.           |
+| `wrap-text`        | `wrapText`        | `boolean`                       | `false`     | Allows text within the dropdown options to wrap instead of truncating. |
+| `match-width`      | `matchWidth`      | `boolean`                       | `true`      | Forces the listbox dropdown to match the trigger's width. |
+| `placement`        | `placement`       | `DropdownPlacement`             | `'bottom-start'` | Preferred positioning of the listbox dropdown. |
+| `hoist`            | `hoist`           | `boolean`                       | `true`      | Uses a fixed positioning strategy to escape clipping containers. |
+| `flip-boundary`    | `flipBoundary`    | `string`                        | `''`        | CSS selector for a boundary element used in collision detection. |
+
+#### Slots
+
+- **Default Slot**: Used for placing `<vi-select-option>` and `<vi-select-group>` child elements.
+- **`helper` Slot**: Location to insert description text below the select component.
+
+#### Child Components (`<vi-select-option>` and `<vi-select-group>`)
+
+Options are created using the `<vi-select-option>` tag inside the select.
+- **`value`**: The value to submit when selected.
+- **`label`**: The plain text label used for the trigger and type-ahead filtering.
+- **Default Slot**: You can place any complex HTML template inside the option (e.g., avatars, icons, badges) and it will render inside the listbox!
+
+You can group options logically using `<vi-select-group>`:
+- **`label`**: The heading text for the option group.
+
+#### CSS Custom Properties
+
+- `--vi-select-width`: Controls the width of the select trigger and the dropdown (default: `100%`).
+- `--vi-typeahead-highlight-bg`: Background color of the text match when using keyboard type-ahead (default: `#ebf5ff` / `blue-100`).
+- `--vi-typeahead-highlight-color`: Text color of the type-ahead match (default: `#3676d0` / `primary`).
+
+#### Events
+
+- `vialiq-change`: Fires when an option is selected. Detail: `{ value: string, label: string }`.
+- `vialiq-clear`: Fires when the clear button is clicked.
+
+#### Snippets
+
+**Basic Usage:**
+
+```html
+<vi-select name="country" placeholder="Select a country...">
+  <vi-select-option value="us" label="United States"></vi-select-option>
+  <vi-select-option value="uk" label="United Kingdom"></vi-select-option>
+  <vi-select-option value="ca" label="Canada"></vi-select-option>
+</vi-select>
+```
+
+**Custom Templates & Width:**
+
+```html
+<vi-select style="--vi-select-width: 300px;" placeholder="Select a user...">
+  <vi-select-option value="user1" label="Jane Doe">
+    <div style="display: flex; gap: 8px;">
+      <img src="avatar.png" alt="" />
+      <span>Jane Doe</span>
+    </div>
+  </vi-select-option>
+</vi-select>
+```
+
+**Option Groups:**
+
+```html
+<vi-select name="fruits" placeholder="Select a fruit...">
+  <vi-select-group label="Citrus">
+    <vi-select-option value="orange" label="Orange"></vi-select-option>
+    <vi-select-option value="lemon" label="Lemon"></vi-select-option>
+  </vi-select-group>
+  <vi-select-group label="Berries">
+    <vi-select-option value="strawberry" label="Strawberry"></vi-select-option>
+    <vi-select-option value="blueberry" label="Blueberry"></vi-select-option>
+  </vi-select-group>
+</vi-select>
+```
+
+**Placement & Fit Width (`match-width="false"`):**
+
+By default, the dropdown matches the width of the trigger. To allow the dropdown to grow based on its content width, and change the floating direction:
+
+```html
+<vi-select placement="top-start" match-width="false" placeholder="Select a user...">
+  <vi-select-option value="user1" label="Jane Doe">
+    <div style="display: flex; white-space: nowrap;">
+      Jane Doe (jane.doe@example.com - Senior Software Engineer)
+    </div>
+  </vi-select-option>
+</vi-select>
+```
+
+**Form Integration & Reset:**
+
+The `<vi-select>` responds properly to native form resets and submit interactions.
+
+```html
+<form>
+  <vi-select name="status" value="pending" required>
+    <vi-select-option value="pending" label="Pending"></vi-select-option>
+    <vi-select-option value="approved" label="Approved"></vi-select-option>
+  </vi-select>
+
+  <!-- This native reset will restore the select back to "pending" -->
+  <vi-button type="reset" variant="ghost">Clear Changes</vi-button>
+  <vi-button type="submit" variant="primary">Submit</vi-button>
+</form>
+```
+
+---
+
 ### Checkbox ([vi-checkbox](./src/checkbox/vi-checkbox.ts))
 
 The [ViCheckbox](./src/checkbox/vi-checkbox.ts) is a customizable form-associated checkbox control using SVG graphics for checkmarks and supporting the indeterminate (mixed) validation state.

@@ -1,6 +1,5 @@
 import { ReactiveController, ReactiveControllerHost } from 'lit';
-import type { ListboxOption } from '../types/listbox.types.js';
-import type { ViComboboxItem } from '../../combobox/vi-combobox-item.js';
+import type { ListboxOption, SlottedListboxItem } from '../types/listbox.types.js';
 
 export interface KeyboardControllerHost extends ReactiveControllerHost, HTMLElement {
   disabled: boolean;
@@ -13,8 +12,8 @@ export interface KeyboardControllerOptions<TData = unknown> {
   getActiveIndex: () => number;
   setActiveIndex: (index: number) => void;
   getFilteredOptions: () => ListboxOption<TData>[];
-  getSlottedItems: () => ViComboboxItem[];
-  getVisibleSlottedItems: () => ViComboboxItem[];
+  getSlottedItems: () => SlottedListboxItem[];
+  getVisibleSlottedItems: () => SlottedListboxItem[];
   getSelectedValues: () => string[];
   
   updateSlottedActiveState: (index: number) => void;
@@ -25,9 +24,13 @@ export interface KeyboardControllerOptions<TData = unknown> {
   close: () => void;
   openDropdown: () => void;
   getQuery: () => string;
+  onTypeAheadChange?: (str: string) => void;
 }
 
 export class ListboxKeyboardController<TData = unknown> implements ReactiveController {
+  private _searchString = '';
+  private _searchTimeout?: ReturnType<typeof setTimeout>;
+
   constructor(
     private host: KeyboardControllerHost,
     private config: KeyboardControllerOptions<TData>
@@ -132,8 +135,76 @@ export class ListboxKeyboardController<TData = unknown> implements ReactiveContr
         if (!this.host.isSearchable && !this.host.open) {
           e.preventDefault();
           this.config.openDropdown();
+        } else if (!this.host.isSearchable && this.host.open && this._searchString.length > 0) {
+          e.preventDefault();
+          this._handleTypeAhead(' ');
         }
         break;
+
+      default:
+        if (!this.host.isSearchable && e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+          e.preventDefault();
+          this._handleTypeAhead(e.key);
+        }
+        break;
+    }
+  }
+
+  private _handleTypeAhead(char: string): void {
+    if (this._searchTimeout) {
+      clearTimeout(this._searchTimeout);
+    }
+
+    this._searchTimeout = setTimeout(() => {
+      this._searchString = '';
+      this.config.onTypeAheadChange?.(this._searchString);
+    }, 1000);
+
+    this._searchString += char.toLowerCase();
+    this.config.onTypeAheadChange?.(this._searchString);
+
+    const options = this.config.getFilteredOptions();
+    const isSlotted = this.config.getSlottedItems().length > 0;
+    const visible = isSlotted ? this.config.getVisibleSlottedItems() : [];
+    const len = isSlotted ? visible.length : options.length;
+
+    if (len === 0) return;
+
+    const getLabel = (i: number) => {
+      if (isSlotted) {
+        return (visible[i]?.label || visible[i]?.textContent || '').toLowerCase();
+      }
+      return (options[i]?.label || options[i]?.value || '').toLowerCase();
+    };
+
+    const isDisabled = (i: number) => (isSlotted ? visible[i]?.disabled : options[i]?.disabled) ?? false;
+
+    // Start searching from current active index + 1
+    const startIdx = Math.max(0, this.config.getActiveIndex());
+    let matchIdx = -1;
+
+    // Search after current index
+    for (let i = startIdx + 1; i < len; i++) {
+      if (!isDisabled(i) && getLabel(i).startsWith(this._searchString)) {
+        matchIdx = i;
+        break;
+      }
+    }
+
+    // Wrap around to start
+    if (matchIdx === -1) {
+      for (let i = 0; i <= startIdx; i++) {
+        if (!isDisabled(i) && getLabel(i).startsWith(this._searchString)) {
+          matchIdx = i;
+          break;
+        }
+      }
+    }
+
+    if (matchIdx !== -1) {
+      this.config.setActiveIndex(matchIdx);
+      if (isSlotted) this.config.updateSlottedActiveState(matchIdx);
+      this.config.scrollToActiveIndex();
     }
   }
 

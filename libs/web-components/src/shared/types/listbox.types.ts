@@ -22,3 +22,16 @@ export interface RenderListboxOptionParams<TData = unknown> {
   query: string;
   selected: boolean;
 }
+
+export interface SlottedListboxItem extends HTMLElement {
+  value: string;
+  label: string;
+  searchText: string[];
+  group: string;
+  disabled: boolean;
+  icon: string;
+  description: string;
+  data: unknown;
+  selected: boolean;
+  active: boolean;
+}
