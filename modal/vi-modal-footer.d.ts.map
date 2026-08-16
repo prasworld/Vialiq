@@ -1,0 +1,1 @@
+{"version":3,"file":"vi-modal-footer.d.ts","sourceRoot":"","sources":["../../../../libs/web-components/src/modal/vi-modal-footer.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,UAAU,EAAQ,cAAc,EAAa,MAAM,KAAK,CAAC;AAKlE,qBACa,aAAc,SAAQ,UAAU;IAC3C,OAAgB,MAAM,0BAAqB;IAElC,MAAM,IAAI,cAAc;CAOlC;AAED,OAAO,CAAC,MAAM,CAAC;IACb,UAAU,qBAAqB;QAC7B,iBAAiB,EAAE,aAAa,CAAC;KAClC;CACF"}
