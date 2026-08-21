@@ -42,7 +42,12 @@ export class ViSelect extends ValidityMixin(FocusableMixin(ViElement)) {
   @property({ type: Boolean, reflect: true }) accessor required = false;
   @property({ type: String }) accessor validityMessage = '';
 
-  @property({ type: Boolean, attribute: 'match-width' }) accessor matchWidth = true;
+@property({
+  attribute: 'match-width',
+  converter: {
+    fromAttribute: (v: string | null) => v !== null && v !== 'false',
+  },
+}) accessor matchWidth = true;
 
 
   // ── Public API ─────────────────────────────────────────────────────────────
