@@ -6,11 +6,6 @@ export class ViSelectGroup extends LitElement {
   /** The label text for the group header. */
   @property({ type: String }) label = '';
 
-  // Instead of shadow DOM styling, we'll let the Light DOM style it or just use simple shadow DOM
-  // Wait, vi-select relies on slots and styling. Let's provide basic CSS inline or use external.
-  // Actually, we'll import styles from vi-select.scss or similar if needed.
-  // Let's just create a basic render.
-
   override render() {
     return html`
       <style>
