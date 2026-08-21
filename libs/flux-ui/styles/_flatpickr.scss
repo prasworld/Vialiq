@@ -1,4 +1,5 @@
 @use './variables' as tokens;
+@import 'flatpickr/dist/flatpickr.css';
 
 /**
  * Global Flatpickr Theme overrides using flux-ui tokens.
