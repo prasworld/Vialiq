@@ -338,9 +338,7 @@ export class ViSelect extends ValidityMixin(FocusableMixin(ViElement)) {
   private _handleKeyDown = (e: KeyboardEvent): void => {
     if (this.disabled) return;
 
-    // Typeahead logic for alphabetical jump
-    if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
-      e.preventDefault();
+if (this.open && e.key !== ' ' && e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
       this._typeaheadBuffer += e.key.toLowerCase();
 
       window.clearTimeout(this._typeaheadTimeout);
