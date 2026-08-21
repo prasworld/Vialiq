@@ -168,11 +168,10 @@ export class ViSelect extends ValidityMixin(FocusableMixin(ViElement)) {
     this._observeSlottedItems();
   }
 
-  formResetCallback(): void {
-    this.value = this._defaultValue;
-    this.status = 'default';
-    this.validityMessage = '';
-  }
+formResetCallback(): void {
+  this.value = this._defaultValue;
+  super.formResetCallback();
+}
 
   override updated(changedProperties: PropertyValues): void {
     super.updated(changedProperties);
