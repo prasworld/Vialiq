@@ -104,19 +104,22 @@ export class ViButton extends FocusableMixin(ViElement) {
       event.stopImmediatePropagation();
       return;
     }
-    // Shadow DOM isolation: a <button type="reset|submit"> inside a shadow root
-    // cannot natively interact with the parent form. We must do it manually.
-    if (this.type === 'reset' || this.type === 'submit') {
-      // Walk up composed tree to find the closest <form>
-      const form = this.closest('form');
-      if (form) {
-        if (this.type === 'reset') {
-          form.reset();
-        } else {
-          form.requestSubmit();
-        }
-      }
+// Shadow DOM isolation: a <button type="reset|submit"> inside a shadow root
+// cannot natively interact with the parent form. We must do it manually.
+if (this.type === 'reset' || this.type === 'submit') {
+  const form = event
+    .composedPath()
+    .find((n): n is HTMLFormElement => n instanceof HTMLFormElement);
+
+  if (form) {
+    if (this.type === 'reset') {
+      form.reset();
+    } else {
+      const submitter = event.currentTarget instanceof HTMLButtonElement ? event.currentTarget : undefined;
+      form.requestSubmit(submitter);
     }
+  }
+}
   }
 
   override render(): TemplateResult {
