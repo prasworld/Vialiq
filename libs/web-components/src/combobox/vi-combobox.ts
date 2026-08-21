@@ -271,9 +271,10 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
     this._observeSlottedItems();
   }
 
-  formResetCallback(): void {
-    this.value = this._defaultValue;
-  }
+formResetCallback(): void {
+  this.value = this._defaultValue;
+  super.formResetCallback();
+}
 
   protected override updated(changedProperties: PropertyValues): void {
     super.updated(changedProperties);
