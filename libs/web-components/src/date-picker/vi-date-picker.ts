@@ -206,8 +206,8 @@ export class ViDatePicker extends FlatpickrMixin(ViElement) {
     }
 
     if (minMaxChanged && this._fp) {
-      if (this.min) this._fp.set('minDate', this.min);
-      if (this.max) this._fp.set('maxDate', this.max);
+      this._fp.set('minDate', this.min || undefined);
+      this._fp.set('maxDate', this.max || undefined);
     }
 
     if (changed.has('value') && this._fp) {
