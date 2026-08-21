@@ -131,8 +131,8 @@ export class ViComboboxItem extends ViElement implements SlottedListboxItem {
       return this.label;
     }
 
-    const regex = new RegExp(`(${this.highlightText})`, 'gi');
-    const parts = this.label.split(regex);
+const escaped = this.highlightText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const regex = new RegExp(`(${escaped})`, 'gi');
 
     return html`${parts.map(part => 
       part.toLowerCase() === this.highlightText.toLowerCase() 
