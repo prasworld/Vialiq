@@ -11,7 +11,7 @@ export function resolveLocale(localeAttr: string | null): string {
 export function resolveTimeZone(): string {
   try {
     return Intl.DateTimeFormat().resolvedOptions().timeZone;
-  } catch (e) {
+  } catch (_e) {
     return 'UTC';
   }
 }
@@ -25,7 +25,7 @@ export function getTodayLabel(locale: string): string {
     const rtf = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' });
     const today = rtf.format(0, 'day'); 
     return today.charAt(0).toUpperCase() + today.slice(1);
-  } catch (e) {
+  } catch (_e) {
     return 'Today';
   }
 }
@@ -78,12 +78,12 @@ const FMT_OPTIONS_BY_MODE: Record<DatePickerMode, Intl.DateTimeFormatOptions> = 
 };
 
 export function formatDisplay(date: Date, locale: string, mode: DatePickerMode, formatStr?: string): string {
-  if (formatStr && /^([yYmMdD\-\/\.\s]+)$/.test(formatStr)) {
+  if (formatStr && new RegExp('^([yYmMdD\\-/.\\s]+)$').test(formatStr)) {
     const year = date.getFullYear();
     const month = date.getMonth() + 1;
     const day = date.getDate();
 
-    let res = formatStr.replace(/y{4}|Y{4}|y{2}|Y{2}|y|Y|m{4}|M{4}|m{3}|M{3}|m{2}|M{2}|m|M|d{2}|D{2}|d|D/g, (match) => {
+    const res = formatStr.replace(/y{4}|Y{4}|y{2}|Y{2}|y|Y|m{4}|M{4}|m{3}|M{3}|m{2}|M{2}|m|M|d{2}|D{2}|d|D/g, (match) => {
       switch (match) {
         case 'yyyy': case 'YYYY': return year.toString();
         case 'yy': case 'YY': return year.toString().slice(-2);

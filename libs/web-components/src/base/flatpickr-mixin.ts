@@ -1,4 +1,4 @@
-import { LitElement, type PropertyValues } from 'lit';
+import { LitElement } from 'lit';
 import type { Instance, FlatpickrFn } from 'flatpickr/dist/types/instance';
 import type { Options } from 'flatpickr/dist/types/options';
 import type {
