@@ -1,7 +1,13 @@
 import { PropertyValues, TemplateResult } from 'lit';
 import { ViElement } from '../base/vi-element.js';
 import { SlottedListboxItem } from '../shared/types/listbox.types.js';
-export declare class ViComboboxItem extends ViElement implements SlottedListboxItem {
+/**
+ * vi-select-option
+ * Dropdown item primitive for declarative composition inside <vi-select>.
+ *
+ * @element vi-select-option
+ */
+export declare class ViSelectOption extends ViElement implements SlottedListboxItem {
     static styles: import('lit').CSSResult;
     accessor value: string;
     accessor label: string;
@@ -10,17 +16,12 @@ export declare class ViComboboxItem extends ViElement implements SlottedListboxI
     accessor disabled: boolean;
     accessor icon: string;
     accessor description: string;
-    /**
-     * Search corpus override for slotted mode. Accepts an array of search terms; joined with a
-     * space internally. Falls back to `label` when empty.
-     * HTML attribute: space-separated string — `search-text="Alice PI alice@acme.com"`
-     * JS property: string array  — `.searchText=${['Alice', 'PI', 'alice@acme.com']}`
-     */
     accessor searchText: string[];
     accessor selected: boolean;
     accessor active: boolean;
+    accessor wrapText: boolean;
     accessor highlightText: string;
-    accessor _hasSlotContent: boolean;
+    private accessor _hasSlotContent;
     connectedCallback(): void;
     disconnectedCallback(): void;
     protected firstUpdated(changedProperties: PropertyValues): void;
@@ -32,7 +33,7 @@ export declare class ViComboboxItem extends ViElement implements SlottedListboxI
 }
 declare global {
     interface HTMLElementTagNameMap {
-        'vi-combobox-item': ViComboboxItem;
+        'vi-select-option': ViSelectOption;
     }
 }
-//# sourceMappingURL=vi-combobox-item.d.ts.map
+//# sourceMappingURL=vi-select-option.d.ts.map

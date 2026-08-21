@@ -24,7 +24,7 @@ export interface FloatingControllerOptions {
     /** Element or selector string to constrain flipping. */
     boundary?: () => HTMLElement | string | null;
     /** Whether the floating element should be forced to match the reference element's width. */
-    matchWidth?: boolean;
+    matchWidth?: boolean | (() => boolean);
 }
 /**
  * FloatingController

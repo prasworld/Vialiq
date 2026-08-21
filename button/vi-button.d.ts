@@ -53,6 +53,8 @@ export declare class ViButton extends ViButton_base {
     accessor iconOnly: boolean;
     /** Disables the button. */
     accessor disabled: boolean;
+    /** The button type — 'button', 'submit', or 'reset'. Forwarded to the inner native button. */
+    accessor type: 'button' | 'submit' | 'reset';
     /** Accessible label forwarded to the inner native button. */
     accessor ariaLabel: string | null;
     private accessor _hasIcon;

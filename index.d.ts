@@ -38,4 +38,7 @@ export { ViTag } from './tag/vi-tag.js';
 export type { TagVariant, TagAppearance, TagSize } from './tag/vi-tag.js';
 export { ViSwitch } from './switch/vi-switch.js';
 export type { SwitchSize, LabelPlacement } from './switch/vi-switch.js';
+export { ViSelect } from './select/vi-select.js';
+export { ViSelectOption } from './select/vi-select-option.js';
+export { ViSelectGroup } from './select/vi-select-group.js';
 //# sourceMappingURL=index.d.ts.map

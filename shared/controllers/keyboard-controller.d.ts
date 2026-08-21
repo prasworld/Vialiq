@@ -1,6 +1,5 @@
 import { ReactiveController, ReactiveControllerHost } from 'lit';
-import { ListboxOption } from '../types/listbox.types.js';
-import { ViComboboxItem } from '../../combobox/vi-combobox-item.js';
+import { ListboxOption, SlottedListboxItem } from '../types/listbox.types.js';
 export interface KeyboardControllerHost extends ReactiveControllerHost, HTMLElement {
     disabled: boolean;
     open: boolean;
@@ -11,8 +10,8 @@ export interface KeyboardControllerOptions<TData = unknown> {
     getActiveIndex: () => number;
     setActiveIndex: (index: number) => void;
     getFilteredOptions: () => ListboxOption<TData>[];
-    getSlottedItems: () => ViComboboxItem[];
-    getVisibleSlottedItems: () => ViComboboxItem[];
+    getSlottedItems: () => SlottedListboxItem[];
+    getVisibleSlottedItems: () => SlottedListboxItem[];
     getSelectedValues: () => string[];
     updateSlottedActiveState: (index: number) => void;
     scrollToActiveIndex: () => void;
@@ -22,13 +21,17 @@ export interface KeyboardControllerOptions<TData = unknown> {
     close: () => void;
     openDropdown: () => void;
     getQuery: () => string;
+    onTypeAheadChange?: (str: string) => void;
 }
 export declare class ListboxKeyboardController<TData = unknown> implements ReactiveController {
     private host;
     private config;
+    private _searchString;
+    private _searchTimeout?;
     constructor(host: KeyboardControllerHost, config: KeyboardControllerOptions<TData>);
     hostConnected(): void;
     handleKeyDown(e: KeyboardEvent): void;
+    private _handleTypeAhead;
     private _navigate;
 }
 //# sourceMappingURL=keyboard-controller.d.ts.map

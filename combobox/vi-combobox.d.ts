@@ -97,7 +97,9 @@ export declare class ViCombobox extends ViCombobox_base {
     protected get _focusableElement(): HTMLElement | null;
     get isSearchable(): boolean;
     disconnectedCallback(): void;
-    protected firstUpdated(_changedProperties: PropertyValues): void;
+    private _defaultValue;
+    protected firstUpdated(changedProperties: PropertyValues): void;
+    formResetCallback(): void;
     protected updated(changedProperties: PropertyValues): void;
     private _observeSlottedItems;
     private _rebuildOptionDataMap;
