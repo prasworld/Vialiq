@@ -21,6 +21,7 @@ import { ViMonthYearPlugin } from './plugins/vi-month-year-plugin.js';
 import { ViShadowDomPlugin } from './plugins/vi-shadow-dom-plugin.js';
 import { ViRangePlugin } from './plugins/vi-range-plugin.js';
 import { isViPlugin } from './plugin-utils.js';
+import './vi-date-picker-input.js';
 import type { ViDatePickerInput } from './vi-date-picker-input.js';
 import type {
   DatePickerMode,
