@@ -77,14 +77,6 @@ export function FlatpickrMixin<T extends Constructor<LitElement>>(Base: T) {
     private _initGeneration = 0;
 
     /**
-     * Light-DOM portal element appended directly to the host.
-     * Flatpickr mounts popup calendars here so that CSS custom properties
-     * set on the host cascade into the calendar (document.body is outside
-     * the host's inheritance chain).
-     */
-    private _fpPortal: HTMLElement | null = null;
-
-    /**
      * Optional config to pass to the mode plugin loader.
      */
     protected _getModePluginConfig(): Record<string, unknown> {
@@ -124,26 +116,11 @@ export function FlatpickrMixin<T extends Constructor<LitElement>>(Base: T) {
       const mergedPlugins = mergePlugins(modePlugin, this.plugins);
       const allPlugins = [...(config.plugins || []), ...mergedPlugins];
 
-      // Use caller-supplied appendTo (e.g. inline container) if provided.
-      // Otherwise create/reuse a light-DOM portal under the host so that CSS
-      // custom properties defined on the host cascade into the popup calendar.
-      let appendTo: HTMLElement;
-      if (config.appendTo) {
-        appendTo = config.appendTo;
-      } else {
-        if (!this._fpPortal) {
-          this._fpPortal = document.createElement('div');
-          this._fpPortal.setAttribute('aria-hidden', 'true');
-          this.appendChild(this._fpPortal);
-        }
-        appendTo = this._fpPortal;
-      }
-
       const fpConfig: Partial<Options> = {
+        appendTo: document.body,
         disableMobile: true,
         static: false,
         ...config,
-        appendTo,
         plugins: allPlugins,
         ...(locale ? { locale } : {}),
       };
@@ -156,10 +133,6 @@ export function FlatpickrMixin<T extends Constructor<LitElement>>(Base: T) {
       if (this._fp) {
         this._fp.destroy();
         this._fp = null;
-      }
-      if (this._fpPortal) {
-        this._fpPortal.remove();
-        this._fpPortal = null;
       }
     }
 
