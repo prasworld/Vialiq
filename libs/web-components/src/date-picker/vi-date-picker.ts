@@ -262,7 +262,7 @@ export class ViDatePicker extends FlatpickrMixin(ViElement) {
 
   /** Clears the selected date(s). */
   clear(): void {
-    this._fp?.clear();
+    this._fp?.clear(false);
     this.value = '';
     this._internals.setFormValue('');
     this._inputs.forEach((input) => {
