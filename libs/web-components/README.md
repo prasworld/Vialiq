@@ -310,7 +310,7 @@ The [ViSelect](./src/select/vi-select.ts) is a custom listbox component that rep
 | Attribute          | Property          | Type                            | Default     | Description                                      |
 | :----------------- | :---------------- | :------------------------------ | :---------- | :----------------------------------------------- |
 | `value`            | `value`           | `string`                        | `''`        | The currently selected option's value.           |
-| `placeholder`      | `placeholder`     | `string`                        | `''`        | Text shown when no option is selected.           |
+| `placeholder`      | `placeholder`     | `string`                        | `'Select...'` | Text shown when no option is selected.           |
 | `name`             | `name`            | `string`                        | `''`        | Form field name.                                 |
 | `disabled`         | `disabled`        | `boolean`                       | `false`     | Disables the select component entirely.          |
 | `required`         | `required`        | `boolean`                       | `false`     | Makes selecting an option mandatory.             |
