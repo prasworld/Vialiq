@@ -26,7 +26,7 @@ const meta: Meta<DatePickerArgs> = {
     onVialiqChange: { action: 'vialiq-change' },
     mode: {
       control: 'select',
-      options: ['date', 'range', 'month', 'month-year', 'year', 'week'],
+      options: ['date', 'range', 'month', 'month-year', 'week'],
       description: 'Picker mode',
     },
     flat: {
@@ -288,8 +288,8 @@ export const ProgrammaticRange: Story = {
           name=${args.name}
           @vialiq-change=${(e: CustomEvent) => args.onVialiqChange?.(e.detail)}
         >
-          <vi-date-picker-input kind="from" label="Start Date"></vi-date-picker-input>
-          <vi-date-picker-input kind="to" label="End Date"></vi-date-picker-input>
+          <vi-date-picker-input kind="from" label="Start Date" placeholder="yyyy-mm-dd"></vi-date-picker-input>
+          <vi-date-picker-input kind="to" label="End Date" placeholder="yyyy-mm-dd"></vi-date-picker-input>
         </vi-date-picker>
       </div>
     `;
@@ -400,7 +400,7 @@ export const ProgrammaticValueUpdate: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Demonstrates updating the `value` property programmatically. The `value` property should always be passed as an ISO 8601 string, regardless of the active locale or display format. Accepted formats based on `mode`:\n\n- `date`: `YYYY-MM-DD`\n- `month` / `month-year`: `YYYY-MM`\n- `year`: `YYYY`\n- `week`: `YYYY-Www`\n- `range`: `YYYY-MM-DD to YYYY-MM-DD`',
+        story: 'Demonstrates updating the `value` property programmatically. The `value` property should always be passed as an ISO 8601 string, regardless of the active locale or display format. Accepted formats based on `mode`:\n\n- `date`: `YYYY-MM-DD`\n- `month` / `month-year`: `YYYY-MM`\n- `week`: `YYYY-Www`\n- `range`: `YYYY-MM-DD to YYYY-MM-DD`',
       },
     },
   },

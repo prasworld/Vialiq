@@ -1,4 +1,5 @@
 import { LitElement } from 'lit';
+import { property } from 'lit/decorators.js';
 import type { Instance, FlatpickrFn } from 'flatpickr/dist/types/instance';
 import type { Options } from 'flatpickr/dist/types/options';
 import type {
@@ -61,7 +62,8 @@ export function FlatpickrMixin<T extends Constructor<LitElement>>(Base: T) {
      * Consumer-provided plugins (in addition to the mode plugin).
      * Not reflected as an attribute — set via JS property only.
      */
-    plugins: DatePickerPluginInput[] = [];
+    @property({ attribute: false }) accessor plugins: DatePickerPluginInput[] =
+      [];
 
     /**
      * Returns the hidden input flatpickr should mount on.
@@ -140,5 +142,6 @@ export function FlatpickrMixin<T extends Constructor<LitElement>>(Base: T) {
     }
   }
 
-  return FlatpickrMixinClass as unknown as Constructor<FlatpickrMixinInterface> & T;
+  return FlatpickrMixinClass as unknown as Constructor<FlatpickrMixinInterface> &
+    T;
 }

@@ -23,12 +23,6 @@ const REGISTRY: Partial<Record<DatePickerMode, ModePluginLoader>> = {
     const mod = await import('flatpickr/dist/plugins/weekSelect/weekSelect.js');
     const factory: Plugin = mod.default() as Plugin;
     return { id: 'vi-week-select', label: 'Week Select', factory };
-  },
-  year: async () => {
-    // Stub for Phase 2: custom yearSelectPlugin wrapper
-    // We will implement this fully in Phase 2.
-    const factory: Plugin = () => ({});
-    return { id: 'vi-year-select', label: 'Year Select', factory };
   }
 };
 

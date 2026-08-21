@@ -176,4 +176,71 @@ describe('vi-date-picker', () => {
     
     expect(triggerBtn?.getAttribute('aria-expanded')).toBe('true');
   });
+  it('enforces required constraint', async () => {
+    render(html`
+      <vi-date-picker required>
+        <vi-date-picker-input></vi-date-picker-input>
+      </vi-date-picker>
+    `, container);
+
+    const picker = container.querySelector('vi-date-picker') as ViDatePicker;
+    await waitForUpdate(picker);
+
+    expect(picker.checkValidity()).toBe(false);
+    expect(picker.validity.valueMissing).toBe(true);
+
+    picker.value = '2025-01-01';
+    await waitForUpdate(picker);
+    expect(picker.checkValidity()).toBe(true);
+  });
+
+  it('enforces min constraint', async () => {
+    render(html`
+      <vi-date-picker min="2025-01-10" value="2025-01-05">
+        <vi-date-picker-input></vi-date-picker-input>
+      </vi-date-picker>
+    `, container);
+
+    const picker = container.querySelector('vi-date-picker') as ViDatePicker;
+    await waitForUpdate(picker);
+
+    expect(picker.checkValidity()).toBe(false);
+    expect(picker.validity.rangeUnderflow).toBe(true);
+  });
+
+  it('enforces max constraint', async () => {
+    render(html`
+      <vi-date-picker max="2025-01-10" value="2025-01-15">
+        <vi-date-picker-input></vi-date-picker-input>
+      </vi-date-picker>
+    `, container);
+
+    const picker = container.querySelector('vi-date-picker') as ViDatePicker;
+    await waitForUpdate(picker);
+
+    expect(picker.checkValidity()).toBe(false);
+    expect(picker.validity.rangeOverflow).toBe(true);
+  });
+  it('handles programmatic week value', async () => {
+    render(html`
+      <vi-date-picker mode="week" value="2024-W01">
+        <vi-date-picker-input></vi-date-picker-input>
+      </vi-date-picker>
+    `, container);
+
+    const picker = container.querySelector('vi-date-picker') as ViDatePicker;
+    await waitForUpdate(picker);
+
+    // 2024-W01 Monday is 2024-01-01
+    let fpSelectedDates = (picker as any)._fp.selectedDates;
+    expect(fpSelectedDates.length).toBe(1);
+    expect(fpSelectedDates[0].getFullYear()).toBe(2024);
+    expect(fpSelectedDates[0].getMonth()).toBe(0); // Jan
+    expect(fpSelectedDates[0].getDate()).toBe(1);
+    
+    picker.value = '2024-W02';
+    await waitForUpdate(picker);
+    fpSelectedDates = (picker as any)._fp.selectedDates;
+    expect(fpSelectedDates[0].getDate()).toBe(8); // 2024-01-08
+  });
 });

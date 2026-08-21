@@ -1,5 +1,5 @@
 @use './variables' as tokens;
-@import 'flatpickr/dist/flatpickr.css';
+@use './flatpickr-core';
 
 /**
  * Global Flatpickr Theme overrides using flux-ui tokens.
@@ -292,6 +292,7 @@
 // ----------------------------------------------------------------------------
 
 .flatpickr-day {
+  // When hovering over a week, it adds .inRange to all 7 days
   &.inRange,
   &.inRange:hover {
     // Add pill-like rounded corners to the start and end of the week row
@@ -300,6 +301,34 @@
       border-bottom-left-radius: var(--vi-border-radius-full, tokens.$border-radius-full);
     }
     &:nth-child(7n) {
+      border-top-right-radius: var(--vi-border-radius-full, tokens.$border-radius-full);
+      border-bottom-right-radius: var(--vi-border-radius-full, tokens.$border-radius-full);
+    }
+  }
+
+  // When a week is selected, it adds .week.selected to all 7 days
+  &.week.selected {
+    // Middle days look like .inRange (light blue, no radius)
+    background: var(--vi-color-blue-100, tokens.$color-blue-100);
+    border-color: var(--vi-color-blue-100, tokens.$color-blue-100);
+    color: var(--vi-text-primary, tokens.$text-primary);
+    border-radius: 0;
+    box-shadow: none;
+
+    // First day looks like .startRange (dark blue, left rounded)
+    &:nth-child(7n + 1) {
+      background: var(--vi-date-picker-day-selected-bg, tokens.$color-primary);
+      border-color: var(--vi-date-picker-day-selected-bg, tokens.$color-primary);
+      color: var(--vi-date-picker-day-selected-color, tokens.$text-primary-inverse);
+      border-top-left-radius: var(--vi-border-radius-full, tokens.$border-radius-full);
+      border-bottom-left-radius: var(--vi-border-radius-full, tokens.$border-radius-full);
+    }
+
+    // Last day looks like .endRange (dark blue, right rounded)
+    &:nth-child(7n) {
+      background: var(--vi-date-picker-day-selected-bg, tokens.$color-primary);
+      border-color: var(--vi-date-picker-day-selected-bg, tokens.$color-primary);
+      color: var(--vi-date-picker-day-selected-color, tokens.$text-primary-inverse);
       border-top-right-radius: var(--vi-border-radius-full, tokens.$border-radius-full);
       border-bottom-right-radius: var(--vi-border-radius-full, tokens.$border-radius-full);
     }

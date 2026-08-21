@@ -36,7 +36,7 @@
   min-height: var(--vi-input-height, 40px);
   padding: 0 var(--vi-spacing-md, tokens.$spacing-md);
   background: var(--vi-input-bg, tokens.$layer-01);
-  border: 1px solid var(--vi-border-02, tokens.$border-02);
+  border: 1px solid var(--vi-input-trigger-border-color, tokens.$border-02);
   border-radius: var(--vi-border-radius-md, tokens.$border-radius-md);
   color: var(--vi-text-primary, tokens.$text-primary);
   font-family: inherit;
@@ -85,4 +85,16 @@
   .trigger:disabled & {
     color: var(--vi-text-disabled, tokens.$text-disabled);
   }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
 }

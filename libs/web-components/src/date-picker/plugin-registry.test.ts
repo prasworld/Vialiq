@@ -24,10 +24,5 @@ describe('plugin-registry', () => {
     expect(typeof plugin?.factory).toBe('function');
   });
   
-  it('returns a wrapper for "year" mode', async () => {
-    const plugin = await loadModePlugin('year');
-    expect(plugin).not.toBeNull();
-    expect(plugin?.id).toBe('vi-year-select');
-    expect(typeof plugin?.factory).toBe('function');
-  });
+
 });

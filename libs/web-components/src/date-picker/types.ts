@@ -1,7 +1,7 @@
 import type { Plugin } from 'flatpickr/dist/types/options';
 import type { CustomLocale, key as LocaleKey, Locale } from 'flatpickr/dist/types/locale';
 
-export type DatePickerMode = 'date' | 'month' | 'month-year' | 'year' | 'range' | 'week';
+export type DatePickerMode = 'date' | 'month' | 'month-year' | 'range' | 'week';
 
 export interface DateComponents {
   day: number;

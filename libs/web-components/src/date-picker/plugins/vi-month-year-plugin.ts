@@ -19,8 +19,6 @@ export function ViMonthYearPlugin(config: ViMonthYearPluginConfig = {}) {
     let monthToggleBtn: HTMLButtonElement;
     let yearSelect: HTMLElement; // vi-select
     let monthGridContainer: HTMLDivElement;
-    
-    const months = fp.l10n.months.shorthand;
 
     function createHeader() {
       headerContainer = document.createElement('div');
@@ -56,9 +54,7 @@ export function ViMonthYearPlugin(config: ViMonthYearPluginConfig = {}) {
       monthToggleBtn = document.createElement('button');
       monthToggleBtn.type = 'button';
       monthToggleBtn.className = 'vi-calendar-month-toggle';
-      if (config.ariaLabels?.selectMonth) {
-        monthToggleBtn.setAttribute('aria-label', config.ariaLabels.selectMonth);
-      }
+      monthToggleBtn.setAttribute('aria-label', config.ariaLabels?.selectMonth ?? fp.l10n.monthAriaLabel ?? 'Select month');
       monthToggleBtn.addEventListener('click', (e) => {
         e.preventDefault();
         toggleMonthGrid();
@@ -67,9 +63,7 @@ export function ViMonthYearPlugin(config: ViMonthYearPluginConfig = {}) {
       yearSelect = document.createElement('vi-select');
       yearSelect.className = 'vi-calendar-year-select';
       yearSelect.setAttribute('size', 'sm');
-      if (config.ariaLabels?.selectYear) {
-        yearSelect.setAttribute('aria-label', config.ariaLabels.selectYear);
-      }
+      yearSelect.setAttribute('aria-label', config.ariaLabels?.selectYear ?? fp.l10n.yearAriaLabel ?? 'Select year');
       
       // Use createElement and assign .value directly so vi-select can synchronously read the value
       // even before Lit has fully upgraded the custom elements in the browser.
@@ -112,6 +106,8 @@ export function ViMonthYearPlugin(config: ViMonthYearPluginConfig = {}) {
       monthGridContainer = document.createElement('div');
       monthGridContainer.className = 'vi-calendar-month-grid';
       monthGridContainer.style.display = 'none';
+
+      const months = fp.l10n.months.shorthand;
 
       months.forEach((monthName, index) => {
         const btn = document.createElement('button');
@@ -162,6 +158,15 @@ export function ViMonthYearPlugin(config: ViMonthYearPluginConfig = {}) {
       if (!monthToggleBtn || !yearSelect) return;
       monthToggleBtn.textContent = fp.l10n.months.longhand[fp.currentMonth];
       (yearSelect as HTMLElement & { value: string }).value = fp.currentYear.toString();
+
+      if (prevBtn && !config.ariaLabels?.prevMonth) {
+        const prevMonthIndex = fp.currentMonth === 0 ? 11 : fp.currentMonth - 1;
+        prevBtn.setAttribute('aria-label', fp.l10n.months.longhand[prevMonthIndex]);
+      }
+      if (nextBtn && !config.ariaLabels?.nextMonth) {
+        const nextMonthIndex = fp.currentMonth === 11 ? 0 : fp.currentMonth + 1;
+        nextBtn.setAttribute('aria-label', fp.l10n.months.longhand[nextMonthIndex]);
+      }
     }
 
     function applyHideDaysConfig() {

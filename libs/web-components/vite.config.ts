@@ -178,6 +178,8 @@ export default defineConfig({
         /^@lit\//,
         '@floating-ui/dom',
         /^@floating-ui\//,
+        'flatpickr',
+        /^flatpickr\//,
         /^@vialiq\//, // Ensures other workspace libraries are treated as external dependencies
       ],
       output: {

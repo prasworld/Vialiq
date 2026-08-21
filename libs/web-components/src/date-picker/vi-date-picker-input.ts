@@ -1,4 +1,4 @@
-import { html, css, unsafeCSS, LitElement } from 'lit';
+import { html, css, unsafeCSS, LitElement, nothing } from 'lit';
 import { customElement, property, query } from 'lit/decorators.js';
 import { ViElement } from '../base/vi-element.js';
 import datePickerInputStyles from './vi-date-picker-input.scss?inline';
@@ -7,8 +7,11 @@ import datePickerInputStyles from './vi-date-picker-input.scss?inline';
 export class ViDatePickerInput extends ViElement {
   @property({ type: String, reflect: true }) accessor kind: 'from' | 'to' | 'single' = 'single';
   @property({ type: String }) accessor label = '';
-  @property({ type: String }) accessor placeholder = '';
+  @property({ type: String }) accessor placeholder!: string;
   @property({ type: Boolean, reflect: true }) accessor disabled = false;
+  @property({ type: Boolean, reflect: true }) accessor required = false;
+  @property({ type: Boolean, reflect: true }) accessor invalid = false;
+  @property({ type: String }) accessor validityMessage = '';
   @property({ type: Boolean }) accessor expanded = false;
   
   // The actual value string (formatted or ISO, depending on how date-picker manages it)
@@ -52,6 +55,9 @@ export class ViDatePickerInput extends ViElement {
           aria-haspopup="dialog"
           aria-expanded="${this.expanded}"
           aria-label="${accessibleName}"
+          aria-required="${this.required ? 'true' : 'false'}"
+          aria-invalid="${this.invalid ? 'true' : 'false'}"
+          aria-errormessage="${this.invalid && this.validityMessage ? 'vi-err-msg' : nothing}"
         >
           <span class="display-value">
             ${this.value 
@@ -67,6 +73,7 @@ export class ViDatePickerInput extends ViElement {
             </svg>
           </span>
         </button>
+        ${this.invalid && this.validityMessage ? html`<span id="vi-err-msg" class="sr-only">${this.validityMessage}</span>` : ''}
       </div>
     `;
   }

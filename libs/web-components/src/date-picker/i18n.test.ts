@@ -64,10 +64,6 @@ describe('i18n utilities', () => {
     it('formats month mode', () => {
       expect(formatDisplay(date, 'en-GB', 'month')).toMatch(/June 2025/i);
     });
-
-    it('formats year mode', () => {
-      expect(formatDisplay(date, 'en-GB', 'year')).toBe('2025');
-    });
   });
 
 

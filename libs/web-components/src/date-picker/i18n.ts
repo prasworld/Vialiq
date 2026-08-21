@@ -72,7 +72,6 @@ const FMT_OPTIONS_BY_MODE: Record<DatePickerMode, Intl.DateTimeFormatOptions> = 
   date: { day: 'numeric', month: 'long', year: 'numeric' },
   month: { month: 'long', year: 'numeric' },
   'month-year': { month: 'long', year: 'numeric' },
-  year: { year: 'numeric' },
   range: { day: 'numeric', month: 'short', year: 'numeric' },
   week: { year: 'numeric', month: 'short', day: 'numeric' } // Fallback, usually overridden by custom week display
 };
