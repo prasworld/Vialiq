@@ -37,10 +37,6 @@ export class ViSelect extends ValidityMixin(FocusableMixin(ViElement)) {
     ${unsafeCSS(selectStyles)}
   `;
 
-  // ── ValidityMixin contract — must be declared as @property —————————————
-  @property({ reflect: true }) accessor status: ControlStatus = 'default';
-  @property({ type: Boolean, reflect: true }) accessor required = false;
-  @property({ type: String }) accessor validityMessage = '';
 
 @property({
   attribute: 'match-width',
