@@ -4,7 +4,7 @@ import { customElement, property } from 'lit/decorators.js';
 @customElement('vi-select-group')
 export class ViSelectGroup extends LitElement {
   /** The label text for the group header. */
-  @property({ type: String }) label = '';
+  @property({ type: String }) accessor label = '';
 
   override render() {
     return html`

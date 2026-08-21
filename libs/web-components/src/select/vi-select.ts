@@ -22,6 +22,7 @@ import type { DropdownPlacement } from '../combobox/vi-combobox.types.js';
 import type { Placement } from '@floating-ui/dom';
 
 import './vi-select-option.js';
+import './vi-select-group.js';
 
 // Register internally used icons so consumers do not need to do this explicitly.
 registerIcons([chevronDownIcon, xIcon]);
@@ -64,6 +65,15 @@ export class ViSelect extends ValidityMixin(FocusableMixin(ViElement)) {
   @property({ attribute: false }) accessor flipBoundaryElement: HTMLElement | null = null;
 
   // ── Internal State ─────────────────────────────────────────────────────────
+  private _listboxId = `listbox-${Math.random().toString(36).substring(2, 11)}`;
+  private _optionIdMap = new Map<string, string>();
+  
+  private _getOptionId(value: string): string {
+    if (!this._optionIdMap.has(value)) {
+      this._optionIdMap.set(value, `opt-${Math.random().toString(36).substring(2, 11)}`);
+    }
+    return this._optionIdMap.get(value) ?? '';
+  }
   @state() private accessor _selectedLabel = '';
   @state() private accessor _activeIndex = -1;
   @state() private accessor _slottedItems: SlottedListboxItem[] = [];
@@ -249,6 +259,13 @@ formResetCallback(): void {
       
       // Sync initial properties to children
       for (const item of this._slottedItems) {
+        if (item.value) {
+          if (item.id) {
+            this._optionIdMap.set(item.value, item.id);
+          } else {
+            item.id = this._getOptionId(item.value);
+          }
+        }
         (item as unknown as { wrapText: boolean }).wrapText = this.wrapText;
         (item as unknown as { highlightText: string }).highlightText = this._typeAheadString;
       }
@@ -451,6 +468,10 @@ if (this.open && e.key !== ' ' && e.key.length === 1 && !e.ctrlKey && !e.metaKey
             tabindex=${this.disabled ? '-1' : '0'}
             aria-haspopup="listbox"
             aria-expanded=${this.open ? 'true' : 'false'}
+            aria-controls=${this._listboxId}
+            aria-activedescendant=${this.open && this._activeIndex >= 0 && this._slottedItems[this._activeIndex]
+              ? this._getOptionId(this._slottedItems[this._activeIndex].value)
+              : ''}
             aria-label=${ifNonEmpty(this.ariaLabel || this.placeholder)}
             aria-invalid=${this.status === 'invalid' ? 'true' : 'false'}
             aria-describedby=${this.validityMessage ? 'helper-text validation-message' : 'helper-text'}
@@ -487,6 +508,7 @@ if (this.open && e.key !== ' ' && e.key.length === 1 && !e.ctrlKey && !e.metaKey
           
           <!-- Floating Listbox Dropdown -->
           <div
+            id=${this._listboxId}
             part="listbox"
             class="select-listbox"
             role="listbox"
