@@ -162,9 +162,6 @@ export class ViSelect extends ValidityMixin(FocusableMixin(ViElement)) {
   protected override firstUpdated(changedProperties: PropertyValues): void {
     super.firstUpdated(changedProperties);
     this._defaultValue = this.getAttribute('value') ?? '';
-    if (this.required) {
-      this._internals.setValidity(this._getValidity(), 'Please select an option.');
-    }
     this._observeSlottedItems();
   }
 
