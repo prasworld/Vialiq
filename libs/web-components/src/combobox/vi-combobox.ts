@@ -184,7 +184,7 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
       if (this._slottedItems?.length > 0) {
         this._filterController.applySlottedFilter(val, this._slottedItems);
         this._slottedItems.forEach(item => {
-          (item as any).highlightText = this.highlightMatch ? val : '';
+          item.highlightText = this.highlightMatch ? val : '';
         });
       }
       this.requestUpdate(); 
@@ -361,7 +361,7 @@ formResetCallback(): void {
           this._filterController.applySlottedFilter(this._query, this._slottedItems);
         }
         for (const item of this._slottedItems) {
-          (item as any).highlightText = this.highlightMatch ? this._query : '';
+          item.highlightText = this.highlightMatch ? this._query : '';
         }
       }
 

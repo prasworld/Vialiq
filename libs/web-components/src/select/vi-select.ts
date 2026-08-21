@@ -7,7 +7,7 @@ import {
 } from 'lit';
 import { customElement, property, state, query } from 'lit/decorators.js';
 import { FocusableMixin } from '../base/focusable-mixin.js';
-import { ValidityMixin, type ControlStatus } from '../base/validity-mixin.js';
+import { ValidityMixin } from '../base/validity-mixin.js';
 import { ViElement } from '../base/vi-element.js';
 import { ifNonEmpty } from '../base/if-non-empty.js';
 import selectStyles from './vi-select.scss?inline';
@@ -19,6 +19,7 @@ import { FloatingController } from '../base/controllers/floating-controller.js';
 import { ListboxKeyboardController } from '../shared/controllers/keyboard-controller.js';
 import type { SlottedListboxItem, ListboxOption } from '../shared/types/listbox.types.js';
 import type { DropdownPlacement } from '../combobox/vi-combobox.types.js';
+import type { Placement } from '@floating-ui/dom';
 
 import './vi-select-option.js';
 
@@ -82,7 +83,7 @@ export class ViSelect extends ValidityMixin(FocusableMixin(ViElement)) {
   private _floatingController = new FloatingController(this, {
     reference: () => this._triggerEl,
     floating: () => this._listboxEl,
-    placement: () => this.placement as any,
+    placement: () => this.placement as unknown as Placement,
     offset: 4,
     hoist: () => this.hoist,
     boundary: () => this.flipBoundaryElement || this.flipBoundary || null,
@@ -99,8 +100,8 @@ export class ViSelect extends ValidityMixin(FocusableMixin(ViElement)) {
     updateSlottedActiveState: (index: number) => this._updateSlottedActiveState(index),
     scrollToActiveIndex: () => this._scrollToActiveIndex(),
     selectOption: (opt: ListboxOption<unknown>) => this._selectOption(opt),
-    handleCreate: () => {},
-    removeTag: () => {},
+    handleCreate: () => { /* no-op */ },
+    removeTag: () => { /* no-op */ },
     close: () => { this.open = false; },
     openDropdown: () => { this.open = true; },
     getQuery: () => '',
@@ -112,7 +113,7 @@ export class ViSelect extends ValidityMixin(FocusableMixin(ViElement)) {
 
   private _syncHighlightToOptions(): void {
     this._slottedItems.forEach(item => {
-      (item as any).highlightText = this._typeAheadString;
+      (item as unknown as { highlightText: string }).highlightText = this._typeAheadString;
     });
   }
 
@@ -172,7 +173,7 @@ formResetCallback(): void {
     if (changedProperties.has('wrapText')) {
       for (const item of this._slottedItems) {
         if ('wrapText' in item) {
-          (item as any).wrapText = this.wrapText;
+          (item as unknown as { wrapText: boolean }).wrapText = this.wrapText;
         }
       }
     }
@@ -236,7 +237,7 @@ formResetCallback(): void {
       const collectOptions = (elements: Element[]) => {
         for (const el of elements) {
           if (el.tagName.toLowerCase() === 'vi-select-option') {
-            items.push(el as any as SlottedListboxItem);
+            items.push(el as unknown as SlottedListboxItem);
           } else if (el.tagName.toLowerCase() === 'vi-select-group') {
             collectOptions(Array.from(el.children));
           }
@@ -248,8 +249,8 @@ formResetCallback(): void {
       
       // Sync initial properties to children
       for (const item of this._slottedItems) {
-        (item as any).wrapText = this.wrapText;
-        (item as any).highlightText = this._typeAheadString;
+        (item as unknown as { wrapText: boolean }).wrapText = this.wrapText;
+        (item as unknown as { highlightText: string }).highlightText = this._typeAheadString;
       }
 
       this._syncSlottedSelectedState();

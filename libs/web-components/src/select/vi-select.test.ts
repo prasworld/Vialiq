@@ -1,4 +1,4 @@
-import { $, expect, browser } from '@wdio/globals';
+import { expect, browser } from '@wdio/globals';
 import { html, render } from 'lit';
 import './vi-select.js';
 import './vi-select-option.js';

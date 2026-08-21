@@ -784,7 +784,7 @@ describe('vi-modal', () => {
           new PointerEvent('pointermove', { clientX: 500, clientY: 500, bubbles: true }),
         );
         window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
-      } catch (e) {
+      } catch (_e) {
         threw = true;
       }
 

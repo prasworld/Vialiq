@@ -186,11 +186,11 @@ export const WrappedText: Story = {
   args: {
     ...Default.args,
     placeholder: 'Select a lengthy option...',
-    // @ts-ignore
+    // @ts-expect-error - wrapText is added dynamically to the args
     wrapText: true,
   },
   argTypes: {
-    // @ts-ignore
+    // @ts-expect-error - wrapText is added dynamically to the argTypes
     wrapText: {
       control: 'boolean',
       description: 'Allows long text to wrap instead of truncating with an ellipsis',
@@ -436,7 +436,7 @@ export const FormReset: Story = {
     value: 'option1',
   },
   render: ({ placeholder, disabled, required, clearable, status, validityMessage, name }: SelectArgs) => html`
-    <form @reset=${(e: Event) => console.log('Form reset fired!')} @submit=${(e: Event) => e.preventDefault()}>
+    <form @reset=${(_e: Event) => console.log('Form reset fired!')} @submit=${(_e: Event) => e.preventDefault()}>
       <div style="width: 250px; display: flex; flex-direction: column; gap: 16px;">
         <vi-select
           placeholder=${placeholder}
