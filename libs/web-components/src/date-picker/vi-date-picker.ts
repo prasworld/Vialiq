@@ -34,7 +34,7 @@ import type {
 /** Emitted when the user selects a date. Detail: DatePickerChangeDetail. */
 export const VIALIQ_CHANGE = 'vialiq-change';
 
-/** Emitted on every segment keystroke (future partial input). */
+/** Emitted on every keystroke. */
 export const VIALIQ_INPUT = 'vialiq-input';
 
 /**
@@ -81,9 +81,7 @@ export class ViDatePicker extends FlatpickrMixin(ViElement) {
     'default';
   @property({ type: String, attribute: 'validity-message' })
   accessor validityMessage = '';
-  @property({ type: String, attribute: 'today-label' }) accessor todayLabel:
-    | string
-    | undefined = undefined;
+  @property({ type: String, attribute: 'today-label' }) accessor todayLabel: string | undefined = undefined;
 
   /** Consumer plugins — set programmatically, not via attribute. */
   plugins: DatePickerPluginInput[] = [];
@@ -99,6 +97,18 @@ export class ViDatePicker extends FlatpickrMixin(ViElement) {
   /** Light DOM container for flatpickr inline mode to inherit global CSS */
   private _inlineContainer?: HTMLDivElement;
 
+  @property({ type: String, attribute: 'label-prev-month' })
+  accessor labelPrevMonth: string | undefined = undefined;
+
+  @property({ type: String, attribute: 'label-next-month' })
+  accessor labelNextMonth: string | undefined = undefined;
+
+  @property({ type: String, attribute: 'label-select-month' })
+  accessor labelSelectMonth: string | undefined = undefined;
+
+  @property({ type: String, attribute: 'label-select-year' })
+  accessor labelSelectYear: string | undefined = undefined;
+
   // ── Lifecycle ─────────────────────────────────────────────────────────────
 
   constructor() {
@@ -106,9 +116,25 @@ export class ViDatePicker extends FlatpickrMixin(ViElement) {
     this._internals = this.attachInternals();
   }
 
+  protected _getModePluginConfig() {
+    return {
+      ariaLabels: {
+        prevMonth: this.labelPrevMonth,
+        nextMonth: this.labelNextMonth,
+        selectMonth: this.labelSelectMonth,
+        selectYear: this.labelSelectYear,
+      }
+    };
+  }
+
   override connectedCallback() {
     super.connectedCallback();
     this._resolvedLocale = resolveLocale(this.locale);
+
+    if (this.hasUpdated && !this._fp) {
+      // Re-initialize if the component is detached and re-attached
+      this._setupFlatpickr();
+    }
   }
 
   override disconnectedCallback() {
@@ -133,6 +159,10 @@ export class ViDatePicker extends FlatpickrMixin(ViElement) {
       await Promise.all(this._inputs.map((input) => input.updateComplete));
     }
 
+    await this._setupFlatpickr();
+  }
+
+  private async _setupFlatpickr() {
     if (this.flat && !this._inlineContainer) {
       this._inlineContainer = document.createElement('div');
       this._inlineContainer.slot = 'inline-container';
@@ -146,6 +176,12 @@ export class ViDatePicker extends FlatpickrMixin(ViElement) {
       this.mode,
       this._resolvedLocale,
     );
+
+    // Restore value if re-attaching
+    if (this.value && this._fp) {
+      this._fp.setDate(this.value, false);
+      this._syncInputValues(this._fp.selectedDates);
+    }
   }
 
   override async updated(changed: PropertyValues) {
@@ -418,7 +454,6 @@ export class ViDatePicker extends FlatpickrMixin(ViElement) {
       weekNumber: start ? getISOWeek(start) : null,
       locale: this._resolvedLocale,
       timeZone: resolveTimeZone(),
-      partial: false,
     };
 
     this.dispatchEvent(

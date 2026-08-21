@@ -107,6 +107,10 @@
     "./date-picker/vi-date-picker": {
       "types": "./date-picker/vi-date-picker.d.ts",
       "default": "./date-picker/vi-date-picker.js"
+    },
+    "./date-picker/vi-date-picker-input": {
+      "types": "./date-picker/vi-date-picker-input.d.ts",
+      "default": "./date-picker/vi-date-picker-input.js"
     }
   },
   "peerDependencies": {

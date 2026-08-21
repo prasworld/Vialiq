@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { resolveLocale, resolveSegmentOrder, formatDisplay, formatPartialDate, resolveTimeZone } from './i18n.js';
+import { resolveLocale, resolveSegmentOrder, formatDisplay, resolveTimeZone } from './i18n.js';
 
 describe('i18n utilities', () => {
   afterEach(() => {
@@ -70,24 +70,7 @@ describe('i18n utilities', () => {
     });
   });
 
-  describe('formatPartialDate', () => {
-    it('formats full known date', () => {
-      expect(formatPartialDate({ year: 1985, month: 6, day: 15 }, 'en-GB')).toMatch(/15 June 1985/i);
-    });
 
-    it('formats year and month', () => {
-      expect(formatPartialDate({ year: 1985, month: 6, day: null }, 'en-GB')).toMatch(/June 1985/i);
-    });
-
-    it('formats year only', () => {
-      expect(formatPartialDate({ year: 1985, month: null, day: null }, 'en-GB')).toBe('1985');
-    });
-    
-    it('formats with different locales', () => {
-      expect(formatPartialDate({ year: 1985, month: 6, day: null }, 'de-DE')).toMatch(/Juni 1985/i);
-      expect(formatPartialDate({ year: 2025, month: null, day: null }, 'zh-CN')).toMatch(/2025/i);
-    });
-  });
   
   describe('resolveTimeZone', () => {
     it('returns a string', () => {

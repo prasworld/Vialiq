@@ -14,7 +14,7 @@ export function resolvePlugin(p: DatePickerPluginInput): Plugin {
  * Ensures the mode plugin is always first, and deduplicates by ViDatePickerPlugin.id.
  */
 export function mergePlugins(
-  modePlugin: Plugin | null,
+  modePlugin: DatePickerPluginInput | null,
   consumerPlugins: DatePickerPluginInput[] = []
 ): Plugin[] {
   const finalPlugins: Plugin[] = [];
@@ -34,11 +34,7 @@ export function mergePlugins(
   };
 
   if (modePlugin) {
-    // Mode plugin goes first. Assuming modePlugin here is the raw factory, 
-    // but in our registry we return ViDatePickerPlugin.
-    // Wait, the signature says modePlugin is Plugin | null, meaning it's already resolved.
-    // Actually it's cleaner to pass it in directly.
-    finalPlugins.push(modePlugin);
+    addPlugin(modePlugin);
   }
 
   consumerPlugins.forEach(addPlugin);

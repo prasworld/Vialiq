@@ -1,19 +1,48 @@
-import type { CustomLocale, key as LocaleKey } from 'flatpickr/dist/types/locale';
+import type { CustomLocale } from 'flatpickr/dist/types/locale';
 
-// Shape of the default export of every flatpickr dist/l10n/*.js module:
-// a map keyed by locale code, each value being a CustomLocale (or undefined).
-type L10nMap = Partial<Record<LocaleKey, CustomLocale>>;
+/** Loader function type — returns the module namespace object */
+type LocaleLoader = () => Promise<CustomLocale | null>;
 
-/** Loader function type — returns the module's default export (the locale map) */
-type LocaleLoader = () => Promise<L10nMap>;
-
-async function loadL10n(importer: () => Promise<{ default: L10nMap }>): Promise<L10nMap> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function loadL10n(importer: () => Promise<any>): Promise<CustomLocale | null> {
   const mod = await importer();
-  return mod.default;
+  
+  const isLocale = (v: unknown): v is CustomLocale => 
+    !!v && typeof v === 'object' && 'weekdays' in v && 'months' in v;
+
+  // 1. Check if the module exports a named locale directly (e.g. exports.French)
+  for (const key of Object.keys(mod)) {
+    if (key !== 'default' && isLocale(mod[key])) {
+      return mod[key] as CustomLocale;
+    }
+  }
+
+  // 2. Check if mod.default is the locale directly
+  if (isLocale(mod.default)) {
+    return mod.default as CustomLocale;
+  }
+
+  // 3. Check if mod.default is an l10ns map (e.g. { fr: CustomLocale })
+  if (mod.default && typeof mod.default === 'object') {
+    const l10ns = mod.default as Record<string, unknown>;
+    for (const key of Object.keys(l10ns)) {
+      if (isLocale(l10ns[key])) {
+        return l10ns[key] as CustomLocale;
+      }
+    }
+  }
+
+  // 4. Check if mod itself is the l10ns map
+  for (const key of Object.keys(mod)) {
+    if (isLocale(mod[key])) {
+      return mod[key] as CustomLocale;
+    }
+  }
+
+  return null;
 }
 
 // Map of BCP 47 locale tags to flatpickr l10n imports.
-// Each entry wraps the dynamic import so callers receive only the typed L10nMap.
 const LOCALE_MAP: Record<string, LocaleLoader> = {
   ar:      () => loadL10n(() => import('flatpickr/dist/l10n/ar.js')),
   de:      () => loadL10n(() => import('flatpickr/dist/l10n/de.js')),
@@ -57,10 +86,7 @@ export async function loadLocale(bcp47: string): Promise<CustomLocale | null> {
   }
 
   try {
-    const l10nMap = await loadFn();
-    // Try the full BCP 47 key first, then the language-only prefix.
-    const langKey = bcp47.split('-')[0] as LocaleKey;
-    const locale = l10nMap[bcp47 as LocaleKey] ?? l10nMap[langKey] ?? null;
+    const locale = await loadFn();
     localeCache.set(bcp47, locale);
     return locale;
   } catch (e) {

@@ -33,19 +33,19 @@ describe('plugin-utils', () => {
 
   describe('mergePlugins', () => {
     it('puts mode plugin first', () => {
-      const modePlugin = mockFactory as unknown as Plugin;
+      const modePlugin = mockViPlugin;
       const result = mergePlugins(modePlugin, []);
       expect(result).toHaveLength(1);
-      expect(result[0]).toBe(modePlugin);
+      expect(result[0]).toBe(modePlugin.factory);
     });
 
     it('deduplicates by id', () => {
-      const modePlugin = mockFactory as unknown as Plugin;
+      const modePlugin = mockViPlugin;
       const dupPlugin: ViDatePickerPlugin = { ...mockViPlugin };
       
       const result = mergePlugins(modePlugin, [mockViPlugin, dupPlugin]);
-      expect(result).toHaveLength(2); // 1 mode + 1 deduped vi plugin
-      expect(result[1]).toBe(mockViPlugin.factory);
+      expect(result).toHaveLength(1); // 1 mode, duplicate dropped
+      expect(result[0]).toBe(mockViPlugin.factory);
     });
 
     it('allows duplicate raw plugins', () => {

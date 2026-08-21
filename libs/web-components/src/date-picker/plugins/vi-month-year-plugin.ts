@@ -3,6 +3,12 @@ import '../../select/vi-select.js';
 
 export interface ViMonthYearPluginConfig {
   hideDays?: boolean;
+  ariaLabels?: {
+    prevMonth?: string;
+    nextMonth?: string;
+    selectMonth?: string;
+    selectYear?: string;
+  };
 }
 
 export function ViMonthYearPlugin(config: ViMonthYearPluginConfig = {}) {
@@ -23,7 +29,9 @@ export function ViMonthYearPlugin(config: ViMonthYearPluginConfig = {}) {
       prevBtn = document.createElement('button');
       prevBtn.type = 'button';
       prevBtn.className = 'vi-calendar-nav-btn vi-calendar-prev';
-      prevBtn.setAttribute('aria-label', 'Previous month');
+      if (config.ariaLabels?.prevMonth) {
+        prevBtn.setAttribute('aria-label', config.ariaLabels.prevMonth);
+      }
       prevBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>`;
       prevBtn.addEventListener('click', (e) => {
         e.preventDefault();
@@ -33,7 +41,9 @@ export function ViMonthYearPlugin(config: ViMonthYearPluginConfig = {}) {
       nextBtn = document.createElement('button');
       nextBtn.type = 'button';
       nextBtn.className = 'vi-calendar-nav-btn vi-calendar-next';
-      nextBtn.setAttribute('aria-label', 'Next month');
+      if (config.ariaLabels?.nextMonth) {
+        nextBtn.setAttribute('aria-label', config.ariaLabels.nextMonth);
+      }
       nextBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>`;
       nextBtn.addEventListener('click', (e) => {
         e.preventDefault();
@@ -46,7 +56,9 @@ export function ViMonthYearPlugin(config: ViMonthYearPluginConfig = {}) {
       monthToggleBtn = document.createElement('button');
       monthToggleBtn.type = 'button';
       monthToggleBtn.className = 'vi-calendar-month-toggle';
-      monthToggleBtn.setAttribute('aria-label', 'Select month');
+      if (config.ariaLabels?.selectMonth) {
+        monthToggleBtn.setAttribute('aria-label', config.ariaLabels.selectMonth);
+      }
       monthToggleBtn.addEventListener('click', (e) => {
         e.preventDefault();
         toggleMonthGrid();
@@ -55,7 +67,9 @@ export function ViMonthYearPlugin(config: ViMonthYearPluginConfig = {}) {
       yearSelect = document.createElement('vi-select');
       yearSelect.className = 'vi-calendar-year-select';
       yearSelect.setAttribute('size', 'sm');
-      yearSelect.setAttribute('aria-label', 'Select year');
+      if (config.ariaLabels?.selectYear) {
+        yearSelect.setAttribute('aria-label', config.ariaLabels.selectYear);
+      }
       
       // Use createElement and assign .value directly so vi-select can synchronously read the value
       // even before Lit has fully upgraded the custom elements in the browser.

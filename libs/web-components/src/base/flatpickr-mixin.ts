@@ -71,6 +71,16 @@ export function FlatpickrMixin<T extends Constructor<LitElement>>(Base: T) {
       return null;
     }
 
+    /** Token to track and cancel overlapping initializations. */
+    private _initGeneration = 0;
+
+    /**
+     * Optional config to pass to the mode plugin loader.
+     */
+    protected _getModePluginConfig(): Record<string, unknown> {
+      return {};
+    }
+
     /**
      * Initialises flatpickr with the given config and optional mode.
      * Loads the flatpickr module, locale, and mode plugin in parallel.
@@ -80,8 +90,7 @@ export function FlatpickrMixin<T extends Constructor<LitElement>>(Base: T) {
       mode: DatePickerMode = 'date',
       resolvedLocale: string = resolveLocale(null),
     ): Promise<void> {
-      // Destroy any previous instance first (e.g. locale change triggers re-init)
-      this._destroyFlatpickr();
+      const currentGen = ++this._initGeneration;
 
       const input = this._getHiddenInput();
       if (!input) return;
@@ -90,12 +99,19 @@ export function FlatpickrMixin<T extends Constructor<LitElement>>(Base: T) {
       const [{ default: flatpickr }, locale, modePlugin] = await Promise.all([
         import('flatpickr') as Promise<{ default: FlatpickrFn }>,
         loadLocale(resolvedLocale),
-        loadModePlugin(mode),
+        loadModePlugin(mode, this._getModePluginConfig()),
       ]);
 
+      // Abort if another init was called, or if disconnected during loading
+      if (currentGen !== this._initGeneration || !this.isConnected) {
+        return;
+      }
+
+      // Destroy any previous instance right before we mount the new one
+      this._destroyFlatpickr();
+
       // Resolve raw Plugin[] from ViDatePickerPlugin wrappers + consumer plugins + internal config plugins
-      const modePluginFactory = modePlugin ? modePlugin.factory : null;
-      const mergedPlugins = mergePlugins(modePluginFactory, this.plugins);
+      const mergedPlugins = mergePlugins(modePlugin, this.plugins);
       const allPlugins = [...(config.plugins || []), ...mergedPlugins];
 
       const fpConfig: Partial<Options> = {

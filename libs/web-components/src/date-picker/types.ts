@@ -3,18 +3,10 @@ import type { CustomLocale, key as LocaleKey, Locale } from 'flatpickr/dist/type
 
 export type DatePickerMode = 'date' | 'month' | 'month-year' | 'year' | 'range' | 'week';
 
-export type PartialDateMode = 'full' | 'month-year' | 'year';
-
 export interface DateComponents {
   day: number;
   month: number;
   year: number;
-}
-
-export interface PartialDateValue {
-  year: number;
-  month: number | null;
-  day: number | null;
 }
 
 export type SegmentOrder = 'DMY' | 'MDY' | 'YMD';
@@ -30,12 +22,6 @@ export interface DatePickerChangeDetail {
   weekNumber: number | null;
   locale: string;
   timeZone: string;
-  partial: boolean;
-}
-
-export interface PartialDateChangeDetail extends DatePickerChangeDetail {
-  partialValue: PartialDateValue;
-  isComplete: boolean;
 }
 
 export interface ViDatePickerPlugin {

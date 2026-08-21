@@ -59,8 +59,6 @@ export { ViSelectGroup } from './select/vi-select-group.js';
 
 export { ViCombobox } from './combobox/vi-combobox.js';
 export { ViComboboxItem } from './combobox/vi-combobox-item.js';
-export type { ComboboxPlacement, ComboboxChangeDetail } from './combobox/vi-combobox.js';
-
 export { ViDatePicker, VIALIQ_CHANGE, VIALIQ_INPUT } from './date-picker/vi-date-picker.js';
 export { ViDatePickerInput } from './date-picker/vi-date-picker-input.js';
-export type { DatePickerMode, DatePickerChangeDetail, PartialDateChangeDetail } from './date-picker/types.js';
+export type { DatePickerMode, DatePickerChangeDetail } from './date-picker/types.js';

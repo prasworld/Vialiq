@@ -1,4 +1,4 @@
-import type { SegmentOrder, PartialDateValue, DatePickerMode } from './types.js';
+import type { SegmentOrder, DatePickerMode } from './types.js';
 
 /** Resolves the effective BCP 47 locale tag. */
 export function resolveLocale(localeAttr: string | null): string {
@@ -105,12 +105,4 @@ export function formatDisplay(date: Date, locale: string, mode: DatePickerMode, 
   return new Intl.DateTimeFormat(locale, opts).format(date);
 }
 
-export function formatPartialDate(v: PartialDateValue, locale: string): string {
-  const opts: Intl.DateTimeFormatOptions = {
-    year: 'numeric',
-    ...(v.month !== null && { month: 'long' }),
-    ...(v.day !== null && { day: 'numeric' }),
-  };
-  const ref = new Date(v.year, (v.month ?? 1) - 1, v.day ?? 1);
-  return new Intl.DateTimeFormat(locale, opts).format(ref);
-}
+

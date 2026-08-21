@@ -7,7 +7,7 @@ import datePickerInputStyles from './vi-date-picker-input.scss?inline';
 export class ViDatePickerInput extends ViElement {
   @property({ type: String, reflect: true }) accessor kind: 'from' | 'to' | 'single' = 'single';
   @property({ type: String }) accessor label = '';
-  @property({ type: String }) accessor placeholder = 'Pick a date';
+  @property({ type: String }) accessor placeholder = '';
   @property({ type: Boolean, reflect: true }) accessor disabled = false;
   @property({ type: Boolean }) accessor expanded = false;
   

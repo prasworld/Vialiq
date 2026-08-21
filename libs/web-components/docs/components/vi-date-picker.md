@@ -26,7 +26,7 @@
 14. [Validation Rules](#validation-rules)
 15. [Keyboard Interactions](#keyboard-interactions)
 16. [Accessibility](#accessibility)
-17. [Partial Date Mode](#partial-date-mode)
+
 18. [Usage Examples](#usage-examples)
 19. [Framework Integration](#framework-integration)
 20. [Extension Points](#extension-points)
@@ -43,7 +43,6 @@ A form-associated date entry control for clinical EDC and general-purpose use.
 3. **Consumer plugin passthrough** — raw `Plugin` or `ViDatePickerPlugin` via `.plugins` property
 4. **Internationalization** — locale-aware formatting, lazy-loaded flatpickr l10n, segment order follows locale
 5. **Rich event detail** — emits `rawValue {day,month,year}`, `formattedValue`, `utcIso`, `locale`, `timeZone`
-6. **Partial date support** — `partial=true` enables unknown components; form value becomes `{year,month,day}` JSON; controlled by `mode='full'|'month-year'|'year'`
 7. **Dynamic loading** — plugins and locale files loaded via `import()` in parallel at init time
 8. **Flat/inline mode** — renders the calendar inline (no popup trigger)
 9. **Fully CSS-tokenized** — three-level Flux UI cascade; dark mode and study themes automatic
@@ -52,7 +51,7 @@ A form-associated date entry control for clinical EDC and general-purpose use.
 
 ## Design Modes
 
-### Standard modes (no `partial` attribute)
+### Supported modes
 
 | Mode | Output | Built-in Plugin | Flatpickr mode |
 |---|---|---|---|
@@ -68,26 +67,6 @@ A form-associated date entry control for clinical EDC and general-purpose use.
 > natively. Our responsibility is: (1) the visible trigger/segment UI in shadow DOM, (2) Flux UI
 > CSS tokens applied to the portalled `.flatpickr-calendar` in `<body>`, (3) the event detail
 > shape we emit after flatpickr fires `onChange`.
-
-### Partial modes (`partial=true`)
-
-When `partial=true`, the component switches to **segment-only entry** (no calendar popup).
-The `mode` attribute controls which segments are shown:
-
-| Mode + partial | Visible segments | Form value | formattedValue example (en-GB) |
-|---|---|---|---|
-| `mode="full"` | Day / Month / Year | `{"year":1985,"month":6,"day":null}` | `June 1985` |
-| `mode="month-year"` | Month / Year | `{"year":2025,"month":6,"day":null}` | `June 2025` |
-| `mode="year"` | Year only | `{"year":2019,"month":null,"day":null}` | `2019` |
-
-> **`partial` + `mode='full'` rules**
-> - Leaving a segment empty = unknown (`null`) — no checkboxes, no toggles
-> - If month is empty, day must also be empty (cascading rule)
-> - Year is always required
-> - The calendar popup never opens when `partial=true`
->
-> `flat` is an **attribute modifier** (`flat` boolean) — not a mode. Sets `inline: true` on
-> flatpickr. Only meaningful when `partial=false`.
 
 ---
 
@@ -255,7 +234,6 @@ export type SegmentOrder = 'DMY' | 'MDY' | 'YMD';
  * - `formattedValue` — locale-aware display string (Intl.DateTimeFormat); use for UI labels
  * - `locale`         — browser BCP 47 tag; allows server to reproduce the exact display format
  * - `timeZone`       — IANA tz; allows server to reconstruct the absolute moment
- * - `partial`        — true when any component is unknown (CDISC partial date)
  */
 export interface DatePickerChangeDetail {
   /** ISO 8601 machine value stored in the hidden form field.
@@ -264,7 +242,7 @@ export interface DatePickerChangeDetail {
 
   /**
    * Full UTC ISO 8601 timestamp (midnight UTC on the selected date).
-   * Null when partial=true or when no date is selected.
+   * Null when no date is selected.
    * Example: '2025-06-15T00:00:00.000Z'
    */
   utcIso: string | null;
@@ -279,7 +257,7 @@ export interface DatePickerChangeDetail {
   /**
    * Unambiguous numeric components. Preferred for server-side date reconstruction.
    * For range mode: represents the START date components.
-   * Null when partial=true or mode is 'year'/'month' (not all components apply).
+   * Null when mode is 'year'/'month' (not all components apply).
    */
   rawValue: DateComponents | null;
 
@@ -305,8 +283,7 @@ export interface DatePickerChangeDetail {
    */
   timeZone: string;
 
-  /** True when any date component is unknown (partial date mode). */
-  partial: boolean;
+
 }
 ```
 
@@ -852,16 +829,16 @@ const start = dates[0] ?? null;
 const end   = dates[1] ?? null;          // range mode only
 
 const isoValue = this._buildIsoValue(start, end);
-const utcIso   = start && !this.partial
+const utcIso   = start
   ? start.toISOString()                  // 2025-06-15T00:00:00.000Z
   : null;
 
-const rawValue: DateComponents | null = start && !this.partial
+const rawValue: DateComponents | null = start
   ? { day: start.getDate(), month: start.getMonth() + 1, year: start.getFullYear() }
   : null;
 
 const rawEndValue: DateComponents | null =
-  this.mode === 'range' && end && !this.partial
+  this.mode === 'range' && end
     ? { day: end.getDate(), month: end.getMonth() + 1, year: end.getFullYear() }
     : null;
 
@@ -876,7 +853,6 @@ const detail: DatePickerChangeDetail = {
   rawValue, rawEndValue,
   weekNumber: this.mode === 'week' ? getISOWeek(start) : null,
   locale, timeZone,
-  partial: this.partial,
 };
 
 this.dispatchEvent(new CustomEvent<DatePickerChangeDetail>('vialiq-change', {
@@ -917,7 +893,6 @@ this.dispatchEvent(new CustomEvent<DatePickerChangeDetail>('vialiq-change', {
 | `locale` | `locale` | `string` | `''` | — | BCP 47 locale tag. Falls back to `navigator.language` then `'en'`. Controls calendar l10n, and provides default segment order and `formattedValue` if `format` is not set. |
 | `disabled` | `disabled` | `boolean` | `false` | ✅ | Disables the control |
 | `required` | `required` | `boolean` | `false` | ✅ | Required field |
-| `partial` | `partial` | `boolean` | `false` | ✅ | When `true`: no calendar popup, empty=null, form value is JSON `{year,month,day}`. Use `mode` to control which segments are visible (`'full'\|'month-year'\|'year'`). |
 | `weekNumbers` | `week-numbers` | `boolean` | `false` | — | Show ISO week numbers in calendar |
 | `firstDayOfWeek` | `first-day-of-week` | `number` | `1` | — | 0=Sun 1=Mon 6=Sat |
 | `plugins` | — | `DatePickerPluginInput[]` | `[]` | — | **JS-only.** Extra flatpickr plugins |
@@ -939,14 +914,13 @@ this.dispatchEvent(new CustomEvent<DatePickerChangeDetail>('vialiq-change', {
 | Field | Type | Description |
 |---|---|---|
 | `isoValue` | `string` | Machine-readable ISO 8601 value stored in form (`'2025-06-15'`, `'2025-06'`, `'2025-01-01 to 2025-06-30'`) |
-| `utcIso` | `string \| null` | Full UTC ISO timestamp, midnight UTC (`'2025-06-15T00:00:00.000Z'`). `null` when partial. |
+| `utcIso` | `string \| null` | Full UTC ISO timestamp, midnight UTC (`'2025-06-15T00:00:00.000Z'`). |
 | `formattedValue` | `string` | Locale-aware display string via `Intl.DateTimeFormat` (`'15 June 2025'`, `'15. Juni 2025'`) |
-| `rawValue` | `DateComponents \| null` | `{ day, month, year }` — unambiguous integers, month is 1-indexed. `null` when partial or mode=year/month. |
+| `rawValue` | `DateComponents \| null` | `{ day, month, year }` — unambiguous integers, month is 1-indexed. `null` when mode=year/month. |
 | `rawEndValue` | `DateComponents \| null` | End date components for `range` mode. `null` for all other modes. |
 | `weekNumber` | `number \| null` | ISO week number. Non-null only when `mode='week'`. |
 | `locale` | `string` | Resolved BCP 47 locale tag (`'en-GB'`, `'de-DE'`, `'zh-CN'`). |
 | `timeZone` | `string` | IANA time zone from browser Intl (`'Asia/Kolkata'`, `'America/New_York'`). |
-| `partial` | `boolean` | `true` when any date component is unknown (CDISC partial date). |
 
 ### Imperative Methods
 
@@ -981,7 +955,6 @@ this.dispatchEvent(new CustomEvent<DatePickerChangeDetail>('vialiq-change', {
 | `inline-calendar` | Inline calendar wrapper | `flat` attribute |
 | `helper` | Helper text | all |
 | `validation` | Validation message | all |
-| `partial-toggle` | Unknown checkbox | `date` + `partial` |
 
 ---
 
@@ -1001,7 +974,7 @@ All tokens follow the **three-level cascade** from `CSS-DESIGN-SYSTEM.md`:
 
 ```
 libs/flux-ui/components/
-└── _date-picker.scss         ← Entry point; @forwards all partials
+└── _date-picker.scss         ← Entry point; @forwards all pieces
 libs/flux-ui/components/date-picker/
     ├── _input.scss           ← Segment inputs + trigger buttons
     ├── _calendar.scss        ← Calendar shell + navigation header (shared)
@@ -1032,7 +1005,6 @@ libs/flux-ui/components/date-picker/
 | `--vi-date-picker-segment-width-month` | `36px` | Month segment width |
 | `--vi-date-picker-segment-width-year` | `52px` | Year segment width |
 | `--vi-date-picker-separator-color` | `tokens.$border-03` | `/` colour |
-| `--vi-date-picker-unknown-color` | `tokens.$text-disabled` | `??` partial text |
 
 #### Calendar Popup
 
@@ -1289,16 +1261,14 @@ Because not all modes produce a full `{day, month, year}` triple, here is the de
 
 | Mode | `rawValue` | `rawEndValue` |
 |---|---|---|
-| `date` (no partial) | `{ day, month, year }` | `null` |
-| `date` (partial, day unknown) | `null` | `null` |
+| `date` | `{ day, month, year }` | `null` |
 | `month` / `month-year` | `null` (no day) | `null` |
 | `year` | `null` (no day or month) | `null` |
 | `week` | `{ day, month, year }` of week start | `null` |
 | `range` (both selected) | `{ day, month, year }` of start | `{ day, month, year }` of end |
-| `range` (partial) | `null` | `null` |
 
 > **Server-side recommendation:** always prefer `rawValue` for date reconstruction. Fall back to
-> parsing `isoValue` only when `rawValue` is null (month/year/partial modes). Use `utcIso` as the
+> parsing `isoValue` only when `rawValue` is null (month/year modes). Use `utcIso` as the
 > audit trail key.
 
 ---
@@ -1312,7 +1282,7 @@ Because not all modes produce a full `{day, month, year}` triple, here is the de
 | Before min | `rangeUnderflow` | Date < min |
 | After max | `rangeOverflow` | Date > max (or > today) |
 | Incomplete range | `badInput` | Range: start set but end missing |
-| Incomplete entry | `badInput` | Some segments filled, some empty (non-partial) |
+| Incomplete entry | `badInput` | Some segments filled, some empty |
 
 ---
 
@@ -1367,122 +1337,16 @@ const opts: Intl.DateTimeFormatOptions = {
 
 ---
 
-## Partial Date Mode
 
-> **Design decision:** `vi-partial-date` is NOT a separate component. Partial date support
-> is a configuration of `vi-date-picker` via `partial=true`.
-
-### Overview
-
-When `partial=true`:
-- **No calendar popup** — ever. Segments only.
-- **Implicit empty = unknown** — leaving a field blank means `null` (no checkboxes, no toggles)
-- **Form value becomes JSON** — `{"year":number, "month":number|null, "day":number|null}`
-- **`mode` controls visible segments** — `full`, `month-year`, or `year`
-- **`isoValue` in the event detail is also JSON** — same as the form value
-
-### PartialDateValue type
-
-```typescript
-// src/date-picker/types.ts
-export interface PartialDateValue {
-  year:  number;         // always present — year is always required
-  month: number | null;  // 1–12, null = unknown
-  day:   number | null;  // 1–31, null = unknown
-}
-```
-
-### Form submission value
-
-```typescript
-// ElementInternals stores the JSON string
-this._internals.setFormValue(JSON.stringify(this._value));
-```
-
-| User entry | JSON form value |
-|---|---|
-| DD=15, MM=6, YYYY=1985 | `{"year":1985,"month":6,"day":15}` |
-| DD=empty, MM=6, YYYY=1985 | `{"year":1985,"month":6,"day":null}` |
-| DD=empty, MM=empty, YYYY=1985 | `{"year":1985,"month":null,"day":null}` |
-| mode=month-year, MM=6, YYYY=2025 | `{"year":2025,"month":6,"day":null}` |
-| mode=year, YYYY=2019 | `{"year":2019,"month":null,"day":null}` |
-
-### Event detail when `partial=true`
-
-The `vialiq-change` event emits a `PartialDateChangeDetail` (extends `DatePickerChangeDetail`):
-
-```typescript
-export interface PartialDateChangeDetail extends DatePickerChangeDetail {
-  /** Structured value — same as the form field JSON. */
-  partialValue: PartialDateValue;
-
-  /**
-   * Locale-formatted display of known components only.
-   * Examples (en-GB):
-   *   {year:1985, month:6, day:15}   → '15 June 1985'
-   *   {year:1985, month:6, day:null} → 'June 1985'
-   *   {year:1985, month:null}        → '1985'
-   */
-  formattedValue: string;   // overrides base (uses partial-aware formatting)
-
-  /** True when all segments visible for the current mode are filled. */
-  isComplete: boolean;
-}
-```
-
-### Building `formattedValue` for partial dates
-
-```typescript
-function formatPartialDate(v: PartialDateValue, locale: string): string {
-  // Only pass Intl options for components that are known
-  const opts: Intl.DateTimeFormatOptions = {
-    year: 'numeric',
-    ...(v.month !== null && { month: 'long' }),
-    ...(v.day   !== null && { day:   'numeric' }),
-  };
-  // Use safe defaults for unknown components (they won’t be displayed)
-  const ref = new Date(v.year, (v.month ?? 1) - 1, v.day ?? 1);
-  return new Intl.DateTimeFormat(locale, opts).format(ref);
-}
-
-// formatPartialDate({year:1985, month:6, day:null}, 'de-DE')  → 'Juni 1985'
-// formatPartialDate({year:2025, month:null, day:null}, 'zh-CN') → '2025年'
-```
-
-### Validation rules (partial mode)
-
-| Rule | Validity flag | Condition |
-|---|---|---|
-| Year empty | `valueMissing` | Year is always required |
-| Invalid year | `badInput` | Year < min or > max |
-| Invalid month | `badInput` | Month entered but > 12 or < 1 |
-| Invalid day | `badInput` | Day entered but > 31 or < 1 |
-| Day without month | `badInput` | Day non-null but month is null |
-| Required complete | `valueMissing` | `required=true` and `isComplete=false` |
-
-### Input structure in partial mode
-
-Segment order still follows locale (`resolveSegmentOrder`). Empty segments show greyed placeholder:
-
-```html
-<!-- partial=true, mode="full", locale="en-GB" (DMY order) -->
-<div part="segments" role="group" aria-label="Partial date">
-  <input part="segment-day"   placeholder="DD" aria-label="Day (optional)" />
-  <span  part="separator" aria-hidden="true">/</span>
-  <input part="segment-month" placeholder="MM" aria-label="Month (optional)" />
-  <span  part="separator" aria-hidden="true">/</span>
-  <input part="segment-year"  placeholder="YYYY" aria-label="Year (required)" aria-required="true" />
-</div>
-```
-
----
 
 ## Usage Examples
 
 ### Standard date entry
 
 ```html
-<vi-date-picker name="aeStartDate" max="today" required></vi-date-picker>
+<vi-date-picker name="aeStartDate" max="today" required>
+  <vi-date-picker-input></vi-date-picker-input>
+</vi-date-picker>
 ```
 
 ### Date entry with explicit locale (German)
@@ -1494,35 +1358,45 @@ Segment order still follows locale (`resolveSegmentOrder`). Empty segments show 
   locale="de-DE"
   max="today"
   required
-></vi-date-picker>
+>
+  <vi-date-picker-input></vi-date-picker-input>
+</vi-date-picker>
 ```
 
 ### Month picker
 
 ```html
-<vi-date-picker name="reportMonth" mode="month" max="today"></vi-date-picker>
+<vi-date-picker name="reportMonth" mode="month" max="today">
+  <vi-date-picker-input></vi-date-picker-input>
+</vi-date-picker>
 <!-- isoValue: "2025-06" -->
-```
 ```
 
 ### Year picker
 
 ```html
-<vi-date-picker name="diagnosisYear" mode="year" min="1900" max="today"></vi-date-picker>
+<vi-date-picker name="diagnosisYear" mode="year" min="1900" max="today">
+  <vi-date-picker-input></vi-date-picker-input>
+</vi-date-picker>
 <!-- Output: "2019" -->
 ```
 
 ### Week picker
 
 ```html
-<vi-date-picker name="reportWeek" mode="week" max="today" week-numbers></vi-date-picker>
+<vi-date-picker name="reportWeek" mode="week" max="today" week-numbers>
+  <vi-date-picker-input></vi-date-picker-input>
+</vi-date-picker>
 <!-- Output: "2025-W24" -->
 ```
 
 ### Date range picker
 
 ```html
-<vi-date-picker name="conMedDuration" mode="range" max="today" required></vi-date-picker>
+<vi-date-picker name="conMedDuration" mode="range" max="today" required>
+  <vi-date-picker-input kind="from"></vi-date-picker-input>
+  <vi-date-picker-input kind="to"></vi-date-picker-input>
+</vi-date-picker>
 <!-- Output: "2024-01-15 to 2024-06-30" -->
 ```
 
