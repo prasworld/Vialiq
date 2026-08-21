@@ -1,0 +1,43 @@
+@use '@vialiq/flux-ui/styles/variables' as tokens;
+
+:host {
+  display: inline-block;
+  font-family: var(--vi-font-family, tokens.$font-family-base);
+  position: relative;
+}
+
+#fp-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: 0;
+  pointer-events: none;
+  width: 0;
+  height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.control {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vi-date-picker-spacing-field-gap, tokens.$spacing-xs);
+}
+
+.inputs-container {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: var(--vi-date-picker-spacing-inputs-gap, tokens.$spacing-md);
+  width: 100%;
+}
+
+:host([status='invalid']) .inputs-container ::slotted(vi-date-picker-input) {
+  --vi-input-border-color: var(--vi-date-picker-error-color, tokens.$color-error);
+}
+
+.validity-msg {
+  font-size: var(--vi-date-picker-validity-font-size, tokens.$font-size-xs);
+  color: var(--vi-date-picker-error-color, tokens.$color-error);
+}

@@ -728,6 +728,99 @@ The [ViModal](./src/modal/vi-modal.ts) is a focus-trapping dialog that dynamical
 
 ---
 
+### Date Picker ([vi-date-picker](./src/date-picker/vi-date-picker.ts))
+
+The [ViDatePicker](./src/date-picker/vi-date-picker.ts) is a powerful form-associated calendar control built on top of Flatpickr. It fully handles Shadow DOM retargeting, multiple calendar modes, custom locales, and complex date-range selections.
+
+#### Properties & Attributes
+
+| Attribute          | Property          | Type                            | Default     | Description                                      |
+| :----------------- | :---------------- | :------------------------------ | :---------- | :----------------------------------------------- |
+| `mode`             | `mode`            | `'date'\|'range'\|'month'\|'month-year'\|'year'\|'week'` | `'date'` | Determines the calendar view and selection behavior. |
+| `value`            | `value`           | `string`                        | `''`        | Controlled input value (must be an ISO 8601 string). |
+| `flat`             | `flat`            | `boolean`                       | `false`     | Renders the calendar inline instead of within a popup. |
+| `min`              | `min`             | `string`                        | `''`        | Minimum selectable date (ISO string).            |
+| `max`              | `max`             | `string`                        | `''`        | Maximum selectable date (ISO string).            |
+| `locale`           | `locale`          | `string`                        | `'en'`      | BCP 47 locale tag (e.g., `'de-DE'`, `'fr-FR'`).  |
+| `week-numbers`     | `weekNumbers`     | `boolean`                       | `false`     | Shows ISO week numbers on the left of the calendar. |
+| `disabled`         | `disabled`        | `boolean`                       | `false`     | Disables interactions.                           |
+| `required`         | `required`        | `boolean`                       | `false`     | Marks field validation as mandatory.             |
+| `status`           | `status`          | `'default'\|'valid'\|'invalid'` | `'default'` | Controls validation visual presentation.         |
+| `validity-message` | `validityMessage` | `string`                        | `''`        | Validation error message to display in UI.       |
+
+#### Child Components (\`<vi-date-picker-input>\`)
+
+The `<vi-date-picker>` acts as a wrapper container. The actual interactive input fields must be provided as children using `<vi-date-picker-input>`:
+- **`kind`**: `'single' | 'from' | 'to'`. Use `'from'` and `'to'` when `mode="range"`.
+- **`label`**: Optional label string displayed above the input.
+- **`placeholder`**: The placeholder text when no date is selected.
+
+#### Events
+
+- `vialiq-change`: Fires when a date is selected or changed. Detail: `{ value: string, isoValue: string, formattedValue: string, rawValue: DateComponents, type: string, ... }`.
+
+#### Snippets
+
+**Basic Date Selection:**
+```html
+<vi-date-picker name="birthday">
+  <vi-date-picker-input label="Birthday" placeholder="YYYY-MM-DD"></vi-date-picker-input>
+</vi-date-picker>
+```
+
+**Range Selection (Start & End Inputs):**
+When using `mode="range"`, provide two input children marked with `kind="from"` and `kind="to"`.
+
+```html
+<vi-date-picker mode="range" name="vacation">
+  <vi-date-picker-input kind="from" label="Start Date" placeholder="Select Start"></vi-date-picker-input>
+  <vi-date-picker-input kind="to" label="End Date" placeholder="Select End"></vi-date-picker-input>
+</vi-date-picker>
+```
+
+**Month, Year, and Week Selection:**
+```html
+<!-- Month and Year -->
+<vi-date-picker mode="month-year" name="expiry">
+  <vi-date-picker-input label="Card Expiry" placeholder="YYYY-MM"></vi-date-picker-input>
+</vi-date-picker>
+
+<!-- ISO Week -->
+<vi-date-picker mode="week" name="sprint">
+  <vi-date-picker-input label="Sprint Week" placeholder="YYYY-Www"></vi-date-picker-input>
+</vi-date-picker>
+```
+
+**Flat Inline Calendar:**
+```html
+<vi-date-picker flat mode="date" value="2025-01-01">
+  <!-- No inputs needed when flat=true, the calendar renders inline -->
+</vi-date-picker>
+```
+
+**Programmatic Value Updates:**
+The `value` property can be set directly via JavaScript. The value should always be an **ISO 8601 string**, regardless of the configured locale or display mode.
+
+```html
+<vi-date-picker id="start-date" mode="date"></vi-date-picker>
+
+<script>
+  const picker = document.getElementById('start-date');
+  
+  // Update value programmatically
+  picker.value = '2026-10-12';
+  
+  // Format guide by mode:
+  // - date: 'YYYY-MM-DD'
+  // - month / month-year: 'YYYY-MM'
+  // - year: 'YYYY'
+  // - week: 'YYYY-Www'
+  // - range: 'YYYY-MM-DD to YYYY-MM-DD'
+</script>
+```
+
+---
+
 ## Form Validation & ElementInternals
 
 Custom controls inside this library utilize the native browser [ValidityMixin](./src/base/validity-mixin.ts) to integrate with standard `<form>` features like `.elements`, `.checkValidity()`, and `.reportValidity()`.

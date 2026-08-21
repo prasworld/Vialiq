@@ -17,7 +17,10 @@ import { chevronDownIcon, xIcon } from '@vialiq/icons';
 
 import { FloatingController } from '../base/controllers/floating-controller.js';
 import { ListboxKeyboardController } from '../shared/controllers/keyboard-controller.js';
-import type { SlottedListboxItem, ListboxOption } from '../shared/types/listbox.types.js';
+import type {
+  SlottedListboxItem,
+  ListboxOption,
+} from '../shared/types/listbox.types.js';
 import type { DropdownPlacement } from '../combobox/vi-combobox.types.js';
 import type { Placement } from '@floating-ui/dom';
 
@@ -39,14 +42,13 @@ export class ViSelect extends ValidityMixin(FocusableMixin(ViElement)) {
     ${unsafeCSS(selectStyles)}
   `;
 
-
-@property({
-  attribute: 'match-width',
-  converter: {
-    fromAttribute: (v: string | null) => v !== null && v !== 'false',
-  },
-}) accessor matchWidth = true;
-
+  @property({
+    attribute: 'match-width',
+    converter: {
+      fromAttribute: (v: string | null) => v !== null && v !== 'false',
+    },
+  })
+  accessor matchWidth = true;
 
   // ── Public API ─────────────────────────────────────────────────────────────
   @property({ type: String, reflect: true }) accessor value = '';
@@ -56,21 +58,28 @@ export class ViSelect extends ValidityMixin(FocusableMixin(ViElement)) {
   @property({ type: Boolean }) accessor clearable = false;
   @property({ attribute: 'aria-label' }) accessor ariaLabel = '';
 
-  @property({ type: Boolean, attribute: 'wrap-text' }) accessor wrapText = false;
+  @property({ type: Boolean, attribute: 'wrap-text' }) accessor wrapText =
+    false;
 
   @property({ type: Boolean, reflect: true }) accessor open = false;
-  @property({ type: String }) accessor placement: DropdownPlacement = 'bottom-start';
+  @property({ type: String }) accessor placement: DropdownPlacement =
+    'bottom-start';
   @property({ type: Boolean }) accessor hoist = true;
-  @property({ type: String, attribute: 'flip-boundary' }) accessor flipBoundary = '';
-  @property({ attribute: false }) accessor flipBoundaryElement: HTMLElement | null = null;
+  @property({ type: String, attribute: 'flip-boundary' })
+  accessor flipBoundary = '';
+  @property({ attribute: false })
+  accessor flipBoundaryElement: HTMLElement | null = null;
 
   // ── Internal State ─────────────────────────────────────────────────────────
   private _listboxId = `listbox-${Math.random().toString(36).substring(2, 11)}`;
   private _optionIdMap = new Map<string, string>();
-  
+
   private _getOptionId(value: string): string {
     if (!this._optionIdMap.has(value)) {
-      this._optionIdMap.set(value, `opt-${Math.random().toString(36).substring(2, 11)}`);
+      this._optionIdMap.set(
+        value,
+        `opt-${Math.random().toString(36).substring(2, 11)}`,
+      );
     }
     return this._optionIdMap.get(value) ?? '';
   }
@@ -80,7 +89,7 @@ export class ViSelect extends ValidityMixin(FocusableMixin(ViElement)) {
 
   @query('.select-trigger') private accessor _triggerEl!: HTMLDivElement | null;
   @query('.select-listbox') private accessor _listboxEl!: HTMLDivElement | null;
-  
+
   private _slotMutationObserver: MutationObserver | null = null;
   @state() private accessor _typeAheadString = '';
 
@@ -102,18 +111,29 @@ export class ViSelect extends ValidityMixin(FocusableMixin(ViElement)) {
 
   private _keyboardController = new ListboxKeyboardController<unknown>(this, {
     getActiveIndex: () => this._activeIndex,
-    setActiveIndex: (index: number) => { this._activeIndex = index; },
+    setActiveIndex: (index: number) => {
+      this._activeIndex = index;
+    },
     getFilteredOptions: () => [], // No options prop array yet
     getSlottedItems: () => this._slottedItems,
-    getVisibleSlottedItems: () => this._slottedItems.filter(i => !i.hidden),
-    getSelectedValues: () => this.value ? [this.value] : [],
-    updateSlottedActiveState: (index: number) => this._updateSlottedActiveState(index),
+    getVisibleSlottedItems: () => this._slottedItems.filter((i) => !i.hidden),
+    getSelectedValues: () => (this.value ? [this.value] : []),
+    updateSlottedActiveState: (index: number) =>
+      this._updateSlottedActiveState(index),
     scrollToActiveIndex: () => this._scrollToActiveIndex(),
     selectOption: (opt: ListboxOption<unknown>) => this._selectOption(opt),
-    handleCreate: () => { /* no-op */ },
-    removeTag: () => { /* no-op */ },
-    close: () => { this.open = false; },
-    openDropdown: () => { this.open = true; },
+    handleCreate: () => {
+      /* no-op */
+    },
+    removeTag: () => {
+      /* no-op */
+    },
+    close: () => {
+      this.open = false;
+    },
+    openDropdown: () => {
+      this.open = true;
+    },
     getQuery: () => '',
     onTypeAheadChange: (str: string) => {
       this._typeAheadString = str;
@@ -122,14 +142,19 @@ export class ViSelect extends ValidityMixin(FocusableMixin(ViElement)) {
   });
 
   private _syncHighlightToOptions(): void {
-    this._slottedItems.forEach(item => {
-      (item as unknown as { highlightText: string }).highlightText = this._typeAheadString;
+    this._slottedItems.forEach((item) => {
+      (item as unknown as { highlightText: string }).highlightText =
+        this._typeAheadString;
     });
   }
 
   // Provide properties required by ListboxKeyboardControllerHost
-  get isSearchable() { return false; }
-  get mode() { return 'single' as const; }
+  get isSearchable() {
+    return false;
+  }
+  get mode() {
+    return 'single' as const;
+  }
 
   // ── ValidityMixin hook ─────────────────────────────────────────────────────
 
@@ -151,14 +176,20 @@ export class ViSelect extends ValidityMixin(FocusableMixin(ViElement)) {
   override connectedCallback(): void {
     super.connectedCallback();
     this.addEventListener('keydown', this._handleKeyDown);
-    this.addEventListener('vi-select-item-select', this._handleSlottedItemSelect as EventListener);
+    this.addEventListener(
+      'vi-select-item-select',
+      this._handleSlottedItemSelect as EventListener,
+    );
     document.addEventListener('click', this._handleOutsideClick);
   }
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     this.removeEventListener('keydown', this._handleKeyDown);
-    this.removeEventListener('vi-select-item-select', this._handleSlottedItemSelect as EventListener);
+    this.removeEventListener(
+      'vi-select-item-select',
+      this._handleSlottedItemSelect as EventListener,
+    );
     document.removeEventListener('click', this._handleOutsideClick);
     if (this._slotMutationObserver) this._slotMutationObserver.disconnect();
     this._floatingController.stop();
@@ -172,10 +203,10 @@ export class ViSelect extends ValidityMixin(FocusableMixin(ViElement)) {
     this._observeSlottedItems();
   }
 
-formResetCallback(): void {
-  this.value = this._defaultValue;
-  super.formResetCallback();
-}
+  formResetCallback(): void {
+    this.value = this._defaultValue;
+    super.formResetCallback();
+  }
 
   override updated(changedProperties: PropertyValues): void {
     super.updated(changedProperties);
@@ -205,10 +236,12 @@ formResetCallback(): void {
           return;
         }
         this._floatingController.start();
-        
+
         // Focus selected item
         if (this.value) {
-          const idx = this._slottedItems.filter(i => !i.hidden).findIndex(i => i.value === this.value);
+          const idx = this._slottedItems
+            .filter((i) => !i.hidden)
+            .findIndex((i) => i.value === this.value);
           this._activeIndex = idx;
           if (idx >= 0) this._updateSlottedActiveState(idx);
           this._scrollToActiveIndex();
@@ -228,8 +261,6 @@ formResetCallback(): void {
     }
   }
 
-
-
   formDisabledCallback(disabled: boolean): void {
     this.disabled = disabled;
   }
@@ -237,7 +268,9 @@ formResetCallback(): void {
   // ── Internal Methods ───────────────────────────────────────────────────────
 
   private _observeSlottedItems(): void {
-    const slot = this.shadowRoot?.querySelector('slot:not([name])') as HTMLSlotElement | null;
+    const slot = this.shadowRoot?.querySelector(
+      'slot:not([name])',
+    ) as HTMLSlotElement | null;
     if (!slot) return;
 
     const updateItems = () => {
@@ -256,7 +289,7 @@ formResetCallback(): void {
 
       collectOptions(assigned);
       this._slottedItems = items;
-      
+
       // Sync initial properties to children
       for (const item of this._slottedItems) {
         if (item.value) {
@@ -267,7 +300,8 @@ formResetCallback(): void {
           }
         }
         (item as unknown as { wrapText: boolean }).wrapText = this.wrapText;
-        (item as unknown as { highlightText: string }).highlightText = this._typeAheadString;
+        (item as unknown as { highlightText: string }).highlightText =
+          this._typeAheadString;
       }
 
       this._syncSlottedSelectedState();
@@ -291,16 +325,19 @@ formResetCallback(): void {
   }
 
   private _syncSelectedLabel(): void {
-    const selectedItem = this._slottedItems.find((item) => item.value === this.value);
+    const selectedItem = this._slottedItems.find(
+      (item) => item.value === this.value,
+    );
     if (selectedItem) {
-      this._selectedLabel = selectedItem.label || selectedItem.textContent?.trim() || '';
+      this._selectedLabel =
+        selectedItem.label || selectedItem.textContent?.trim() || '';
     } else {
       this._selectedLabel = '';
     }
   }
 
   private _updateSlottedActiveState(activeIndex: number): void {
-    const visible = this._slottedItems.filter(i => !i.hidden);
+    const visible = this._slottedItems.filter((i) => !i.hidden);
     visible.forEach((item, i) => {
       item.active = i === activeIndex;
     });
@@ -309,7 +346,9 @@ formResetCallback(): void {
   private async _scrollToActiveIndex(): Promise<void> {
     await this.updateComplete;
     if (this._activeIndex < 0) return;
-    const activeItem = this._slottedItems[this._activeIndex] as unknown as HTMLElement;
+    const activeItem = this._slottedItems[
+      this._activeIndex
+    ] as unknown as HTMLElement;
     if (activeItem && typeof activeItem.scrollIntoView === 'function') {
       activeItem.scrollIntoView({ block: 'nearest' });
     }
@@ -317,7 +356,9 @@ formResetCallback(): void {
 
   // ── Event handlers ─────────────────────────────────────────────────────────
 
-  private _handleSlottedItemSelect = (e: CustomEvent<{ item: SlottedListboxItem }>): void => {
+  private _handleSlottedItemSelect = (
+    e: CustomEvent<{ item: SlottedListboxItem }>,
+  ): void => {
     e.stopPropagation();
     const item = e.detail.item;
     this._selectOption({
@@ -348,7 +389,14 @@ formResetCallback(): void {
   private _handleKeyDown = (e: KeyboardEvent): void => {
     if (this.disabled) return;
 
-if (this.open && e.key !== ' ' && e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    if (
+      this.open &&
+      e.key !== ' ' &&
+      e.key.length === 1 &&
+      !e.ctrlKey &&
+      !e.metaKey &&
+      !e.altKey
+    ) {
       this._typeaheadBuffer += e.key.toLowerCase();
 
       window.clearTimeout(this._typeaheadTimeout);
@@ -362,7 +410,9 @@ if (this.open && e.key !== ' ' && e.key.length === 1 && !e.ctrlKey && !e.metaKey
       this._typeAheadString = this._typeaheadBuffer;
       this._syncHighlightToOptions();
 
-      const visible = this._slottedItems.filter(i => !i.hidden && !i.disabled);
+      const visible = this._slottedItems.filter(
+        (i) => !i.hidden && !i.disabled,
+      );
 
       // Start searching from next index if repeating the same char, or current index if not
       const startIndex = this._activeIndex >= 0 ? this._activeIndex : 0;
@@ -371,7 +421,13 @@ if (this.open && e.key !== ' ' && e.key.length === 1 && !e.ctrlKey && !e.metaKey
       // Look forward
       for (let i = 1; i <= visible.length; i++) {
         const checkIdx = (startIndex + i) % visible.length;
-        const itemLabel = (visible[checkIdx].label || visible[checkIdx].textContent || '').trim().toLowerCase();
+        const itemLabel = (
+          visible[checkIdx].label ||
+          visible[checkIdx].textContent ||
+          ''
+        )
+          .trim()
+          .toLowerCase();
 
         if (itemLabel.startsWith(this._typeaheadBuffer)) {
           matchIdx = checkIdx;
@@ -405,10 +461,12 @@ if (this.open && e.key !== ' ' && e.key.length === 1 && !e.ctrlKey && !e.metaKey
 
   private _toggleOpen(e: Event): void {
     if (this.disabled) return;
-    
+
     // Prevent toggle if clicking clear button
     const path = e.composedPath();
-    const isClearBtn = path.some((el) => (el as HTMLElement).part?.contains('clear-btn'));
+    const isClearBtn = path.some((el) =>
+      (el as HTMLElement).part?.contains('clear-btn'),
+    );
     if (isClearBtn) return;
 
     this.open = !this.open;
@@ -435,14 +493,14 @@ if (this.open && e.key !== ' ' && e.key.length === 1 && !e.ctrlKey && !e.metaKey
     if (!this.value) return;
     this.value = '';
     this._selectedLabel = '';
-    
+
     this.dispatchEvent(
       new CustomEvent<void>('vialiq-clear', {
         bubbles: true,
         composed: true,
       }),
     );
-    
+
     this.dispatchEvent(
       new CustomEvent<{ value: string; label: string }>('vialiq-change', {
         detail: { value: '', label: '' },
@@ -459,23 +517,40 @@ if (this.open && e.key !== ' ' && e.key.length === 1 && !e.ctrlKey && !e.metaKey
 
     return html`
       <div class="select-field">
-        <div class="select-wrapper ${this.status === 'invalid' ? 'is-invalid' : this.status === 'valid' ? 'is-valid' : ''}" part="wrapper">
-          
+        <div
+          class="select-wrapper ${this.status === 'invalid'
+            ? 'is-invalid'
+            : this.status === 'valid'
+              ? 'is-valid'
+              : ''}"
+          part="wrapper"
+        >
           <!-- Visual trigger element -->
           <div
             part="trigger"
-            class="select-trigger ${hasSelection ? '' : 'is-placeholder'} ${this.disabled ? 'is-disabled' : ''}"
+            class="select-trigger ${hasSelection ? '' : 'is-placeholder'} ${this
+              .disabled
+              ? 'is-disabled'
+              : ''}"
             tabindex=${this.disabled ? '-1' : '0'}
             aria-haspopup="listbox"
             aria-expanded=${this.open ? 'true' : 'false'}
             aria-controls=${this._listboxId}
-            aria-activedescendant=${this.open && this._activeIndex >= 0 && this._slottedItems[this._activeIndex]
+            aria-activedescendant=${this.open &&
+            this._activeIndex >= 0 &&
+            this._slottedItems[this._activeIndex]
               ? this._getOptionId(this._slottedItems[this._activeIndex].value)
               : ''}
             aria-label=${ifNonEmpty(this.ariaLabel || this.placeholder)}
             aria-invalid=${this.status === 'invalid' ? 'true' : 'false'}
-            aria-describedby=${this.validityMessage ? 'helper-text validation-message' : 'helper-text'}
-            aria-errormessage=${ifNonEmpty(this.status === 'invalid' && this.validityMessage ? 'validation-message' : '')}
+            aria-describedby=${this.validityMessage
+              ? 'helper-text validation-message'
+              : 'helper-text'}
+            aria-errormessage=${ifNonEmpty(
+              this.status === 'invalid' && this.validityMessage
+                ? 'validation-message'
+                : '',
+            )}
             @click=${this._toggleOpen}
             title=${hasSelection ? this._selectedLabel : ''}
           >
@@ -486,7 +561,10 @@ if (this.open && e.key !== ' ' && e.key.length === 1 && !e.ctrlKey && !e.metaKey
               <div class="select-measurer" aria-hidden="true">
                 <span>${this.placeholder}</span>
                 ${this._slottedItems.map(
-                  (item) => html`<span>${item.label || item.textContent?.trim() || ''}</span>`
+                  (item) =>
+                    html`<span
+                      >${item.label || item.textContent?.trim() || ''}</span
+                    >`,
                 )}
               </div>
             </div>
@@ -502,10 +580,15 @@ if (this.open && e.key !== ' ' && e.key.length === 1 && !e.ctrlKey && !e.metaKey
               >
                 <vi-icon name="x" size="14"></vi-icon>
               </button>
-              <vi-icon name="chevron-down" class="select-chevron" part="chevron" size="16"></vi-icon>
+              <vi-icon
+                name="chevron-down"
+                class="select-chevron"
+                part="chevron"
+                size="16"
+              ></vi-icon>
             </div>
           </div>
-          
+
           <!-- Floating Listbox Dropdown -->
           <div
             id=${this._listboxId}
@@ -523,7 +606,11 @@ if (this.open && e.key !== ' ' && e.key.length === 1 && !e.ctrlKey && !e.metaKey
         </span>
         <span
           id="validation-message"
-          class="select-validation ${this.status === 'invalid' ? 'is-invalid' : this.status === 'valid' ? 'is-valid' : ''}"
+          class="select-validation ${this.status === 'invalid'
+            ? 'is-invalid'
+            : this.status === 'valid'
+              ? 'is-valid'
+              : ''}"
           part="validation"
           role="alert"
           aria-live="polite"

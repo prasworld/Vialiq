@@ -1,0 +1,334 @@
+@use './variables' as tokens;
+
+/**
+ * Global Flatpickr Theme overrides using flux-ui tokens.
+ * This styles both popup calendars (appended to body) and inline calendars
+ * (when injected into the Light DOM of vi-date-picker).
+ */
+
+.flatpickr-calendar {
+  background: var(--vi-date-picker-calendar-bg, tokens.$layer-01);
+  box-shadow: var(--vi-date-picker-calendar-shadow, tokens.$shadow-lg);
+  border-radius: var(--vi-border-radius-lg, tokens.$border-radius-lg);
+  border: 1px solid var(--vi-border-03, tokens.$border-03);
+  font-family: var(--vi-font-family-base, tokens.$font-family-base);
+  color: var(--vi-text-primary, tokens.$text-primary);
+  padding: var(--vi-spacing-sm, tokens.$spacing-sm) 0;
+
+  &.arrowTop:before { border-bottom-color: var(--vi-border-03, tokens.$border-03); }
+  &.arrowTop:after { border-bottom-color: var(--vi-date-picker-calendar-bg, tokens.$layer-01); }
+  &.arrowBottom:before { border-top-color: var(--vi-border-03, tokens.$border-03); }
+  &.arrowBottom:after { border-top-color: var(--vi-date-picker-calendar-bg, tokens.$layer-01); }
+}
+
+.flatpickr-months {
+  .flatpickr-month {
+    color: var(--vi-text-primary, tokens.$text-primary);
+    fill: var(--vi-text-primary, tokens.$text-primary);
+  }
+  
+  .flatpickr-prev-month,
+  .flatpickr-next-month {
+    color: var(--vi-text-secondary, tokens.$text-secondary);
+    fill: var(--vi-text-secondary, tokens.$text-secondary);
+    padding: var(--vi-spacing-xs, tokens.$spacing-xs);
+    border-radius: var(--vi-border-radius-md, tokens.$border-radius-md);
+    transition: background-color 0.2s ease;
+    
+    &:hover {
+      background-color: var(--vi-layer-hover-02, tokens.$layer-hover-02);
+      color: var(--vi-text-primary, tokens.$text-primary);
+      fill: var(--vi-text-primary, tokens.$text-primary);
+    }
+  }
+}
+
+.flatpickr-current-month {
+  font-size: var(--vi-font-size-base, tokens.$font-size-base);
+  font-weight: var(--vi-font-weight-semibold, tokens.$font-weight-semibold);
+  color: inherit;
+  
+  .flatpickr-monthDropdown-months {
+    background: var(--vi-date-picker-calendar-bg, tokens.$layer-01);
+    border-radius: var(--vi-border-radius-md, tokens.$border-radius-md);
+    padding: 4px;
+    
+    &:hover {
+      background-color: var(--vi-layer-hover-02, tokens.$layer-hover-02);
+    }
+  }
+  
+  input.cur-year {
+    font-weight: inherit;
+    color: inherit;
+    
+    &:hover {
+      background-color: var(--vi-layer-hover-02, tokens.$layer-hover-02);
+    }
+  }
+}
+
+.flatpickr-weekdays {
+  .flatpickr-weekday {
+    color: var(--vi-text-secondary, tokens.$text-secondary);
+    font-size: var(--vi-font-size-xs, tokens.$font-size-xs);
+    font-weight: var(--vi-font-weight-medium, tokens.$font-weight-medium);
+  }
+}
+
+.flatpickr-days {
+  width: auto;
+}
+
+.dayContainer {
+  width: auto;
+  min-width: auto;
+  max-width: none;
+}
+
+.flatpickr-day {
+  color: var(--vi-text-primary, tokens.$text-primary);
+  border-radius: var(--vi-border-radius-full, tokens.$border-radius-full);
+  margin: 2px;
+  max-width: var(--vi-date-picker-day-size, 36px);
+  height: var(--vi-date-picker-day-size, 36px);
+  line-height: var(--vi-date-picker-day-size, 36px);
+  transition: all 0.2s ease;
+  
+  &:hover,
+  &:focus {
+    background: var(--vi-date-picker-day-hover-bg, tokens.$layer-hover-01);
+    border-color: var(--vi-date-picker-day-hover-bg, tokens.$layer-hover-01);
+  }
+  
+  &.today {
+    border-color: var(--vi-date-picker-day-today-border, tokens.$color-primary);
+    
+    &:hover,
+    &:focus {
+      border-color: var(--vi-date-picker-day-today-border, tokens.$color-primary);
+      background: var(--vi-date-picker-day-hover-bg, tokens.$layer-hover-01);
+    }
+  }
+  
+  &.selected,
+  &.startRange,
+  &.endRange,
+  &.selected.inRange,
+  &.startRange.inRange,
+  &.endRange.inRange,
+  &.selected:focus,
+  &.startRange:focus,
+  &.endRange:focus,
+  &.selected:hover,
+  &.startRange:hover,
+  &.endRange:hover,
+  &.selected.prevMonthDay,
+  &.startRange.prevMonthDay,
+  &.endRange.prevMonthDay,
+  &.selected.nextMonthDay,
+  &.startRange.nextMonthDay,
+  &.endRange.nextMonthDay {
+    background: var(--vi-date-picker-day-selected-bg, tokens.$color-primary);
+    border-color: var(--vi-date-picker-day-selected-bg, tokens.$color-primary);
+    color: var(--vi-date-picker-day-selected-color, tokens.$text-primary-inverse);
+  }
+  
+  &.inRange,
+  &.prevMonthDay.inRange,
+  &.nextMonthDay.inRange,
+  &.today.inRange,
+  &.prevMonthDay.today.inRange,
+  &.nextMonthDay.today.inRange,
+  &:hover.inRange,
+  &.prevMonthDay:hover.inRange,
+  &.nextMonthDay:hover.inRange {
+    background: var(--vi-color-blue-100, tokens.$color-blue-100);
+    border-color: var(--vi-color-blue-100, tokens.$color-blue-100);
+    border-radius: 0;
+    box-shadow: none;
+    color: var(--vi-text-primary, tokens.$text-primary);
+  }
+  
+  &.flatpickr-disabled,
+  &.flatpickr-disabled:hover,
+  &.prevMonthDay,
+  &.nextMonthDay,
+  &.notAllowed,
+  &.notAllowed.prevMonthDay,
+  &.notAllowed.nextMonthDay {
+    color: var(--vi-text-disabled, tokens.$text-disabled);
+    background: transparent;
+    border-color: transparent;
+  }
+  
+  &.flatpickr-disabled,
+  &.flatpickr-disabled:hover {
+    cursor: not-allowed;
+  }
+}
+
+// ----------------------------------------------------------------------------
+// Custom vi-month-year-plugin Styles
+// ----------------------------------------------------------------------------
+
+.vi-calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--vi-spacing-xs, tokens.$spacing-xs) var(--vi-spacing-sm, tokens.$spacing-sm);
+  border-bottom: 1px solid var(--vi-border-02, tokens.$border-02);
+  margin-bottom: var(--vi-spacing-xs, tokens.$spacing-xs);
+}
+
+.vi-calendar-selectors {
+  display: flex;
+  gap: var(--vi-spacing-xs, tokens.$spacing-xs);
+  align-items: center;
+}
+
+.vi-calendar-month-toggle {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--vi-border-radius-md, tokens.$border-radius-md);
+  padding: 4px 8px;
+  font-family: var(--vi-font-family-base, tokens.$font-family-base);
+  font-weight: var(--vi-font-weight-semibold, tokens.$font-weight-semibold);
+  font-size: var(--vi-font-size-base, tokens.$font-size-base);
+  color: var(--vi-text-primary, tokens.$text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: var(--vi-layer-hover-02, tokens.$layer-hover-02);
+  }
+  
+  &:focus-visible {
+    outline: none;
+    background: var(--vi-layer-hover-02, tokens.$layer-hover-02);
+    box-shadow: 0 0 0 2px var(--vi-focus, tokens.$focus);
+  }
+}
+
+.vi-calendar-year-select {
+  /* Using standard CSS since it renders in Light DOM, allowing it to look okay even if vi-select isn't loaded */
+  min-width: 110px;
+  --vi-select-spacing-padding-inline: 8px;
+  --vi-select-option-padding-inline: 8px;
+  --vi-select-sizing-min-height: 32px;
+}
+
+.vi-calendar-nav {
+  display: flex;
+  gap: 2px;
+}
+
+.vi-calendar-nav-btn {
+  background: transparent;
+  border: none;
+  border-radius: var(--vi-border-radius-md, tokens.$border-radius-md);
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--vi-text-secondary, tokens.$text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: var(--vi-layer-hover-02, tokens.$layer-hover-02);
+    color: var(--vi-text-primary, tokens.$text-primary);
+  }
+}
+
+.vi-calendar-month-grid {
+  position: absolute;
+  top: 50px; /* Below the header */
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--vi-date-picker-calendar-bg, tokens.$layer-01);
+  z-index: 10;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-auto-rows: min-content;
+  gap: var(--vi-spacing-xs, tokens.$spacing-xs);
+  padding: var(--vi-spacing-sm, tokens.$spacing-sm);
+  border-radius: 0 0 var(--vi-border-radius-lg, tokens.$border-radius-lg) var(--vi-border-radius-lg, tokens.$border-radius-lg);
+
+  /* When Days grid is hidden (Month Mode), we don't need position absolute over it */
+  .vi-month-mode & {
+    position: relative;
+    top: 0;
+    margin-top: var(--vi-spacing-xs, tokens.$spacing-xs);
+  }
+}
+
+.vi-calendar-month-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--vi-border-radius-full, tokens.$border-radius-full);
+  padding: var(--vi-spacing-xs, tokens.$spacing-xs) 0;
+  font-family: var(--vi-font-family-base, tokens.$font-family-base);
+  font-size: var(--vi-font-size-sm, tokens.$font-size-sm);
+  color: var(--vi-text-primary, tokens.$text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: var(--vi-layer-hover-01, tokens.$layer-hover-01);
+  }
+
+  &.active {
+    background: var(--vi-date-picker-day-selected-bg, tokens.$color-primary);
+    color: var(--vi-text-primary-inverse, tokens.$text-primary-inverse);
+  }
+}
+
+// ----------------------------------------------------------------------------
+// Week Mode Styles
+// ----------------------------------------------------------------------------
+
+.flatpickr-day {
+  &.inRange,
+  &.inRange:hover {
+    // Add pill-like rounded corners to the start and end of the week row
+    &:nth-child(7n + 1) {
+      border-top-left-radius: var(--vi-border-radius-full, tokens.$border-radius-full);
+      border-bottom-left-radius: var(--vi-border-radius-full, tokens.$border-radius-full);
+    }
+    &:nth-child(7n) {
+      border-top-right-radius: var(--vi-border-radius-full, tokens.$border-radius-full);
+      border-bottom-right-radius: var(--vi-border-radius-full, tokens.$border-radius-full);
+    }
+  }
+}
+
+// ----------------------------------------------------------------------------
+// Date Mode - Today Button Styles
+// ----------------------------------------------------------------------------
+
+.vi-calendar-footer {
+  padding: var(--vi-spacing-xs, tokens.$spacing-xs) var(--vi-spacing-sm, tokens.$spacing-sm);
+  border-top: 1px solid var(--vi-border-02, tokens.$border-02);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.vi-calendar-today-btn {
+  background: transparent;
+  border: none;
+  color: var(--vi-color-primary, tokens.$color-primary);
+  font-family: var(--vi-font-family-base, tokens.$font-family-base);
+  font-weight: var(--vi-font-weight-medium, tokens.$font-weight-medium);
+  font-size: var(--vi-font-size-sm, tokens.$font-size-sm);
+  cursor: pointer;
+  padding: var(--vi-spacing-xs, tokens.$spacing-xs) var(--vi-spacing-sm, tokens.$spacing-sm);
+  border-radius: var(--vi-border-radius-md, tokens.$border-radius-md);
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background: var(--vi-layer-hover-01, tokens.$layer-hover-01);
+  }
+}

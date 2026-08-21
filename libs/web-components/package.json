@@ -99,12 +99,21 @@
     "./accordion/vi-accordion-item": {
       "types": "./accordion/vi-accordion-item.d.ts",
       "default": "./accordion/vi-accordion-item.js"
+    },
+    "./date-picker": {
+      "types": "./date-picker/index.d.ts",
+      "default": "./date-picker/index.js"
+    },
+    "./date-picker/vi-date-picker": {
+      "types": "./date-picker/vi-date-picker.d.ts",
+      "default": "./date-picker/vi-date-picker.js"
     }
   },
   "peerDependencies": {
     "@floating-ui/dom": ">=1.0.0",
     "@vialiq/flux-ui": ">=0.0.4",
     "@vialiq/icons": ">=0.0.3",
+    "flatpickr": ">=4.6.0",
     "lit": "^3.0.0"
   },
   "keywords": [
@@ -126,6 +135,12 @@
     "checkbox/",
     "tooltip/",
     "badge/",
+    "date-picker/",
     "README.md"
-  ]
+  ],
+  "peerDependenciesMeta": {
+    "flatpickr": {
+      "optional": false
+    }
+  }
 }
