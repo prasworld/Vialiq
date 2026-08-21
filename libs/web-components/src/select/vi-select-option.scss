@@ -1,5 +1,5 @@
 @use '@vialiq/flux-ui/styles/variables' as tokens;
-@use '@vialiq/flux-ui/components/combobox';
+@use '@vialiq/flux-ui/components/select';
 
 :host {
   display: block;
@@ -7,6 +7,22 @@
 
 :host([hidden]) {
   display: none !important;
+}
+
+.select-option {
+  @extend .select-option;
+}
+
+.select-option-content {
+  @extend .select-option-content;
+}
+
+.select-option-label {
+  @extend .select-option-label;
+}
+
+.select-option-description {
+  @extend .select-option-description;
 }
 
 // Reset browser UA stylesheet mark{background-color:yellow} inside shadow DOM.

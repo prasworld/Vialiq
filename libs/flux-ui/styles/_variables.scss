@@ -114,6 +114,12 @@ $color-warning:   var(--vi-color-warning,   #ffba00);   // yellow-500
 $color-error:     var(--vi-color-error,     #ef4444);   // red-500
 $color-info:      var(--vi-color-info,      #3676d0);   // blue-700
 
+// -- Typeahead / search highlight tokens -------------------------------------
+// Used for <mark class="highlight"> inside vi-select-option and vi-combobox-item.
+// Fallbacks use direct hex so nested var() resolution issues in shadow DOM are avoided.
+$typeahead-highlight-bg:     var(--vi-typeahead-highlight-bg,    #ebf5ff); // blue-100
+$typeahead-highlight-color:  var(--vi-typeahead-highlight-color, #3676d0); // primary / blue-700
+
 // -- Functional colors -------------------------------------------------------
 
 $color-background: var(--vi-color-background, #ffffff);

@@ -1,0 +1,332 @@
+/**
+ * Select component base styles.
+ *
+ * Provides the host-agnostic foundation for native select wrapper controls.
+ * All styling strictly uses semantic design tokens from flux-ui.
+ */
+
+@use '../styles/variables' as tokens;
+
+@layer components {
+  // -------------------------------------------------------------------------
+  // Field wrapper — stacks helper / validation below control
+  // -------------------------------------------------------------------------
+  .select-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--vi-select-spacing-field-gap, #{tokens.$spacing-xs});
+    width: var(--vi-select-width, 100%);
+    position: relative;
+  }
+
+  // -------------------------------------------------------------------------
+  // Outer Control Wrapper (contains trigger and absolute native select)
+  // -------------------------------------------------------------------------
+  .select-wrapper {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  // -------------------------------------------------------------------------
+  // Styled Trigger Button (visible UI)
+  // -------------------------------------------------------------------------
+  .select-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-sizing: border-box;
+    width: 100%;
+    min-height: var(--vi-select-sizing-min-height, 40px);
+    padding: var(--vi-select-spacing-padding-block, #{tokens.$spacing-xs})
+             var(--vi-select-spacing-padding-inline, #{tokens.$spacing-sm});
+    background-color: var(--vi-select-background-color, #{tokens.$color-background});
+    border: var(--vi-select-border-width, #{tokens.$border-width-thin}) solid var(--vi-select-border-color, #{tokens.$border-03});
+    border-radius: var(--vi-select-shape-border-radius, #{tokens.$border-radius-lg});
+    font-family: inherit;
+    font-size: var(--vi-font-size-base, #{tokens.$font-size-base});
+    color: var(--vi-select-text-color, #{tokens.$color-foreground});
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+    cursor: pointer;
+    text-align: left;
+    white-space: nowrap;
+
+    &:hover:not(.is-disabled) {
+      border-color: var(--vi-select-border-color-hover, #{tokens.$border-04});
+    }
+
+    &.is-placeholder {
+      color: var(--vi-select-placeholder-color, #{tokens.$text-secondary});
+    }
+
+    &.is-disabled {
+      background-color: var(--vi-layer-disabled, #{tokens.$layer-disabled});
+    }
+
+    // Focus styling applied directly if trigger is focusable
+    &:focus-visible {
+      border-color: var(--vi-select-focus-ring-color, #{tokens.$focus});
+      outline: var(--vi-border-width-base, 2px) solid var(--vi-select-focus-ring-color, #{tokens.$focus});
+      outline-offset: -1px;
+      box-shadow: 0 0 0 3px var(--vi-select-focus-ring-glow, #{tokens.$color-blue-200});
+    }
+  }
+
+  .select-label-container {
+    display: grid;
+    flex: 1 1 0%;
+    min-width: 0;
+    align-items: center;
+  }
+
+  .select-label {
+    grid-area: 1 / 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    &.is-wrapped {
+      white-space: normal;
+      overflow: visible;
+      text-overflow: clip;
+      word-break: break-word;
+    }
+  }
+
+  .select-measurer {
+    grid-area: 1 / 1;
+    visibility: hidden;
+    height: 0;
+    overflow: hidden;
+    pointer-events: none;
+    user-select: none;
+
+    > span {
+      display: block;
+      white-space: nowrap;
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Icons area (Chevron and Clear)
+  // -------------------------------------------------------------------------
+  .select-icons {
+    display: flex;
+    align-items: center;
+    gap: #{tokens.$spacing-xs};
+    flex-shrink: 0;
+    z-index: 2;
+    position: relative;
+    color: var(--vi-select-arrow-color, #{tokens.$text-secondary});
+  }
+
+  .select-chevron {
+    width: 18px;
+    height: 18px;
+    pointer-events: none; // Let clicks pass through to native select
+  }
+
+  .select-clear-btn {
+    appearance: none;
+    -webkit-appearance: none;
+    background: transparent;
+    border: none;
+    padding: 2px;
+    margin: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--vi-select-arrow-color, #{tokens.$text-secondary});
+    cursor: pointer;
+    border-radius: #{tokens.$border-radius-sm};
+    transition: color 150ms ease, background-color 150ms ease;
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+
+    &:hover {
+      color: #{tokens.$text-primary};
+      background-color: #{tokens.$layer-hover-01};
+    }
+
+    &[hidden] {
+      display: none;
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Floating Listbox Dropdown
+  // -------------------------------------------------------------------------
+  .select-listbox {
+    margin: 0;
+    padding: var(--vi-select-listbox-padding, #{tokens.$spacing-xs} 0);
+    list-style: none;
+    background-color: var(--vi-select-listbox-background, #{tokens.$layer-01});
+    border: var(--vi-border-width-base, 1px) solid var(--vi-select-listbox-border-color, #{tokens.$border-02});
+    border-radius: var(--vi-select-shape-border-radius, #{tokens.$border-radius-lg});
+    box-shadow: var(--vi-select-listbox-shadow, #{tokens.$shadow-md});
+    max-height: var(--vi-select-listbox-max-height, 300px);
+    overflow-y: auto;
+    z-index: 1000; // Will be managed by OverlayManager when hoisted
+    box-sizing: border-box;
+    width: 100%;
+
+    &:focus {
+      outline: none;
+    }
+
+    &[hidden] {
+      display: none !important;
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Listbox Option Item
+  // -------------------------------------------------------------------------
+  .select-option {
+    display: flex;
+    align-items: center;
+    gap: #{tokens.$spacing-sm};
+    padding: var(--vi-select-option-padding-block, 10px) var(--vi-select-option-padding-inline, #{tokens.$spacing-md});
+    cursor: pointer;
+    font-family: inherit;
+    font-size: var(--vi-font-size-base, #{tokens.$font-size-base});
+    color: var(--vi-select-option-text-color, #{tokens.$text-primary});
+    background-color: transparent;
+    transition: background-color 150ms ease, color 150ms ease;
+    width: 100%;
+    box-sizing: border-box;
+
+    &:hover:not(.is-disabled) {
+      background-color: var(--vi-select-option-hover-bg, #{tokens.$layer-hover-01});
+    }
+
+    &.is-active:not(.is-disabled) {
+      background-color: var(--vi-select-option-active-bg, #{tokens.$layer-02});
+    }
+
+    &.is-selected {
+      font-weight: var(--vi-font-weight-medium, 500);
+      background-color: var(--vi-select-option-selected-bg, #{tokens.$layer-02});
+    }
+
+    &.is-disabled {
+      color: var(--vi-select-option-disabled-color, #{tokens.$text-disabled});
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+  }
+
+  .select-option-icon {
+    flex-shrink: 0;
+    color: var(--vi-select-option-icon-color, #{tokens.$text-secondary});
+    width: 18px;
+    height: 18px;
+  }
+
+  .select-option-check {
+    flex-shrink: 0;
+    color: var(--vi-select-option-check-color, #{tokens.$color-primary});
+    width: 16px;
+    height: 16px;
+    margin-left: auto;
+  }
+
+  .select-option-content {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    overflow: hidden;
+  }
+
+  .select-option-label {
+    flex: 1 1 0%;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: block;
+
+    &.is-wrapped {
+      white-space: normal;
+      overflow: visible;
+      text-overflow: clip;
+      word-break: break-word;
+    }
+  }
+
+  .select-option-description {
+    font-size: var(--vi-font-size-sm, #{tokens.$font-size-xs});
+    color: var(--vi-text-secondary, #{tokens.$text-secondary});
+    margin-top: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: block;
+  }
+
+  // -------------------------------------------------------------------------
+  // Native Select Element (Invisible, but handles focus/interaction) - Legacy
+  // -------------------------------------------------------------------------
+  .select-native {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+    z-index: 1;
+
+    &:disabled {
+      cursor: not-allowed;
+    }
+
+    // Apply focus styles to the sibling trigger
+    &:focus-visible + .select-trigger {
+      border-color: var(--vi-select-focus-ring-color, #{tokens.$focus});
+      outline: var(--vi-border-width-base, 2px) solid var(--vi-select-focus-ring-color, #{tokens.$focus});
+      outline-offset: -1px;
+      box-shadow: 0 0 0 3px var(--vi-select-focus-ring-glow, #{tokens.$color-blue-200});
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Validation States
+  // -------------------------------------------------------------------------
+  .select-wrapper.is-invalid .select-trigger {
+    border-color: var(--vi-color-error, #{tokens.$color-error});
+
+    .select-native:focus-visible + .select-trigger {
+      outline-color: var(--vi-color-error, #{tokens.$color-error});
+      box-shadow: none; // or custom error glow
+    }
+  }
+
+  .select-wrapper.is-valid .select-trigger {
+    border-color: var(--vi-color-success, #{tokens.$color-success});
+  }
+
+  // -------------------------------------------------------------------------
+  // Helper & Validation Messages
+  // -------------------------------------------------------------------------
+  .select-helper {
+    font-size: var(--vi-font-size-sm, #{tokens.$font-size-xs});
+    color: var(--vi-text-helper, #{tokens.$text-helper});
+  }
+
+  .select-validation {
+    font-size: var(--vi-font-size-sm, #{tokens.$font-size-xs});
+    color: var(--vi-color-error, #{tokens.$color-error});
+
+    &.is-valid {
+      color: var(--vi-color-success, #{tokens.$color-success});
+    }
+
+    &[hidden] {
+      display: none;
+    }
+  }
+}

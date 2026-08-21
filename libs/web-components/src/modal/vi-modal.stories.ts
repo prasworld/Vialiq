@@ -1180,19 +1180,19 @@ export const EventLifecycle: Story = {
       }
     };
 
-    const handleBeforeOpen = (e: Event) => {
+    const handleBeforeOpen = (_e: Event) => {
       logEvent('vi-modal-before-open');
     };
 
-    const handleOpen = (e: Event) => {
+    const handleOpen = (_e: Event) => {
       logEvent('vi-modal-open');
     };
 
-    const handleAfterOpen = (e: Event) => {
+    const handleAfterOpen = (_e: Event) => {
       logEvent('vi-modal-after-open');
     };
 
-    const handleBeforeClose = (e: Event) => {
+    const handleBeforeClose = (_e: Event) => {
       logEvent('vi-modal-before-close');
       if (preventClose) {
         e.preventDefault();

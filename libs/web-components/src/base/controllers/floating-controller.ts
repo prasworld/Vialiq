@@ -26,7 +26,7 @@ export interface FloatingControllerOptions {
   /** Element or selector string to constrain flipping. */
   boundary?: () => HTMLElement | string | null;
   /** Whether the floating element should be forced to match the reference element's width. */
-  matchWidth?: boolean;
+  matchWidth?: boolean | (() => boolean);
 }
 
 /**
@@ -136,18 +136,25 @@ export class FloatingController implements ReactiveController {
       flip({ boundary: boundaryElement, fallbackPlacements: ['top-start', 'bottom-start', 'top-end', 'bottom-end'] })
     ];
 
-    if (this.options.matchWidth) {
-      middlewares.push(
-        size({
-          apply: ({ rects }) => {
+    const matchWidthVal = typeof this.options.matchWidth === 'function' ? this.options.matchWidth() : this.options.matchWidth;
+
+    middlewares.push(
+      size({
+        apply: ({ rects }) => {
+          if (matchWidthVal !== false) {
             Object.assign(floating.style, {
               width: `${rects.reference.width}px`,
               minWidth: 'auto',
             });
-          },
-        })
-      );
-    }
+          } else {
+            Object.assign(floating.style, {
+              width: 'auto',
+              minWidth: `${rects.reference.width}px`,
+            });
+          }
+        },
+      })
+    );
 
     const { x, y, placement } = await computePosition(ref, floating, {
       placement: placementStr,

@@ -31,8 +31,10 @@ registerIcons([checkIcon]);
  * @csspart check       - Checkmark icon when selected
  * @csspart content     - Custom slot wrapper
  */
+import { SlottedListboxItem } from '../shared/types/listbox.types.js';
+
 @customElement('vi-combobox-item')
-export class ViComboboxItem extends ViElement {
+export class ViComboboxItem extends ViElement implements SlottedListboxItem {
   static override styles = css`
     ${unsafeCSS(itemStyles)}
   `;
@@ -62,6 +64,8 @@ export class ViComboboxItem extends ViElement {
   @property({ type: Boolean, reflect: true }) accessor selected = false;
 
   @property({ type: Boolean, reflect: true }) accessor active = false;
+
+  @property({ type: String, attribute: 'highlight-text' }) accessor highlightText = '';
 
   @state() accessor _hasSlotContent = false;
 
@@ -122,6 +126,22 @@ export class ViComboboxItem extends ViElement {
     }
   }
 
+  private _renderHighlightedLabel(): TemplateResult | string {
+    if (!this.highlightText || !this.label) {
+      return this.label;
+    }
+
+    const escaped = this.highlightText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`(${escaped})`, 'gi');
+    const parts = this.label.split(regex);
+
+    return html`${parts.map(part => 
+      part.toLowerCase() === this.highlightText.toLowerCase() 
+        ? html`<mark class="highlight">${part}</mark>` 
+        : part
+    )}`;
+  }
+
   override render(): TemplateResult {
     return html`
       <li
@@ -145,7 +165,7 @@ export class ViComboboxItem extends ViElement {
           ${!this._hasSlotContent
             ? html`
                 <span part="label" class="combobox-option-label"
-                  >${this.label}</span
+                  >${this._renderHighlightedLabel()}</span
                 >
                 ${this.description
                   ? html`<span

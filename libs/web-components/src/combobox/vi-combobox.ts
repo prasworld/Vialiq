@@ -183,6 +183,9 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
       this._filterController.query = val; 
       if (this._slottedItems?.length > 0) {
         this._filterController.applySlottedFilter(val, this._slottedItems);
+        this._slottedItems.forEach(item => {
+          item.highlightText = this.highlightMatch ? val : '';
+        });
       }
       this.requestUpdate(); 
     }
@@ -260,10 +263,18 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
   }
 
 
-  protected override firstUpdated(_changedProperties: PropertyValues): void {
-    super.firstUpdated(_changedProperties);
+  private _defaultValue = '';
+
+  protected override firstUpdated(changedProperties: PropertyValues): void {
+    super.firstUpdated(changedProperties);
+    this._defaultValue = this.getAttribute('value') ?? '';
     this._observeSlottedItems();
   }
+
+formResetCallback(): void {
+  this.value = this._defaultValue;
+  super.formResetCallback();
+}
 
   protected override updated(changedProperties: PropertyValues): void {
     super.updated(changedProperties);
@@ -348,6 +359,9 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
         // Re-apply filter if the dropdown is open with an active query
         if (this._query && this.open) {
           this._filterController.applySlottedFilter(this._query, this._slottedItems);
+        }
+        for (const item of this._slottedItems) {
+          item.highlightText = this.highlightMatch ? this._query : '';
         }
       }
 
