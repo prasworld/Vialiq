@@ -53,7 +53,11 @@ export class ViLabel extends ViElement {
   private _handleSlotChange(e: Event): void {
     const slot = e.target as HTMLSlotElement;
     const nodes = slot.assignedNodes({ flatten: true });
-    this._hasTooltip = nodes.length > 0;
+    this._hasTooltip = nodes.some(
+      (node) =>
+        node.nodeType === Node.ELEMENT_NODE ||
+        (node.nodeType === Node.TEXT_NODE && Boolean(node.textContent?.trim())),
+    );
     this.requestUpdate();
   }
 
