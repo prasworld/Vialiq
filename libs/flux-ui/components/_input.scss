@@ -60,6 +60,13 @@
     &::placeholder {
       color: var(--vi-input-placeholder-color, #{tokens.$text-secondary});
     }
+
+    &:disabled {
+      cursor: not-allowed;
+      background-color: var(--vi-input-bg-disabled, #{tokens.$layer-disabled});
+      color: var(--vi-input-text-disabled, #{tokens.$text-disabled});
+      border-color: var(--vi-input-border-disabled, #{tokens.$border-02});
+    }
   }
 
   // -------------------------------------------------------------------------

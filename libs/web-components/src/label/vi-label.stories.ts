@@ -30,12 +30,24 @@ const meta: Meta = {
       options: ['sm', 'md', 'lg'],
       description: 'Font size variant',
     },
+    layout: {
+      control: 'select',
+      options: ['stacked', 'inline'],
+      description: 'Layout spacing behavior',
+    },
+    type: {
+      control: 'select',
+      options: ['default', 'primary', 'secondary'],
+      description: 'Semantic text color',
+    },
   },
   args: {
     required: false,
     optional: false,
     disabled: false,
     size: 'md',
+    layout: 'stacked',
+    type: 'default',
   },
 };
 
@@ -51,6 +63,8 @@ export const Default: Story = {
       ?optional=${args.optional}
       ?disabled=${args.disabled}
       size=${ifDefined(args.size)}
+      layout=${ifDefined(args.layout)}
+      type=${ifDefined(args.type)}
     >
       Label Text
     </vi-label>
@@ -69,6 +83,8 @@ export const Required: Story = {
       ?optional=${args.optional}
       ?disabled=${args.disabled}
       size=${ifDefined(args.size)}
+      layout=${ifDefined(args.layout)}
+      type=${ifDefined(args.type)}
     >
       Subject ID
     </vi-label>
@@ -87,6 +103,8 @@ export const Optional: Story = {
       ?optional=${args.optional}
       ?disabled=${args.disabled}
       size=${ifDefined(args.size)}
+      layout=${ifDefined(args.layout)}
+      type=${ifDefined(args.type)}
     >
       Middle Name
     </vi-label>
@@ -124,9 +142,51 @@ export const Disabled: Story = {
       ?optional=${args.optional}
       ?disabled=${args.disabled}
       size=${ifDefined(args.size)}
+      layout=${ifDefined(args.layout)}
+      type=${ifDefined(args.type)}
     >
       Disabled Label
     </vi-label>
-    <vi-input id="disabled-input" ?disabled=${args.disabled}></vi-input>
+  `,
+};
+
+export const LayoutInline: Story = {
+  args: {
+    layout: 'inline',
+  },
+  render: (args) => html`
+    <div style="display: flex; align-items: center;">
+      <vi-label
+        for="inline-input"
+        ?required=${args.required}
+        ?optional=${args.optional}
+        ?disabled=${args.disabled}
+        size=${ifDefined(args.size)}
+        layout=${ifDefined(args.layout)}
+        type=${ifDefined(args.type)}
+      >
+        Inline Label
+      </vi-label>
+      <vi-input id="inline-input" ?disabled=${args.disabled}></vi-input>
+    </div>
+  `,
+};
+
+export const SemanticTypes: Story = {
+  render: () => html`
+    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+      <div>
+        <vi-label type="default" for="type-default">Default Label</vi-label>
+        <vi-input id="type-default"></vi-input>
+      </div>
+      <div>
+        <vi-label type="primary" for="type-primary">Primary Label</vi-label>
+        <vi-input id="type-primary"></vi-input>
+      </div>
+      <div>
+        <vi-label type="secondary" for="type-secondary">Secondary Label</vi-label>
+        <vi-input id="type-secondary"></vi-input>
+      </div>
+    </div>
   `,
 };

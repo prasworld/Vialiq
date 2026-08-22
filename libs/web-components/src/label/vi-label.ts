@@ -5,6 +5,8 @@ import { ViElement } from '../base/vi-element.js';
 import labelStyles from './vi-label.scss?inline';
 
 export type LabelSize = 'sm' | 'md' | 'lg';
+export type LabelLayout = 'stacked' | 'inline';
+export type LabelType = 'default' | 'primary' | 'secondary';
 
 /**
  * `vi-label`
@@ -47,6 +49,12 @@ export class ViLabel extends ViElement {
 
   /** Font size variant */
   @property({ type: String }) accessor size: LabelSize = 'md';
+
+  /** Layout spacing behavior */
+  @property({ type: String, reflect: true }) accessor layout: LabelLayout = 'stacked';
+
+  /** Semantic text color */
+  @property({ type: String, reflect: true }) accessor type: LabelType = 'default';
 
   private _hasTooltip = false;
 
