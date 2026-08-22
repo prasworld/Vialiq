@@ -15,6 +15,12 @@ export default defineConfig({
   // place output two levels above the workspace root.
   root: __dirname,
   esbuild: false,
+  resolve: {
+    alias: [
+      { find: /^flatpickr\/l10n\/(.+)$/, replacement: 'flatpickr/dist/l10n/$1' },
+      { find: /^flatpickr\/plugins\/(.+)$/, replacement: 'flatpickr/dist/plugins/$1' },
+    ],
+  },
   optimizeDeps: {
     exclude: ['@vialiq/icons'],
   },
@@ -159,6 +165,9 @@ export default defineConfig({
         'select/vi-select-option': path.resolve(__dirname, 'src/select/vi-select-option.ts'),
         'select/vi-select-group': path.resolve(__dirname, 'src/select/vi-select-group.ts'),
         'select/index': path.resolve(__dirname, 'src/select/index.ts'),
+        'date-picker/vi-date-picker': path.resolve(__dirname, 'src/date-picker/vi-date-picker.ts'),
+        'date-picker/vi-date-picker-input': path.resolve(__dirname, 'src/date-picker/vi-date-picker-input.ts'),
+        'date-picker/index': path.resolve(__dirname, 'src/date-picker/index.ts'),
       },
       formats: ['es'],
     },
@@ -169,6 +178,8 @@ export default defineConfig({
         /^@lit\//,
         '@floating-ui/dom',
         /^@floating-ui\//,
+        'flatpickr',
+        /^flatpickr\//,
         /^@vialiq\//, // Ensures other workspace libraries are treated as external dependencies
       ],
       output: {

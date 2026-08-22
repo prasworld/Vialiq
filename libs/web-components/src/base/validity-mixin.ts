@@ -7,7 +7,14 @@ type Constructor<T = object> = new (...args: any[]) => T;
 /**
  * Generic shape of value types supported by form controls.
  */
-export type DefaultValueType = string | string[] | number | boolean | File | FileList | unknown;
+export type DefaultValueType =
+  | string
+  | string[]
+  | number
+  | boolean
+  | File
+  | FileList
+  | unknown;
 
 /**
  * Tri-state visual status for form controls.
@@ -70,6 +77,9 @@ export declare class ValidityInterface<V = DefaultValueType> {
    */
   protected _testValidity(): Partial<ValidityStateFlags>;
 
+  /** Internal validity sync — updates `_internals.setValidity()` without changing visual `status` or dispatching events. */
+  public _syncValidity(): void;
+
   /**
    * Returns the element that the browser validation popup should point at.
    * Override in subclasses that wrap a native control (input, textarea, etc.).
@@ -83,7 +93,10 @@ export declare class ValidityInterface<V = DefaultValueType> {
   formDisabledCallback(disabled: boolean): void;
 
   /** Called when the browser restores form state (bfcache, autofill). */
-  formStateRestoreCallback(state: string | File | FormData | null, reason: string): void;
+  formStateRestoreCallback(
+    state: string | File | FormData | null,
+    reason: string,
+  ): void;
 }
 
 /**
@@ -101,10 +114,8 @@ export declare class ValidityInterface<V = DefaultValueType> {
  */
 export function ValidityMixin<
   V = DefaultValueType,
-  T extends Constructor<LitElement> = Constructor<LitElement>
->(
-  Base: T
-): T & Constructor<ValidityInterface<V>> {
+  T extends Constructor<LitElement> = Constructor<LitElement>,
+>(Base: T): T & Constructor<ValidityInterface<V>> {
   class ValidityMixinClass extends Base {
     // ── Form association ─────────────────────────────────────────────────────
 
@@ -148,7 +159,10 @@ export function ValidityMixin<
      * Per spec, disabled controls return false (they are not candidates).
      */
     get willValidate(): boolean {
-      return !(this as unknown as { disabled?: boolean }).disabled && this._internals.willValidate;
+      return (
+        !(this as unknown as { disabled?: boolean }).disabled &&
+        this._internals.willValidate
+      );
     }
 
     // ── Extension hooks for subclasses ────────────────────────────────────────
@@ -182,7 +196,10 @@ export function ValidityMixin<
      * dispatches the cancelable `invalid` event if invalid.
      * Returns whether the control is valid and whether the event was allowed.
      */
-    private _checkValidityAndDispatch(): { isValid: boolean; proceed: boolean } {
+    private _checkValidityAndDispatch(): {
+      isValid: boolean;
+      proceed: boolean;
+    } {
       const flags = this._testValidity();
       const isValid = !Object.values(flags).some(Boolean);
       const anchor = this._getValidationAnchor();
@@ -201,7 +218,11 @@ export function ValidityMixin<
       let proceed = true;
       if (!isValid) {
         proceed = this.dispatchEvent(
-          new Event('invalid', { bubbles: false, cancelable: true, composed: false })
+          new Event('invalid', {
+            bubbles: false,
+            cancelable: true,
+            composed: false,
+          }),
         );
       }
 
@@ -292,7 +313,7 @@ export function ValidityMixin<
      * Internal validity sync — updates `_internals.setValidity()` without
      * changing visual `status` or dispatching events.
      */
-    private _syncValidity(): void {
+    public _syncValidity(): void {
       const flags = this._testValidity();
       const isValid = !Object.values(flags).some(Boolean);
       const anchor = this._getValidationAnchor();
@@ -340,7 +361,7 @@ export function ValidityMixin<
      */
     formStateRestoreCallback(
       state: string | File | FormData | null,
-      _reason: string
+      _reason: string,
     ): void {
       if (typeof state === 'string') {
         (this as unknown as { value: V }).value = state as V;

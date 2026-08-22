@@ -22,7 +22,11 @@ export class ViSelectGroup extends LitElement {
         }
       </style>
       <div class="select-group">
-        ${this.label ? html`<div class="select-group-header" part="header">${this.label}</div>` : ''}
+        ${this.label
+          ? html`<div class="select-group-header" part="header">
+              ${this.label}
+            </div>`
+          : ''}
         <slot></slot>
       </div>
     `;
