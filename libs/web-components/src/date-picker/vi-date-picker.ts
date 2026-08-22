@@ -9,7 +9,7 @@ import {
 import type { Instance } from 'flatpickr/dist/types/instance';
 import { ViElement } from '../base/vi-element.js';
 import { FlatpickrMixin } from '../base/flatpickr-mixin.js';
-import { ValidityMixin, type ControlStatus } from '../base/validity-mixin.js';
+import { ValidityMixin } from '../base/validity-mixin.js';
 import { FloatingController } from '../base/controllers/floating-controller.js';
 import {
   resolveLocale,
@@ -28,7 +28,6 @@ import type { ViDatePickerInput } from './vi-date-picker-input.js';
 import type {
   DatePickerMode,
   DatePickerChangeDetail,
-  DatePickerPluginInput,
   DateComponents,
 } from './types.js';
 
@@ -144,7 +143,7 @@ export class ViDatePicker extends ValidityMixin(FlatpickrMixin(ViElement)) {
     }
 
     if (this.value && (this.min || this.max)) {
-      let dates: Date[] = [];
+      const dates: Date[] = [];
       // Parse this.value directly since flatpickr might silently drop out-of-bounds dates
       // from its selectedDates array, causing us to miss the validation error.
       if (this.mode === 'range') {
@@ -461,10 +460,7 @@ export class ViDatePicker extends ValidityMixin(FlatpickrMixin(ViElement)) {
         : {}),
       ...(!this.flat
         ? {
-            position: (
-              fp: Instance,
-              customElement: HTMLElement | undefined,
-            ) => {
+            position: (fp: Instance) => {
               if (this._fp?.isOpen) {
                 this._floatingController.updatePosition().then(() => {
                   if (fp.calendarContainer) {
