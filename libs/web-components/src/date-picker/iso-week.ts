@@ -7,24 +7,26 @@
  * @returns The ISO 8601 week number (1-53).
  */
 export function getISOWeek(date: Date): number {
-  const dt = new Date(date.valueOf());
-  
+  const dt = new Date(
+    Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()),
+  );
+
   // Set to nearest Thursday: current date + 4 - current day number
   // Make Sunday's day number 7
-  const dayn = (date.getDay() + 6) % 7;
-  dt.setDate(dt.getDate() - dayn + 3);
-  
+  const dayn = (dt.getUTCDay() + 6) % 7;
+  dt.setUTCDate(dt.getUTCDate() - dayn + 3);
+
   // Return the calculated week number
   const firstThursday = dt.valueOf();
-  
+
   // Set to January 1 of the nearest Thursday's year
-  dt.setMonth(0, 1);
-  if (dt.getDay() !== 4) {
-    dt.setMonth(0, 1 + ((4 - dt.getDay()) + 7) % 7);
+  dt.setUTCMonth(0, 1);
+  if (dt.getUTCDay() !== 4) {
+    dt.setUTCMonth(0, 1 + ((4 - dt.getUTCDay() + 7) % 7));
   }
-  
+
   // Calculate week number
-  return 1 + Math.ceil((firstThursday - dt.valueOf()) / 604800000);
+  return 1 + Math.round((firstThursday - dt.valueOf()) / 604800000);
 }
 
 /**
@@ -37,19 +39,24 @@ export function getISOWeek(date: Date): number {
 export function parseISOWeek(isoWeekString: string): Date | null {
   const match = /^(\d{4})-W(\d{2})$/.exec(isoWeekString);
   if (!match) return null;
-  
+
   const year = parseInt(match[1], 10);
   const week = parseInt(match[2], 10);
-  
+
   if (week < 1 || week > 53) return null;
 
   // Jan 4 is always in ISO week 1.
-  const jan4 = new Date(year, 0, 4);
+  const jan4 = new Date(Date.UTC(year, 0, 4));
   // Find Monday of week 1
-  const dayn = (jan4.getDay() + 6) % 7; // Monday = 0, Sunday = 6
-  const week1Monday = new Date(year, 0, 4 - dayn);
-  
+  const dayn = (jan4.getUTCDay() + 6) % 7; // Monday = 0, Sunday = 6
+  const week1Monday = new Date(Date.UTC(year, 0, 4 - dayn));
+
   // Add (week - 1) weeks
-  week1Monday.setDate(week1Monday.getDate() + (week - 1) * 7);
-  return week1Monday;
+  week1Monday.setUTCDate(week1Monday.getUTCDate() + (week - 1) * 7);
+
+  return new Date(
+    week1Monday.getUTCFullYear(),
+    week1Monday.getUTCMonth(),
+    week1Monday.getUTCDate(),
+  );
 }

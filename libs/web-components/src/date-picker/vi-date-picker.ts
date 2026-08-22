@@ -10,6 +10,7 @@ import type { Instance } from 'flatpickr/dist/types/instance';
 import { ViElement } from '../base/vi-element.js';
 import { FlatpickrMixin } from '../base/flatpickr-mixin.js';
 import { ValidityMixin, type ControlStatus } from '../base/validity-mixin.js';
+import { FloatingController } from '../base/controllers/floating-controller.js';
 import {
   resolveLocale,
   resolveTimeZone,
@@ -64,6 +65,7 @@ export class ViDatePicker extends ValidityMixin(FlatpickrMixin(ViElement)) {
   @property({ type: String, reflect: true }) accessor mode: DatePickerMode =
     'date';
   @property({ type: Boolean, reflect: true }) accessor flat = false;
+  @property({ type: Boolean }) accessor hoist = false;
   @property({ type: String }) accessor min = '';
   @property({ type: String }) accessor max = '';
   @property({ type: String }) accessor locale: string | null = null;
@@ -80,6 +82,8 @@ export class ViDatePicker extends ValidityMixin(FlatpickrMixin(ViElement)) {
   @state() private accessor _displayValue = '';
 
   @query('#fp-input') private accessor _fpInput!: HTMLInputElement;
+  @query('#floating-menu-container')
+  private accessor _floatingMenuContainer?: HTMLDivElement;
   @queryAssignedElements({ selector: 'vi-date-picker-input' })
   private accessor _inputs!: ViDatePickerInput[];
   /** Light DOM container for flatpickr inline mode to inherit global CSS */
@@ -98,6 +102,19 @@ export class ViDatePicker extends ValidityMixin(FlatpickrMixin(ViElement)) {
 
   @property({ type: String, attribute: 'label-select-year' })
   accessor labelSelectYear: string | undefined = undefined;
+
+  private _floatingController = new FloatingController(this, {
+    reference: () => {
+      const primaryInput =
+        this._inputs.find((i) => i.kind === 'from') || this._inputs[0];
+      return primaryInput ? primaryInput.inputElement : this._fpInput;
+    },
+    floating: () => this._fp?.calendarContainer ?? null,
+    hoist: () => this.hoist,
+    placement: () => 'bottom-start',
+    offset: 4,
+    matchWidth: 'none',
+  });
 
   // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -429,11 +446,42 @@ export class ViDatePicker extends ValidityMixin(FlatpickrMixin(ViElement)) {
       mode: this.mode === 'range' ? ('range' as const) : ('single' as const),
       dateFormat: 'Y-m-d',
       disableMobile: true,
+      ignoredFocusElements: [
+        this,
+        ...this._inputs,
+        ...this._inputs.map((i) => i.shadowRoot as Node).filter(Boolean),
+      ],
       ...(this.flat && this._inlineContainer
         ? { appendTo: this._inlineContainer }
-        : {}),
+        : this._floatingMenuContainer
+          ? { appendTo: this._floatingMenuContainer }
+          : {}),
       ...(primaryInput && !this.flat
         ? { positionElement: primaryInput.inputElement }
+        : {}),
+      ...(!this.flat
+        ? {
+            position: (
+              fp: Instance,
+              customElement: HTMLElement | undefined,
+            ) => {
+              if (this._fp?.isOpen) {
+                this._floatingController.updatePosition().then(() => {
+                  if (fp.calendarContainer) {
+                    const placement =
+                      fp.calendarContainer.getAttribute('data-placement') ||
+                      'bottom';
+                    const isBottom = placement.startsWith('bottom');
+                    fp.calendarContainer.classList.toggle('arrowTop', isBottom);
+                    fp.calendarContainer.classList.toggle(
+                      'arrowBottom',
+                      !isBottom,
+                    );
+                  }
+                });
+              }
+            },
+          }
         : {}),
       ...(this.min ? { minDate: this.min } : {}),
       ...(this.max ? { maxDate: this.max } : {}),
@@ -452,10 +500,18 @@ export class ViDatePicker extends ValidityMixin(FlatpickrMixin(ViElement)) {
         if (instance.calendarContainer) {
           instance.calendarContainer.focus();
         }
+
+        if (!this.flat) {
+          this._floatingController.start();
+        }
       },
       onClose: (selectedDates: Date[], dateStr: string, instance: Instance) => {
         if (this._inputs) this._inputs.forEach((i) => (i.expanded = false));
         this._removeFpAria();
+
+        if (!this.flat) {
+          this._floatingController.stop();
+        }
 
         if (!this.flat && this._inputs && this._inputs.length > 0) {
           const active = document.activeElement;
@@ -736,6 +792,7 @@ export class ViDatePicker extends ValidityMixin(FlatpickrMixin(ViElement)) {
                   </span>`
                 : ''}
             </div>
+            <div id="floating-menu-container"></div>
           `}
 
       <slot name="helper"></slot>

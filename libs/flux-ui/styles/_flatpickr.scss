@@ -14,12 +14,17 @@
   border: 1px solid var(--vi-border-03, tokens.$border-03);
   font-family: var(--vi-font-family-base, tokens.$font-family-base);
   color: var(--vi-text-primary, tokens.$text-primary);
-  padding: var(--vi-spacing-sm, tokens.$spacing-sm) 0;
+  padding: var(--vi-spacing-xs, tokens.$spacing-xs) 0;
+  width: max-content;
 
   &.arrowTop:before { border-bottom-color: var(--vi-border-03, tokens.$border-03); }
   &.arrowTop:after { border-bottom-color: var(--vi-date-picker-calendar-bg, tokens.$layer-01); }
   &.arrowBottom:before { border-top-color: var(--vi-border-03, tokens.$border-03); }
   &.arrowBottom:after { border-top-color: var(--vi-date-picker-calendar-bg, tokens.$layer-01); }
+
+  .flatpickr-innerContainer {
+    justify-content: center;
+  }
 }
 
 .flatpickr-months {
@@ -70,6 +75,12 @@
 }
 
 .flatpickr-weekdays {
+  .flatpickr-weekdaycontainer {
+    display: grid;
+    grid-template-columns: repeat(7, var(--vi-date-picker-day-size, 32px));
+    justify-items: center;
+    width: max-content;
+  }
   .flatpickr-weekday {
     color: var(--vi-text-secondary, tokens.$text-secondary);
     font-size: var(--vi-font-size-xs, tokens.$font-size-xs);
@@ -82,7 +93,10 @@
 }
 
 .dayContainer {
-  width: auto;
+  display: grid;
+  grid-template-columns: repeat(7, var(--vi-date-picker-day-size, 32px));
+  justify-items: center;
+  width: max-content;
   min-width: auto;
   max-width: none;
 }
@@ -90,10 +104,14 @@
 .flatpickr-day {
   color: var(--vi-text-primary, tokens.$text-primary);
   border-radius: var(--vi-border-radius-full, tokens.$border-radius-full);
-  margin: 2px;
-  max-width: var(--vi-date-picker-day-size, 36px);
-  height: var(--vi-date-picker-day-size, 36px);
-  line-height: var(--vi-date-picker-day-size, 36px);
+  margin: 0;
+  width: var(--vi-date-picker-day-size, 32px);
+  max-width: var(--vi-date-picker-day-size, 32px);
+  height: var(--vi-date-picker-day-size, 32px);
+  line-height: var(--vi-date-picker-day-size, 32px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: all 0.2s ease;
   
   &:hover,
@@ -177,7 +195,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--vi-spacing-xs, tokens.$spacing-xs) var(--vi-spacing-sm, tokens.$spacing-sm);
+  padding: 4px var(--vi-spacing-xs, tokens.$spacing-xs);
   border-bottom: 1px solid var(--vi-border-02, tokens.$border-02);
   margin-bottom: var(--vi-spacing-xs, tokens.$spacing-xs);
 }
@@ -213,8 +231,8 @@
 
 .vi-calendar-year-select {
   /* Using standard CSS since it renders in Light DOM, allowing it to look okay even if vi-select isn't loaded */
-  min-width: 110px;
-  --vi-select-spacing-padding-inline: 8px;
+  min-width: 76px;
+  --vi-select-spacing-padding-inline: 4px;
   --vi-select-option-padding-inline: 8px;
   --vi-select-sizing-min-height: 32px;
 }
@@ -254,8 +272,8 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-auto-rows: min-content;
-  gap: var(--vi-spacing-xs, tokens.$spacing-xs);
-  padding: var(--vi-spacing-sm, tokens.$spacing-sm);
+  gap: 4px;
+  padding: var(--vi-spacing-xs, tokens.$spacing-xs);
   border-radius: 0 0 var(--vi-border-radius-lg, tokens.$border-radius-lg) var(--vi-border-radius-lg, tokens.$border-radius-lg);
 
   /* When Days grid is hidden (Month Mode), we don't need position absolute over it */
@@ -340,7 +358,7 @@
 // ----------------------------------------------------------------------------
 
 .vi-calendar-footer {
-  padding: var(--vi-spacing-xs, tokens.$spacing-xs) var(--vi-spacing-sm, tokens.$spacing-sm);
+  padding: 4px var(--vi-spacing-xs, tokens.$spacing-xs);
   border-top: 1px solid var(--vi-border-02, tokens.$border-02);
   display: flex;
   justify-content: flex-end;

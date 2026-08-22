@@ -739,6 +739,7 @@ The [ViDatePicker](./src/date-picker/vi-date-picker.ts) is a powerful form-assoc
 | `mode`             | `mode`            | `'date'\|'range'\|'month'\|'month-year'\|'year'\|'week'` | `'date'` | Determines the calendar view and selection behavior. |
 | `value`            | `value`           | `string`                        | `''`        | Controlled input value (must be an ISO 8601 string). |
 | `flat`             | `flat`            | `boolean`                       | `false`     | Renders the calendar inline instead of within a popup. |
+| `hoist`            | `hoist`           | `boolean`                       | `false`     | Uses a fixed positioning strategy to escape clipping containers. |
 | `min`              | `min`             | `string`                        | `''`        | Minimum selectable date (ISO string).            |
 | `max`              | `max`             | `string`                        | `''`        | Maximum selectable date (ISO string).            |
 | `locale`           | `locale`          | `string`                        | `'en'`      | BCP 47 locale tag (e.g., `'de-DE'`, `'fr-FR'`).  |
@@ -758,6 +759,27 @@ The `<vi-date-picker>` acts as a wrapper container. The actual interactive input
 #### Events
 
 - `vialiq-change`: Fires when a date is selected or changed. Detail: `{ value: string, isoValue: string, formattedValue: string, rawValue: DateComponents, type: string, ... }`.
+
+#### CSS Custom Properties
+
+Exposes variables for custom theme styling (these cascade down to the hoisted calendar container as well):
+
+```css
+vi-date-picker {
+  /* Controls the size of the individual day cell grid */
+  --vi-date-picker-day-size: 32px;
+  
+  /* Popup calendar base styling */
+  --vi-date-picker-calendar-bg: var(--vi-color-layer-01);
+  --vi-date-picker-calendar-shadow: var(--vi-shadow-lg);
+
+  /* Day states (hover, selected, today) */
+  --vi-date-picker-day-hover-bg: var(--vi-color-layer-hover-01);
+  --vi-date-picker-day-selected-bg: var(--vi-color-primary);
+  --vi-date-picker-day-selected-color: var(--vi-color-text-primary-inverse);
+  --vi-date-picker-day-today-border: var(--vi-color-primary);
+}
+```
 
 #### Snippets
 
@@ -796,6 +818,17 @@ When using `mode="range"`, provide two input children marked with `kind="from"` 
 <vi-date-picker flat mode="date" value="2025-01-01">
   <!-- No inputs needed when flat=true, the calendar renders inline -->
 </vi-date-picker>
+```
+
+**Hoisted Calendar (For escaping `overflow: hidden` containers):**
+By setting the `hoist` attribute, the date picker popup will use `position: fixed` to ensure it breaks out of any restrictive parent containers.
+
+```html
+<div style="overflow: hidden; height: 100px; padding: 20px;">
+  <vi-date-picker hoist name="appointment">
+    <vi-date-picker-input label="Book Appointment" placeholder="Select a date..."></vi-date-picker-input>
+  </vi-date-picker>
+</div>
 ```
 
 **Programmatic Value Updates:**
