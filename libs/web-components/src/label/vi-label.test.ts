@@ -25,7 +25,7 @@ describe('vi-label', () => {
     const label = container.querySelector('vi-label') as ViLabel;
 
     // allow web component to render
-    await new Promise(r => setTimeout(r, 0));
+    await label.updateComplete;
 
     expect(label).toExist();
     expect(label.getAttribute('for')).toBe('test-input');
@@ -47,7 +47,7 @@ describe('vi-label', () => {
     );
     const label = container.querySelector('vi-label') as ViLabel;
 
-    await new Promise(r => setTimeout(r, 0));
+    await label.updateComplete;
 
     const requiredIndicator = label.shadowRoot!.querySelector('.vi-label-required');
     expect(requiredIndicator).toExist();
@@ -64,7 +64,7 @@ describe('vi-label', () => {
     );
     const label = container.querySelector('vi-label') as ViLabel;
 
-    await new Promise(r => setTimeout(r, 0));
+    await label.updateComplete;
 
     const optionalIndicator = label.shadowRoot!.querySelector('.vi-label-optional');
     expect(optionalIndicator).toExist();
@@ -80,7 +80,7 @@ describe('vi-label', () => {
     );
     const label = container.querySelector('vi-label') as ViLabel;
 
-    await new Promise(r => setTimeout(r, 0));
+    await label.updateComplete;
 
     expect(label.hasAttribute('disabled')).toBe(true);
     const nativeLabel = label.shadowRoot!.querySelector('label');
@@ -96,7 +96,7 @@ describe('vi-label', () => {
     );
     const label = container.querySelector('vi-label') as ViLabel;
 
-    await new Promise(r => setTimeout(r, 0));
+    await label.updateComplete;
 
     const nativeLabel = label.shadowRoot!.querySelector('label');
     expect(nativeLabel!.classList.contains('size-lg')).toBe(true);

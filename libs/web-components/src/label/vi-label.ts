@@ -48,6 +48,29 @@ export class ViLabel extends ViElement {
   /** Font size variant */
   @property({ type: String }) accessor size: LabelSize = 'md';
 
+  private _hasTooltip = false;
+
+  private _handleSlotChange(e: Event): void {
+    const slot = e.target as HTMLSlotElement;
+    const nodes = slot.assignedNodes({ flatten: true });
+    this._hasTooltip = nodes.length > 0;
+    this.requestUpdate();
+  }
+
+  private _handleClick(_e: MouseEvent): void {
+    if (this.disabled || !this.for) return;
+
+    // Cross shadow boundary workaround
+    const rootNode = this.getRootNode() as Document | ShadowRoot;
+    const target = rootNode.getElementById(this.for);
+    if (target) {
+      target.focus();
+      if ('click' in target && typeof (target as HTMLElement).click === 'function') {
+        (target as HTMLElement).click();
+      }
+    }
+  }
+
   override render(): TemplateResult {
     const classes = {
       'vi-label': true,
@@ -56,7 +79,7 @@ export class ViLabel extends ViElement {
     };
 
     return html`
-      <label part="label" class=${classMap(classes)} for=${this.for || nothing}>
+      <label part="label" class=${classMap(classes)} for=${this.for || nothing} @click=${this._handleClick}>
         <slot></slot>
 
         ${this.required
@@ -65,13 +88,13 @@ export class ViLabel extends ViElement {
             `
           : nothing}
 
-        ${this.optional
+        ${this.optional && !this.required
           ? html`
               <span part="optional-indicator" class="vi-label-optional">(optional)</span>
             `
           : nothing}
 
-        <slot name="tooltip"></slot>
+        <slot name="tooltip" @slotchange=${this._handleSlotChange} style=${!this._hasTooltip ? 'display: none;' : nothing}></slot>
       </label>
     `;
   }
