@@ -1,0 +1,10 @@
+@use '@vialiq/flux-ui/components/label';
+
+:host {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+::slotted(vi-tooltip) {
+  margin-inline-start: var(--vi-label-gap, 4px);
+}
