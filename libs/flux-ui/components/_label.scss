@@ -1,7 +1,7 @@
 @use '../styles/variables' as tokens;
 
 @layer components {
-  :root {
+  .vi-label {
     // --vi-label-font-size: var(--vi-font-size-sm)
     --vi-label-font-size: var(--vi-font-size-sm, #{tokens.$font-size-sm});
     // --vi-label-font-weight: var(--vi-font-weight-medium)
