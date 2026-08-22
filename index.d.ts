@@ -46,4 +46,6 @@ export { ViComboboxItem } from './combobox/vi-combobox-item.js';
 export { ViDatePicker, VIALIQ_CHANGE } from './date-picker/vi-date-picker.js';
 export { ViDatePickerInput } from './date-picker/vi-date-picker-input.js';
 export type { DatePickerMode, DatePickerChangeDetail } from './date-picker/types.js';
+export { ViLabel } from './label/vi-label.js';
+export type { LabelSize } from './label/vi-label.js';
 //# sourceMappingURL=index.d.ts.map
