@@ -52,6 +52,8 @@ export declare class ValidityInterface<V = DefaultValueType> {
      * Subclasses MUST override this to provide component-specific validation logic.
      */
     protected _testValidity(): Partial<ValidityStateFlags>;
+    /** Internal validity sync — updates `_internals.setValidity()` without changing visual `status` or dispatching events. */
+    _syncValidity(): void;
     /**
      * Returns the element that the browser validation popup should point at.
      * Override in subclasses that wrap a native control (input, textarea, etc.).
