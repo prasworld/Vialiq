@@ -57,8 +57,9 @@ export class ViLabel extends ViElement {
     this.requestUpdate();
   }
 
-  private _handleClick(_e: MouseEvent): void {
+  private _handleClick(e: MouseEvent): void {
     if (this.disabled || !this.for) return;
+    e.preventDefault();
 
     // Cross shadow boundary workaround
     const rootNode = this.getRootNode() as Document | ShadowRoot;
