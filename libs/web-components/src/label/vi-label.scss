@@ -1,0 +1,28 @@
+@use '@vialiq/flux-ui/styles/variables' as tokens;
+@use '@vialiq/flux-ui/components/label';
+
+:host {
+  vertical-align: middle;
+}
+
+/* Layouts */
+:host([layout='stacked']) {
+  display: block;
+  margin-bottom: var(--vi-label-margin-bottom, 8px);
+}
+
+:host([layout='inline']) {
+  display: inline-flex;
+  align-items: center;
+  margin-right: var(--vi-label-margin-inline, 12px);
+  margin-bottom: 0;
+}
+
+/* Semantic Types */
+:host([type='primary']) .vi-label {
+  --vi-label-color: var(--vi-color-text-primary, #{tokens.$text-primary});
+}
+
+:host([type='secondary']) .vi-label {
+  --vi-label-color: var(--vi-color-text-secondary, #{tokens.$text-secondary});
+}

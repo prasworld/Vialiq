@@ -111,6 +111,14 @@
     "./date-picker/vi-date-picker-input": {
       "types": "./date-picker/vi-date-picker-input.d.ts",
       "default": "./date-picker/vi-date-picker-input.js"
+    },
+    "./label": {
+      "types": "./label/index.d.ts",
+      "default": "./label/index.js"
+    },
+    "./label/vi-label": {
+      "types": "./label/vi-label.d.ts",
+      "default": "./label/vi-label.js"
     }
   },
   "peerDependencies": {
@@ -140,6 +148,7 @@
     "tooltip/",
     "badge/",
     "date-picker/",
+    "label/",
     "README.md"
   ],
   "peerDependenciesMeta": {

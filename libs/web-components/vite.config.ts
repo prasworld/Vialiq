@@ -168,6 +168,8 @@ export default defineConfig({
         'date-picker/vi-date-picker': path.resolve(__dirname, 'src/date-picker/vi-date-picker.ts'),
         'date-picker/vi-date-picker-input': path.resolve(__dirname, 'src/date-picker/vi-date-picker-input.ts'),
         'date-picker/index': path.resolve(__dirname, 'src/date-picker/index.ts'),
+        'label/vi-label': path.resolve(__dirname, 'src/label/vi-label.ts'),
+        'label/index': path.resolve(__dirname, 'src/label/index.ts'),
       },
       formats: ['es'],
     },

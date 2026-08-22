@@ -1,0 +1,53 @@
+@use '../styles/variables' as tokens;
+
+@layer components {
+  .vi-label {
+    // --vi-label-font-size: var(--vi-font-size-sm)
+    --vi-label-font-size: var(--vi-font-size-sm, #{tokens.$font-size-sm});
+    // --vi-label-font-weight: var(--vi-font-weight-medium)
+    --vi-label-font-weight: var(--vi-font-weight-medium, #{tokens.$font-weight-medium});
+    // --vi-label-color: var(--vi-text-primary)
+    --vi-label-color: var(--vi-text-primary, #{tokens.$text-primary});
+    // --vi-label-color-disabled: var(--vi-text-disabled)
+    --vi-label-color-disabled: var(--vi-text-disabled, #{tokens.$text-disabled});
+    // --vi-label-required-color: var(--vi-color-error)
+    --vi-label-required-color: var(--vi-color-error, #{tokens.$color-error});
+    // --vi-label-optional-color: var(--vi-text-helper)
+    --vi-label-optional-color: var(--vi-text-helper, #{tokens.$text-helper});
+    // --vi-label-gap: 4px
+    --vi-label-gap: 4px;
+  }
+
+  .vi-label {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--vi-label-gap);
+    font-size: var(--vi-label-font-size);
+    font-weight: var(--vi-label-font-weight);
+    color: var(--vi-label-color);
+    line-height: 1.5;
+    margin: 0;
+
+    &.size-sm {
+      --vi-label-font-size: var(--vi-font-size-xs, #{tokens.$font-size-xs});
+    }
+
+    &.size-lg {
+      --vi-label-font-size: var(--vi-font-size-base, #{tokens.$font-size-base});
+    }
+
+    &.is-disabled {
+      color: var(--vi-label-color-disabled);
+      cursor: default;
+    }
+  }
+
+  .vi-label-required {
+    color: var(--vi-label-required-color);
+  }
+
+  .vi-label-optional {
+    color: var(--vi-label-optional-color);
+    font-weight: normal;
+  }
+}
