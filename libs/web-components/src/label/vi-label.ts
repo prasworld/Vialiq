@@ -107,7 +107,9 @@ export class ViLabel extends ViElement {
             `
           : nothing}
 
-        <slot name="tooltip" @slotchange=${this._handleSlotChange} style=${!this._hasTooltip ? 'display: none;' : nothing}></slot>
+        <span part="tooltip-trigger" style=${!this._hasTooltip ? 'display: none;' : nothing}>
+          <slot name="tooltip" @slotchange=${this._handleSlotChange}></slot>
+        </span>
       </label>
     `;
   }
