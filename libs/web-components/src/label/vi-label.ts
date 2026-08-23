@@ -70,16 +70,47 @@ export class ViLabel extends ViElement {
   }
 
   private _handleClick(e: MouseEvent): void {
-    if (this.disabled || !this.for) return;
-    e.preventDefault();
+    if (this.disabled) {
+      e.preventDefault();
+      return;
+    }
 
-    // Cross shadow boundary workaround
+    if (!this.for) {
+      return; // Do not prevent default if it's wrapping an input normally
+    }
+    
+    // Custom elements are not natively 'labelable' by the browser, so we must
+    // manually route the focus/click.
     const rootNode = this.getRootNode() as Document | ShadowRoot;
     const target = rootNode.getElementById(this.for);
     if (target) {
+      e.preventDefault();
       target.focus();
       if ('click' in target && typeof (target as HTMLElement).click === 'function') {
         (target as HTMLElement).click();
+      }
+    }
+  }
+
+  override updated(changedProperties: Map<string | number | symbol, unknown>): void {
+    super.updated(changedProperties);
+
+    // Cross shadow boundary workaround for screen readers
+    // Link the aria-labelledby of the target to this label's ID natively in Light DOM
+    if (changedProperties.has('for') && this.for) {
+      const rootNode = this.getRootNode() as Document | ShadowRoot;
+      const target = rootNode.getElementById(this.for);
+      
+      if (target) {
+        if (!this.id) {
+          this.id = `vi-label-${Math.random().toString(36).substring(2, 9)}`;
+        }
+        
+        const currentAria = target.getAttribute('aria-labelledby') || '';
+        if (!currentAria.includes(this.id)) {
+          const newAria = currentAria ? `${currentAria} ${this.id}` : this.id;
+          target.setAttribute('aria-labelledby', newAria);
+        }
       }
     }
   }

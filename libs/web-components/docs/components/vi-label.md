@@ -30,10 +30,14 @@ A styled `<label>` element for associating visible text with form controls. Prov
 | `required` | `required` | `boolean` | `false` | — | Show required `*` indicator |
 | `optional` | `optional` | `boolean` | `false` | — | Show "(optional)" text |
 | `disabled` | `disabled` | `boolean` | `false` | ✅ | Muted disabled styling |
-| `size` | `size` | `LabelSize` | `'md'` | — | Font size variant |
+| `size` | `size` | `LabelSize` | `'md'` | ✅ | Font size variant |
+| `layout` | `layout` | `LabelLayout` | `'stacked'` | ✅ | Layout spacing behavior |
+| `type` | `type` | `LabelType` | `'default'` | ✅ | Semantic text color |
 
 ```typescript
 type LabelSize = 'sm' | 'md' | 'lg';
+type LabelLayout = 'stacked' | 'inline';
+type LabelType = 'default' | 'primary' | 'secondary';
 ```
 
 ---
@@ -45,16 +49,7 @@ type LabelSize = 'sm' | 'md' | 'lg';
 | *(default)* | Label text |
 | `tooltip` | Inline help icon that triggers a tooltip |
 
----
-
-### CSS Parts
-
-| Part | Element |
-|------|---------|
-| `label` | The `<label>` element |
-| `required-indicator` | The `*` asterisk `<span>` |
-| `optional-indicator` | The "(optional)" `<span>` |
-| `tooltip-trigger` | Tooltip icon wrapper |
+*(Note: `vi-label` is rendered in the Light DOM to preserve native label accessibility. Slotted content is rendered as direct child nodes of the `vi-label` host element.)*
 
 ---
 
@@ -64,33 +59,32 @@ type LabelSize = 'sm' | 'md' | 'lg';
 |----------|---------|-------------|
 | `--vi-label-font-size` | `var(--vi-font-size-sm)` | Label text size |
 | `--vi-label-font-weight` | `var(--vi-font-weight-medium)` | Label weight (500) |
-| `--vi-label-color` | `var(--vi-color-grey-700)` | Label text colour |
-| `--vi-label-color-disabled` | `var(--vi-color-grey-400)` | Disabled state colour |
+| `--vi-label-color` | `var(--vi-text-primary)` | Label text colour |
+| `--vi-label-color-disabled` | `var(--vi-text-disabled)` | Disabled state colour |
 | `--vi-label-required-color` | `var(--vi-color-error)` | `*` indicator colour |
-| `--vi-label-optional-color` | `var(--vi-color-grey-400)` | "(optional)" text colour |
+| `--vi-label-optional-color` | `var(--vi-text-helper)` | "(optional)" text colour |
 | `--vi-label-gap` | `4px` | Gap between label text and indicators |
 
 ---
 
-## Shadow DOM Structure
+## Light DOM Structure
+
+Because native `<label for="...">` accessibility does not cross Shadow DOM boundaries, `vi-label` is rendered in the **Light DOM**.
 
 ```html
-<label part="label" class="label" for=${this.for}>
-  <slot></slot>
-
-  ${this.required ? html`
-    <span part="required-indicator" class="label-required" aria-hidden="true">*</span>
-  ` : nothing}
-
-  ${this.optional ? html`
-    <span part="optional-indicator" class="label-optional">(optional)</span>
-  ` : nothing}
-
-  <slot name="tooltip"></slot>
-</label>
+<vi-label class="size-md" for="my-input">
+  Label Text
+  <label class="vi-label size-md" for="my-input">
+    <!-- Indicators and Tooltips are rendered here -->
+    <span class="vi-label-required" aria-hidden="true">*</span>
+    <span class="vi-label-tooltip-trigger">
+      <vi-icon name="info-circle"></vi-icon>
+    </span>
+  </label>
+</vi-label>
 ```
 
-The `*` is `aria-hidden` — the `required` state is communicated via `aria-required` on the control itself, not via the visual asterisk.
+The `*` is `aria-hidden` — the `required` state is communicated via `aria-required` on the control itself, not via the visual asterisk. Since there is no Shadow DOM, there are no `::part()` pseudo-elements; consumers can style elements using standard CSS classes if necessary, although standard CSS custom properties should be preferred.
 
 ---
 
@@ -98,7 +92,7 @@ The `*` is `aria-hidden` — the `required` state is communicated via `aria-requ
 
 | Requirement | Implementation |
 |-------------|----------------|
-| Label association | `for` attribute links to control `id` |
+| Label association | `for` attribute links to control `id` natively in Light DOM |
 | Required indicator | `*` is `aria-hidden="true"` — the control carries `aria-required` |
 | Disabled | Visual only — `cursor: default`, muted colour |
 
@@ -120,11 +114,23 @@ The `*` is `aria-hidden` — the `required` state is communicated via `aria-requ
 <vi-input id="middle-name" name="middleName"></vi-input>
 ```
 
-### Small size (for compact forms)
+### With semantic type and tooltip
 
 ```html
-<vi-label for="initials" size="sm" required>Initials</vi-label>
-<vi-input id="initials" name="initials" size="sm"></vi-input>
+<vi-label for="semantic-input" type="primary">
+  Primary Label
+  <vi-icon slot="tooltip" name="info-circle"></vi-icon>
+</vi-label>
+<vi-input id="semantic-input"></vi-input>
+```
+
+### Inline Layout
+
+```html
+<div style="display: flex; align-items: center;">
+  <vi-label for="inline-input" layout="inline">Inline Label</vi-label>
+  <vi-input id="inline-input"></vi-input>
+</div>
 ```
 
 ---

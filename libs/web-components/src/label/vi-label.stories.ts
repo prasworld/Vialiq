@@ -190,3 +190,21 @@ export const SemanticTypes: Story = {
     </div>
   `,
 };
+
+export const WithTooltip: Story = {
+  render: (args) => html`
+    <vi-label
+      for="tooltip-input"
+      ?required=${args.required}
+      ?optional=${args.optional}
+      ?disabled=${args.disabled}
+      size=${ifDefined(args.size)}
+      layout=${ifDefined(args.layout)}
+      type=${ifDefined(args.type)}
+    >
+      Label with Tooltip
+      <span slot="tooltip" style="cursor: help; margin-left: 4px;" title="Helpful information about this field">ℹ️</span>
+    </vi-label>
+    <vi-input id="tooltip-input" ?disabled=${args.disabled}></vi-input>
+  `,
+};

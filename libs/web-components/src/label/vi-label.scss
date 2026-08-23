@@ -2,7 +2,11 @@
 @use '@vialiq/flux-ui/components/label';
 
 :host {
+  display: inline-block;
   vertical-align: middle;
+  color: var(--vi-label-color, var(--vi-text-primary, #{tokens.$text-primary}));
+  font-size: var(--vi-label-font-size, var(--vi-font-size-sm, #{tokens.$font-size-sm}));
+  font-weight: var(--vi-label-font-weight, var(--vi-font-weight-medium, #{tokens.$font-weight-medium}));
 }
 
 /* Layouts */
@@ -18,11 +22,30 @@
   margin-bottom: 0;
 }
 
+/* Sizes */
+:host([size='sm']) {
+  --vi-label-font-size: var(--vi-font-size-xs, #{tokens.$font-size-xs});
+}
+
+:host([size='lg']) {
+  --vi-label-font-size: var(--vi-font-size-base, #{tokens.$font-size-base});
+}
+
+/* States */
+:host([disabled]) {
+  color: var(--vi-label-color-disabled, var(--vi-text-disabled, #{tokens.$text-disabled}));
+  cursor: default;
+}
+
 /* Semantic Types */
-:host([type='primary']) .vi-label {
+:host([type='primary']) {
   --vi-label-color: var(--vi-color-text-primary, #{tokens.$text-primary});
 }
 
-:host([type='secondary']) .vi-label {
+:host([type='secondary']) {
   --vi-label-color: var(--vi-color-text-secondary, #{tokens.$text-secondary});
+}
+
+::slotted(vi-tooltip) {
+  margin-inline-start: var(--vi-label-gap, 4px);
 }
