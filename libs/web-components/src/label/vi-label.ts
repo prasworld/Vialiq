@@ -23,17 +23,12 @@ export type LabelType = 'default' | 'primary' | 'secondary';
  *
  * @slot - Default slot for label text
  * @slot tooltip - Inline help icon that triggers a tooltip
- *
- * @csspart label - The `<label>` element
- * @csspart required-indicator - The `*` asterisk `<span>`
- * @csspart optional-indicator - The "(optional)" `<span>`
- * @csspart tooltip-trigger - Tooltip icon wrapper
  */
 @customElement('vi-label')
 export class ViLabel extends ViElement {
-  static override styles = css`
-    ${unsafeCSS(labelStyles)}
-  `;
+  protected override createRenderRoot() {
+    return this;
+  }
 
   /** ID of the associated control */
   @property({ type: String }) accessor for = '';
@@ -69,14 +64,29 @@ export class ViLabel extends ViElement {
     this.requestUpdate();
   }
 
-  private _handleClick(e: MouseEvent): void {
-    if (this.disabled || !this.for) return;
-    e.preventDefault();
+  override connectedCallback(): void {
+    super.connectedCallback();
+    this.addEventListener('click', this._handleClick);
+  }
 
-    // Cross shadow boundary workaround
+  override disconnectedCallback(): void {
+    super.disconnectedCallback();
+    this.removeEventListener('click', this._handleClick);
+  }
+
+  private _handleClick(e: MouseEvent): void {
+    if (this.disabled || !this.for) {
+      e.preventDefault();
+      return;
+    }
+
+    // Custom elements are not natively 'labelable' by the browser, so we must
+    // manually route the focus/click even when rendering in the Light DOM.
     const rootNode = this.getRootNode() as Document | ShadowRoot;
     const target = rootNode.getElementById(this.for);
+    
     if (target) {
+      e.preventDefault();
       target.focus();
       if ('click' in target && typeof (target as HTMLElement).click === 'function') {
         (target as HTMLElement).click();
@@ -92,22 +102,25 @@ export class ViLabel extends ViElement {
     };
 
     return html`
-      <label part="label" class=${classMap(classes)} for=${this.for || nothing} @click=${this._handleClick}>
+      <style>
+        ${unsafeCSS(labelStyles)}
+      </style>
+      <label class=${classMap(classes)} for=${this.for || nothing}>
         <slot></slot>
 
         ${this.required
           ? html`
-              <span part="required-indicator" class="vi-label-required" aria-hidden="true">*</span>
+              <span class="vi-label-required" aria-hidden="true">*</span>
             `
           : nothing}
 
         ${this.optional && !this.required
           ? html`
-              <span part="optional-indicator" class="vi-label-optional">(optional)</span>
+              <span class="vi-label-optional">(optional)</span>
             `
           : nothing}
 
-        <span part="tooltip-trigger" style=${!this._hasTooltip ? 'display: none;' : nothing}>
+        <span class="vi-label-tooltip-trigger" style=${!this._hasTooltip ? 'display: none;' : nothing}>
           <slot name="tooltip" @slotchange=${this._handleSlotChange}></slot>
         </span>
       </label>
