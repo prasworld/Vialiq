@@ -1,7 +1,8 @@
 @use '@vialiq/flux-ui/styles/variables' as tokens;
 @use '@vialiq/flux-ui/components/label';
 
-vi-label {
+:host {
+  display: inline-block;
   vertical-align: middle;
   color: var(--vi-label-color, var(--vi-text-primary, #{tokens.$text-primary}));
   font-size: var(--vi-label-font-size, var(--vi-font-size-sm, #{tokens.$font-size-sm}));
@@ -9,12 +10,12 @@ vi-label {
 }
 
 /* Layouts */
-vi-label[layout='stacked'] {
+:host([layout='stacked']) {
   display: block;
   margin-bottom: var(--vi-label-margin-bottom, 8px);
 }
 
-vi-label[layout='inline'] {
+:host([layout='inline']) {
   display: inline-flex;
   align-items: center;
   margin-right: var(--vi-label-margin-inline, 12px);
@@ -22,25 +23,29 @@ vi-label[layout='inline'] {
 }
 
 /* Sizes */
-vi-label[size='sm'] {
+:host([size='sm']) {
   --vi-label-font-size: var(--vi-font-size-xs, #{tokens.$font-size-xs});
 }
 
-vi-label[size='lg'] {
+:host([size='lg']) {
   --vi-label-font-size: var(--vi-font-size-base, #{tokens.$font-size-base});
 }
 
 /* States */
-vi-label[disabled] {
+:host([disabled]) {
   color: var(--vi-label-color-disabled, var(--vi-text-disabled, #{tokens.$text-disabled}));
   cursor: default;
 }
 
 /* Semantic Types */
-vi-label[type='primary'] {
+:host([type='primary']) {
   --vi-label-color: var(--vi-color-text-primary, #{tokens.$text-primary});
 }
 
-vi-label[type='secondary'] {
+:host([type='secondary']) {
   --vi-label-color: var(--vi-color-text-secondary, #{tokens.$text-secondary});
+}
+
+::slotted(vi-tooltip) {
+  margin-inline-start: var(--vi-label-gap, 4px);
 }

@@ -23,12 +23,17 @@ export type LabelType = 'default' | 'primary' | 'secondary';
  *
  * @slot - Default slot for label text
  * @slot tooltip - Inline help icon that triggers a tooltip
+ *
+ * @csspart label - The `<label>` element
+ * @csspart required-indicator - The `*` asterisk `<span>`
+ * @csspart optional-indicator - The "(optional)" `<span>`
+ * @csspart tooltip-trigger - Tooltip icon wrapper
  */
 @customElement('vi-label')
 export class ViLabel extends ViElement {
-  protected override createRenderRoot() {
-    return this;
-  }
+  static override styles = css`
+    ${unsafeCSS(labelStyles)}
+  `;
 
   /** ID of the associated control */
   @property({ type: String }) accessor for = '';
@@ -64,32 +69,48 @@ export class ViLabel extends ViElement {
     this.requestUpdate();
   }
 
-  override connectedCallback(): void {
-    super.connectedCallback();
-    this.addEventListener('click', this._handleClick);
-  }
-
-  override disconnectedCallback(): void {
-    super.disconnectedCallback();
-    this.removeEventListener('click', this._handleClick);
-  }
-
   private _handleClick(e: MouseEvent): void {
-    if (this.disabled || !this.for) {
+    if (this.disabled) {
       e.preventDefault();
       return;
     }
 
+    if (!this.for) {
+      return; // Do not prevent default if it's wrapping an input normally
+    }
+    
     // Custom elements are not natively 'labelable' by the browser, so we must
-    // manually route the focus/click even when rendering in the Light DOM.
+    // manually route the focus/click.
     const rootNode = this.getRootNode() as Document | ShadowRoot;
     const target = rootNode.getElementById(this.for);
-    
     if (target) {
       e.preventDefault();
       target.focus();
       if ('click' in target && typeof (target as HTMLElement).click === 'function') {
         (target as HTMLElement).click();
+      }
+    }
+  }
+
+  override updated(changedProperties: Map<string | number | symbol, unknown>): void {
+    super.updated(changedProperties);
+
+    // Cross shadow boundary workaround for screen readers
+    // Link the aria-labelledby of the target to this label's ID natively in Light DOM
+    if (changedProperties.has('for') && this.for) {
+      const rootNode = this.getRootNode() as Document | ShadowRoot;
+      const target = rootNode.getElementById(this.for);
+      
+      if (target) {
+        if (!this.id) {
+          this.id = `vi-label-${Math.random().toString(36).substring(2, 9)}`;
+        }
+        
+        const currentAria = target.getAttribute('aria-labelledby') || '';
+        if (!currentAria.includes(this.id)) {
+          const newAria = currentAria ? `${currentAria} ${this.id}` : this.id;
+          target.setAttribute('aria-labelledby', newAria);
+        }
       }
     }
   }
@@ -102,25 +123,22 @@ export class ViLabel extends ViElement {
     };
 
     return html`
-      <style>
-        ${unsafeCSS(labelStyles)}
-      </style>
-      <label class=${classMap(classes)} for=${this.for || nothing}>
+      <label part="label" class=${classMap(classes)} for=${this.for || nothing} @click=${this._handleClick}>
         <slot></slot>
 
         ${this.required
           ? html`
-              <span class="vi-label-required" aria-hidden="true">*</span>
+              <span part="required-indicator" class="vi-label-required" aria-hidden="true">*</span>
             `
           : nothing}
 
         ${this.optional && !this.required
           ? html`
-              <span class="vi-label-optional">(optional)</span>
+              <span part="optional-indicator" class="vi-label-optional">(optional)</span>
             `
           : nothing}
 
-        <span class="vi-label-tooltip-trigger" style=${!this._hasTooltip ? 'display: none;' : nothing}>
+        <span part="tooltip-trigger" style=${!this._hasTooltip ? 'display: none;' : nothing}>
           <slot name="tooltip" @slotchange=${this._handleSlotChange}></slot>
         </span>
       </label>
