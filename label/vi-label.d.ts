@@ -43,6 +43,7 @@ export declare class ViLabel extends ViElement {
     private _hasTooltip;
     private _handleSlotChange;
     private _handleClick;
+    updated(changedProperties: Map<string | number | symbol, unknown>): void;
     render(): TemplateResult;
 }
 declare global {
