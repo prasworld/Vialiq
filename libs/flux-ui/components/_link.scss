@@ -1,0 +1,46 @@
+@use '../styles/variables' as tokens;
+@use './focus' as *;
+
+@mixin vi-link-styles {
+  color: var(--vi-link-color, #{tokens.$link-color});
+  text-decoration-thickness: 1px;
+  text-underline-offset: var(--vi-link-underline-offset, 2px);
+  cursor: pointer;
+  transition: color 0.2s ease, text-decoration-color 0.2s ease;
+  outline: none;
+  text-decoration: underline;
+
+  &.underline-none {
+    text-decoration: none;
+  }
+
+  &.underline-hover {
+    text-decoration: none;
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  &.variant-secondary {
+    --vi-link-color: var(--vi-link-color-secondary, #{tokens.$link-color-secondary});
+  }
+
+  &.variant-muted {
+    --vi-link-color: var(--vi-link-color-muted, #{tokens.$link-color-muted});
+  }
+
+  &:hover {
+    color: var(--vi-link-color-hover, #{tokens.$link-color-hover});
+  }
+
+  &:focus-visible {
+    @include vi-focus-ring(tokens.$link-color, transparent);
+  }
+
+  &[aria-disabled="true"], &.disabled {
+    color: var(--vi-link-color-disabled, #{tokens.$link-color-disabled});
+    pointer-events: none;
+    cursor: not-allowed;
+    text-decoration: none;
+  }
+}

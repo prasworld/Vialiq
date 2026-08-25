@@ -425,3 +425,11 @@ $modal-max-width-sm:           var(--vi-modal-max-width-sm,           480px);
 $modal-max-width-md:           var(--vi-modal-max-width-md,           640px);
 $modal-max-width-lg:           var(--vi-modal-max-width-lg,           800px);
 $modal-max-width-xl:           var(--vi-modal-max-width-xl,           960px);
+
+
+$link-color:          var(--vi-link-color,          $color-primary);
+$link-color-hover:    var(--vi-link-color-hover,    $color-blue-700);
+$link-color-visited:  var(--vi-link-color-visited,  $color-purple-600);
+$link-color-disabled: var(--vi-link-color-disabled, $color-grey-400);
+$link-color-secondary:var(--vi-link-color-secondary,$color-grey-700);
+$link-color-muted:    var(--vi-link-color-muted,    $color-grey-500);

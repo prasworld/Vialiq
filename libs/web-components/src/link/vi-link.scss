@@ -1,0 +1,12 @@
+@use '../../../../flux-ui/components/link' as link;
+
+:host {
+  display: inline-block;
+}
+
+.link {
+  @include link.vi-link-styles;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
