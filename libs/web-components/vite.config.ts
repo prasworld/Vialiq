@@ -170,6 +170,8 @@ export default defineConfig({
         'date-picker/index': path.resolve(__dirname, 'src/date-picker/index.ts'),
         'label/vi-label': path.resolve(__dirname, 'src/label/vi-label.ts'),
         'label/index': path.resolve(__dirname, 'src/label/index.ts'),
+        'link/vi-link': path.resolve(__dirname, 'src/link/vi-link.ts'),
+        'link/index': path.resolve(__dirname, 'src/link/index.ts'),
       },
       formats: ['es'],
     },
