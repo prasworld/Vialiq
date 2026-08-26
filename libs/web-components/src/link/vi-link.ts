@@ -67,14 +67,14 @@ export class ViLink extends FocusableMixin(ViElement) {
         aria-label=${ariaLabel}
         tabindex=${this.disabled ? '-1' : '0'}
       >
-        <span part="icon"><slot name="icon"></slot></span>
+        <slot name="icon" part="icon"></slot>
         <slot></slot>
         ${this.external
-          ? html`<span part="external-icon"
-              ><vi-icon name="external-link" size="14"></vi-icon
-            ></span>`
+          ? html`<span part="external-icon">
+              <vi-icon name="external-link" size="14"></vi-icon>
+              <span class="sr-only">(opens in new tab)</span>
+            </span>`
           : nothing}
-      </a>
     `;
   }
 }
