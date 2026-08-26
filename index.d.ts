@@ -48,4 +48,5 @@ export { ViDatePickerInput } from './date-picker/vi-date-picker-input.js';
 export type { DatePickerMode, DatePickerChangeDetail } from './date-picker/types.js';
 export { ViLabel } from './label/vi-label.js';
 export type { LabelSize } from './label/vi-label.js';
+export { ViLink } from './link/index.js';
 //# sourceMappingURL=index.d.ts.map
