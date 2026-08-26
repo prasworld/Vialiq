@@ -19,7 +19,8 @@ export class ViLink extends FocusableMixin(ViElement) {
   @property({ type: String }) accessor target = '_self';
   @property({ type: String }) accessor rel = '';
   @property({ type: String }) accessor download = '';
-  @property({ type: String, reflect: true }) accessor variant: LinkVariant = 'primary';
+  @property({ type: String, reflect: true }) accessor variant: LinkVariant =
+    'primary';
   @property({ type: String }) accessor size: LinkSize = 'inherit';
   @property({ type: String }) accessor underline: LinkUnderline = 'hover';
   @property({ type: Boolean, reflect: true }) accessor disabled = false;
@@ -48,13 +49,15 @@ export class ViLink extends FocusableMixin(ViElement) {
     const effectiveTarget = this._effectiveTarget;
     const effectiveRel = this._effectiveRel;
     const ariaDisabled = this.disabled ? 'true' : null;
-    const href = this.disabled ? nothing : this.href;
-    const ariaLabel = this.external ? `${this.textContent || ''} (opens in new tab)`.trim() : nothing;
+    const href = this.disabled || !this.href ? nothing : this.href;
+
+    const ariaLabel = this.getAttribute('aria-label') || nothing;
 
     return html`
       <a
         part="link"
-        class="link ${this.disabled ? 'disabled' : ''} variant-${this.variant} size-${this.size} underline-${this.underline}"
+        class="link ${this.disabled ? 'disabled' : ''} variant-${this
+          .variant} size-${this.size} underline-${this.underline}"
         href=${href}
         target=${effectiveTarget}
         rel=${effectiveRel}
@@ -65,7 +68,11 @@ export class ViLink extends FocusableMixin(ViElement) {
       >
         <span part="icon"><slot name="icon"></slot></span>
         <slot></slot>
-        ${this.external ? html`<span part="external-icon"><vi-icon name="external-link" size="14"></vi-icon></span>` : nothing}
+        ${this.external
+          ? html`<span part="external-icon"
+              ><vi-icon name="external-link" size="14"></vi-icon
+            ></span>`
+          : nothing}
       </a>
     `;
   }

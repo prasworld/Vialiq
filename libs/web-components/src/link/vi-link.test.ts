@@ -1,7 +1,7 @@
 import { expect } from '@wdio/globals';
 import { render, html } from 'lit';
-import { ViLink } from './vi-link';
-import '../icons/vi-icon'; // Ensure icon is imported if testing external
+import { ViLink } from './vi-link.js';
+import '../icons/vi-icon.js'; // Ensure icon is imported if testing external
 
 describe('vi-link', () => {
   beforeEach(() => {
@@ -29,8 +29,8 @@ describe('vi-link', () => {
     expect(anchor.getAttribute('download')).toEqual('file.pdf');
   });
 
-  it('handles external links correctly', async () => {
-    render(html`<vi-link href="https://example.com" external>Link</vi-link>`, document.body);
+  it('handles external links correctly and delegates aria-label', async () => {
+    render(html`<vi-link href="https://example.com" external aria-label="My External Link">Link</vi-link>`, document.body);
     const link = document.body.querySelector('vi-link') as ViLink;
     await link.updateComplete;
     const anchor = link.shadowRoot!.querySelector('a')!;
@@ -38,7 +38,7 @@ describe('vi-link', () => {
     expect(anchor.getAttribute('target')).toEqual('_blank');
     expect(anchor.getAttribute('rel')).toContain('noopener');
     expect(anchor.getAttribute('rel')).toContain('noreferrer');
-    expect(anchor.getAttribute('aria-label')).toContain('opens in new tab');
+    expect(anchor.getAttribute('aria-label')).toEqual('My External Link');
   });
 
   it('removes href and sets aria-disabled when disabled', async () => {
