@@ -119,6 +119,14 @@
     "./label/vi-label": {
       "types": "./label/vi-label.d.ts",
       "default": "./label/vi-label.js"
+    },
+    "./link": {
+      "types": "./link/index.d.ts",
+      "default": "./link/index.js"
+    },
+    "./link/vi-link": {
+      "types": "./link/vi-link.d.ts",
+      "default": "./link/vi-link.js"
     }
   },
   "peerDependencies": {
@@ -149,6 +157,7 @@
     "badge/",
     "date-picker/",
     "label/",
+    "link/",
     "README.md"
   ],
   "peerDependenciesMeta": {

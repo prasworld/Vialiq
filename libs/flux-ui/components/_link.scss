@@ -23,14 +23,28 @@
 
   &.variant-secondary {
     --vi-link-color: var(--vi-link-color-secondary, #{tokens.$link-color-secondary});
+    --vi-link-color-hover: var(--vi-link-color-secondary-hover, #{tokens.$color-grey-800});
+    --vi-link-color-active: var(--vi-link-color-secondary-active, #{tokens.$color-grey-900});
+    --vi-link-color-visited: var(--vi-link-color-secondary-visited, #{tokens.$color-grey-700});
   }
 
   &.variant-muted {
     --vi-link-color: var(--vi-link-color-muted, #{tokens.$link-color-muted});
+    --vi-link-color-hover: var(--vi-link-color-muted-hover, #{tokens.$color-grey-600});
+    --vi-link-color-active: var(--vi-link-color-muted-active, #{tokens.$color-grey-700});
+    --vi-link-color-visited: var(--vi-link-color-muted-visited, #{tokens.$color-grey-500});
+  }
+
+  &:visited {
+    color: var(--vi-link-color-visited, #{tokens.$link-color-visited});
   }
 
   &:hover {
     color: var(--vi-link-color-hover, #{tokens.$link-color-hover});
+  }
+
+  &:active {
+    color: var(--vi-link-color-active, #{tokens.$link-color-active});
   }
 
   &:focus-visible {

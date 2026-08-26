@@ -66,4 +66,4 @@ export type { DatePickerMode, DatePickerChangeDetail } from './date-picker/types
 export { ViLabel } from './label/vi-label.js';
 export type { LabelSize } from './label/vi-label.js';
 
-export * from './link/vi-link';
+export { ViLink } from './link/index.js';

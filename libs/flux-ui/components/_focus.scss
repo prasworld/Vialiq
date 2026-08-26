@@ -1,0 +1,7 @@
+@use '../styles/variables' as tokens;
+
+@mixin vi-focus-ring($color-token, $glow-token) {
+  outline: var(--vi-border-width-base, 2px) solid var(--vi-focus-ring-color, #{$color-token});
+  outline-offset: 0;
+  box-shadow: 0 0 0 3px var(--vi-focus-ring-glow, #{$glow-token});
+}

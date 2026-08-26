@@ -1,76 +1,90 @@
 import { html } from 'lit';
-import './vi-link';
-import '../icons/vi-icon'; // ensure icons are registered
+import type { Meta, StoryObj } from '@storybook/web-components';
+import './vi-link.js';
 
-export default {
-  title: 'Components/vi-link',
+const meta: Meta = {
+  title: 'Components/Link',
   component: 'vi-link',
+  tags: ['autodocs'],
   argTypes: {
     variant: {
-      control: { type: 'select', options: ['primary', 'secondary', 'muted'] },
+      control: 'select',
+      options: ['primary', 'secondary', 'muted'],
     },
     size: {
-      control: { type: 'select', options: ['inherit', 'sm', 'md', 'lg'] },
+      control: 'select',
+      options: ['inherit', 'sm', 'md', 'lg'],
     },
     underline: {
-      control: { type: 'select', options: ['always', 'hover', 'none'] },
+      control: 'select',
+      options: ['always', 'hover', 'none'],
+    },
+    disabled: {
+      control: 'boolean',
+    },
+    external: {
+      control: 'boolean',
     },
   },
+  args: {
+    variant: 'primary',
+    size: 'inherit',
+    underline: 'hover',
+    disabled: false,
+    external: false,
+  },
+};
+export default meta;
+
+type Story = StoryObj;
+
+export const Default: Story = {
+  render: (args) => html`
+    <vi-link
+      variant=${args.variant}
+      size=${args.size}
+      underline=${args.underline}
+      ?disabled=${args.disabled}
+      ?external=${args.external}
+      href="https://example.com"
+    >
+      Click here to learn more
+    </vi-link>
+  `,
 };
 
-const Template = (args: any) => html`
-  <vi-link
-    href=${args.href}
-    target=${args.target}
-    rel=${args.rel}
-    download=${args.download}
-    variant=${args.variant}
-    size=${args.size}
-    underline=${args.underline}
-    ?disabled=${args.disabled}
-    ?external=${args.external}
-  >
-    ${args.label}
-  </vi-link>
-`;
-
-export const Default = Template.bind({});
-Default.args = {
-  label: 'Navigation Link',
-  href: '#',
-  variant: 'primary',
-  size: 'inherit',
-  underline: 'hover',
-  disabled: false,
-  external: false,
+export const Variants: Story = {
+  render: () => html`
+    <div style="display: flex; gap: 1rem; align-items: center;">
+      <vi-link variant="primary" href="#">Primary Link</vi-link>
+      <vi-link variant="secondary" href="#">Secondary Link</vi-link>
+      <vi-link variant="muted" href="#">Muted Link</vi-link>
+    </div>
+  `,
 };
 
-export const External = Template.bind({});
-External.args = {
-  label: 'External Link',
-  href: 'https://example.com',
-  external: true,
-  variant: 'primary',
+export const UnderlineModes: Story = {
+  render: () => html`
+    <div style="display: flex; gap: 1rem; align-items: center;">
+      <vi-link underline="always" href="#">Always Underline</vi-link>
+      <vi-link underline="hover" href="#">Hover Underline</vi-link>
+      <vi-link underline="none" href="#">No Underline</vi-link>
+    </div>
+  `,
 };
 
-export const Disabled = Template.bind({});
-Disabled.args = {
-  label: 'Disabled Link',
-  href: '#',
-  disabled: true,
+export const External: Story = {
+  render: () => html`
+    <div style="display: flex; gap: 1rem; align-items: center;">
+      <vi-link external href="https://example.com">External Link</vi-link>
+    </div>
+  `,
 };
 
-export const WithIcon = () => html`
-  <vi-link href="#" download="file.pdf">
-    <vi-icon slot="icon" name="download" size="14"></vi-icon>
-    Download (PDF)
-  </vi-link>
-`;
-
-export const Variants = () => html`
-  <div style="display: flex; gap: 1rem; flex-direction: column;">
-    <vi-link href="#" variant="primary">Primary Link</vi-link>
-    <vi-link href="#" variant="secondary">Secondary Link</vi-link>
-    <vi-link href="#" variant="muted">Muted Link</vi-link>
-  </div>
-`;
+export const Disabled: Story = {
+  render: () => html`
+    <div style="display: flex; gap: 1rem; align-items: center;">
+      <vi-link disabled href="#">Disabled Link</vi-link>
+    </div>
+  `,
+};

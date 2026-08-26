@@ -1,7 +1,8 @@
 import { html, css, nothing, unsafeCSS } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
-import { ViElement } from '../base/vi-element';
-import { FocusableMixin } from '../base/focusable-mixin';
+import { ViElement } from '../base/vi-element.js';
+import { FocusableMixin } from '../base/focusable-mixin.js';
+import '../icons/vi-icon.js';
 import linkStyles from './vi-link.scss?inline';
 
 type LinkVariant = 'primary' | 'secondary' | 'muted';
@@ -10,30 +11,29 @@ type LinkUnderline = 'always' | 'hover' | 'none';
 
 @customElement('vi-link')
 export class ViLink extends FocusableMixin(ViElement) {
-  static styles = [
-    ViElement.styles,
-    css`${unsafeCSS(linkStyles)}`
-  ];
+  static override styles = css`
+    ${unsafeCSS(linkStyles)}
+  `;
 
-  @property({ type: String }) href = '';
-  @property({ type: String }) target = '_self';
-  @property({ type: String }) rel = '';
-  @property({ type: String }) download = '';
-  @property({ type: String, reflect: true }) variant: LinkVariant = 'primary';
-  @property({ type: String }) size: LinkSize = 'inherit';
-  @property({ type: String }) underline: LinkUnderline = 'hover';
-  @property({ type: Boolean, reflect: true }) disabled = false;
-  @property({ type: Boolean }) external = false;
+  @property({ type: String }) accessor href = '';
+  @property({ type: String }) accessor target = '_self';
+  @property({ type: String }) accessor rel = '';
+  @property({ type: String }) accessor download = '';
+  @property({ type: String, reflect: true }) accessor variant: LinkVariant = 'primary';
+  @property({ type: String }) accessor size: LinkSize = 'inherit';
+  @property({ type: String }) accessor underline: LinkUnderline = 'hover';
+  @property({ type: Boolean, reflect: true }) accessor disabled = false;
+  @property({ type: Boolean }) accessor external = false;
 
-  get _focusableElement() {
+  protected override get _focusableElement() {
     return this.shadowRoot?.querySelector('a') as HTMLElement;
   }
 
-  private _getEffectiveTarget() {
+  protected get _effectiveTarget() {
     return this.external ? '_blank' : this.target;
   }
 
-  private _getEffectiveRel() {
+  protected get _effectiveRel() {
     const isExternal = this.external || this.target === '_blank';
     if (!isExternal) {
       return this.rel || nothing;
@@ -44,9 +44,9 @@ export class ViLink extends FocusableMixin(ViElement) {
     return Array.from(rels).join(' ');
   }
 
-  render() {
-    const effectiveTarget = this._getEffectiveTarget();
-    const effectiveRel = this._getEffectiveRel();
+  override render() {
+    const effectiveTarget = this._effectiveTarget;
+    const effectiveRel = this._effectiveRel;
     const ariaDisabled = this.disabled ? 'true' : null;
     const href = this.disabled ? nothing : this.href;
     const ariaLabel = this.external ? `${this.textContent || ''} (opens in new tab)`.trim() : nothing;
