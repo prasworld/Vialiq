@@ -8,5 +8,28 @@
   @include link.vi-link-styles;
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
+}
+
+::slotted([slot='icon']) {
+  display: inline-flex;
+  margin-inline-end: 0.25rem;
+}
+
+[part='external-icon'] {
+  display: inline-flex;
+  align-items: center;
+  margin-inline-start: 0.25rem;
+}
+
+/* Visually hidden accessible text (e.g., external link hint) */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
