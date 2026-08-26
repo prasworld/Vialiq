@@ -41,7 +41,8 @@ Supports four advanced features:
 | `variant` | `variant` | `TabsVariant` | `'line'` | ✅ | Visual style |
 | `overflow` | `overflow` | `TabsOverflow` | `'scroll'` | — | Overflow handling strategy |
 | `addable` | `addable` | `boolean` | `false` | — | Show "+" button to add tab |
-| `activation` | `activation` | `TabsActivation` | `'automatic'` | — | When tab becomes active |
+| `activation` | `activation` | `TabsActivation` | `'manual'` | — | When tab becomes active |
+| `anchorClosable` | `anchor-closable` | `boolean` | `false` | — | When `true`, closable tabs are visually sorted to the end of the tablist |
 
 ```typescript
 type TabsOrientation = 'horizontal' | 'vertical';
@@ -58,11 +59,11 @@ type TabsOverflow =
   | 'wrap';   // tabs wrap to next line (use sparingly)
 
 type TabsActivation =
-  | 'automatic'  // focus = activate immediately (default)
-  | 'manual';    // focus only; user must press Enter/Space to activate
+  | 'automatic'  // focus = activate immediately
+  | 'manual';    // focus only; user must press Enter/Space to activate (default)
 ```
 
-**`activation` note:** ARIA guidance recommends `automatic` for simple content, `manual` for heavy tabs that take time to load (avoids triggering expensive renders on every arrow key).
+**`activation` note:** Default is `'manual'`. ARIA guidance recommends `manual` for content-heavy tabs (like clinical EDC forms) to avoid triggering expensive renders on every arrow key press. Only use `'automatic'` for lightweight, instantly-renderable content.
 
 ### Slots
 
@@ -76,9 +77,11 @@ type TabsActivation =
 
 | Event | Type | Bubbles | Fires when |
 |-------|------|---------|-----------|
-| `vialiq-change` | `CustomEvent<{tabId: string; previousTabId: string}>` | ✅ | Active tab changes |
-| `vialiq-close` | `CustomEvent<{tabId: string}>` | ✅ | A tab's × is clicked |
-| `vialiq-add` | `CustomEvent<void>` | ✅ | "+" add button clicked |
+| `vi-tabs-before-change` | `CustomEvent<{fromTabId: string; toTabId: string}>` | ✅ | Before active tab changes (cancelable) |
+| `vi-tabs-change` | `CustomEvent<{fromTabId: string; toTabId: string}>` | ✅ | Active tab changes |
+| `vi-tabs-before-close` | `CustomEvent<{tabId: string}>` | ✅ | Before a tab closes (cancelable) |
+| `vi-tabs-close` | `CustomEvent<{tabId: string}>` | ✅ | A tab's × is clicked |
+| `vi-tabs-add` | `CustomEvent<void>` | ✅ | "+" add button clicked |
 
 ### CSS Parts
 
@@ -126,7 +129,8 @@ type TabsActivation =
 
 | Event | Type | Bubbles | Fires when |
 |-------|------|---------|-----------|
-| `vialiq-close` | `CustomEvent<{tabId: string}>` | ✅ | × close button clicked |
+| `vi-tab-before-close` | `CustomEvent<{tabId: string}>` | ✅ | Before × close button completes action (cancelable) |
+| `vi-tab-close` | `CustomEvent<{tabId: string}>` | ✅ | × close button clicked |
 
 ### CSS Parts
 
@@ -211,8 +215,8 @@ The `vi-tabs` implements roving tabindex on `vi-tab` children:
 | Key | Behaviour |
 |-----|-----------|
 | `Tab` | Enter tablist on active tab; next `Tab` jumps to panel |
-| `←` / `→` | Move focus to previous/next tab (horizontal) |
-| `↑` / `↓` | Move focus to previous/next tab (vertical orientation) |
+| `←` / `→` | Move focus to previous/next tab (horizontal) with focus wrapping |
+| `↑` / `↓` | Move focus to previous/next tab (vertical) with focus wrapping |
 | `Home` | Move to first tab |
 | `End` | Move to last tab |
 | `Enter` / `Space` | Activate focused tab (manual activation mode) |
@@ -230,14 +234,15 @@ In `activation="automatic"` mode, focus movement also activates the tab — no E
 | Tablist | `role="tablist"` on tablist container; `aria-orientation` |
 | Tab | `role="tab"` on each `vi-tab` inner button |
 | Selected | `aria-selected="true/false"` on each tab |
+| Position/Size | `aria-setsize` and `aria-posinset` managed dynamically (critical for responsive swapping) |
 | Panel link | `aria-controls="{panel-id}"` on tab |
 | Tab focus | Only active tab in tab order (`tabindex="0"`); others `tabindex="-1"` (roving) |
 | Panel | `role="tabpanel"` + `aria-labelledby="{tab-id}"` |
-| Panel focus | `tabindex="0"` on panel to allow Shift+Tab back |
+| Panel focus | `tabindex="0"` on panel to allow Shift+Tab back (per APG recommendation) |
 | Disabled tab | `aria-disabled="true"` + excluded from roving tabindex |
 | Closable tab | × button: `aria-label="Close {tab label}"` |
 | Add button | `aria-label="Add new tab"` |
-| Overflow menu | `aria-label="More tabs"` + `aria-haspopup="menu"` |
+| Overflow menu | `aria-label="More tabs"` + `aria-haspopup="menu"` + `aria-expanded="true/false"` |
 
 ---
 
@@ -253,19 +258,31 @@ The tablist scrolls horizontally. Fade-out gradients on edges indicate more cont
 
 Scroll buttons are `vi-button[icon-only][variant="ghost"]` with `aria-label="Scroll tabs left/right"`.
 
-### `overflow="menu"`
+### `overflow="menu"` (Dynamic Placement)
 
-Tabs that don't fit collapse into a "More ▾" dropdown (implemented as a `vi-dropdown` / `popover`). The active tab is always visible:
+Tabs that exceed the container's width automatically collapse into a "More ▾" dropdown menu. 
+
+**Dynamic Swap Placement**:
+To ensure the user always sees the active tab, selecting a tab from the "More" dropdown will **swap** its position with the last visible tab.
+- The selected hidden tab is placed at the end of the visible tab strip.
+- The tab that was previously at the end of the visible strip is moved into the "More" section.
 
 ```
 [Visit 1] [Visit 2] [Visit 3] [More ▾]  [+]
-                  ↓ (dropdown)
-            [Visit 4]
-            [Visit 5] ← active
-            [Visit 6]
+                                ↓ (dropdown)
+                          [Visit 4]
+                          [Visit 5]
 ```
+*(If Visit 4 is selected, it swaps places with Visit 3 in the visual order).*
 
-The "More ▾" button shows the count of hidden tabs: `More (3)`.
+The "More ▾" button shows the count of hidden tabs: `More (2)`.
+
+**ARIA Role Switching on Overflow**:
+- Tabs in the **visible strip**: `role="tab"` with correct `aria-setsize` / `aria-posinset`.
+- Tabs in the **overflow dropdown**: `role="menuitem"` (NOT `role="tab"`). Using `role="tab"` here would create a duplicate tablist that screen readers would announce incorrectly.
+- After a swap, the moved-in tab receives `role="tab"` and the moved-out tab receives `role="menuitem"`.
+
+**Focus Rule After Swap**: After a tab is selected from the overflow dropdown and swapped into the visible strip, focus MUST move to the newly visible tab — not to the "More ▾" button.
 
 ### `overflow="wrap"`
 
@@ -275,20 +292,28 @@ Tabs wrap to a second row. Use only for ≤ 10 tabs in a wide viewport; avoid fo
 
 ## Closable Tabs
 
-When `vi-tab[closable]`, a × button appears inside the tab:
+When `vi-tab[closable]`, a × button appears inside the tab.
 
-1. User clicks × → `vialiq-close` event fires with `{ tabId }`
-2. Host app receives event and removes the tab from its data list
-3. Host re-renders the `vi-tab` / `vi-tab-panel` list
-4. `vi-tabs` detects active tab was closed → auto-activates adjacent tab
+**Sorting & Layout**:
+- By default, tabs render in DOM order regardless of `closable` state.
+- When `vi-tabs[anchor-closable]` is set, closable tabs are **visually sorted to the end** of the tab list via CSS `order`, keeping non-closable (permanent) tabs anchored on the left. The underlying DOM order is not mutated.
+
+**Focus & Fallback Activation**:
+1. User clicks × (or presses `Delete`) → A cancelable `vi-tabs-before-close` event fires on `vi-tabs`.
+2. If not cancelled, the `vi-tabs-close` event fires with `{ tabId }`.
+3. Host app receives event and removes the tab from its data list.
+4. `vi-tabs` automatically moves focus and activation:
+   - **Default**: Move to the **tab immediately before** the closed tab (to its left).
+   - **Edge case — first tab closed**: If the closed tab was the first in the list, focus falls **forward** to the new first tab.
 
 ```typescript
 // Host app handles close
 onTabClose(tabId: string) {
+  // IMPORTANT: capture the index BEFORE filtering
+  const idx = this.visitTabs.findIndex(v => v.id === tabId);
   this.visitTabs = this.visitTabs.filter(v => v.id !== tabId);
   if (this.activeTab === tabId) {
-    // activate adjacent tab
-    const idx = this.visitTabs.findIndex(v => v.id === tabId);
+    // Fall back to previous tab, or first if it was the first tab
     this.activeTab = this.visitTabs[Math.max(0, idx - 1)]?.id ?? '';
   }
 }
@@ -300,10 +325,10 @@ onTabClose(tabId: string) {
 
 ## Dynamic Tabs
 
-When `addable="true"`, `vi-tabs` renders a "+" button that fires `vialiq-add`:
+When `addable="true"`, `vi-tabs` renders a "+" button that fires `vi-tabs-add`:
 
 ```html
-<vi-tabs addable (vialiq-add)="addNewVisit()">
+<vi-tabs addable (vi-tabs-add)="addNewVisit()">
   @for (visit of visits; track visit.id) {
     <vi-tab [tabId]="visit.id" closable>{{visit.label}}</vi-tab>
   }
@@ -361,11 +386,11 @@ By default all panels render but only the active one is visible (`display: none`
 ### Visit tabs with badges (query counts) and close
 
 ```html
-<vi-tabs [active]="activeVisitId" overflow="scroll"
-  (vialiq-change)="activeVisitId = $event.detail.tabId"
-  (vialiq-close)="removeVisit($event.detail.tabId)"
+<vi-tabs [active]="activeVisitId" overflow="scroll" anchor-closable
+  (vi-tabs-change)="activeVisitId = $event.detail.toTabId"
+  (vi-tabs-close)="removeVisit($event.detail.tabId)"
   addable
-  (vialiq-add)="openAddVisitDialog()">
+  (vi-tabs-add)="openAddVisitDialog()">
 
   @for (visit of visits; track visit.id) {
     <vi-tab

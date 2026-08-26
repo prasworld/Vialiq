@@ -298,6 +298,79 @@ vi-input {
 
 ---
 
+### Label ([vi-label](./src/label/vi-label.ts))
+
+The [ViLabel](./src/label/vi-label.ts) is a styled `<label>` component for associating visible text with form controls. It supports required/optional indicators and inline help tooltips. Because it uses Shadow DOM, it automatically maps click and focus events to target controls and manages `aria-labelledby` across the Shadow boundary for accessibility.
+
+#### Properties & Attributes
+
+| Attribute  | Property   | Type                               | Default     | Description                                |
+| :--------- | :--------- | :--------------------------------- | :---------- | :----------------------------------------- |
+| `for`      | `for`      | `string`                           | `''`        | ID of the target control to focus/click.   |
+| `required` | `required` | `boolean`                          | `false`     | Shows a `*` indicator.                     |
+| `optional` | `optional` | `boolean`                          | `false`     | Shows "(optional)" text.                   |
+| `disabled` | `disabled` | `boolean`                          | `false`     | Muted disabled styling.                    |
+| `size`     | `size`     | `'sm'\|'md'\|'lg'`                 | `'md'`      | Font size variant.                         |
+| `layout`   | `layout`   | `'stacked'\|'inline'`              | `'stacked'` | Controls margin and inline-flex spacing.   |
+| `type`     | `type`     | `'default'\|'primary'\|'secondary'`| `'default'` | Semantic text color for emphasis.          |
+
+#### Slots
+
+- **Default Slot**: Label text content.
+- **`tooltip` Slot**: Optional icon/element that triggers an inline tooltip (renders to the right of the label text).
+
+#### CSS Shadow Parts
+
+Since `vi-label` uses Shadow DOM, you can override its internal styles using CSS shadow parts (`::part`):
+
+```css
+vi-label::part(label) {
+  --vi-label-font-size: var(--vi-font-size-sm);
+  --vi-label-font-weight: var(--vi-font-weight-medium);
+  --vi-label-color: var(--vi-text-primary);
+  /* Other styles... */
+}
+
+vi-label::part(required-indicator) {
+  color: red;
+}
+```
+
+The available parts are:
+- `label`: The internal `<label>` container.
+- `required-indicator`: The `*` span.
+- `optional-indicator`: The `(optional)` span.
+- `tooltip-trigger`: The wrapper around the tooltip slot.
+
+#### Snippets
+
+**Basic Standard Usage:**
+```html
+<vi-label for="first-name" required>First Name</vi-label>
+<vi-input id="first-name" name="firstName"></vi-input>
+```
+
+**Optional & Inline:**
+```html
+<div style="display: flex; align-items: center;">
+  <vi-label for="promo-code" layout="inline" optional>Promo Code</vi-label>
+  <vi-input id="promo-code" name="promoCode"></vi-input>
+</div>
+```
+
+**With Semantic Type and Tooltip:**
+```html
+<vi-label for="cvv-input" type="primary">
+  Card Security Code
+  <vi-tooltip slot="tooltip" content="3 digits on back of card">
+    <vi-icon name="info-circle"></vi-icon>
+  </vi-tooltip>
+</vi-label>
+<vi-input id="cvv-input" type="password"></vi-input>
+```
+
+---
+
 ### Select ([vi-select](./src/select/vi-select.ts))
 
 > [!NOTE]
