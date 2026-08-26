@@ -1,7 +1,6 @@
 import {
   css,
   html,
-  svg,
   nothing,
   unsafeCSS,
   type PropertyValues,
@@ -374,8 +373,9 @@ export class ViTabs extends ViElement {
     }
 
     // 3. Evaluate tabs strictly in their persistent _visualOrder
-    const orderedTabs = this._visualOrder.map(
-      (id) => tabs.find((t) => t.tabId === id)!,
+    const orderedTabs = this._visualOrder.map((id) =>
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      tabs.find((t) => t.tabId === id)!
     );
 
     const activeTabWidth = this.active ? tabWidths.get(this.active) || 0 : 0;
@@ -391,6 +391,7 @@ export class ViTabs extends ViElement {
         return;
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const tw = tabWidths.get(tab.tabId)!;
       // Keep adding to visible until we bust the budget
       if (used + tw <= budgetedWidth) {
@@ -584,6 +585,7 @@ export class ViTabs extends ViElement {
     if (enabled.length === 0) return;
 
     const currentTabEl = (e.target as HTMLElement).closest<ViTab>('vi-tab');
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const currentIndex = enabled.indexOf(currentTabEl!);
     if (currentIndex === -1) return;
 
@@ -615,8 +617,10 @@ export class ViTabs extends ViElement {
         break;
       case 'Enter':
       case ' ':
-        if (this.activation === 'manual')
+        if (this.activation === 'manual') {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           this._activateTab(enabled[currentIndex]!.tabId);
+        }
         e.preventDefault();
         return;
       default:
@@ -624,6 +628,7 @@ export class ViTabs extends ViElement {
     }
 
     e.preventDefault();
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const targetTab = enabled[nextIndex]!;
 
     enabled.forEach((t, i) => {

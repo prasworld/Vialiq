@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { html, nothing } from 'lit';
-import { repeat } from 'lit/directives/repeat.js';
 import './vi-tabs.js';
 import './vi-tab.js';
 import './vi-tab-panel.js';
@@ -346,7 +345,7 @@ export const ClosableTabs: Story = {
     const buildUI = () => {
       const el = document.createElement('div');
 
-      const tabsEl = document.createElement('vi-tabs') as any;
+      const tabsEl = document.createElement('vi-tabs') as HTMLElement;
       tabsEl.setAttribute('active', activeTabId);
       tabsEl.setAttribute('variant', 'card');
 
@@ -361,13 +360,13 @@ export const ClosableTabs: Story = {
       });
 
       for (const tab of tabs.filter((t) => openTabIds.includes(t.id))) {
-        const tabEl = document.createElement('vi-tab') as any;
+        const tabEl = document.createElement('vi-tab') as HTMLElement;
         tabEl.setAttribute('tab-id', tab.id);
         tabEl.setAttribute('closable', '');
         tabEl.textContent = tab.label;
         tabsEl.appendChild(tabEl);
 
-        const panelEl = document.createElement('vi-tab-panel') as any;
+        const panelEl = document.createElement('vi-tab-panel') as HTMLElement;
         panelEl.setAttribute('for', tab.id);
         panelEl.innerHTML = `<div style="padding: 20px 4px 8px;">
           <h3 style="margin: 0 0 8px; font-size: 15px; font-weight: 600; color: #111827;">${tab.label}</h3>
@@ -597,7 +596,7 @@ export const AddableTabs: Story = {
     const buildUI = () => {
       const el = document.createElement('div');
       
-      const tabsEl = document.createElement('vi-tabs') as any;
+      const tabsEl = document.createElement('vi-tabs') as HTMLElement;
       tabsEl.setAttribute('active', activeTabId);
       tabsEl.setAttribute('overflow', 'scroll');
       tabsEl.setAttribute('addable', '');
@@ -621,13 +620,13 @@ export const AddableTabs: Story = {
       // Render the tabs dynamically
       for (let i = 1; i <= count; i++) {
         const id = `tab-${i}`;
-        const tabEl = document.createElement('vi-tab') as any;
+        const tabEl = document.createElement('vi-tab') as HTMLElement;
         tabEl.setAttribute('tab-id', id);
         tabEl.setAttribute('closable', '');
         tabEl.textContent = `Document ${i}`;
         tabsEl.appendChild(tabEl);
 
-        const panelEl = document.createElement('vi-tab-panel') as any;
+        const panelEl = document.createElement('vi-tab-panel') as HTMLElement;
         panelEl.setAttribute('for', id);
         panelEl.innerHTML = `<div style="padding: 20px 4px 8px;">
           <h3 style="margin: 0 0 8px; font-size: 15px; font-weight: 600; color: #111827;">Document ${i}</h3>

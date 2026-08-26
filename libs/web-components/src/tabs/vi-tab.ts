@@ -41,7 +41,7 @@ export class ViTab extends ViElement {
 
   /** Unique ID linking to vi-tab-panel[for]. Auto-generated if not set. */
   @property({ type: String, attribute: 'tab-id', reflect: true })
-  accessor tabId: string = '';
+  accessor tabId = '';
 
   /** Tab is not selectable. */
   @property({ type: Boolean, reflect: true })
@@ -107,7 +107,7 @@ export class ViTab extends ViElement {
     this.requestUpdate();
   }
 
-  override updated(changedProperties: Map<string, any>): void {
+  override updated(changedProperties: Map<string, unknown>): void {
     super.updated(changedProperties);
     if (changedProperties.has('active')) {
       this.setAttribute('aria-selected', this.active ? 'true' : 'false');

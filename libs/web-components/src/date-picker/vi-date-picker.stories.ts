@@ -508,7 +508,7 @@ export const ProgrammaticValueUpdate: Story = {
 };
 
 export const Hoisting: Story = {
-  render: (args) => html`
+  render: (_args) => html`
     <div
       style="height: 150px; overflow: hidden; border: 2px dashed red; padding: 20px;"
     >

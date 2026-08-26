@@ -1,7 +1,6 @@
 import { $, expect } from '@wdio/globals';
 import { html, render } from 'lit';
 import './vi-label.js';
-import { ViLabel } from './vi-label.js';
 
 describe('vi-label', () => {
   let container: HTMLElement;
