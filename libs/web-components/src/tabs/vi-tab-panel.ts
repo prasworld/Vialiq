@@ -21,7 +21,6 @@ import tabPanelStyles from './vi-tab-panel.scss?inline';
 export class ViTabPanel extends ViElement {
   static override shadowRootOptions = {
     ...ViElement.shadowRootOptions,
-    delegatesFocus: true,
   };
 
   static override styles = css`

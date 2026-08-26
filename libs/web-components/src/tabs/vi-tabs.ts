@@ -13,7 +13,12 @@ import { ViElement } from '../base/vi-element.js';
 import { ViTab } from './vi-tab.js';
 import { ViTabPanel } from './vi-tab-panel.js';
 import { registerIcons } from '../icons/registry.js';
-import { chevronLeftIcon, chevronRightIcon, plusIcon, chevronDownIcon } from '@vialiq/icons';
+import {
+  chevronLeftIcon,
+  chevronRightIcon,
+  plusIcon,
+  chevronDownIcon,
+} from '@vialiq/icons';
 import tabsStyles from './vi-tabs.scss?inline';
 
 export type TabsOrientation = 'horizontal' | 'vertical';
@@ -128,7 +133,12 @@ export class ViTabs extends ViElement {
   override connectedCallback(): void {
     super.connectedCallback();
     if (!ViTabs._iconsRegistered) {
-      registerIcons([chevronLeftIcon, chevronRightIcon, plusIcon, chevronDownIcon]);
+      registerIcons([
+        chevronLeftIcon,
+        chevronRightIcon,
+        plusIcon,
+        chevronDownIcon,
+      ]);
       ViTabs._iconsRegistered = true;
     }
     this.addEventListener('vi-tab-select', this._onTabSelect as EventListener);
@@ -290,7 +300,7 @@ export class ViTabs extends ViElement {
       p.setAttribute('role', 'tabpanel');
       p.setAttribute('id', `panel-${p.for}`);
       p.setAttribute('aria-labelledby', p.for);
-      p.tabIndex = 0;
+      p.removeAttribute('tabindex');
     });
 
     // ── Overflow ────────────────────────────────────────────────────────────
@@ -373,9 +383,10 @@ export class ViTabs extends ViElement {
     }
 
     // 3. Evaluate tabs strictly in their persistent _visualOrder
-    const orderedTabs = this._visualOrder.map((id) =>
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      tabs.find((t) => t.tabId === id)!
+    const orderedTabs = this._visualOrder.map(
+      (id) =>
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        tabs.find((t) => t.tabId === id)!,
     );
 
     const activeTabWidth = this.active ? tabWidths.get(this.active) || 0 : 0;
@@ -470,7 +481,8 @@ export class ViTabs extends ViElement {
 
     const listRect = this._tablistEl.getBoundingClientRect();
     const tabRect = activeTabEl.getBoundingClientRect();
-    const btnEl = activeTabEl.shadowRoot?.querySelector<HTMLElement>('[part="tab"]');
+    const btnEl =
+      activeTabEl.shadowRoot?.querySelector<HTMLElement>('[part="tab"]');
     const btnRect = btnEl ? btnEl.getBoundingClientRect() : tabRect;
 
     if (this.orientation === 'vertical') {
@@ -698,7 +710,12 @@ export class ViTabs extends ViElement {
           }}
         >
           More
-          <vi-icon class="vi-tabs__more-chevron" name="chevron-down" size="12" aria-hidden="true"></vi-icon>
+          <vi-icon
+            class="vi-tabs__more-chevron"
+            name="chevron-down"
+            size="12"
+            aria-hidden="true"
+          ></vi-icon>
         </button>
 
         ${this._moreMenuOpen
@@ -730,18 +747,24 @@ export class ViTabs extends ViElement {
     `;
   }
 
-  private _renderScrollArrow(dir: 'left' | 'right'): TemplateResult | typeof nothing {
+  private _renderScrollArrow(
+    dir: 'left' | 'right',
+  ): TemplateResult | typeof nothing {
     if (this.overflow !== 'scroll' || !this._isScrollable) return nothing;
     const isLeft = dir === 'left';
     const disabled = isLeft ? this._isScrollStart : this._isScrollEnd;
-    
+
     return html`
       <button
         class="vi-tabs__scroll-btn vi-tabs__scroll-btn--${dir}"
         aria-hidden="true"
         tabindex="-1"
         ?disabled=${disabled}
-        @click=${() => this._tablistEl?.scrollBy({ left: isLeft ? -150 : 150, behavior: 'smooth' })}
+        @click=${() =>
+          this._tablistEl?.scrollBy({
+            left: isLeft ? -150 : 150,
+            behavior: 'smooth',
+          })}
       >
         <vi-icon name="chevron-${dir}" size="16" aria-hidden="true"></vi-icon>
       </button>
