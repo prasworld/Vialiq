@@ -77,11 +77,11 @@ export { ViLabel } from './label/vi-label.js';
 export type { LabelSize } from './label/vi-label.js';
 
 export { ViLink } from './link/index.js';
-export { ViTabs } from './tabs/vi-tabs.js';
 export type {
   TabsOrientation,
   TabsVariant,
   TabsActivation,
+  TabsOverflow,
 } from './tabs/vi-tabs.js';
 export { ViTab } from './tabs/vi-tab.js';
 export { ViTabPanel } from './tabs/vi-tab-panel.js';
