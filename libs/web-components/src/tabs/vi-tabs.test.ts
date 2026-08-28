@@ -251,7 +251,6 @@ describe('vi-tabs', () => {
     );
     await new Promise((r) => setTimeout(r, 50));
 
-    const tabs = await $('vi-tabs');
     const t1 = await $('vi-tab[tab-id="t1"]');
     await t1.click(); // focus it
 
@@ -281,7 +280,6 @@ describe('vi-tabs', () => {
     );
     await new Promise((r) => setTimeout(r, 50));
 
-    const tabs = await $('vi-tabs');
     const t1 = await $('vi-tab[tab-id="t1"]');
     await t1.click(); // focus it
 

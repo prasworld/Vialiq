@@ -147,13 +147,10 @@ export class ViTabs extends ViElement {
     );
     // keydown is handled via @keydown on [part="tablist"]
     document.addEventListener('click', this._onDocClick);
+  }
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
-    this.removeEventListener(
-      'vi-tab-select',
-      this._onTabSelect as EventListener,
-    );
     this.removeEventListener(
       'vi-tab-before-close',
       this._onTabBeforeClose as EventListener,
