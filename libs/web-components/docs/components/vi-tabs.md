@@ -43,6 +43,7 @@ Supports four advanced features:
 | `addable` | `addable` | `boolean` | `false` | — | Show "+" button to add tab |
 | `activation` | `activation` | `TabsActivation` | `'manual'` | — | When tab becomes active |
 | `anchorClosable` | `anchor-closable` | `boolean` | `false` | — | When `true`, closable tabs are visually sorted to the end of the tablist |
+| `destroyOnClose` | `destroy-on-close` | `boolean` | `false` | — | Automatically remove closed tab and its panel from the DOM |
 
 ```typescript
 type TabsOrientation = 'horizontal' | 'vertical';
@@ -79,7 +80,7 @@ type TabsActivation =
 |-------|------|---------|-----------|
 | `vi-tabs-before-change` | `CustomEvent<{fromTabId: string; toTabId: string}>` | ✅ | Before active tab changes (cancelable) |
 | `vi-tabs-change` | `CustomEvent<{fromTabId: string; toTabId: string}>` | ✅ | Active tab changes |
-| `vi-tabs-tab-close` | `CustomEvent<{tabId: string}>` | ✅ | A closable tab's × button was clicked and action wasn't cancelled |
+| `vi-tabs-tab-close` | `CustomEvent<{tabId: string}>` | ✅ | A closable tab's × button was clicked and action wasn't cancelled. If destroy-on-close is false, host must remove element. |
 | `vi-tabs-add` | `CustomEvent<void>` | ✅ | "+" add button clicked |
 
 #### Intercepting Tab Activation
@@ -313,13 +314,15 @@ When `vi-tab[closable]`, a × button appears inside the tab.
 **Focus & Fallback Activation**:
 1. User clicks × (or presses `Delete`) → A cancelable `vi-tabs-before-close` event fires on `vi-tabs`.
 2. If not cancelled, the `vi-tabs-close` event fires with `{ tabId }`.
-3. Host app receives event and removes the tab from its data list.
-4. `vi-tabs` automatically moves focus and activation:
+3. `vi-tabs` automatically moves focus and activation:
    - **Default**: Move to the **tab immediately before** the closed tab (to its left).
    - **Edge case — first tab closed**: If the closed tab was the first in the list, focus falls **forward** to the new first tab.
+4. **DOM Removal**:
+   - If `destroy-on-close` is `true`, `vi-tabs` automatically calls `.remove()` on the `<vi-tab>` and its corresponding `<vi-tab-panel>`.
+   - If `destroy-on-close` is `false` (the default), `vi-tabs` does nothing to the DOM. The host app receives the event and must remove the tab from its data list.
 
 ```typescript
-// Host app handles close
+// If destroy-on-close is false, host app handles close
 onTabClose(tabId: string) {
   // IMPORTANT: capture the index BEFORE filtering
   const idx = this.visitTabs.findIndex(v => v.id === tabId);
@@ -331,7 +334,7 @@ onTabClose(tabId: string) {
 }
 ```
 
-`vi-tabs` itself **does not remove the DOM** — the host owns tab data.
+`vi-tabs` itself **does not remove the DOM by default** — the host owns tab data unless `destroy-on-close` is explicitly enabled.
 
 ---
 
