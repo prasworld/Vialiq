@@ -141,14 +141,12 @@ export class ViTabs extends ViElement {
       ]);
       ViTabs._iconsRegistered = true;
     }
-    this.addEventListener('vi-tab-select', this._onTabSelect as EventListener);
     this.addEventListener(
       'vi-tab-before-close',
       this._onTabBeforeClose as EventListener,
     );
-    this.addEventListener('keydown', this._onKeydown);
+    // keydown is handled via @keydown on [part="tablist"]
     document.addEventListener('click', this._onDocClick);
-  }
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
