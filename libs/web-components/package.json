@@ -127,6 +127,22 @@
     "./link/vi-link": {
       "types": "./link/vi-link.d.ts",
       "default": "./link/vi-link.js"
+    },
+    "./tabs": {
+      "types": "./tabs/index.d.ts",
+      "default": "./tabs/index.js"
+    },
+    "./tabs/vi-tabs": {
+      "types": "./tabs/vi-tabs.d.ts",
+      "default": "./tabs/vi-tabs.js"
+    },
+    "./tabs/vi-tab": {
+      "types": "./tabs/vi-tab.d.ts",
+      "default": "./tabs/vi-tab.js"
+    },
+    "./tabs/vi-tab-panel": {
+      "types": "./tabs/vi-tab-panel.d.ts",
+      "default": "./tabs/vi-tab-panel.js"
     }
   },
   "peerDependencies": {

@@ -75,6 +75,7 @@ export class ViLink extends FocusableMixin(ViElement) {
               <span class="sr-only">(opens in new tab)</span>
             </span>`
           : nothing}
+      </a>
     `;
   }
 }

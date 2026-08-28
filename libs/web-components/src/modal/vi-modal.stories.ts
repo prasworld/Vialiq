@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
-import { html } from 'lit';
+import { html, render } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './vi-modal.js';
 import './vi-modal-header.js';
@@ -1236,7 +1236,7 @@ export const EventLifecycle: Story = {
           <vi-button variant="ghost" size="sm" style="margin-top: 0.5rem;" @click=${() => {
             const logger = document.getElementById('event-logger');
             if (logger) {
-              logger.innerHTML = '<em>Waiting for events...</em>';
+              render(html`<em>Waiting for events...</em>`, logger);
               logCount = 0;
             }
           }}>Clear Log</vi-button>

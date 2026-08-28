@@ -23,7 +23,10 @@ export type { TooltipPlacement, TooltipTrigger } from './tooltip/vi-tooltip.js';
 export { ViTextarea } from './textarea/vi-textarea.js';
 export type { TextareaResize } from './textarea/vi-textarea.js';
 export { ViAccordion } from './accordion/vi-accordion.js';
-export type { AccordionVariant, AccordionSize } from './accordion/vi-accordion.js';
+export type {
+  AccordionVariant,
+  AccordionSize,
+} from './accordion/vi-accordion.js';
 export { ViAccordionItem } from './accordion/vi-accordion-item.js';
 export { ViBadge } from './badge/vi-badge.js';
 export type { BadgeVariant, BadgeSize } from './badge/vi-badge.js';
@@ -32,7 +35,11 @@ export { ViAlert } from './alert/vi-alert.js';
 export type { AlertVariant } from './alert/vi-alert.js';
 
 export { ViModal } from './modal/vi-modal.js';
-export type { ModalVariant, DrawerPlacement, ModalSize } from './modal/vi-modal.js';
+export type {
+  ModalVariant,
+  DrawerPlacement,
+  ModalSize,
+} from './modal/vi-modal.js';
 export { ViModalHeader } from './modal/vi-modal-header.js';
 export { ViModalFooter } from './modal/vi-modal-footer.js';
 
@@ -61,9 +68,20 @@ export { ViCombobox } from './combobox/vi-combobox.js';
 export { ViComboboxItem } from './combobox/vi-combobox-item.js';
 export { ViDatePicker, VIALIQ_CHANGE } from './date-picker/vi-date-picker.js';
 export { ViDatePickerInput } from './date-picker/vi-date-picker-input.js';
-export type { DatePickerMode, DatePickerChangeDetail } from './date-picker/types.js';
+export type {
+  DatePickerMode,
+  DatePickerChangeDetail,
+} from './date-picker/types.js';
 
 export { ViLabel } from './label/vi-label.js';
 export type { LabelSize } from './label/vi-label.js';
 
 export { ViLink } from './link/index.js';
+export type {
+  TabsOrientation,
+  TabsVariant,
+  TabsActivation,
+  TabsOverflow,
+} from './tabs/vi-tabs.js';
+export { ViTab } from './tabs/vi-tab.js';
+export { ViTabPanel } from './tabs/vi-tab-panel.js';

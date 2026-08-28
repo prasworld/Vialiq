@@ -1,0 +1,212 @@
+@use '@vialiq/flux-ui/styles/variables' as tokens;
+
+@layer components {
+
+// ─────────────────────────────────────────────────────────────────────────────
+// vi-tab — Individual tab button
+//
+// The tab host is TRANSPARENT — the sliding cursor in vi-tabs handles all bg.
+// The tab itself is responsible for: typography, icon, badge, focus ring.
+//
+// Key decisions:
+//  • No background on :host — cursor does all surface work
+//  • Active: primary color + semibold + slight letterSpacing tightening
+//  • Hover: very soft inset highlight (8% opacity), scale-in animation
+//  • 48px height (M3 minimum) — tabs need body to feel clickable
+// ─────────────────────────────────────────────────────────────────────────────
+
+
+// ── Tab button core ───────────────────────────────────────────────────────────
+
+  .vi-tab {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--vi-tab-icon-gap, 6px);
+    padding: var(--vi-tab-padding, 0 20px);
+    min-width: var(--vi-tab-min-width, 90px);
+    max-width: var(--vi-tab-max-width, 240px);
+    min-height: var(--vi-tab-height, 44px);
+    width: 100%;
+    height: 100%;
+    position: relative;
+    z-index: 1;   // Above the cursor element
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    white-space: nowrap;
+    user-select: none;
+    -webkit-user-select: none;
+
+    // Typography — clear nav-link feel, not body text
+    font-family: inherit;
+    font-size: var(--vi-tab-font-size, 13.5px);
+    font-weight: var(--vi-tab-font-weight, 500);
+    letter-spacing: 0.015em;
+    color: var(--vi-tab-color, #{tokens.$text-secondary});
+
+    transition:
+      color     180ms cubic-bezier(0.4, 0, 0.2, 1),
+      transform 180ms cubic-bezier(0.4, 0, 0.2, 1);
+
+    // ── Hover highlight (inset bloom effect) ──────────────────────────────────
+
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 4px;
+      border-radius: 8px;
+      background: currentColor;
+      opacity: 0;
+      transform: scale(0.85);
+      transition:
+        opacity   150ms cubic-bezier(0.4, 0, 0.2, 1),
+        transform 150ms cubic-bezier(0.4, 0, 0.2, 1);
+      pointer-events: none;
+    }
+
+    // ── Hover ──────────────────────────────────────────────────────────────────
+
+    &:not(.vi-tab--disabled):not(.vi-tab--active):hover {
+      color: var(--vi-tab-color-hover, #{tokens.$text-primary});
+
+      &::before {
+        opacity: 0.06;
+        transform: scale(1);
+      }
+    }
+
+    // ── Selected ──────────────────────────────────────────────────────────────
+
+    &.vi-tab--active {
+      color: var(--vi-tab-color-active, #{tokens.$color-primary});
+      font-weight: var(--vi-tab-font-weight-active, 600);
+      letter-spacing: 0.01em;
+    }
+
+    // ── Focus visible ─────────────────────────────────────────────────────────
+
+    &:focus-visible {
+      outline: none;
+
+      &::before {
+        outline: 2px solid #{tokens.$color-primary};
+        outline-offset: 0;
+        opacity: 0.12;
+        transform: scale(1);
+      }
+    }
+
+    // ── Disabled ───────────────────────────────────────────────────────────────
+
+    &.vi-tab--disabled {
+      color: var(--vi-tab-color-disabled, #{tokens.$text-disabled});
+      cursor: not-allowed;
+      pointer-events: none;
+
+      &::before { display: none; }
+    }
+  }
+
+// ── Icon ──────────────────────────────────────────────────────────────────────
+
+  .vi-tab__icon {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    font-size: var(--vi-tab-icon-size, 15px);
+    opacity: 0.6;
+    position: relative;
+    z-index: 1;
+    transition: opacity 180ms ease, transform 180ms ease;
+
+    .vi-tab--active & {
+      opacity: 1;
+      transform: scale(1.04);
+    }
+  }
+
+// ── Label ─────────────────────────────────────────────────────────────────────
+
+  .vi-tab__label {
+    position: relative;
+    z-index: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+// ── Badge ─────────────────────────────────────────────────────────────────────
+
+  .vi-tab__badge {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: var(--vi-tab-close-size, 18px);
+    height: var(--vi-tab-close-size, 18px);
+    padding: var(--vi-tab-badge-padding, 0 5px);
+    border-radius: 9px;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0;
+    background: var(--vi-tab-badge-bg, #{tokens.$color-primary});
+    color: var(--vi-tab-badge-color, #{tokens.$layer-01});
+    flex-shrink: 0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+    animation: vi-badge-pop 320ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+
+  @keyframes vi-badge-pop {
+    from { transform: scale(0.4); opacity: 0; }
+    to   { transform: scale(1);   opacity: 1; }
+  }
+
+// ── Close button ──────────────────────────────────────────────────────────────
+
+  .vi-tab__close {
+    position: relative;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--vi-tab-close-size, 18px);
+    height: var(--vi-tab-close-size, 18px);
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: currentColor;
+    cursor: pointer;
+    padding: 0;
+    margin-left: var(--vi-tab-close-margin-left, 2px);
+    flex-shrink: 0;
+    opacity: 0;                    // Hidden until tab is hovered
+    transform: scale(0.7);
+    transition:
+      opacity   150ms ease,
+      transform 150ms ease,
+      background-color 120ms ease;
+
+    svg { display: block; }
+  }
+
+// Show close button on tab hover or when the tab is active
+  .vi-tab:hover .vi-tab__close,
+  .vi-tab--active .vi-tab__close {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+
+  .vi-tab__close:hover {
+    opacity: 1 !important;
+    background: color-mix(in srgb, #{tokens.$text-primary} 8%, transparent);
+    transform: scale(1) !important;
+  }
+
+// ── Overflow hidden state (overflow=menu) ─────────────────────────────────────
+
+
+
+}

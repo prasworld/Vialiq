@@ -298,6 +298,79 @@ vi-input {
 
 ---
 
+### Label ([vi-label](./src/label/vi-label.ts))
+
+The [ViLabel](./src/label/vi-label.ts) is a styled `<label>` component for associating visible text with form controls. It supports required/optional indicators and inline help tooltips. Because it uses Shadow DOM, it automatically maps click and focus events to target controls and manages `aria-labelledby` across the Shadow boundary for accessibility.
+
+#### Properties & Attributes
+
+| Attribute  | Property   | Type                               | Default     | Description                                |
+| :--------- | :--------- | :--------------------------------- | :---------- | :----------------------------------------- |
+| `for`      | `for`      | `string`                           | `''`        | ID of the target control to focus/click.   |
+| `required` | `required` | `boolean`                          | `false`     | Shows a `*` indicator.                     |
+| `optional` | `optional` | `boolean`                          | `false`     | Shows "(optional)" text.                   |
+| `disabled` | `disabled` | `boolean`                          | `false`     | Muted disabled styling.                    |
+| `size`     | `size`     | `'sm'\|'md'\|'lg'`                 | `'md'`      | Font size variant.                         |
+| `layout`   | `layout`   | `'stacked'\|'inline'`              | `'stacked'` | Controls margin and inline-flex spacing.   |
+| `type`     | `type`     | `'default'\|'primary'\|'secondary'`| `'default'` | Semantic text color for emphasis.          |
+
+#### Slots
+
+- **Default Slot**: Label text content.
+- **`tooltip` Slot**: Optional icon/element that triggers an inline tooltip (renders to the right of the label text).
+
+#### CSS Shadow Parts
+
+Since `vi-label` uses Shadow DOM, you can override its internal styles using CSS shadow parts (`::part`):
+
+```css
+vi-label::part(label) {
+  --vi-label-font-size: var(--vi-font-size-sm);
+  --vi-label-font-weight: var(--vi-font-weight-medium);
+  --vi-label-color: var(--vi-text-primary);
+  /* Other styles... */
+}
+
+vi-label::part(required-indicator) {
+  color: red;
+}
+```
+
+The available parts are:
+- `label`: The internal `<label>` container.
+- `required-indicator`: The `*` span.
+- `optional-indicator`: The `(optional)` span.
+- `tooltip-trigger`: The wrapper around the tooltip slot.
+
+#### Snippets
+
+**Basic Standard Usage:**
+```html
+<vi-label for="first-name" required>First Name</vi-label>
+<vi-input id="first-name" name="firstName"></vi-input>
+```
+
+**Optional & Inline:**
+```html
+<div style="display: flex; align-items: center;">
+  <vi-label for="promo-code" layout="inline" optional>Promo Code</vi-label>
+  <vi-input id="promo-code" name="promoCode"></vi-input>
+</div>
+```
+
+**With Semantic Type and Tooltip:**
+```html
+<vi-label for="cvv-input" type="primary">
+  Card Security Code
+  <vi-tooltip slot="tooltip" content="3 digits on back of card">
+    <vi-icon name="info-circle"></vi-icon>
+  </vi-tooltip>
+</vi-label>
+<vi-input id="cvv-input" type="password"></vi-input>
+```
+
+---
+
 ### Select ([vi-select](./src/select/vi-select.ts))
 
 > [!NOTE]
@@ -1137,6 +1210,66 @@ The `<vi-switch>` component is a form-associated toggle switch used for boolean 
 <!-- Label to the left of the switch -->
 <vi-switch label-placement="start" size="lg">Auto-save</vi-switch>
 <vi-switch size="sm">Compact Mode</vi-switch>
+```
+
+---
+
+### Tabs ([vi-tabs](./src/tabs/vi-tabs.ts))
+
+The Tabs component is a composite of `<vi-tabs>`, `<vi-tab>`, and `<vi-tab-panel>` used to organize content into separate views where only one view is visible at a time. It follows the WAI-ARIA tabs pattern and includes robust support for responsive overflow, dynamic closable tabs, and advanced layout variants.
+
+#### Properties & Attributes
+
+| Attribute    | Property   | Type                                 | Default        | Description                                            |
+| :----------- | :--------- | :----------------------------------- | :------------- | :----------------------------------------------------- |
+| `active`     | `active`   | `string`                             | `''`           | The `tab-id` of the currently active tab.              |
+| `orientation`| `orientation` | `'horizontal'\|'vertical'`          | `'horizontal'` | The layout direction of the tablist.                   |
+| `variant`    | `variant`  | `'line'\|'pill'\|'card'\|'enclosed'` | `'line'`       | Visual design variant of the tabs.                     |
+| `overflow`   | `overflow` | `'scroll'\|'menu'\|'wrap'`           | `'scroll'`     | Defines behavior when tabs exceed container width.     |
+
+#### Events & Architecture Note
+
+Tabs use a mutually exclusive state (only one can be active at a time). Because of this, tabs are **"activated"** rather than "opened". There is no `vi-tab-before-open` event; instead, you intercept the activation of a tab at the container level using `vi-tabs-before-change`.
+
+If you need to prevent a user from switching to a specific tab (e.g., due to unsaved changes or missing permissions), simply call `e.preventDefault()` on the `vi-tabs-before-change` event:
+
+```javascript
+tabs.addEventListener('vi-tabs-before-change', (e) => {
+  if (e.detail.toTabId === 'restricted-tab' && !userHasAccess) {
+    e.preventDefault(); // Stops the tab from "opening"
+    alert('You do not have access to this tab!');
+  }
+});
+```
+
+For more detailed documentation, including slots, CSS parts, and custom properties, see the [Full Tabs Documentation](./docs/components/vi-tabs.md).
+
+#### Snippets
+
+**Standard Line Tabs:**
+
+```html
+<vi-tabs active="tab-1">
+  <vi-tab tab-id="tab-1">Account</vi-tab>
+  <vi-tab tab-id="tab-2">Security</vi-tab>
+  
+  <vi-tab-panel for="tab-1">Account settings content...</vi-tab-panel>
+  <vi-tab-panel for="tab-2">Security settings content...</vi-tab-panel>
+</vi-tabs>
+```
+
+**Variants & Overflow:**
+
+```html
+<vi-tabs variant="pill" overflow="menu" active="t1">
+  <vi-tab tab-id="t1">Overview</vi-tab>
+  <vi-tab tab-id="t2">Analytics</vi-tab>
+  <vi-tab tab-id="t3" closable>Reports</vi-tab>
+  
+  <vi-tab-panel for="t1">...</vi-tab-panel>
+  <vi-tab-panel for="t2">...</vi-tab-panel>
+  <vi-tab-panel for="t3">...</vi-tab-panel>
+</vi-tabs>
 ```
 
 ---

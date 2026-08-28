@@ -1,0 +1,7 @@
+@use '@vialiq/flux-ui/styles/variables' as tokens;
+@use "@vialiq/flux-ui/components/tabs";
+:host {
+  display: block;
+  width: 100%;
+  min-width: 0; // Essential for allowing flex containers to shrink during window resize
+}

@@ -14,6 +14,8 @@ export * from './capsules';
 export * from './check-circle';
 export * from './check';
 export * from './chevron-down';
+export * from './chevron-left';
+export * from './chevron-right';
 export * from './chevron-up';
 export * from './circle-x';
 export * from './clock';
