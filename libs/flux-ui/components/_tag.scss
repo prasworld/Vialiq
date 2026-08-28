@@ -3,10 +3,10 @@
 @layer components {
   :host,
   :root {
-    --vi-tag-height: 24px;
-    --vi-tag-padding-x: 10px;
+    --vi-tag-height: 22px;
+    --vi-tag-padding-x: 7px;
     --vi-tag-border-radius: 4px;
-    --vi-tag-font-size: var(--vi-font-size-xs, #{tokens.$font-size-xs});
+    --vi-tag-font-size: var(--vi-font-size-xs, 12px);
     --vi-tag-font-weight: var(--vi-font-weight-medium, #{tokens.$font-weight-medium});
     --vi-tag-gap: 6px;
     --vi-tag-remove-size: 16px;

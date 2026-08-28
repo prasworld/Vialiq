@@ -53,7 +53,7 @@
     box-sizing: border-box;
     position: relative;
     width: var(--vi-switch-track-width, 44px);
-    height: var(--vi-switch-track-height, 24px);
+    height: var(--vi-switch-track-height, 22px);
     background-color: var(--vi-switch-track-color-off, #{tokens.$border-03});
     border-radius: var(--vi-border-radius-full, 9999px);
     transition: background-color var(--vi-switch-transition-duration, 150ms) ease;

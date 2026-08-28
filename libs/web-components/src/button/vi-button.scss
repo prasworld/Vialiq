@@ -20,6 +20,14 @@
 
 :host {
   display: inline-block;
+  --vi-button-spacing-padding-block: 4px;
+  --vi-button-spacing-padding-inline: 15px;
+  --vi-button-typography-font-size: 14px;
+  --vi-button-shape-border-radius: 6px;
+}
+
+.button {
+  height: 32px;
 }
 
 // ============================================================================
@@ -27,21 +35,33 @@
 // ============================================================================
 
 :host([size='xs']) {
-  --vi-button-spacing-padding-block:  2px;
-  --vi-button-spacing-padding-inline: 8px;
-  --vi-button-typography-font-size:   #{tokens.$font-size-xs};
+  --vi-button-spacing-padding-block: 0px;
+  --vi-button-spacing-padding-inline: 4px;
+  --vi-button-typography-font-size: 12px;
+  --vi-button-shape-border-radius: 4px;
+}
+:host([size='xs']) .button {
+  height: 20px;
 }
 
 :host([size='sm']) {
-  --vi-button-spacing-padding-block:  4px;
-  --vi-button-spacing-padding-inline: 12px;
-  --vi-button-typography-font-size:   #{tokens.$font-size-sm};
+  --vi-button-spacing-padding-block: 0px;
+  --vi-button-spacing-padding-inline: 7px;
+  --vi-button-typography-font-size: 14px;
+  --vi-button-shape-border-radius: 4px;
+}
+:host([size='sm']) .button {
+  height: 24px;
 }
 
 :host([size='lg']) {
-  --vi-button-spacing-padding-block:  12px;
-  --vi-button-spacing-padding-inline: 24px;
-  --vi-button-typography-font-size:   #{tokens.$font-size-lg};
+  --vi-button-spacing-padding-block: 6.4px;
+  --vi-button-spacing-padding-inline: 15px;
+  --vi-button-typography-font-size: 16px;
+  --vi-button-shape-border-radius: 8px;
+}
+:host([size='lg']) .button {
+  height: 40px;
 }
 
 // ============================================================================
@@ -57,9 +77,9 @@
 }
 
 :host([icon-only]) .button {
-  /* Set aspect ratio or fixed padding to make it a square */
+  /* Set aspect ratio to make it a square */
   aspect-ratio: 1 / 1;
-  padding: var(--vi-button-spacing-padding-block, #{tokens.$spacing-sm});
+  padding: 0;
   justify-content: center;
 }
 
@@ -201,14 +221,12 @@
 
 .button:focus-visible:not(:disabled) {
   outline: #{tokens.$border-width-base} solid var(--vi-button-focus-ring-color, #{tokens.$color-primary});
-  outline-offset: 3px;
-  box-shadow:
-    var(--vi-button-effect-shadow-raised,
-      inset 0 1px 0 rgba(255, 255, 255, 0.14),
-      0 2px 4px rgba(0, 0, 0, 0.18),
-      0 1px 2px rgba(0, 0, 0, 0.08)
-    ),
-    0 0 0 3px var(--vi-button-focus-ring-glow, #{tokens.$color-primary});
+  outline-offset: 0;
+  box-shadow: var(--vi-button-effect-shadow-raised,
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 2px 4px rgba(0, 0, 0, 0.18),
+    0 1px 2px rgba(0, 0, 0, 0.08)
+  );
 }
 
 // Honour user's reduced-motion preference — keep colour/opacity feedback

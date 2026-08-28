@@ -25,8 +25,9 @@
 }
 
 :host([size='md']) {
-  --vi-badge-font-size: 11px;
-  --vi-badge-padding: 2px 8px;
+  --vi-badge-height: 20px;
+  --vi-badge-font-size: 12px;
+  --vi-badge-padding: 0 6px;
   --vi-badge-gap: 4px;
   --vi-badge-dot-size: 8px;
 }

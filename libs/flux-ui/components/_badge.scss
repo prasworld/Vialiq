@@ -16,9 +16,10 @@
     white-space: nowrap;
     box-sizing: border-box;
 
-    font-size: var(--vi-badge-font-size, 11px);
+    height: var(--vi-badge-height, 20px);
+    font-size: var(--vi-badge-font-size, 12px);
     font-weight: var(--vi-badge-font-weight, #{tokens.$font-weight-semibold});
-    padding: var(--vi-badge-padding, 2px 8px);
+    padding: var(--vi-badge-padding, 0 6px);
     border-radius: var(--vi-badge-border-radius, 9999px);
     gap: var(--vi-badge-gap, 4px);
 

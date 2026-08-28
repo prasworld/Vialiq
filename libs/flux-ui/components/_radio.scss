@@ -104,8 +104,8 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: var(--vi-radio-size, 18px);
-    height: var(--vi-radio-size, 18px);
+    width: var(--vi-radio-size, 16px);
+    height: var(--vi-radio-size, 16px);
     border: #{tokens.$border-width-base} solid var(--vi-radio-border-color, #{tokens.$outline});
     border-radius: 50%;
     background-color: var(--vi-radio-background-color, #{tokens.$color-background});
