@@ -1,10 +1,12 @@
+@use '@vialiq/flux-ui/styles/variables' as tokens;
+@use '@vialiq/flux-ui/styles/functions' as func;
 @use '@vialiq/flux-ui/components/tag';
 
 :host {
   display: inline-flex;
   vertical-align: middle;
-  margin-inline-end: var(--vi-tag-margin-end, 6px);
-  margin-block: var(--vi-tag-margin-block, 2px);
+  margin-inline-end: var(--vi-tag-margin-end, func.to-rem(6px));
+  margin-block: var(--vi-tag-margin-block, func.to-rem(2px));
   outline: none;
 }
 
@@ -20,8 +22,8 @@
 
 ::slotted(img) {
   display: block;
-  width: 14px;
-  height: 14px;
+  width: #{tokens.$font-size-base};
+  height: #{tokens.$font-size-base};
   border-radius: 50%;
   object-fit: cover;
 }

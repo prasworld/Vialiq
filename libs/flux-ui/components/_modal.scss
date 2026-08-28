@@ -25,14 +25,14 @@
     margin: auto;
     width: 100%;
     max-width: tokens.$modal-max-width-md;
-    max-height: 90vh; // Fallback max-height
+    max-height: 90dvh; // Fallback max-height
 
     z-index: tokens.$modal-z-index;
 
-    font-family: tokens.$font-family-base;
-    font-size: tokens.$font-size-base;
-    line-height: tokens.$line-height-normal;
-    color: tokens.$text-primary;
+    font-family: var(--vi-modal-font-family, #{tokens.$font-family-base});
+    font-size: var(--vi-modal-font-size, #{tokens.$font-size-base});
+    line-height: var(--vi-modal-line-height, #{tokens.$line-height-normal});
+    color: #{tokens.$text-primary};
 
     &[open] {
       display: flex;
@@ -97,7 +97,7 @@
   .modal-variant-drawer {
     margin: 0;
     max-height: none;
-    height: 100vh;
+    height: 100dvh;
     height: 100dvh; // modern viewport support
     max-width: none;
     width: tokens.$modal-drawer-width;
@@ -174,7 +174,7 @@
     width: 100vw;
     width: 100dvw;
     max-height: none;
-    height: 100vh;
+    height: 100dvh;
     height: 100dvh;
     border-radius: 0;
     margin: 0;
@@ -229,8 +229,8 @@
       max-width: 100vw !important;
       width: 100vw !important;
       width: 100dvw !important;
-      max-height: 100vh !important;
-      height: 100vh !important;
+      max-height: 100dvh !important;
+      height: 100dvh !important;
       height: 100dvh !important;
       border-radius: 0 !important;
       margin: 0 !important;

@@ -1,5 +1,6 @@
 @use '@vialiq/flux-ui/components/modal';
 @use '@vialiq/flux-ui/styles/variables' as tokens;
+@use '@vialiq/flux-ui/styles/functions' as func;
 
 :host {
   display: block;
@@ -37,7 +38,7 @@
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: var(--vi-spacing-sm, 12px);
+  gap: var(--vi-spacing-sm, func.to-rem(12px));
 }
 
 .modal-header--alert .modal-alert-icon {
@@ -46,9 +47,9 @@
   justify-content: center;
   margin: 0;
   padding: 0;
-  width: var(--vi-icon-size-md, 24px);
-  height: var(--vi-icon-size-md, 24px);
-  font-size: var(--vi-icon-size-md, 24px);
+  width: var(--vi-icon-size-md, func.to-rem(24px));
+  height: var(--vi-icon-size-md, func.to-rem(24px));
+  font-size: var(--vi-icon-size-md, func.to-rem(24px));
 }
 
 :host([alert-variant="danger"]) .modal-alert-icon {

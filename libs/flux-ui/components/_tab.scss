@@ -22,11 +22,11 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: var(--vi-tab-icon-gap, 6px);
+    gap: var(--vi-tab-icon-gap, #{tokens.$spacing-xs});
     padding: var(--vi-tab-padding, 0 20px);
     min-width: var(--vi-tab-min-width, 90px);
     max-width: var(--vi-tab-max-width, 240px);
-    min-height: var(--vi-tab-height, 44px);
+    min-height: var(--vi-tab-height, 40px);
     width: 100%;
     height: 100%;
     position: relative;
@@ -40,7 +40,7 @@
 
     // Typography — clear nav-link feel, not body text
     font-family: inherit;
-    font-size: var(--vi-tab-font-size, 13.5px);
+    font-size: var(--vi-tab-font-size, #{tokens.$font-size-base});
     font-weight: var(--vi-tab-font-weight, 500);
     letter-spacing: 0.015em;
     color: var(--vi-tab-color, #{tokens.$text-secondary});

@@ -1,4 +1,5 @@
 @use '@vialiq/flux-ui/styles/variables' as tokens;
+@use '@vialiq/flux-ui/styles/functions' as func;
 @use '@vialiq/flux-ui/components/badge';
 
 :host {
@@ -18,25 +19,27 @@
 // Sizes
 // ============================================================================
 :host([size='sm']) {
-  --vi-badge-font-size: 10px;
-  --vi-badge-padding: 0 6px;
-  --vi-badge-gap: 2px;
-  --vi-badge-dot-size: 6px;
+  // Badges use the smallest typography scale (12px) for both sm and md to maintain data-density
+  --vi-badge-font-size: #{tokens.$font-size-xs};
+  --vi-badge-padding: 0 #{tokens.$spacing-unit};
+  --vi-badge-gap: #{tokens.$spacing-unit};
+  --vi-badge-dot-size: #{tokens.$spacing-unit};
 }
 
 :host([size='md']) {
-  --vi-badge-height: 20px;
-  --vi-badge-font-size: 12px;
-  --vi-badge-padding: 0 6px;
-  --vi-badge-gap: 4px;
-  --vi-badge-dot-size: 8px;
+  --vi-badge-height: #{func.to-rem(20px)};
+  // Matches sm font-size (12px); md scales visually via padding/height, not font-size
+  --vi-badge-font-size: #{tokens.$font-size-xs};
+  --vi-badge-padding: 0 #{tokens.$spacing-xs};
+  --vi-badge-gap: #{tokens.$spacing-unit};
+  --vi-badge-dot-size: #{tokens.$spacing-xs};
 }
 
 :host([size='lg']) {
-  --vi-badge-font-size: 13px;
-  --vi-badge-padding: 4px 12px;
-  --vi-badge-gap: 6px;
-  --vi-badge-dot-size: 10px;
+  --vi-badge-font-size: #{tokens.$font-size-base};
+  --vi-badge-padding: #{tokens.$spacing-unit} #{tokens.$spacing-sm};
+  --vi-badge-gap: #{tokens.$spacing-xs};
+  --vi-badge-dot-size: #{tokens.$spacing-xs};
 }
 
 // ============================================================================
@@ -52,7 +55,7 @@
 
 // Dot specific padding when no text is provided
 .badge.dot-only {
-  --vi-badge-padding: 4px;
+  --vi-badge-padding: #{tokens.$spacing-unit};
 }
 
 // ============================================================================

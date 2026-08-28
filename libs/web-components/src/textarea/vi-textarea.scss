@@ -1,4 +1,5 @@
 @use '@vialiq/flux-ui/styles/variables' as tokens;
+@use '@vialiq/flux-ui/styles/functions' as func;
 @use '@vialiq/flux-ui/components/input';
 
 :host {
@@ -38,8 +39,9 @@
 :host([resize="vertical"]) { --vi-textarea-resize: vertical; }
 
 .input-control {
+  border-radius: var(--vi-border-radius-md, func.to-rem(6px));
   resize: var(--vi-textarea-resize, vertical);
-  min-height: var(--vi-textarea-min-height, 96px);
+  min-height: var(--vi-textarea-min-height, func.to-rem(96px));
   max-height: var(--vi-textarea-max-height, none);
   height: auto;
   overflow-y: auto;
@@ -82,7 +84,7 @@
   font-family: #{tokens.$font-family-base};
   font-size: var(--vi-textarea-char-counter-font-size, #{tokens.$font-size-xs});
   text-align: right;
-  margin-top: var(--vi-textarea-char-counter-margin-top, 4px);
+  margin-top: var(--vi-textarea-char-counter-margin-top, func.to-rem(4px));
   color: var(--vi-textarea-char-counter-color, #{tokens.$text-helper});
 
   &.char-counter--warning {

@@ -12,7 +12,7 @@
   .checkbox-wrapper {
     display: inline-flex;
     align-items: flex-start;
-    gap: var(--vi-checkbox-label-gap, 8px);
+    gap: var(--vi-checkbox-label-gap, #{tokens.$spacing-xs});
     cursor: pointer;
     font-family: #{tokens.$font-family-base};
     font-size: var(--vi-checkbox-label-font-size, #{tokens.$font-size-base});
@@ -41,8 +41,8 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: var(--vi-checkbox-size, 16px);
-    height: var(--vi-checkbox-size, 16px);
+    width: var(--vi-checkbox-size, #{tokens.$spacing-md});
+    height: var(--vi-checkbox-size, #{tokens.$spacing-md});
     border: #{tokens.$border-width-base} solid var(--vi-checkbox-border-color, #{tokens.$outline});
     border-radius: var(--vi-checkbox-border-radius, 4px);
     background-color: var(--vi-checkbox-background-color, #{tokens.$color-background});

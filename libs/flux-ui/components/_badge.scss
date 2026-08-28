@@ -16,20 +16,21 @@
     white-space: nowrap;
     box-sizing: border-box;
 
+    // 20px = standard badge height (not on the spacing scale); kept explicit
     height: var(--vi-badge-height, 20px);
-    font-size: var(--vi-badge-font-size, 12px);
+    font-size: var(--vi-badge-font-size, #{tokens.$font-size-xs});
     font-weight: var(--vi-badge-font-weight, #{tokens.$font-weight-semibold});
-    padding: var(--vi-badge-padding, 0 6px);
-    border-radius: var(--vi-badge-border-radius, 9999px);
-    gap: var(--vi-badge-gap, 4px);
+    padding: var(--vi-badge-padding, 0 #{tokens.$spacing-xs});
+    border-radius: var(--vi-badge-border-radius, #{tokens.$border-radius-full});
+    gap: var(--vi-badge-gap, #{tokens.$spacing-unit});
 
     border: #{tokens.$border-width-thin} solid transparent;
   }
 
   .dot {
     display: inline-block;
-    width: var(--vi-badge-dot-size, 8px);
-    height: var(--vi-badge-dot-size, 8px);
+    width: var(--vi-badge-dot-size, #{tokens.$spacing-xs});
+    height: var(--vi-badge-dot-size, #{tokens.$spacing-xs});
     border-radius: 50%;
     background-color: currentColor;
     flex-shrink: 0;

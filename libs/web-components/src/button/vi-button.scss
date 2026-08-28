@@ -12,6 +12,7 @@
  */
 
 @use '@vialiq/flux-ui/styles/variables' as tokens;
+@use '@vialiq/flux-ui/styles/functions' as func;
 @use '@vialiq/flux-ui/components/button';
 
 // ============================================================================
@@ -20,14 +21,18 @@
 
 :host {
   display: inline-block;
-  --vi-button-spacing-padding-block: 4px;
-  --vi-button-spacing-padding-inline: 15px;
-  --vi-button-typography-font-size: 14px;
-  --vi-button-shape-border-radius: 6px;
+  // Default = md size. These CSS custom properties are the public API:
+  // consumers may override any --vi-button-* to theme this component.
+  --vi-button-spacing-padding-block: #{tokens.$spacing-unit};
+  --vi-button-spacing-padding-inline: #{tokens.$spacing-md};
+  --vi-button-typography-font-size: #{tokens.$font-size-base};
+  --vi-button-shape-border-radius: #{tokens.$border-radius-md};
+  // 32px is intentional: 24px standard + 8px padding = 32. No spacing token maps cleanly; keep explicit.
+  --vi-button-sizing-min-height: #{func.to-rem(32px)};
 }
 
 .button {
-  height: 32px;
+  height: var(--vi-button-sizing-min-height, func.to-rem(32px));
 }
 
 // ============================================================================
@@ -35,33 +40,27 @@
 // ============================================================================
 
 :host([size='xs']) {
-  --vi-button-spacing-padding-block: 0px;
-  --vi-button-spacing-padding-inline: 4px;
-  --vi-button-typography-font-size: 12px;
-  --vi-button-shape-border-radius: 4px;
-}
-:host([size='xs']) .button {
-  height: 20px;
+  --vi-button-spacing-padding-block: 0;
+  --vi-button-spacing-padding-inline: #{tokens.$spacing-unit};
+  --vi-button-typography-font-size: #{tokens.$font-size-xs};
+  --vi-button-shape-border-radius: #{tokens.$border-radius-sm};
+  --vi-button-sizing-min-height: #{func.to-rem(20px)};
 }
 
 :host([size='sm']) {
-  --vi-button-spacing-padding-block: 0px;
-  --vi-button-spacing-padding-inline: 7px;
-  --vi-button-typography-font-size: 14px;
-  --vi-button-shape-border-radius: 4px;
-}
-:host([size='sm']) .button {
-  height: 24px;
+  --vi-button-spacing-padding-block: 0;
+  --vi-button-spacing-padding-inline: #{tokens.$spacing-xs};
+  --vi-button-typography-font-size: #{tokens.$font-size-base};
+  --vi-button-shape-border-radius: #{tokens.$border-radius-sm};
+  --vi-button-sizing-min-height: #{func.to-rem(24px)};
 }
 
 :host([size='lg']) {
-  --vi-button-spacing-padding-block: 6.4px;
-  --vi-button-spacing-padding-inline: 15px;
-  --vi-button-typography-font-size: 16px;
-  --vi-button-shape-border-radius: 8px;
-}
-:host([size='lg']) .button {
-  height: 40px;
+  --vi-button-spacing-padding-block: #{tokens.$spacing-xs};
+  --vi-button-spacing-padding-inline: #{tokens.$spacing-md};
+  --vi-button-typography-font-size: #{tokens.$font-size-lg};
+  --vi-button-shape-border-radius: #{tokens.$border-radius-lg};
+  --vi-button-sizing-min-height: #{func.to-rem(40px)};
 }
 
 // ============================================================================

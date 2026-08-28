@@ -380,6 +380,28 @@ Works with any JavaScript framework:
 - ✅ Focus states built-in
 - ✅ Semantic HTML patterns
 - ✅ Reduced motion support ready
+- ✅ Responsive `rem` scaling based on root font size
+
+### Responsive Typography & Rem Scaling
+Flux UI strictly uses `rem` units for typography and spacing to ensure accessibility. By default, it assumes a standard browser root font size of `16px`.
+
+If your application uses a custom root font size (such as the `62.5%` or `10px` hack), you must configure Flux UI to scale its internal calculations accordingly:
+
+```scss
+// In your application's main SCSS file:
+@use '@vialiq/flux-ui/styles' with (
+  $vi-rem-base: 10px
+);
+```
+This ensures that a component designed to be `16px` tall will correctly output `1.6rem`, rendering exactly 16 pixels at runtime against your custom 10px root.
+
+### CSS Unit Guidelines
+To maintain a robust, scalable, and accessible UI, Flux UI strictly adheres to the following unit rules:
+
+- **`rem`**: Used for **Typography**, **Spacing** (margin, padding, gap), and **Interactive Form Control Sizing** (button heights, input widths, etc.). This guarantees that everything defining the core layout grid and text hierarchy scales fluidly when a user changes their browser root font size for accessibility.
+- **`px`**: Reserved exclusively for rigid geometries that must never scale or blur. Used for **Borders** (`1px solid`), **Shadows** (offsets and blurs), small **Optical Adjustments** (e.g. `2px` focus outline offset), and **Visually Hidden Hacks** (e.g. `1px` clipping for screen readers).
+- **`vh` / `vw`**: Used for **Viewport-Relative Layouts**, such as full-screen modal overlays, drawer max-heights, or sticky banners that must span the entire screen regardless of the parent container size.
+- **`%`**: Used for **Container-Relative Fluidity**, such as a button being `width: 100%` of its parent column, or grid layouts.
 
 ## Contributing
 

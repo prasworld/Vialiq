@@ -14,8 +14,8 @@
     --vi-label-required-color: var(--vi-color-error, #{tokens.$color-error});
     // --vi-label-optional-color: var(--vi-text-helper)
     --vi-label-optional-color: var(--vi-text-helper, #{tokens.$text-helper});
-    // --vi-label-gap: 4px
-    --vi-label-gap: 4px;
+    // --vi-label-gap: $spacing-unit (4px)
+    --vi-label-gap: #{tokens.$spacing-unit};
   }
 
   .vi-label {
@@ -25,7 +25,7 @@
     font-size: var(--vi-label-font-size);
     font-weight: var(--vi-label-font-weight);
     color: var(--vi-label-color);
-    line-height: 1.5;
+    line-height: #{tokens.$line-height-normal};
     margin: 0;
 
     &.size-sm {

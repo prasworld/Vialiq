@@ -34,7 +34,7 @@
 
   .radio-group-items {
     display: flex;
-    gap: var(--vi-radio-group-gap, 8px);
+    gap: var(--vi-radio-group-gap, #{tokens.$spacing-xs});
 
     &[orientation="vertical"] {
       flex-direction: column;
@@ -76,7 +76,7 @@
   .radio-wrapper {
     display: inline-flex;
     align-items: center;
-    gap: var(--vi-radio-label-gap, 8px);
+    gap: var(--vi-radio-label-gap, #{tokens.$spacing-xs});
     cursor: pointer;
     font-family: #{tokens.$font-family-base};
     font-size: var(--vi-radio-label-font-size, #{tokens.$font-size-base});
@@ -104,8 +104,8 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: var(--vi-radio-size, 16px);
-    height: var(--vi-radio-size, 16px);
+    width: var(--vi-radio-size, #{tokens.$spacing-md});
+    height: var(--vi-radio-size, #{tokens.$spacing-md});
     border: #{tokens.$border-width-base} solid var(--vi-radio-border-color, #{tokens.$outline});
     border-radius: 50%;
     background-color: var(--vi-radio-background-color, #{tokens.$color-background});
@@ -115,8 +115,9 @@
 
   .radio-dot {
     box-sizing: border-box;
-    width: var(--vi-radio-dot-size, 8px);
-    height: var(--vi-radio-dot-size, 8px);
+    // 8px dot is half of the 16px ($spacing-md) circle; this ratio is intentional
+    width: var(--vi-radio-dot-size, calc(#{tokens.$spacing-md} / 2));
+    height: var(--vi-radio-dot-size, calc(#{tokens.$spacing-md} / 2));
     border-radius: 50%;
     background-color: var(--vi-radio-dot-color, #{tokens.$color-primary});
     transform: scale(0);

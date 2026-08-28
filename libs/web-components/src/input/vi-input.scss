@@ -20,20 +20,17 @@
 
 :host {
   display: block;
-  // Prevent the browser drawing its own default outline on the host element
-  // when it receives :focus via delegatesFocus. The visible focus ring is
-  // rendered on the inner .input-control by _input.scss (see below).
   outline: none;
-  --vi-input-spacing-padding-block: 4px;
-  --vi-input-spacing-padding-inline: 11px;
-  --vi-input-typography-font-size: 14px;
+  // Default = md size. These CSS custom properties are the public API:
+  // consumers may override any --vi-input-* to theme this component.
+  --vi-input-spacing-padding-block: #{tokens.$spacing-unit};
+  --vi-input-spacing-padding-inline: #{tokens.$spacing-sm};
+  --vi-input-typography-font-size: #{tokens.$font-size-base};
   --vi-input-sizing-min-height: 32px;
-  --vi-input-shape-border-radius: 6px;
+  --vi-input-shape-border-radius: #{tokens.$border-radius-md};
 }
 
-.input-control {
-  height: 32px;
-}
+
 
 // ============================================================================
 // Disabled state
@@ -106,36 +103,30 @@
 
 :host([size='xs']) {
   --vi-input-spacing-padding-block: 0px;
-  --vi-input-spacing-padding-inline: 4px;
-  --vi-input-typography-font-size: 12px;
+  --vi-input-spacing-padding-inline: #{tokens.$spacing-unit};
+  --vi-input-typography-font-size: #{tokens.$font-size-xs};
   --vi-input-sizing-min-height: 20px;
-  --vi-input-shape-border-radius: 4px;
+  --vi-input-shape-border-radius: #{tokens.$border-radius-sm};
 }
-:host([size='xs']) .input-control {
-  height: 20px;
-}
+
 
 :host([size='sm']) {
   --vi-input-spacing-padding-block: 0px;
-  --vi-input-spacing-padding-inline: 7px;
-  --vi-input-typography-font-size: 14px;
+  --vi-input-spacing-padding-inline: #{tokens.$spacing-xs};
+  --vi-input-typography-font-size: #{tokens.$font-size-base};
   --vi-input-sizing-min-height: 24px;
-  --vi-input-shape-border-radius: 4px;
-}
-:host([size='sm']) .input-control {
-  height: 24px;
+  --vi-input-shape-border-radius: #{tokens.$border-radius-sm};
 }
 
+
 :host([size='lg']) {
-  --vi-input-spacing-padding-block: 6.4px;
-  --vi-input-spacing-padding-inline: 11px;
-  --vi-input-typography-font-size: 16px;
+  --vi-input-spacing-padding-block: #{tokens.$spacing-xs};
+  --vi-input-spacing-padding-inline: #{tokens.$spacing-sm};
+  --vi-input-typography-font-size: #{tokens.$font-size-lg};
   --vi-input-sizing-min-height: 40px;
-  --vi-input-shape-border-radius: 8px;
+  --vi-input-shape-border-radius: #{tokens.$border-radius-lg};
 }
-:host([size='lg']) .input-control {
-  height: 40px;
-}
+
 
 
 

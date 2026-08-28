@@ -1,4 +1,5 @@
 @use '@vialiq/flux-ui/styles/variables' as tokens;
+@use '@vialiq/flux-ui/styles/functions' as func;
 
 :host {
   display: block;
@@ -33,14 +34,14 @@
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  min-height: var(--vi-input-height, 32px);
-  padding: 4px 11px;
+  min-height: var(--vi-input-sizing-min-height, func.to-rem(32px));
+  padding: var(--vi-input-spacing-padding-block, func.to-rem(4px)) var(--vi-input-spacing-padding-inline, func.to-rem(11px));
   background: var(--vi-input-bg, tokens.$layer-01);
   border: 1px solid var(--vi-input-trigger-border-color, tokens.$border-02);
-  border-radius: var(--vi-border-radius-md, 6px);
+  border-radius: var(--vi-border-radius-md, func.to-rem(6px));
   color: var(--vi-text-primary, tokens.$text-primary);
   font-family: inherit;
-  font-size: var(--vi-font-size-base, 14px);
+  font-size: var(--vi-input-typography-font-size, func.to-rem(14px));
   text-align: left;
   cursor: pointer;
   transition: all 0.2s ease;
