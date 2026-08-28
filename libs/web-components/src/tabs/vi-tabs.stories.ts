@@ -674,6 +674,25 @@ export const BeforeCloseGuard: Story = {
   },
 };
 
+export const DestroyOnClose: Story = {
+  render: () => {
+    return html`
+      ${note(
+        'When destroy-on-close is true, the vi-tabs component automatically removes the tab and its panel from the DOM when the tab is closed.',
+      )}
+      <vi-tabs active="tab-1" destroy-on-close>
+        <vi-tab tab-id="tab-1">Permanent Tab</vi-tab>
+        <vi-tab tab-id="tab-2" closable>Self-Destroying Tab 1</vi-tab>
+        <vi-tab tab-id="tab-3" closable>Self-Destroying Tab 2</vi-tab>
+        
+        <vi-tab-panel for="tab-1">${panelContent('Permanent', 'I cannot be closed.')}</vi-tab-panel>
+        <vi-tab-panel for="tab-2">${panelContent('Self-Destroying Tab 1', 'When you close me, I will be automatically removed from the DOM.')}</vi-tab-panel>
+        <vi-tab-panel for="tab-3">${panelContent('Self-Destroying Tab 2', 'When you close me, I will be automatically removed from the DOM.')}</vi-tab-panel>
+      </vi-tabs>
+    `;
+  },
+};
+
 // ── Full Feature Demo ─────────────────────────────────────────────────────────
 
 export const LazyPanels: Story = {

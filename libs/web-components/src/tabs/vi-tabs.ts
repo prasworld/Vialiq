@@ -98,6 +98,14 @@ export class ViTabs extends ViElement {
   accessor anchorClosable = false;
 
   /**
+   * When true, closing a tab automatically removes the vi-tab and its associated
+   * vi-tab-panel from the DOM. When false (default), the host application must
+   * handle the removal upon receiving the vi-tabs-tab-close event.
+   */
+  @property({ type: Boolean, attribute: 'destroy-on-close' })
+  accessor destroyOnClose = false;
+
+  /**
    * When true, renders an "Add tab" button at the end of the tablist.
    * Dispatches the `vialiq-add` event when clicked.
    */
@@ -141,6 +149,7 @@ export class ViTabs extends ViElement {
       ]);
       ViTabs._iconsRegistered = true;
     }
+    this.addEventListener('vi-tab-select', this._onTabSelect as EventListener);
     this.addEventListener(
       'vi-tab-before-close',
       this._onTabBeforeClose as EventListener,
@@ -151,6 +160,10 @@ export class ViTabs extends ViElement {
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
+    this.removeEventListener(
+      'vi-tab-select',
+      this._onTabSelect as EventListener,
+    );
     this.removeEventListener(
       'vi-tab-before-close',
       this._onTabBeforeClose as EventListener,
@@ -541,7 +554,15 @@ export class ViTabs extends ViElement {
       }
     }
 
+    if (this.destroyOnClose) {
+      const tabToRemove = tabs[closingIdx];
+      const panelToRemove = this.querySelector(`vi-tab-panel[for="${tabId}"]`);
+      tabToRemove?.remove();
+      panelToRemove?.remove();
+    }
+
     // Notify host app — it must remove the vi-tab (and its panel) from the DOM
+    // if destroyOnClose is false.
     this.dispatchEvent(
       new CustomEvent<{ tabId: string }>('vi-tabs-tab-close', {
         detail: { tabId },

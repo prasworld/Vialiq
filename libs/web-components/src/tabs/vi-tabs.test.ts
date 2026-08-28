@@ -162,6 +162,36 @@ describe('vi-tabs', () => {
     await expect(panel2).toHaveAttribute('active');
   });
 
+  it('automatically removes tab and panel from DOM when destroy-on-close is true', async () => {
+    render(
+      html`
+        <vi-tabs active="t1" destroy-on-close>
+          <vi-tab tab-id="t1">Tab 1</vi-tab>
+          <vi-tab tab-id="t2" closable>Tab 2</vi-tab>
+          
+          <vi-tab-panel for="t1">Panel 1</vi-tab-panel>
+          <vi-tab-panel for="t2">Panel 2</vi-tab-panel>
+        </vi-tabs>
+      `,
+      container,
+    );
+    await new Promise((r) => setTimeout(r, 50));
+
+    const t2 = await $('vi-tab[tab-id="t2"]');
+    const closeBtn = await t2.shadow$('button[part="close-btn"]');
+    
+    // Initially they exist
+    expect(await $('vi-tab[tab-id="t2"]').isExisting()).toBe(true);
+    expect(await $('vi-tab-panel[for="t2"]').isExisting()).toBe(true);
+
+    await closeBtn.click();
+    await new Promise((r) => setTimeout(r, 50));
+
+    // After close, they should be removed from DOM
+    expect(await $('vi-tab[tab-id="t2"]').isExisting()).toBe(false);
+    expect(await $('vi-tab-panel[for="t2"]').isExisting()).toBe(false);
+  });
+
   // ── Disabled ──────────────────────────────────────────────────────────────
 
   it('does not activate a disabled tab on click', async () => {
