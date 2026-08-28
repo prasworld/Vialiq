@@ -114,11 +114,14 @@ describe('vi-combobox', function () {
   });
 
   it('supports declarative slotted <vi-combobox-item> with data payload', async () => {
-    element.innerHTML = `
-      <vi-combobox-item value="site-1" label="Site 1" .data="${JSON.stringify({ code: 'S1' })}">
-        <div class="custom-template"><strong>Site 1</strong></div>
-      </vi-combobox-item>
-    `;
+    render(
+      html`
+        <vi-combobox-item value="site-1" label="Site 1" .data="${JSON.stringify({ code: 'S1' })}">
+          <div class="custom-template"><strong>Site 1</strong></div>
+        </vi-combobox-item>
+      `,
+      element
+    );
     await element.updateComplete;
 
     // Give Slot mutation observer a frame
@@ -218,10 +221,13 @@ describe('vi-combobox — slotted item filtering', () => {
     document.body.appendChild(element);
     await element.updateComplete;
 
-    element.innerHTML = `
-      <vi-combobox-item value="usr-1" label="Alice Johnson"></vi-combobox-item>
-      <vi-combobox-item value="usr-2" label="Bob Smith"></vi-combobox-item>
-    `;
+    render(
+      html`
+        <vi-combobox-item value="usr-1" label="Alice Johnson"></vi-combobox-item>
+        <vi-combobox-item value="usr-2" label="Bob Smith"></vi-combobox-item>
+      `,
+      element
+    );
 
     const alice = element.querySelector<ViComboboxItem>('[value="usr-1"]')!;
     const bob = element.querySelector<ViComboboxItem>('[value="usr-2"]')!;
@@ -328,9 +334,12 @@ describe('vi-combobox — slotted item filtering', () => {
     document.body.appendChild(element);
     await element.updateComplete;
 
-    element.innerHTML = `
-      <vi-combobox-item value="usr-1" label="Alice Johnson"></vi-combobox-item>
-    `;
+    render(
+      html`
+        <vi-combobox-item value="usr-1" label="Alice Johnson"></vi-combobox-item>
+      `,
+      element
+    );
     const alice = element.querySelector<ViComboboxItem>('[value="usr-1"]')!;
     alice.searchText = [
       'Alice Johnson',
@@ -523,10 +532,13 @@ describe('vi-combobox — minChars filtering', () => {
     element = document.createElement('vi-combobox') as ViCombobox;
     document.body.appendChild(element);
     element.minChars = 2; // Require 2 chars
-    element.innerHTML = `
-      <vi-combobox-item value="a" label="Apple"></vi-combobox-item>
-      <vi-combobox-item value="b" label="Banana"></vi-combobox-item>
-    `;
+    render(
+      html`
+        <vi-combobox-item value="a" label="Apple"></vi-combobox-item>
+        <vi-combobox-item value="b" label="Banana"></vi-combobox-item>
+      `,
+      element
+    );
     await element.updateComplete;
     // Give Slot mutation observer a frame
     await new Promise((r) => setTimeout(r, 50));
@@ -593,10 +605,13 @@ describe('vi-combobox — minChars filtering', () => {
     });
 
     it('sets correct cross-shadow DOM ARIA semantics on slotted items', async () => {
-      element.innerHTML = `
-        <vi-combobox-item value="1" label="One"></vi-combobox-item>
-        <vi-combobox-item value="2" label="Two" disabled></vi-combobox-item>
-      `;
+      render(
+        html`
+          <vi-combobox-item value="1" label="One"></vi-combobox-item>
+          <vi-combobox-item value="2" label="Two" disabled></vi-combobox-item>
+        `,
+        element
+      );
       await element.updateComplete;
       await new Promise((r) => setTimeout(r, 50));
       await element.updateComplete;

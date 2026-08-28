@@ -79,9 +79,21 @@ type TabsActivation =
 |-------|------|---------|-----------|
 | `vi-tabs-before-change` | `CustomEvent<{fromTabId: string; toTabId: string}>` | ✅ | Before active tab changes (cancelable) |
 | `vi-tabs-change` | `CustomEvent<{fromTabId: string; toTabId: string}>` | ✅ | Active tab changes |
-| `vi-tabs-before-close` | `CustomEvent<{tabId: string}>` | ✅ | Before a tab closes (cancelable) |
-| `vi-tabs-close` | `CustomEvent<{tabId: string}>` | ✅ | A tab's × is clicked |
+| `vi-tabs-tab-close` | `CustomEvent<{tabId: string}>` | ✅ | A closable tab's × button was clicked and action wasn't cancelled |
 | `vi-tabs-add` | `CustomEvent<void>` | ✅ | "+" add button clicked |
+
+#### Intercepting Tab Activation
+
+There is no `vi-tab-before-open` event because tabs are a mutually exclusive state where you "switch" between active tabs. To intercept a tab from becoming active (e.g., to check permissions or warn about unsaved changes), listen for `vi-tabs-before-change` on the parent container and call `e.preventDefault()`:
+
+```javascript
+tabs.addEventListener('vi-tabs-before-change', (e) => {
+  if (e.detail.toTabId === 'restricted-tab' && !userHasAccess) {
+    e.preventDefault(); // Stops the tab from "opening"
+    alert('You do not have access to this tab!');
+  }
+});
+```
 
 ### CSS Parts
 
@@ -136,7 +148,7 @@ type TabsActivation =
 
 | Part | Element |
 |------|---------|
-| `tab` | The tab `<button>` element |
+| `tab` | The tab container `<div>` element |
 | `icon` | Icon slot wrapper |
 | `label` | Label text span |
 | `badge` | Count badge |
@@ -178,7 +190,7 @@ type TabsActivation =
 
 | Part | Element |
 |------|---------|
-| `panel` | The `role="tabpanel"` container |
+| `panel` | The inner panel container (`<div>`) |
 
 ---
 
@@ -232,12 +244,12 @@ In `activation="automatic"` mode, focus movement also activates the tab — no E
 | Requirement | Implementation |
 |-------------|----------------|
 | Tablist | `role="tablist"` on tablist container; `aria-orientation` |
-| Tab | `role="tab"` on each `vi-tab` inner button |
+| Tab | `role="tab"` on the `vi-tab` host element |
 | Selected | `aria-selected="true/false"` on each tab |
 | Position/Size | `aria-setsize` and `aria-posinset` managed dynamically (critical for responsive swapping) |
 | Panel link | `aria-controls="{panel-id}"` on tab |
-| Tab focus | Only active tab in tab order (`tabindex="0"`); others `tabindex="-1"` (roving) |
-| Panel | `role="tabpanel"` + `aria-labelledby="{tab-id}"` |
+| Tab focus | Only active tab in tab order (`tabindex="0"`); others `tabindex="-1"` (roving on host) |
+| Panel | `role="tabpanel"` + `aria-labelledby="{tab-id}"` on the `vi-tab-panel` host element |
 | Panel focus | `tabindex="0"` on panel to allow Shift+Tab back (per APG recommendation) |
 | Disabled tab | `aria-disabled="true"` + excluded from roving tabindex |
 | Closable tab | × button: `aria-label="Close {tab label}"` |
@@ -452,9 +464,9 @@ By default all panels render but only the active one is visible (`display: none`
 ## Implementation Notes
 
 - `vi-tabs` maintains an internal list of `vi-tab` children by observing slot changes via `slotchange` event.
-- Roving tabindex is implemented by `vi-tabs` iterating over slotted `vi-tab` elements and setting their inner button's `tabindex` via a context object / CSS custom property.
+- Roving tabindex is implemented by `vi-tabs` iterating over slotted `vi-tab` elements and setting the host's `tabIndex` directly.
 - The active indicator (line variant) is a `position: absolute` element animated with CSS `left`/`width` transitions — it slides between tabs smoothly.
-- The `vi-tab` inner button is a native `<button type="button">` — keyboard events naturally bubble to `vi-tabs` for centralised handling.
+- The `vi-tab-panel` uses `delegatesFocus: true` and receives `role="tabpanel"` on its host element, ensuring reliable styling for `:focus-visible` without breaking ARIA hierarchies.
 - Panel visibility: inactive panels use `display: contents; visibility: hidden` or `display: none` depending on `lazy` setting.
 - `MutationObserver` watches for tab additions/removals to update overflow calculation.
 

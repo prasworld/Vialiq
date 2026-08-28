@@ -21,6 +21,7 @@ import tabPanelStyles from './vi-tab-panel.scss?inline';
 export class ViTabPanel extends ViElement {
   static override shadowRootOptions = {
     ...ViElement.shadowRootOptions,
+    delegatesFocus: true,
   };
 
   static override styles = css`
@@ -60,7 +61,7 @@ export class ViTabPanel extends ViElement {
     const shouldRender = !this.lazy || this._hasBeenActivated;
 
     return html`
-      <div part="panel">
+      <div part="panel" tabindex="0">
         ${shouldRender ? html`<slot></slot>` : ''}
       </div>
     `;

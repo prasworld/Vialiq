@@ -30,7 +30,9 @@ export function ViMonthYearPlugin(config: ViMonthYearPluginConfig = {}) {
       if (config.ariaLabels?.prevMonth) {
         prevBtn.setAttribute('aria-label', config.ariaLabels.prevMonth);
       }
-      prevBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>`;
+      const parser = new DOMParser();
+      const prevDoc = parser.parseFromString(`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>`, 'image/svg+xml');
+      prevBtn.appendChild(prevDoc.documentElement);
       prevBtn.addEventListener('click', (e) => {
         e.preventDefault();
         fp.changeMonth(-1);
@@ -42,7 +44,8 @@ export function ViMonthYearPlugin(config: ViMonthYearPluginConfig = {}) {
       if (config.ariaLabels?.nextMonth) {
         nextBtn.setAttribute('aria-label', config.ariaLabels.nextMonth);
       }
-      nextBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>`;
+      const nextDoc = parser.parseFromString(`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>`, 'image/svg+xml');
+      nextBtn.appendChild(nextDoc.documentElement);
       nextBtn.addEventListener('click', (e) => {
         e.preventDefault();
         fp.changeMonth(1);

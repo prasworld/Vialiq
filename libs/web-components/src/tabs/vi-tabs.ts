@@ -158,7 +158,6 @@ export class ViTabs extends ViElement {
       'vi-tab-before-close',
       this._onTabBeforeClose as EventListener,
     );
-    this.removeEventListener('keydown', this._onKeydown);
     document.removeEventListener('click', this._onDocClick);
     this._resizeObserver?.disconnect();
   }
@@ -298,7 +297,7 @@ export class ViTabs extends ViElement {
       p.setAttribute('role', 'tabpanel');
       p.setAttribute('id', `panel-${p.for}`);
       p.setAttribute('aria-labelledby', p.for);
-      p.removeAttribute('tabindex');
+      p.tabIndex = 0;
     });
 
     // ── Overflow ────────────────────────────────────────────────────────────
@@ -534,13 +533,14 @@ export class ViTabs extends ViElement {
 
     // Move active to a neighbour if we're closing the active tab
     if (this.active === tabId) {
-      const enabledTabs = tabs.filter((t) => !t.disabled && t.tabId !== tabId);
+      const enabledBefore = tabs.slice(0, closingIdx).filter((t) => !t.disabled);
+      const enabledAfter = tabs.slice(closingIdx + 1).filter((t) => !t.disabled);
+      
       // Prefer tab just before; fall back to tab just after; else nothing
-      const prevTab =
-        enabledTabs[closingIdx - 1] ?? enabledTabs[closingIdx] ?? null;
+      const prevTab = enabledBefore[enabledBefore.length - 1] ?? enabledAfter[0] ?? null;
       if (prevTab) {
         this._activateTab(prevTab.tabId);
-        prevTab.shadowRoot?.querySelector<HTMLElement>('[part="tab"]')?.focus();
+        prevTab.focus();
       }
     }
 
@@ -644,14 +644,14 @@ export class ViTabs extends ViElement {
     enabled.forEach((t, i) => {
       t.tabIndex = i === nextIndex ? 0 : -1;
     });
-    targetTab.shadowRoot?.querySelector<HTMLElement>('[part="tab"]')?.focus();
+    targetTab.focus();
 
     if (this.activation === 'automatic') this._activateTab(targetTab.tabId);
   };
 
   private _onAddClick(): void {
     this.dispatchEvent(
-      new CustomEvent('vialiq-add', {
+      new CustomEvent('vi-tabs-add', {
         bubbles: true,
         composed: true,
       }),

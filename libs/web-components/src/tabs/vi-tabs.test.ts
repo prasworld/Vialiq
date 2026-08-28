@@ -90,12 +90,10 @@ describe('vi-tabs', () => {
     await new Promise((r) => setTimeout(r, 50));
 
     const activeTabEl = await $('vi-tab[tab-id="t1"]');
-    const btn = await activeTabEl.shadow$('button');
-    await expect(btn).toHaveAttribute('aria-selected', 'true');
+    await expect(activeTabEl).toHaveAttribute('aria-selected', 'true');
 
     const inactiveTabEl = await $('vi-tab[tab-id="t2"]');
-    const btn2 = await inactiveTabEl.shadow$('button');
-    await expect(btn2).toHaveAttribute('aria-selected', 'false');
+    await expect(inactiveTabEl).toHaveAttribute('aria-selected', 'false');
   });
 
   it('sets aria-setsize and aria-posinset correctly', async () => {
@@ -115,9 +113,8 @@ describe('vi-tabs', () => {
     await new Promise((r) => setTimeout(r, 50));
 
     const t2 = await $('vi-tab[tab-id="t2"]');
-    const btn = await t2.shadow$('button');
-    await expect(btn).toHaveAttribute('aria-posinset', '2');
-    await expect(btn).toHaveAttribute('aria-setsize', '3');
+    await expect(t2).toHaveAttribute('aria-posinset', '2');
+    await expect(t2).toHaveAttribute('aria-setsize', '3');
   });
 
   it('sets aria-controls and aria-labelledby linking tabs to panels', async () => {
@@ -136,8 +133,7 @@ describe('vi-tabs', () => {
     await expect(tabEl).toHaveAttribute('aria-controls', 'panel-t1');
 
     const panelEl = await $('vi-tab-panel[for="t1"]');
-    const panelDiv = await panelEl.shadow$('[role="tabpanel"]');
-    await expect(panelDiv).toHaveAttribute('aria-labelledby', 't1');
+    await expect(panelEl).toHaveAttribute('aria-labelledby', 't1');
   });
 
   // ── Tab Switch ────────────────────────────────────────────────────────────
@@ -157,8 +153,7 @@ describe('vi-tabs', () => {
     await new Promise((r) => setTimeout(r, 50));
 
     const t2 = await $('vi-tab[tab-id="t2"]');
-    const btn = await t2.shadow$('button');
-    await btn.click();
+    await t2.click();
 
     await new Promise((r) => setTimeout(r, 50));
 
@@ -184,8 +179,7 @@ describe('vi-tabs', () => {
     await new Promise((r) => setTimeout(r, 50));
 
     const t2 = await $('vi-tab[tab-id="t2"]');
-    const btn = await t2.shadow$('button');
-    await btn.click();
+    await t2.click();
 
     await new Promise((r) => setTimeout(r, 50));
 
@@ -231,16 +225,15 @@ describe('vi-tabs', () => {
 
     // Panel 2 not yet activated — should be empty
     const lazyPanel = await $('vi-tab-panel[for="t2"]');
-    const panelDiv = await lazyPanel.shadow$('[role="tabpanel"]');
-    const content = await panelDiv.getText();
+    const content = await lazyPanel.getText();
     expect(content.trim()).toBe('');
 
     // Activate it
     const t2btn = await $('vi-tab[tab-id="t2"]');
-    await (await t2btn.shadow$('button')).click();
+    await t2btn.click();
     await new Promise((r) => setTimeout(r, 50));
 
-    const contentAfter = await panelDiv.getText();
+    const contentAfter = await lazyPanel.getText();
     expect(contentAfter.trim()).toBe('Lazy content');
   });
   // ── Keyboard Navigation ───────────────────────────────────────────────────
@@ -248,7 +241,7 @@ describe('vi-tabs', () => {
   it('navigates to next/previous tab with arrow keys', async () => {
     render(
       html`
-        <vi-tabs active="t1">
+        <vi-tabs active="t1" activation="automatic">
           <vi-tab tab-id="t1">Tab 1</vi-tab>
           <vi-tab tab-id="t2">Tab 2</vi-tab>
           <vi-tab tab-id="t3">Tab 3</vi-tab>
@@ -260,17 +253,16 @@ describe('vi-tabs', () => {
 
     const tabs = await $('vi-tabs');
     const t1 = await $('vi-tab[tab-id="t1"]');
-    const btn1 = await t1.shadow$('button');
-    await btn1.click(); // focus it
+    await t1.click(); // focus it
 
-    // Dispatch ArrowRight on the host
-    await tabs.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight' }));
+    // Dispatch ArrowRight
+    await browser.keys(['ArrowRight']);
     await new Promise((r) => setTimeout(r, 50));
     let activeTab = await $('vi-tab[active]');
     await expect(activeTab).toHaveAttribute('tab-id', 't2');
 
     // Dispatch ArrowLeft
-    await tabs.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft' }));
+    await browser.keys(['ArrowLeft']);
     await new Promise((r) => setTimeout(r, 50));
     activeTab = await $('vi-tab[active]');
     await expect(activeTab).toHaveAttribute('tab-id', 't1');
@@ -279,7 +271,7 @@ describe('vi-tabs', () => {
   it('navigates to first/last tab with Home/End keys', async () => {
     render(
       html`
-        <vi-tabs active="t1">
+        <vi-tabs active="t1" activation="automatic">
           <vi-tab tab-id="t1">Tab 1</vi-tab>
           <vi-tab tab-id="t2">Tab 2</vi-tab>
           <vi-tab tab-id="t3">Tab 3</vi-tab>
@@ -290,12 +282,15 @@ describe('vi-tabs', () => {
     await new Promise((r) => setTimeout(r, 50));
 
     const tabs = await $('vi-tabs');
-    await tabs.dispatchEvent(new KeyboardEvent('keydown', { key: 'End' }));
+    const t1 = await $('vi-tab[tab-id="t1"]');
+    await t1.click(); // focus it
+
+    await browser.keys(['End']);
     await new Promise((r) => setTimeout(r, 50));
     let activeTab = await $('vi-tab[active]');
     await expect(activeTab).toHaveAttribute('tab-id', 't3');
 
-    await tabs.dispatchEvent(new KeyboardEvent('keydown', { key: 'Home' }));
+    await browser.keys(['Home']);
     await new Promise((r) => setTimeout(r, 50));
     activeTab = await $('vi-tab[active]');
     await expect(activeTab).toHaveAttribute('tab-id', 't1');

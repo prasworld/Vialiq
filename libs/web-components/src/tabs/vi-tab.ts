@@ -98,7 +98,6 @@ export class ViTab extends ViElement {
     if (!this.tabId) {
       this.tabId = `vi-tab-${Math.random().toString(36).substring(2, 9)}`;
     }
-    this.setAttribute('role', 'presentation');
   }
 
   private _onIconSlotChange(e: Event): void {

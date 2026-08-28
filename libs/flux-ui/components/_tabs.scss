@@ -58,57 +58,7 @@
     }
   }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Add Button
-// ─────────────────────────────────────────────────────────────────────────────
 
-  .vi-tabs__add-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 48px;
-    height: 48px;
-    flex-shrink: 0;
-    background: transparent;
-    border: none;
-    border-radius: 50%;
-    color: var(--vi-tabs-add-btn-color, #{tokens.$text-secondary});
-    cursor: pointer;
-    margin-left: auto; // Push to end
-    outline: none;
-    position: relative;
-    transition: background-color 0.2s, color 0.2s;
-    order: 9998; // Ensure it stays right before the More menu
-
-    &::before {
-      content: '';
-      position: absolute;
-      inset: 4px;
-      border-radius: 50%;
-      background-color: currentColor;
-      opacity: 0;
-      transition: opacity 0.2s;
-    }
-
-    &:hover::before,
-    &:focus-visible::before {
-      opacity: 0.08;
-    }
-
-    &:active::before {
-      opacity: 0.12;
-    }
-
-    &:focus-visible {
-      border-radius: 4px; // Square focus ring for accessibility
-      outline: 2px solid var(--vi-tabs-focus-ring, #{tokens.$color-primary});
-      outline-offset: 2px;
-    }
-
-    svg {
-      position: relative; // Above the hover state
-    }
-  }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Add Button
@@ -334,11 +284,12 @@
 
     // The cursor is the active card surface
     .vi-tabs__cursor {
+      $surface-color: var(--vi-tabs-surface-primary, #{tokens.$layer-01});
       display: block;
       border-radius: 8px 8px 0 0;
-      background: var(--vi-tabs-surface-primary, #{tokens.$layer-01});
+      background: $surface-color;
       border: 1px solid var(--vi-tabs-border-color, #{tokens.$color-border});
-      border-bottom-color: #fff; // Merges with content below
+      border-bottom-color: $surface-color; // Merges with content below
       margin-top: 8px;
       box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
     }

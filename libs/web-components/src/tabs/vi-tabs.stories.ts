@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
-import { html, nothing } from 'lit';
+import { html, nothing, render } from 'lit';
 import './vi-tabs.js';
 import './vi-tab.js';
 import './vi-tab-panel.js';
@@ -520,7 +520,7 @@ export const ClosableTabs: Story = {
     let activeTabId = tabs[0].id;
 
     const rerender = () => {
-      container.innerHTML = '';
+      container.replaceChildren();
       container.appendChild(buildUI());
     };
 
@@ -556,17 +556,22 @@ export const ClosableTabs: Story = {
 
         const panelEl = document.createElement('vi-tab-panel') as HTMLElement;
         panelEl.setAttribute('for', tab.id);
-        panelEl.innerHTML = `<div style="padding: 20px 4px 8px;">
-          <h3 style="margin: 0 0 8px; font-size: 15px; font-weight: 600; color: #111827;">${tab.label}</h3>
-          <p style="margin: 0; font-size: 13.5px; color: #6b7280;">${tab.content}</p>
-          ${openTabIds.length === 0 ? '<p style="color:#9ca3af;font-style:italic">All tabs closed.</p>' : ''}
-        </div>`;
+        render(
+          html`<div style="padding: 20px 4px 8px;">
+            <h3 style="margin: 0 0 8px; font-size: 15px; font-weight: 600; color: #111827;">${tab.label}</h3>
+            <p style="margin: 0; font-size: 13.5px; color: #6b7280;">${tab.content}</p>
+            ${openTabIds.length === 0 ? html`<p style="color:#9ca3af;font-style:italic">All tabs closed.</p>` : nothing}
+          </div>`,
+          panelEl,
+        );
         tabsEl.appendChild(panelEl);
       }
 
       if (openTabIds.length === 0) {
-        el.innerHTML =
-          '<p style="font-size:13px;color:#9ca3af;font-style:italic;margin:16px 4px;">All tabs have been closed.</p>';
+        render(
+          html`<p style="font-size:13px;color:#9ca3af;font-style:italic;margin:16px 4px;">All tabs have been closed.</p>`,
+          el,
+        );
       } else {
         el.appendChild(tabsEl);
       }
@@ -893,7 +898,7 @@ export const AddableTabs: Story = {
       tabsEl.setAttribute('anchor-closable', '');
 
       const rerender = () => {
-        el.innerHTML = '';
+        el.replaceChildren();
         el.appendChild(buildUI());
       };
 
@@ -904,7 +909,7 @@ export const AddableTabs: Story = {
         },
       );
 
-      tabsEl.addEventListener('vialiq-add', () => {
+      tabsEl.addEventListener('vi-tabs-add', () => {
         count++;
         activeTabId = `tab-${count}`;
         rerender();
@@ -921,10 +926,13 @@ export const AddableTabs: Story = {
 
         const panelEl = document.createElement('vi-tab-panel') as HTMLElement;
         panelEl.setAttribute('for', id);
-        panelEl.innerHTML = `<div style="padding: 20px 4px 8px;">
-          <h3 style="margin: 0 0 8px; font-size: 15px; font-weight: 600; color: #111827;">Document ${i}</h3>
-          <p style="margin: 0; font-size: 13.5px; color: #6b7280;">Content for dynamically added document ${i}.</p>
-        </div>`;
+        render(
+          html`<div style="padding: 20px 4px 8px;">
+            <h3 style="margin: 0 0 8px; font-size: 15px; font-weight: 600; color: #111827;">Document ${i}</h3>
+            <p style="margin: 0; font-size: 13.5px; color: #6b7280;">Content for dynamically added document ${i}.</p>
+          </div>`,
+          panelEl,
+        );
         tabsEl.appendChild(panelEl);
       }
 

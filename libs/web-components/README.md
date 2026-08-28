@@ -1214,6 +1214,66 @@ The `<vi-switch>` component is a form-associated toggle switch used for boolean 
 
 ---
 
+### Tabs ([vi-tabs](./src/tabs/vi-tabs.ts))
+
+The Tabs component is a composite of `<vi-tabs>`, `<vi-tab>`, and `<vi-tab-panel>` used to organize content into separate views where only one view is visible at a time. It follows the WAI-ARIA tabs pattern and includes robust support for responsive overflow, dynamic closable tabs, and advanced layout variants.
+
+#### Properties & Attributes
+
+| Attribute    | Property   | Type                                 | Default        | Description                                            |
+| :----------- | :--------- | :----------------------------------- | :------------- | :----------------------------------------------------- |
+| `active`     | `active`   | `string`                             | `''`           | The `tab-id` of the currently active tab.              |
+| `orientation`| `orientation` | `'horizontal'\|'vertical'`          | `'horizontal'` | The layout direction of the tablist.                   |
+| `variant`    | `variant`  | `'line'\|'pill'\|'card'\|'enclosed'` | `'line'`       | Visual design variant of the tabs.                     |
+| `overflow`   | `overflow` | `'scroll'\|'menu'\|'wrap'`           | `'scroll'`     | Defines behavior when tabs exceed container width.     |
+
+#### Events & Architecture Note
+
+Tabs use a mutually exclusive state (only one can be active at a time). Because of this, tabs are **"activated"** rather than "opened". There is no `vi-tab-before-open` event; instead, you intercept the activation of a tab at the container level using `vi-tabs-before-change`.
+
+If you need to prevent a user from switching to a specific tab (e.g., due to unsaved changes or missing permissions), simply call `e.preventDefault()` on the `vi-tabs-before-change` event:
+
+```javascript
+tabs.addEventListener('vi-tabs-before-change', (e) => {
+  if (e.detail.toTabId === 'restricted-tab' && !userHasAccess) {
+    e.preventDefault(); // Stops the tab from "opening"
+    alert('You do not have access to this tab!');
+  }
+});
+```
+
+For more detailed documentation, including slots, CSS parts, and custom properties, see the [Full Tabs Documentation](./docs/components/vi-tabs.md).
+
+#### Snippets
+
+**Standard Line Tabs:**
+
+```html
+<vi-tabs active="tab-1">
+  <vi-tab tab-id="tab-1">Account</vi-tab>
+  <vi-tab tab-id="tab-2">Security</vi-tab>
+  
+  <vi-tab-panel for="tab-1">Account settings content...</vi-tab-panel>
+  <vi-tab-panel for="tab-2">Security settings content...</vi-tab-panel>
+</vi-tabs>
+```
+
+**Variants & Overflow:**
+
+```html
+<vi-tabs variant="pill" overflow="menu" active="t1">
+  <vi-tab tab-id="t1">Overview</vi-tab>
+  <vi-tab tab-id="t2">Analytics</vi-tab>
+  <vi-tab tab-id="t3" closable>Reports</vi-tab>
+  
+  <vi-tab-panel for="t1">...</vi-tab-panel>
+  <vi-tab-panel for="t2">...</vi-tab-panel>
+  <vi-tab-panel for="t3">...</vi-tab-panel>
+</vi-tabs>
+```
+
+---
+
 ## Storybook
 
 The project uses **Storybook 10** with the `@storybook/web-components-vite` framework.
