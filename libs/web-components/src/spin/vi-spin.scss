@@ -1,0 +1,16 @@
+@use '@vialiq/flux-ui/components/spin';
+
+:host {
+  display: block;
+}
+
+// We rely on the base styles from _spin.scss for the complex 4-dot animation.
+// Ensure host does not collapse if used as an inline wrapper without children.
+:host(:not([hidden])) {
+  display: inline-block;
+}
+
+// If it has children, we want it to block display properly
+:host(:not([hidden])) .spin-nested-loading {
+  display: block;
+}

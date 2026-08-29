@@ -45,23 +45,23 @@
 // ============================================================================
 
 :host([size='xs']) {
-  --vi-checkbox-size: 12px;
+  --vi-checkbox-size: #{func.to-rem(12px)};
   --vi-checkbox-border-radius: #{func.to-rem(2px)};
-  --vi-checkbox-label-gap: 4px;
+  --vi-checkbox-label-gap: #{func.to-rem(4px)};
   --vi-checkbox-label-font-size: #{tokens.$font-size-xs};
 }
 
 :host([size='sm']) {
-  --vi-checkbox-size: 14px;
+  --vi-checkbox-size: #{func.to-rem(14px)};
   --vi-checkbox-border-radius: #{func.to-rem(2px)};
-  --vi-checkbox-label-gap: 6px;
+  --vi-checkbox-label-gap: #{func.to-rem(6px)};
   --vi-checkbox-label-font-size: #{tokens.$font-size-sm};
 }
 
 :host([size='lg']) {
-  --vi-checkbox-size: 22px;
+  --vi-checkbox-size: #{func.to-rem(22px)};
   --vi-checkbox-border-radius: #{func.to-rem(4px)};
-  --vi-checkbox-label-gap: 10px;
+  --vi-checkbox-label-gap: #{func.to-rem(10px)};
   --vi-checkbox-label-font-size: #{tokens.$font-size-lg};
 }
 

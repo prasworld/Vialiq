@@ -156,7 +156,7 @@
     background: var(--vi-tab-badge-bg, #{tokens.$color-primary});
     color: var(--vi-tab-badge-color, #{tokens.$layer-01});
     flex-shrink: 0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+    box-shadow: #{tokens.$shadow-sm};
     animation: vi-badge-pop 320ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
   }
 

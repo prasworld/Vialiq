@@ -76,7 +76,7 @@
     height: var(--vi-switch-thumb-size, func.to-rem(18px));
     background-color: var(--vi-switch-thumb-color, #{tokens.$text-primary-inverse});
     border-radius: 50%;
-    box-shadow: var(--vi-switch-thumb-shadow, 0 1px 3px rgba(0, 0, 0, 0.2));
+    box-shadow: var(--vi-switch-thumb-shadow, #{tokens.$shadow-md});
     transition: left var(--vi-switch-transition-duration, 150ms) ease;
   }
 
@@ -98,7 +98,7 @@
     outline: #{tokens.$border-width-base} solid
       var(--vi-switch-focus-ring-color, #{tokens.$focus});
     outline-offset: 2px;
-    box-shadow: 0 0 0 3px var(--vi-switch-focus-ring-glow, #{tokens.$color-blue-200});
+    box-shadow: #{tokens.$focus-ring-shadow};
   }
 
   // ── Disabled state ────────────────────────────────────────────────────────────

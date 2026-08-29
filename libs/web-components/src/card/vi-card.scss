@@ -1,0 +1,66 @@
+@use '@vialiq/flux-ui/styles/variables' as tokens;
+@use '@vialiq/flux-ui/styles/functions' as func;
+@use '@vialiq/flux-ui/components/card';
+
+:host {
+  display: block;
+  width: 100%;
+}
+
+/* Base structural shadow DOM mappings */
+
+.vi-card {
+  @extend .vi-card;
+}
+
+.vi-card-cover {
+  @extend .vi-card-cover;
+}
+
+.vi-card-header {
+  @extend .vi-card-header;
+}
+
+.vi-card-title {
+  @extend .vi-card-title;
+}
+
+.vi-card-extra {
+  @extend .vi-card-extra;
+}
+
+.vi-card-body {
+  @extend .vi-card-body;
+}
+
+.vi-card-footer {
+  @extend .vi-card-footer;
+}
+
+.vi-card-actions {
+  @extend .vi-card-actions;
+}
+
+
+
+/* Ensure empty slots do not consume padding if no content is provided */
+
+.vi-card-header:empty,
+.vi-card-footer:empty,
+.vi-card-actions:empty,
+.vi-card-cover:empty {
+  display: none;
+}
+
+.vi-card-skeleton {
+  @extend .vi-card-skeleton;
+}
+.vi-card-skeleton-content {
+  @extend .vi-card-skeleton-content;
+}
+.vi-card-skeleton-title {
+  @extend .vi-card-skeleton-title;
+}
+.vi-card-skeleton-short {
+  @extend .vi-card-skeleton-short;
+}

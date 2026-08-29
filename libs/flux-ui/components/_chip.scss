@@ -31,7 +31,7 @@
   .chip:focus-visible {
     outline: #{tokens.$border-width-base} solid var(--vi-chip-focus-ring-color, #{tokens.$focus});
     outline-offset: 0;
-    box-shadow: 0 0 0 3px var(--vi-chip-focus-ring-glow, #{tokens.$color-blue-200});
+    box-shadow: #{tokens.$focus-ring-shadow};
   }
 
   // Disabled state structure

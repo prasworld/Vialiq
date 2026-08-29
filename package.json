@@ -33,7 +33,8 @@
     "@floating-ui/dom": "^1.7.6",
     "@lit-labs/virtualizer": "^2.1.1",
     "@nx/angular": "^22.5.1",
-    "@vialiq/web-components": "^0.4.0",
+    "@vialiq/icons": "0.5.0",
+    "@vialiq/web-components": "0.26.0",
     "create-nx": "0.0.0",
     "lit": "^3.3.2",
     "rxjs": "~7.8.0"
@@ -72,7 +73,7 @@
     "@swc/helpers": "~0.5.18",
     "@types/node": "20.19.9",
     "@typescript-eslint/utils": "^8.40.0",
-    "@vialiq/flux-ui": "^0.3.0",
+    "@vialiq/flux-ui": "0.21.0",
     "@vitest/coverage-v8": "^4.0.0",
     "@vitest/ui": "^4.0.8",
     "@wdio/browser-runner": "^9.27.0",

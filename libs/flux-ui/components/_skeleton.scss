@@ -1,0 +1,35 @@
+@use '../styles/variables' as tokens;
+@use '../styles/functions' as func;
+@use './animation';
+
+@layer components {
+  .vi-skeleton {
+    display: block;
+    background: var(--vi-skeleton-color, #{tokens.$layer-02});
+    box-sizing: border-box;
+    /* Transition for smooth animation changes if needed */
+    transition: background 0.3s ease;
+  }
+
+  /* Shimmer Animation State */
+  .vi-skeleton--animation-shimmer {
+    background: linear-gradient(
+      90deg,
+      var(--vi-skeleton-color, #{tokens.$layer-02}) 25%,
+      var(--vi-skeleton-to-color, #{tokens.$layer-03}) 37%,
+      var(--vi-skeleton-color, #{tokens.$layer-02}) 63%
+    );
+    background-size: 400% 100%;
+    animation: vi-shimmer 1.4s ease infinite;
+  }
+
+  /* Pulse Animation State */
+  .vi-skeleton--animation-pulse {
+    animation: vi-pulse 1.5s ease-in-out infinite;
+  }
+
+  /* None Animation State */
+  .vi-skeleton--animation-none {
+    /* No animation overrides, uses default static background */
+  }
+}

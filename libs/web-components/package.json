@@ -143,6 +143,118 @@
     "./tabs/vi-tab-panel": {
       "types": "./tabs/vi-tab-panel.d.ts",
       "default": "./tabs/vi-tab-panel.js"
+    },
+    "./spin": {
+      "types": "./spin/index.d.ts",
+      "default": "./spin/index.js"
+    },
+    "./spin/vi-spin": {
+      "types": "./spin/vi-spin.d.ts",
+      "default": "./spin/vi-spin.js"
+    },
+    "./card": {
+      "types": "./card/index.d.ts",
+      "default": "./card/index.js"
+    },
+    "./card/vi-card": {
+      "types": "./card/vi-card.d.ts",
+      "default": "./card/vi-card.js"
+    },
+    "./skeleton": {
+      "types": "./skeleton/index.d.ts",
+      "default": "./skeleton/index.js"
+    },
+    "./skeleton/vi-skeleton": {
+      "types": "./skeleton/vi-skeleton.d.ts",
+      "default": "./skeleton/vi-skeleton.js"
+    },
+    "./alert": {
+      "types": "./alert/index.d.ts",
+      "default": "./alert/index.js"
+    },
+    "./alert/vi-alert": {
+      "types": "./alert/vi-alert.d.ts",
+      "default": "./alert/vi-alert.js"
+    },
+    "./modal": {
+      "types": "./modal/index.d.ts",
+      "default": "./modal/index.js"
+    },
+    "./modal/vi-modal": {
+      "types": "./modal/vi-modal.d.ts",
+      "default": "./modal/vi-modal.js"
+    },
+    "./modal/vi-modal-header": {
+      "types": "./modal/vi-modal-header.d.ts",
+      "default": "./modal/vi-modal-header.js"
+    },
+    "./modal/vi-modal-footer": {
+      "types": "./modal/vi-modal-footer.d.ts",
+      "default": "./modal/vi-modal-footer.js"
+    },
+    "./animation": {
+      "types": "./animation/index.d.ts",
+      "default": "./animation/index.js"
+    },
+    "./animation/vi-animation": {
+      "types": "./animation/vi-animation.d.ts",
+      "default": "./animation/vi-animation.js"
+    },
+    "./chip": {
+      "types": "./chip/index.d.ts",
+      "default": "./chip/index.js"
+    },
+    "./chip/vi-chip": {
+      "types": "./chip/vi-chip.d.ts",
+      "default": "./chip/vi-chip.js"
+    },
+    "./chip/vi-chip-group": {
+      "types": "./chip/vi-chip-group.d.ts",
+      "default": "./chip/vi-chip-group.js"
+    },
+    "./combobox": {
+      "types": "./combobox/index.d.ts",
+      "default": "./combobox/index.js"
+    },
+    "./combobox/vi-combobox": {
+      "types": "./combobox/vi-combobox.d.ts",
+      "default": "./combobox/vi-combobox.js"
+    },
+    "./combobox/vi-combobox-item": {
+      "types": "./combobox/vi-combobox-item.d.ts",
+      "default": "./combobox/vi-combobox-item.js"
+    },
+    "./select": {
+      "types": "./select/index.d.ts",
+      "default": "./select/index.js"
+    },
+    "./select/vi-select": {
+      "types": "./select/vi-select.d.ts",
+      "default": "./select/vi-select.js"
+    },
+    "./select/vi-select-option": {
+      "types": "./select/vi-select-option.d.ts",
+      "default": "./select/vi-select-option.js"
+    },
+    "./select/vi-select-group": {
+      "types": "./select/vi-select-group.d.ts",
+      "default": "./select/vi-select-group.js"
+    },
+    "./switch": {
+      "types": "./switch/index.d.ts",
+      "default": "./switch/index.js"
+    },
+    "./switch/vi-switch": {
+      "types": "./switch/vi-switch.d.ts",
+      "default": "./switch/vi-switch.js"
+    },
+    "./tag": {
+      "types": "./tag/index.d.ts",
+      "default": "./tag/index.js"
+    },
+    "./tag/vi-tag": {
+      "types": "./tag/vi-tag.d.ts",
+      "default": "./tag/vi-tag.js"
     }
   },
   "peerDependencies": {
@@ -174,7 +286,21 @@
     "date-picker/",
     "label/",
     "link/",
-    "README.md"
+    "README.md",
+    "accordion/",
+    "alert/",
+    "animation/",
+    "card/",
+    "chip/",
+    "combobox/",
+    "modal/",
+    "select/",
+    "skeleton/",
+    "spin/",
+    "switch/",
+    "tabs/",
+    "tag/",
+    "textarea/"
   ],
   "peerDependenciesMeta": {
     "flatpickr": {

@@ -801,6 +801,91 @@ The [ViModal](./src/modal/vi-modal.ts) is a focus-trapping dialog that dynamical
 
 ---
 
+### Spin ([vi-spin](./src/spin/vi-spin.ts))
+
+The `<vi-spin>` component is a highly versatile loading indicator. It provides a visual spinner for data fetching states and can optionally act as a full overlay (dimming its children) or a fullscreen backdrop. It supports determinate progress, multiple visual variants, and completely custom SVG/Lottie indicators.
+
+#### Properties & Attributes
+
+| Attribute    | Property     | Type                        | Default | Description                                                        |
+| :----------- | :----------- | :-------------------------- | :------ | :----------------------------------------------------------------- |
+| `spinning`   | `spinning`   | `boolean`                   | `true`  | Controls whether the spinner is active and visible.                |
+| `variant`    | `variant`    | `'arc'\|'dots'`             | `'arc'` | The visual design of the built-in spinner.                         |
+| `size`       | `size`       | `'sm'\|'md'\|'lg'`          | `'md'`  | The physical dimensions of the spinner graphic.                    |
+| `percent`    | `percent`    | `number`                    | `undefined` | Converts the arc variant into a determinate progress ring (0-100). |
+| `fullscreen` | `fullscreen` | `boolean`                   | `false` | Renders a fixed backdrop that covers the entire viewport.          |
+| `tip`        | `tip`        | `string`                    | `''`    | Custom text label displayed directly underneath the spinner.       |
+| `delay`      | `delay`      | `number`                    | `undefined` | Debounce time (ms) to wait before rendering to prevent flashing.   |
+
+#### Slots
+
+- **Default Slot**: Place content here to have the `<vi-spin>` automatically overlay and blur it when `spinning="true"`.
+- **`indicator` Slot**: Replace the built-in spinner graphic entirely with your own custom HTML, SVGs, or `lottie-player`.
+
+#### Snippets
+
+**Basic Usage & Variants:**
+
+```html
+<vi-spin tip="Loading Default (Arc)..."></vi-spin>
+<vi-spin variant="dots" tip="Legacy Dots"></vi-spin>
+```
+
+**Determinate Progress:**
+When tracking measurable progress (like a file upload), pass a `percent` value to the `arc` variant.
+
+```html
+<vi-spin percent="75" tip="Uploading... 75%"></vi-spin>
+```
+
+**Debounced Delay (No-Flash):**
+If a request completes very quickly, showing a spinner for 10ms causes an ugly visual flash. Use `delay` to ensure the spinner only mounts if the operation takes longer than the specified threshold.
+
+```html
+<vi-spin delay="500" tip="Fetching heavy data...">
+  <!-- If data loads in 200ms, the user will never see a spinner -->
+  <div>Content block here...</div>
+</vi-spin>
+```
+
+**Nested Content Overlay:**
+When you provide children to the `<vi-spin>`, it automatically creates a relative bounding box, dims the children, and centers the spinner over them.
+
+```html
+<vi-spin spinning="true" tip="Saving changes...">
+  <form>
+    <vi-input placeholder="Name"></vi-input>
+    <vi-button>Submit</vi-button>
+  </form>
+</vi-spin>
+```
+
+**Fullscreen Mode:**
+Trigger a `position: fixed` overlay that blocks the entire screen.
+
+```html
+<vi-spin fullscreen tip="Initializing Application..."></vi-spin>
+```
+
+**Custom Indicator (Lottie Animation):**
+If you want to use a completely custom animation, utilize the `indicator` slot.
+
+```html
+<vi-spin tip="Processing payment...">
+  <lottie-player 
+    slot="indicator"
+    src="https://assets2.lottiefiles.com/packages/lf20_usmfx6bp.json"
+    background="transparent" 
+    speed="1" 
+    style="width: 60px; height: 60px;" 
+    loop 
+    autoplay
+  ></lottie-player>
+</vi-spin>
+```
+
+---
+
 ### Date Picker ([vi-date-picker](./src/date-picker/vi-date-picker.ts))
 
 The [ViDatePicker](./src/date-picker/vi-date-picker.ts) is a powerful form-associated calendar control built on top of Flatpickr. It fully handles Shadow DOM retargeting, multiple calendar modes, custom locales, and complex date-range selections.

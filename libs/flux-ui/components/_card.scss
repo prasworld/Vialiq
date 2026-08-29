@@ -1,0 +1,180 @@
+@use '../styles/variables' as tokens;
+@use '../styles/functions' as func;
+
+@layer components {
+  :host {
+    display: block;
+    width: 100%;
+  }
+
+  .vi-card {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    box-sizing: border-box;
+    width: 100%;
+
+    background-color: var(--vi-card-bg, #{tokens.$layer-01});
+    border: #{tokens.$border-width-thin} solid var(--vi-card-border-color, #{tokens.$border-02});
+    border-radius: var(--vi-card-border-radius, #{tokens.$border-radius-lg});
+    color: var(--vi-card-color, #{tokens.$text-primary});
+    // Refined premium transitions
+    transition: box-shadow 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), 
+                border-color 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), 
+                transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    
+    // Subtle glassy inner highlight for 3D machined edge + faint ambient shadow
+    box-shadow: var(--vi-card-shadow, #{tokens.$shadow-sm}, #{tokens.$shadow-inner-light});
+    
+    // Default padding (can be overridden by size classes)
+    --vi-card-padding: #{func.to-rem(24px)};
+  }
+
+  /* Size Overrides */
+  .vi-card--size-sm { --vi-card-padding: #{func.to-rem(12px)}; }
+  .vi-card--size-md { --vi-card-padding: #{func.to-rem(16px)}; }
+  .vi-card--size-lg { --vi-card-padding: #{func.to-rem(24px)}; }
+
+  .vi-card--hoverable:hover {
+    // Multi-layered diffuse shadow + maintaining the inner inset highlight
+    box-shadow: var(--vi-card-hover-shadow, #{tokens.$shadow-md}, #{tokens.$shadow-inner-light});
+    border-color: var(--vi-card-hover-border-color, #{tokens.$border-03});
+    // Physical lift micro-interaction
+    transform: translateY(-2px);
+    cursor: pointer;
+  }
+  
+  // Subtle tactile press effect
+  .vi-card--hoverable:active {
+    transform: translateY(0) scale(0.995);
+    box-shadow: var(--vi-card-active-shadow, #{tokens.$shadow-sm}, #{tokens.$shadow-inner-light});
+  }
+
+  /* Structural Slots */
+  
+  .vi-card-cover {
+    display: flex;
+    overflow: hidden;
+    border-top-left-radius: var(--vi-card-border-radius, #{tokens.$border-radius-lg});
+    border-top-right-radius: var(--vi-card-border-radius, #{tokens.$border-radius-lg});
+    margin-top: -1px;
+    margin-left: -1px;
+    margin-right: -1px;
+
+    ::slotted(*) {
+      width: 100%;
+      display: block;
+      object-fit: cover;
+    }
+  }
+  .vi-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--vi-card-padding);
+    border-bottom: #{tokens.$border-width-thin} solid transparent;
+  }
+
+  .vi-card--bordered .vi-card-header {
+    border-bottom-color: var(--vi-card-border-color, #{tokens.$border-02});
+  }
+
+  .vi-card-title {
+    margin: 0;
+    font-family: #{tokens.$font-family-base};
+    font-weight: #{tokens.$font-weight-semibold};
+    /* Premium tracking for dense, modern typography */
+    letter-spacing: -0.01em;
+    
+    /* Fluid typography fallback using vw instead of cqi */
+    font-size: var(--vi-card-title-font-size, clamp(#{func.to-rem(16px)}, #{func.to-rem(14px)} + 1vw, #{func.to-rem(20px)}));
+    line-height: #{tokens.$line-height-tight};
+    color: var(--vi-card-title-color, #{tokens.$text-primary});
+  }
+
+  .vi-card-extra {
+    display: flex;
+    align-items: center;
+    gap: #{func.to-rem(8px)};
+  }
+
+  .vi-card-body {
+    padding: var(--vi-card-padding);
+    flex: 1 1 auto;
+    font-size: var(--vi-card-body-font-size, #{tokens.$font-size-base});
+    line-height: #{tokens.$line-height-normal};
+    color: var(--vi-card-body-color, #{tokens.$text-secondary});
+  }
+
+  .vi-card-footer {
+    display: flex;
+    align-items: center;
+    padding: var(--vi-card-padding);
+    border-top: #{tokens.$border-width-thin} solid transparent;
+  }
+
+  .vi-card--bordered .vi-card-footer {
+    border-top-color: var(--vi-card-border-color, #{tokens.$border-02});
+  }
+
+  .vi-card-actions {
+    display: flex;
+    // Visually anchor actions with faint background
+    background: var(--vi-card-actions-bg, #{tokens.$layer-dimmed});
+    border-top: #{tokens.$border-width-thin} solid transparent;
+  }
+
+  .vi-card--bordered .vi-card-actions {
+    border-top-color: var(--vi-card-border-color, #{tokens.$border-02});
+  }
+
+  .vi-card-actions ::slotted(*) {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: #{func.to-rem(12px)} 0;
+    margin: 0;
+    border-right: #{tokens.$border-width-thin} solid transparent;
+    color: var(--vi-card-action-color, #{tokens.$text-secondary});
+    transition: color 0.3s ease;
+    cursor: pointer;
+  }
+
+  .vi-card--bordered .vi-card-actions ::slotted(*) {
+    border-right-color: var(--vi-card-border-color, #{tokens.$border-02});
+  }
+
+  .vi-card-actions ::slotted(*:hover) {
+    color: var(--vi-card-action-hover-color, #{tokens.$text-primary});
+  }
+
+  .vi-card-actions ::slotted(*:last-child) {
+    border-right: none;
+  }
+
+
+  .vi-card-skeleton {
+    display: flex;
+    gap: #{func.to-rem(16px)};
+    width: 100%;
+  }
+
+  .vi-card-skeleton-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    gap: #{func.to-rem(16px)};
+  }
+
+  .vi-card-skeleton-title {
+    width: 38%;
+    margin-top: #{func.to-rem(8px)};
+    margin-bottom: #{func.to-rem(4px)};
+  }
+
+  .vi-card-skeleton-short {
+    width: 61%;
+  }
+
+}

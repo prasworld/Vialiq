@@ -1,0 +1,159 @@
+/**
+ * Spin component base styles.
+ *
+ * Provides the host-agnostic foundation for the loading spinner.
+ * Includes the dot animations and overlay dimming logic.
+ */
+
+@use '../styles/functions' as func;
+@use '../styles/variables' as tokens;
+
+@layer components {
+
+  @keyframes viSpinRotate {
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes viSpinMove {
+    to {
+      opacity: 1;
+    }
+  }
+
+  .spin-wrapper {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--vi-spin-color, var(--vi-color-primary, #{tokens.$color-primary}));
+    vertical-align: middle;
+    text-align: center;
+    opacity: 0;
+    transition: transform 0.3s cubic-bezier(0.78, 0.14, 0.15, 0.86);
+
+    &.spinning {
+      opacity: 1;
+    }
+
+    &.spin-fullscreen {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background-color: var(--vi-spin-fullscreen-bg, rgba(255, 255, 255, 0.8));
+    }
+  }
+
+  .spin-circle {
+    display: inline-block;
+    font-size: var(--vi-spin-size-md, #{func.to-rem(20px)});
+    width: 1em;
+    height: 1em;
+    animation: viSpinRotate 1s infinite linear;
+
+    &.spin-circle-determinate {
+      animation: none;
+      transform: rotate(-90deg);
+    }
+  }
+
+  .spin-dot {
+    position: relative;
+    display: inline-block;
+    font-size: var(--vi-spin-size-md, #{func.to-rem(20px)});
+    width: 1em;
+    height: 1em;
+    transform: rotate(45deg);
+    animation: viSpinRotate 1.2s infinite linear;
+  }
+
+  .spin-dot-item {
+    position: absolute;
+    display: block;
+    width: var(--vi-spin-item-size-md, 9px);
+    height: var(--vi-spin-item-size-md, 9px);
+    background-color: currentColor;
+    border-radius: 100%;
+    transform: scale(0.75);
+    transform-origin: 50% 50%;
+    opacity: 0.3;
+    animation: viSpinMove 1s infinite linear alternate;
+
+    &:nth-child(1) {
+      top: 0;
+      left: 0;
+    }
+    &:nth-child(2) {
+      top: 0;
+      right: 0;
+      animation-delay: 0.4s;
+    }
+    &:nth-child(3) {
+      right: 0;
+      bottom: 0;
+      animation-delay: 0.8s;
+    }
+    &:nth-child(4) {
+      bottom: 0;
+      left: 0;
+      animation-delay: 1.2s;
+    }
+  }
+
+  .spin-text {
+    margin-top: #{tokens.$spacing-xs};
+    font-family: #{tokens.$font-family-base};
+    font-size: var(--vi-spin-text-font-size, #{tokens.$font-size-sm});
+    color: var(--vi-spin-color, var(--vi-color-primary, #{tokens.$color-primary}));
+  }
+
+  // Sizes
+  .spin-sm {
+    .spin-circle, .spin-dot {
+      font-size: var(--vi-spin-size-sm, #{tokens.$font-size-base});
+    }
+    .spin-dot-item {
+      width: var(--vi-spin-item-size-sm, #{tokens.$spacing-unit});
+      height: var(--vi-spin-item-size-sm, #{tokens.$spacing-unit});
+    }
+  }
+
+  .spin-lg {
+    .spin-circle, .spin-dot {
+      font-size: var(--vi-spin-size-lg, #{tokens.$spacing-xl});
+    }
+    .spin-dot-item {
+      width: var(--vi-spin-item-size-lg, #{tokens.$font-size-base});
+      height: var(--vi-spin-item-size-lg, #{tokens.$font-size-base});
+    }
+  }
+
+  // Nested Overlay Mode
+  .spin-nested-loading {
+    position: relative;
+
+    .spin-container {
+      position: relative;
+      transition: opacity 0.3s;
+      
+      &.spin-blur {
+        clear: both;
+        opacity: 0.5;
+        user-select: none;
+        pointer-events: none;
+      }
+    }
+
+    > .spin-wrapper {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 4;
+      display: flex;
+      width: 100%;
+      height: 100%;
+      max-height: 400px;
+    }
+  }
+}

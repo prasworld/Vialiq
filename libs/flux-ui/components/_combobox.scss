@@ -52,7 +52,7 @@
       border-color: var(--vi-combobox-border-color-focus, #{tokens.$focus});
       outline: var(--vi-combobox-border-width-focus, #{tokens.$border-width-base}) solid var(--vi-combobox-focus-ring-color, #{tokens.$focus});
       outline-offset: 0;
-      box-shadow: 0 0 0 3px var(--vi-combobox-focus-ring-glow, #{tokens.$color-blue-200});
+      box-shadow: #{tokens.$focus-ring-shadow};
     }
 
     &.is-disabled {

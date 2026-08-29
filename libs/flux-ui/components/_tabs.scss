@@ -223,7 +223,7 @@
       padding: var(--vi-tabs-spacing-xs, 4px);
       gap: var(--vi-tabs-gap-xs, 2px);
       // Inset shadow creates a "recessed tray" feel
-      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.07), inset 0 1px 2px rgba(0, 0, 0, 0.04);
+      box-shadow: #{tokens.$shadow-inner-deep};
     }
 
     // The sliding white pill cursor
@@ -233,10 +233,7 @@
       border-radius: #{func.to-rem(7px)};
       background: var(--vi-tabs-surface-primary, #{tokens.$layer-01});
       // Multi-layer shadow for floating card feel
-      box-shadow:
-        0 1px 3px rgba(0, 0, 0, 0.10),
-        0 1px 2px rgba(0, 0, 0, 0.06),
-        0 0   0 1px rgba(0, 0, 0, 0.04);
+      box-shadow: #{tokens.$shadow-sm};
     }
 
     // Indicator hidden — cursor does selection work
@@ -292,7 +289,7 @@
       border: 1px solid var(--vi-tabs-border-color, #{tokens.$color-border});
       border-bottom-color: $surface-color; // Merges with content below
       margin-top: 8px;
-      box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
+      box-shadow: #{tokens.$shadow-sm};
     }
 
     .vi-tabs__indicator { display: none; }
@@ -309,7 +306,7 @@
     border: 1px solid var(--vi-tabs-border-color, #{tokens.$color-border});
     border-radius: #{func.to-rem(10px)};
     overflow: clip;  // Enclosed: clip cursor inside rounded border box
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+    box-shadow: #{tokens.$shadow-sm};
 
     .vi-tabs__tablist {
       background: var(--vi-tabs-surface-secondary, #{tokens.$layer-02});
@@ -370,9 +367,7 @@
       width: calc(100% - 8px) !important; // Override JS width — fills sidebar
       border-radius: #{func.to-rem(8px)};
       background: var(--vi-tabs-surface-primary, #{tokens.$layer-01});
-      box-shadow:
-        0 1px 3px rgba(0, 0, 0, 0.08),
-        0 0 0 1px rgba(0, 0, 0, 0.04);
+      box-shadow: #{tokens.$shadow-sm};
     }
 
     // Vertical indicator — right edge accent line
@@ -518,10 +513,7 @@
     background: var(--vi-tabs-surface-primary, #{tokens.$layer-01});
     border: 1px solid var(--vi-tabs-border-color, #{tokens.$color-border});
     border-radius: #{func.to-rem(8px)};
-    box-shadow:
-      0 4px 6px -1px rgba(0, 0, 0, 0.10),
-      0 2px 4px -1px rgba(0, 0, 0, 0.06),
-      0 0 0 1px rgba(0, 0, 0, 0.04);
+    box-shadow: #{tokens.$shadow-md};
     padding: var(--vi-tabs-spacing-xs, 4px);
     animation: vi-menu-appear 150ms cubic-bezier(0.4, 0, 0.2, 1);
     transform-origin: top right;

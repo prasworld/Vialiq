@@ -126,6 +126,7 @@ $layer-01:            var(--vi-layer-01,            #ffffff); // Pure white base
 $layer-02:            var(--vi-layer-02,            #f3f4f6); // grey-100
 $layer-03:            var(--vi-layer-03,            #e5e7eb); // grey-200
 $layer-04:            var(--vi-layer-04,            #d1d5db); // grey-300
+$layer-dimmed:        var(--vi-layer-dimmed,        rgba(0, 0, 0, 0.02)); // Faint tint for visual anchors
 
 $layer-hover-01:      var(--vi-layer-hover-01,      #f3f4f6); // grey-100
 $layer-hover-02:      var(--vi-layer-hover-02,      #e5e7eb); // grey-200
@@ -220,10 +221,22 @@ $letter-spacing-widest:  var(--vi-letter-spacing-widest,   0.1em);
 
 // -- Primitive: Shadows ------------------------------------------------------
 
-$shadow-sm: var(--vi-shadow-sm, 0 1px 2px 0 rgba(0, 0, 0, 0.05));
-$shadow-md: var(--vi-shadow-md, 0 4px 6px -1px rgba(0, 0, 0, 0.1));
-$shadow-lg: var(--vi-shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.1));
-$shadow-xl: var(--vi-shadow-xl, 0 20px 25px -5px rgba(0, 0, 0, 0.1));
+// Premium multi-layered diffuse shadows
+$shadow-sm: var(--vi-shadow-sm, 0 1px 2px 0 rgba(0, 0, 0, 0.03));
+$shadow-md: var(--vi-shadow-md, 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 10px 15px -3px rgba(0, 0, 0, 0.1));
+$shadow-lg: var(--vi-shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 20px 25px -5px rgba(0, 0, 0, 0.1));
+$shadow-xl: var(--vi-shadow-xl, 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 25px 50px -12px rgba(0, 0, 0, 0.15));
+
+// Premium 3D edge highlights
+$shadow-inner-light: var(--vi-shadow-inner-light, inset 0 1px 0 rgba(255, 255, 255, 0.3));
+$shadow-inner-dark:  var(--vi-shadow-inner-dark, inset 0 1px 0 rgba(0, 0, 0, 0.05));
+$shadow-inner-deep:  var(--vi-shadow-inner-deep, inset 0 1px 3px rgba(0, 0, 0, 0.07), inset 0 1px 2px rgba(0, 0, 0, 0.04));
+
+// Focus Rings
+$focus-ring-color:  var(--vi-focus-ring-color, $color-blue-200);
+$focus-ring-shadow: var(--vi-focus-ring-shadow, 0 0 0 3px $focus-ring-color);
+$focus-ring-error-shadow: var(--vi-focus-ring-error-shadow, 0 0 0 3px $color-red-200);
+$focus-ring-success-shadow: var(--vi-focus-ring-success-shadow, 0 0 0 3px $color-green-200);
 
 // -- Primitive: Border radius ------------------------------------------------
 

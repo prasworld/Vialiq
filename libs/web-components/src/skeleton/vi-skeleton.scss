@@ -1,0 +1,41 @@
+@use '@vialiq/flux-ui/styles/variables' as tokens;
+@use '@vialiq/flux-ui/styles/functions' as func;
+@use '@vialiq/flux-ui/components/skeleton';
+
+:host {
+  display: block;
+  width: var(--vi-skeleton-width, 100%);
+  height: var(--vi-skeleton-height, #{func.to-rem(16px)});
+  border-radius: var(--vi-skeleton-radius, #{tokens.$border-radius-sm});
+}
+
+:host([variant="circle"]) {
+  width: var(--vi-skeleton-width, #{func.to-rem(40px)});
+  height: var(--vi-skeleton-height, #{func.to-rem(40px)});
+  border-radius: var(--vi-skeleton-radius, 50%);
+}
+
+:host([variant="rect"]) {
+  width: var(--vi-skeleton-width, 100%);
+  height: var(--vi-skeleton-height, #{func.to-rem(150px)});
+  border-radius: var(--vi-skeleton-radius, #{tokens.$border-radius-md});
+}
+
+.vi-skeleton {
+  @extend .vi-skeleton;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+}
+
+.vi-skeleton--animation-shimmer {
+  @extend .vi-skeleton--animation-shimmer;
+}
+
+.vi-skeleton--animation-pulse {
+  @extend .vi-skeleton--animation-pulse;
+}
+
+.vi-skeleton--animation-none {
+  @extend .vi-skeleton--animation-none;
+}

@@ -70,7 +70,7 @@
       border-color: var(--vi-select-focus-ring-color, #{tokens.$focus});
       outline: var(--vi-border-width-base, 2px) solid var(--vi-select-focus-ring-color, #{tokens.$focus});
       outline-offset: -1px;
-      box-shadow: 0 0 0 3px var(--vi-select-focus-ring-glow, #{tokens.$color-blue-200});
+      box-shadow: #{tokens.$focus-ring-shadow};
     }
   }
 
@@ -290,7 +290,7 @@
       border-color: var(--vi-select-focus-ring-color, #{tokens.$focus});
       outline: var(--vi-border-width-base, 2px) solid var(--vi-select-focus-ring-color, #{tokens.$focus});
       outline-offset: -1px;
-      box-shadow: 0 0 0 3px var(--vi-select-focus-ring-glow, #{tokens.$color-blue-200});
+      box-shadow: #{tokens.$focus-ring-shadow};
     }
   }
 

@@ -2,6 +2,7 @@ export { ViElement } from './base/vi-element.js';
 export type { ViSize, ViStatus } from './base/vi-element.js';
 export type { ControlStatus } from './base/validity-mixin.js';
 export { ViButton } from './button/vi-button.js';
+export { ViCard } from './card/vi-card.js';
 export type {
   ButtonVariant,
   ButtonSize,
@@ -85,3 +86,7 @@ export type {
 } from './tabs/vi-tabs.js';
 export { ViTab } from './tabs/vi-tab.js';
 export { ViTabPanel } from './tabs/vi-tab-panel.js';
+
+export { ViSpin } from './spin/vi-spin.js';
+export type { SpinSize } from './spin/vi-spin.js';
+export * from './skeleton/vi-skeleton.js';
