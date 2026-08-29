@@ -2,6 +2,7 @@ export { ViElement } from './base/vi-element.js';
 export type { ViSize, ViStatus } from './base/vi-element.js';
 export type { ControlStatus } from './base/validity-mixin.js';
 export { ViButton } from './button/vi-button.js';
+export { ViCard } from './card/vi-card.js';
 export type { ButtonVariant, ButtonSize, ButtonIconPlacement, } from './button/vi-button.js';
 export { ViInput } from './input/vi-input.js';
 export type { InputType, InputSize } from './input/vi-input.js';
@@ -52,4 +53,7 @@ export { ViLink } from './link/index.js';
 export type { TabsOrientation, TabsVariant, TabsActivation, TabsOverflow, } from './tabs/vi-tabs.js';
 export { ViTab } from './tabs/vi-tab.js';
 export { ViTabPanel } from './tabs/vi-tab-panel.js';
+export { ViSpin } from './spin/vi-spin.js';
+export type { SpinSize } from './spin/vi-spin.js';
+export * from './skeleton/vi-skeleton.js';
 //# sourceMappingURL=index.d.ts.map
