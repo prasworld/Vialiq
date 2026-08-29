@@ -1,0 +1,39 @@
+@use 'sass:math';
+@use 'sass:meta';
+
+/// Global configuration for the base font size used in rem calculations.
+/// Consumers can override this if their app uses a non-16px root font size.
+/// Example: @use 'flux-ui/styles/functions' with ($vi-rem-base: 10px);
+$vi-rem-base: 16px !default;
+
+/// Convert pixels to rems based on the configurable global base
+/// @param {Number} $px - The pixel value (with or without 'px' unit)
+/// @return {Number} The value in rems
+@function to-rem($px) {
+  @if meta.type-of($px) != 'number' {
+    @error "to-rem() requires a number, got #{meta.type-of($px)}.";
+  }
+
+  // If the value has a unit other than px (like %, em, rem), return it as is
+  @if not math.is-unitless($px) and math.unit($px) != 'px' {
+    @return $px;
+  }
+
+  // Strip units for math
+  $px-val: $px;
+  @if not math.is-unitless($px) {
+    $px-val: math.div($px, 1px);
+  }
+
+  $base-val: $vi-rem-base;
+  @if not math.is-unitless($vi-rem-base) {
+    $base-val: math.div($vi-rem-base, 1px);
+  }
+
+  // If 0, just return 0 (no unit needed)
+  @if $px-val == 0 {
+    @return 0;
+  }
+
+  @return math.div($px-val, $base-val) * 1rem;
+}

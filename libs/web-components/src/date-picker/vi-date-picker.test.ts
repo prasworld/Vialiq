@@ -41,7 +41,8 @@ describe('vi-date-picker', () => {
     expect(el.mode).toBe('date');
     
     // Flatpickr should have created a calendar element in the DOM (usually appended to body)
-    const calendar = document.querySelector('.flatpickr-calendar');
+    const calendar = el.shadowRoot!.querySelector('.flatpickr-calendar') || document.querySelector('.flatpickr-calendar');
+   
     expect(calendar).toBeTruthy();
   });
 
@@ -64,7 +65,7 @@ describe('vi-date-picker', () => {
     await picker.updateComplete;
     
     expect(input.expanded).toBe(true);
-    const calendar = document.querySelector('.flatpickr-calendar.open');
+    const calendar = picker.shadowRoot!.querySelector('.flatpickr-calendar.open');
     expect(calendar).toBeTruthy();
   });
 
@@ -123,7 +124,7 @@ describe('vi-date-picker', () => {
     const picker = container.querySelector('vi-date-picker') as ViDatePicker;
     await waitForUpdate(picker);
     
-    const calendar = document.querySelector('.flatpickr-calendar');
+    const calendar = picker.shadowRoot!.querySelector('.flatpickr-calendar');
     // The month plugin creates a custom header with `.vi-calendar-header`
     const customHeader = calendar?.querySelector('.vi-calendar-header');
     expect(customHeader).toBeTruthy();

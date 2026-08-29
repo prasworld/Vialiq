@@ -178,13 +178,13 @@ describe('vi-tabs', () => {
     await new Promise((r) => setTimeout(r, 50));
 
     const t2 = await $('vi-tab[tab-id="t2"]');
-    const closeBtn = await t2.shadow$('button[part="close-btn"]');
+    const closeBtn = await t2.shadow$('button[part="close-button"]');
     
     // Initially they exist
     expect(await $('vi-tab[tab-id="t2"]').isExisting()).toBe(true);
     expect(await $('vi-tab-panel[for="t2"]').isExisting()).toBe(true);
 
-    await closeBtn.click();
+    await browser.execute((el: any) => el.click(), closeBtn);
     await new Promise((r) => setTimeout(r, 50));
 
     // After close, they should be removed from DOM
@@ -414,7 +414,7 @@ describe('vi-tabs', () => {
     const closeBtn = await t1.shadow$('.vi-tab__close');
     await expect(closeBtn).toExist();
     
-    await closeBtn.click();
+    await browser.execute((el: any) => el.click(), closeBtn);
     expect(eventFired).toBe(true);
   });
 });

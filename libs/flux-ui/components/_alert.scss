@@ -15,15 +15,15 @@
     box-sizing: border-box;
     width: 100%;
 
-    border-radius: var(--vi-alert-border-radius, 6px);
-    padding: var(--vi-alert-padding, 12px 16px);
-    gap: var(--vi-alert-gap, 12px);
+    border-radius: var(--vi-alert-border-radius, #{tokens.$border-radius-lg});
+    padding: var(--vi-alert-padding, #{tokens.$spacing-xs} #{tokens.$spacing-md});
+    gap: var(--vi-alert-gap, #{tokens.$spacing-sm});
     border-width: var(--vi-alert-border-width, 1px);
     border-style: solid;
 
-    font-family: tokens.$font-family-base;
-    font-size: tokens.$font-size-sm;
-    line-height: tokens.$line-height-normal;
+    font-family: var(--vi-alert-font-family, #{tokens.$font-family-base});
+    font-size: #{tokens.$font-size-sm};
+    line-height: #{tokens.$line-height-normal};
   }
 
   .alert-icon {
@@ -45,7 +45,7 @@
 
   .alert-title {
     font-weight: tokens.$font-weight-semibold;
-    margin-bottom: 4px;
+    margin-bottom: #{tokens.$spacing-unit};
     display: block;
   }
 

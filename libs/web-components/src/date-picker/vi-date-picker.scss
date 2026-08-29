@@ -34,12 +34,6 @@
   width: 100%;
 }
 
-:host([status='invalid']) .inputs-container ::slotted(vi-date-picker-input) {
-  --vi-input-border-color: var(
-    --vi-date-picker-error-color,
-    tokens.$color-error
-  );
-}
 
 .validity-msg {
   font-size: var(--vi-date-picker-validity-font-size, tokens.$font-size-xs);

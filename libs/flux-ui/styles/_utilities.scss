@@ -238,7 +238,7 @@
   }
 
   .rounded-full {
-    border-radius: 9999px;
+    border-radius: #{$border-radius-full};
   }
 
   // ============================================================================

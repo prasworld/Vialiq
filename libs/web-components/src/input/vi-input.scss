@@ -20,11 +20,18 @@
 
 :host {
   display: block;
-  // Prevent the browser drawing its own default outline on the host element
-  // when it receives :focus via delegatesFocus. The visible focus ring is
-  // rendered on the inner .input-control by _input.scss (see below).
   outline: none;
 }
+
+.input-control {
+  padding-block: var(--vi-input-spacing-padding-block, #{tokens.$spacing-unit});
+  padding-inline: var(--vi-input-spacing-padding-inline, #{tokens.$spacing-sm});
+  font-size: var(--vi-input-typography-font-size, #{tokens.$font-size-base});
+  border-radius: var(--vi-input-shape-border-radius, #{tokens.$border-radius-md});
+  min-height: var(--vi-input-sizing-min-height, 32px);
+}
+
+
 
 // ============================================================================
 // Disabled state
@@ -95,23 +102,32 @@
 // Size overrides — adjust input padding and font-size
 // ============================================================================
 
-:host([size='xs']) {
-  --vi-input-spacing-padding-block: 2px;
-  --vi-input-spacing-padding-inline: 8px;
-  --vi-input-typography-font-size: #{tokens.$font-size-xs};
+:host([size='xs']) .input-control {
+  padding-block: var(--vi-input-spacing-padding-block, 0px);
+  padding-inline: var(--vi-input-spacing-padding-inline, #{tokens.$spacing-unit});
+  font-size: var(--vi-input-typography-font-size, #{tokens.$font-size-xs});
+  border-radius: var(--vi-input-shape-border-radius, #{tokens.$border-radius-sm});
+  min-height: var(--vi-input-sizing-min-height, 20px);
 }
 
-:host([size='sm']) {
-  --vi-input-spacing-padding-block: 4px;
-  --vi-input-spacing-padding-inline: 12px;
-  --vi-input-typography-font-size: #{tokens.$font-size-sm};
+
+:host([size='sm']) .input-control {
+  padding-block: var(--vi-input-spacing-padding-block, 0px);
+  padding-inline: var(--vi-input-spacing-padding-inline, #{tokens.$spacing-xs});
+  font-size: var(--vi-input-typography-font-size, #{tokens.$font-size-base});
+  border-radius: var(--vi-input-shape-border-radius, #{tokens.$border-radius-sm});
+  min-height: var(--vi-input-sizing-min-height, 24px);
 }
 
-:host([size='lg']) {
-  --vi-input-spacing-padding-block: 12px;
-  --vi-input-spacing-padding-inline: 20px;
-  --vi-input-typography-font-size: #{tokens.$font-size-lg};
+
+:host([size='lg']) .input-control {
+  padding-block: var(--vi-input-spacing-padding-block, #{tokens.$spacing-xs});
+  padding-inline: var(--vi-input-spacing-padding-inline, #{tokens.$spacing-sm});
+  font-size: var(--vi-input-typography-font-size, #{tokens.$font-size-lg});
+  border-radius: var(--vi-input-shape-border-radius, #{tokens.$border-radius-lg});
+  min-height: var(--vi-input-sizing-min-height, 40px);
 }
+
 
 
 

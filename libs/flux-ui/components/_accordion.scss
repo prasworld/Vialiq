@@ -8,8 +8,8 @@ $accordion-border-radius: var(--vi-accordion-border-radius, tokens.$border-radiu
 $accordion-gap: var(--vi-accordion-gap, 0px);
 $accordion-animation-duration: var(--vi-accordion-animation-duration, 200ms);
 
-$accordion-item-header-padding: var(--vi-accordion-item-header-padding, 14px 16px);
-$accordion-item-body-padding: var(--vi-accordion-item-body-padding, 0 16px 16px);
+$accordion-item-header-padding: var(--vi-accordion-item-header-padding, #{tokens.$spacing-sm} #{tokens.$spacing-md});
+$accordion-item-body-padding: var(--vi-accordion-item-body-padding, 0 #{tokens.$spacing-md} #{tokens.$spacing-md});
 $accordion-item-header-bg: var(--vi-accordion-item-header-bg, transparent);
 $accordion-item-header-bg-hover: var(--vi-accordion-item-header-bg-hover, tokens.$layer-hover-01);
 $accordion-item-header-bg-open: var(--vi-accordion-item-header-bg-open, transparent);
@@ -43,8 +43,8 @@ $accordion-item-chevron-color: var(--vi-accordion-item-chevron-color, tokens.$te
   padding: $accordion-item-header-padding;
   background-color: $accordion-item-header-bg;
   color: $accordion-item-label-color;
-  font-family: tokens.$font-family-base;
-  font-size: var(--vi-accordion-item-header-font-size, tokens.$font-size-base);
+  font-family: var(--vi-accordion-font-family, #{tokens.$font-family-base});
+  font-size: var(--vi-accordion-item-header-font-size, #{tokens.$font-size-base});
   font-weight: $accordion-item-label-font-weight;
   text-align: left;
   border: none;
@@ -91,8 +91,8 @@ $accordion-item-chevron-color: var(--vi-accordion-item-chevron-color, tokens.$te
   margin-inline-start: tokens.$spacing-xs;
 
   svg {
-    width: 16px;
-    height: 16px;
+    width: #{tokens.$spacing-md};
+    height: #{tokens.$spacing-md};
     fill: none;
     stroke: currentColor;
     stroke-width: 2;
@@ -112,9 +112,9 @@ $accordion-item-chevron-color: var(--vi-accordion-item-chevron-color, tokens.$te
 
 .accordion-panel-inner {
   padding: $accordion-item-body-padding;
-  font-family: tokens.$font-family-base;
-  font-size: tokens.$font-size-sm;
-  color: tokens.$text-secondary;
+  font-family: var(--vi-accordion-font-family, #{tokens.$font-family-base});
+  font-size: #{tokens.$font-size-sm};
+  color: #{tokens.$text-secondary};
   box-sizing: border-box;
 }
 
@@ -168,8 +168,8 @@ $accordion-item-chevron-color: var(--vi-accordion-item-chevron-color, tokens.$te
 
 .accordion--sm,
 .accordion-item--sm {
-  --vi-accordion-item-header-padding: 10px 12px;
-  --vi-accordion-item-body-padding: 0 12px 12px;
+  --vi-accordion-item-header-padding: #{tokens.$spacing-xs} #{tokens.$spacing-sm};
+  --vi-accordion-item-body-padding: 0 #{tokens.$spacing-sm} #{tokens.$spacing-sm};
   --vi-accordion-item-header-font-size: #{tokens.$font-size-sm};
 }
 
@@ -182,8 +182,8 @@ $accordion-item-chevron-color: var(--vi-accordion-item-chevron-color, tokens.$te
 
 .accordion--lg,
 .accordion-item--lg {
-  --vi-accordion-item-header-padding: 18px 20px;
-  --vi-accordion-item-body-padding: 0 20px 20px;
+  --vi-accordion-item-header-padding: #{tokens.$spacing-lg} #{tokens.$spacing-xl};
+  --vi-accordion-item-body-padding: 0 #{tokens.$spacing-xl} #{tokens.$spacing-xl};
   --vi-accordion-item-header-font-size: #{tokens.$font-size-lg};
 }
 

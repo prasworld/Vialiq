@@ -12,13 +12,13 @@
     border-style: solid;
 
     // Tokens mapped directly from docs
-    height: var(--vi-chip-height, var(--vi-chip-height-md, 32px));
+    height: var(--vi-chip-height, var(--vi-chip-height-md, #{tokens.$spacing-xl}));
     padding: var(--vi-chip-padding, 0 10px);
-    border-radius: var(--vi-chip-border-radius, 999px);
+    border-radius: var(--vi-chip-border-radius, #{tokens.$border-radius-full});
     border-width: var(--vi-chip-border-width, 1px);
     gap: var(--vi-chip-gap, 6px);
-    font-size: var(--vi-chip-font-size, var(--vi-font-size-sm));
-    font-weight: var(--vi-chip-font-weight, var(--vi-font-weight-medium));
+    font-size: var(--vi-chip-font-size, #{tokens.$font-size-sm});
+    font-weight: var(--vi-chip-font-weight, #{tokens.$font-weight-medium});
     transition: all var(--vi-chip-transition, 100ms ease);
 
     // Color tokens to be overridden by vi-chip variant

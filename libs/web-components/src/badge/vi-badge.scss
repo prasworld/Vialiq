@@ -1,4 +1,5 @@
 @use '@vialiq/flux-ui/styles/variables' as tokens;
+@use '@vialiq/flux-ui/styles/functions' as func;
 @use '@vialiq/flux-ui/components/badge';
 
 :host {
@@ -17,41 +18,39 @@
 // ============================================================================
 // Sizes
 // ============================================================================
-:host([size='sm']) {
-  --vi-badge-font-size: 10px;
-  --vi-badge-padding: 0 6px;
-  --vi-badge-gap: 2px;
-  --vi-badge-dot-size: 6px;
+:host([size='sm']) .badge {
+  font-size: var(--vi-badge-font-size, #{tokens.$font-size-xs});
+  padding: var(--vi-badge-padding, 0 #{tokens.$spacing-unit});
+  gap: var(--vi-badge-gap, #{tokens.$spacing-unit});
 }
 
-:host([size='md']) {
-  --vi-badge-font-size: 11px;
-  --vi-badge-padding: 2px 8px;
-  --vi-badge-gap: 4px;
-  --vi-badge-dot-size: 8px;
+:host([size='md']) .badge {
+  height: var(--vi-badge-height, #{func.to-rem(20px)});
+  font-size: var(--vi-badge-font-size, #{tokens.$font-size-xs});
+  padding: var(--vi-badge-padding, 0 #{tokens.$spacing-xs});
+  gap: var(--vi-badge-gap, #{tokens.$spacing-unit});
 }
 
-:host([size='lg']) {
-  --vi-badge-font-size: 13px;
-  --vi-badge-padding: 4px 12px;
-  --vi-badge-gap: 6px;
-  --vi-badge-dot-size: 10px;
+:host([size='lg']) .badge {
+  font-size: var(--vi-badge-font-size, #{tokens.$font-size-base});
+  padding: var(--vi-badge-padding, #{tokens.$spacing-unit} #{tokens.$spacing-sm});
+  gap: var(--vi-badge-gap, #{tokens.$spacing-xs});
 }
 
 // ============================================================================
 // Pill / Square
 // ============================================================================
-:host([pill]) {
-  --vi-badge-border-radius: 9999px;
+:host([pill]) .badge {
+  border-radius: var(--vi-badge-border-radius, #{tokens.$border-radius-full});
 }
 
-:host(:not([pill])) {
-  --vi-badge-border-radius: #{tokens.$border-radius-sm};
+:host(:not([pill])) .badge {
+  border-radius: var(--vi-badge-border-radius, #{tokens.$border-radius-sm});
 }
 
 // Dot specific padding when no text is provided
 .badge.dot-only {
-  --vi-badge-padding: 4px;
+  --vi-badge-padding: #{tokens.$spacing-unit};
 }
 
 // ============================================================================

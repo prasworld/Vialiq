@@ -1,14 +1,16 @@
 @use '../styles/variables' as tokens;
 
-$vi-tooltip-background: var(--vi-tooltip-background, tokens.$layer-inverse);
-$vi-tooltip-color: var(--vi-tooltip-color, tokens.$text-primary-inverse);
-$vi-tooltip-font-size: var(--vi-tooltip-font-size, 12px);
-$vi-tooltip-border-radius: var(--vi-tooltip-border-radius, 4px);
-$vi-tooltip-padding: var(--vi-tooltip-padding, 6px 10px);
+$vi-tooltip-background: var(--vi-tooltip-background, #{tokens.$layer-inverse});
+$vi-tooltip-color: var(--vi-tooltip-color, #{tokens.$text-primary-inverse});
+$vi-tooltip-font-size: var(--vi-tooltip-font-size, #{tokens.$font-size-xs});
+$vi-tooltip-border-radius: var(--vi-tooltip-border-radius, #{tokens.$border-radius-sm});
+// Padding: 6px vertical is between $spacing-unit (4px) and $spacing-xs (8px); kept as-is for visual compactness
+$vi-tooltip-padding: var(--vi-tooltip-padding, #{tokens.$spacing-unit} #{tokens.$spacing-xs});
 $vi-tooltip-max-width: var(--vi-tooltip-max-width, 240px);
+// Arrow size 6px is not on the standard grid; kept explicit as it is a geometric value
 $vi-tooltip-arrow-size: var(--vi-tooltip-arrow-size, 6px);
-$vi-tooltip-z-index: var(--vi-tooltip-z-index, tokens.$tooltip-z-index);
-$vi-tooltip-shadow: var(--vi-tooltip-shadow, tokens.$shadow-md);
+$vi-tooltip-z-index: var(--vi-tooltip-z-index, #{tokens.$tooltip-z-index});
+$vi-tooltip-shadow: var(--vi-tooltip-shadow, #{tokens.$shadow-md});
 
 .tooltip-panel {
   position: fixed;
@@ -22,7 +24,7 @@ $vi-tooltip-shadow: var(--vi-tooltip-shadow, tokens.$shadow-md);
   background: transparent;
   padding: 0;
   overflow: visible;
-  font-family: tokens.$font-family-base;
+  font-family: var(--vi-tooltip-font-family, #{tokens.$font-family-base});
 
   &[popover]:popover-open {
     display: block;

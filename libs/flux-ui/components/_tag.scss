@@ -1,52 +1,35 @@
 @use '../styles/variables' as tokens;
+@use '../styles/functions' as func;
 
 @layer components {
-  :host,
-  :root {
-    --vi-tag-height: 24px;
-    --vi-tag-padding-x: 10px;
-    --vi-tag-border-radius: 4px;
-    --vi-tag-font-size: var(--vi-font-size-xs, #{tokens.$font-size-xs});
-    --vi-tag-font-weight: var(--vi-font-weight-medium, #{tokens.$font-weight-medium});
-    --vi-tag-gap: 6px;
-    --vi-tag-remove-size: 16px;
-    --vi-tag-dot-size: 6px;
-    --vi-tag-avatar-size: 14px;
-    --vi-tag-icon-size: 14px;
-    --vi-tag-transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
-    --vi-tag-disabled-opacity: 0.5;
-    --vi-tag-max-width: 100%;
-  }
-
   .tag {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     box-sizing: border-box;
-    height: var(--vi-tag-height);
-    padding-inline: var(--vi-tag-padding-x);
-    border-radius: var(--vi-tag-border-radius);
+    height: var(--vi-tag-height, #{func.to-rem(22px)});
+    padding-inline: var(--vi-tag-padding-x, #{func.to-rem(7px)});
+    border-radius: var(--vi-tag-border-radius, #{func.to-rem(4px)});
     font-family: #{tokens.$font-family-base};
-    font-size: var(--vi-tag-font-size);
-    font-weight: var(--vi-tag-font-weight);
+    font-size: var(--vi-tag-font-size, var(--vi-font-size-xs, #{tokens.$font-size-xs}));
+    font-weight: var(--vi-tag-font-weight, var(--vi-font-weight-medium, #{tokens.$font-weight-medium}));
     line-height: 1;
-    gap: var(--vi-tag-gap);
-    transition: var(--vi-tag-transition);
+    gap: var(--vi-tag-gap, #{func.to-rem(6px)});
+    transition: var(--vi-tag-transition, all 150ms cubic-bezier(0.4, 0, 0.2, 1));
     user-select: none;
     border: #{tokens.$border-width-thin} solid transparent;
     cursor: default;
-    max-width: var(--vi-tag-max-width);
+    max-width: var(--vi-tag-max-width, 100%);
     vertical-align: middle;
     position: relative;
 
     // ── Pill shape modifier ──────────────────────────────────────────────────
     &.tag--pill {
-      border-radius: 9999px;
+      border-radius: #{tokens.$border-radius-full};
     }
 
-    // ── Removable padding adjustment ──────────────────────────────────────────
     &.tag--removable {
-      padding-inline-end: calc(var(--vi-tag-padding-x) - 4px);
+      padding-inline-end: calc(var(--vi-tag-padding-x, #{func.to-rem(7px)}) - 4px);
     }
 
     // ── Content wrapper & optical vertical alignment ─────────────────────────
@@ -54,7 +37,7 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: var(--vi-tag-gap);
+      gap: var(--vi-tag-gap, #{func.to-rem(6px)});
       min-width: 0;
       flex: 1 1 auto;
       height: 100%;
@@ -84,8 +67,8 @@
     }
 
     .tag-avatar ::slotted(*) {
-      width: var(--vi-tag-avatar-size, calc(var(--vi-tag-height) - 10px));
-      height: var(--vi-tag-avatar-size, calc(var(--vi-tag-height) - 10px));
+      width: var(--vi-tag-avatar-size, calc(var(--vi-tag-height, #{func.to-rem(22px)}) - 10px));
+      height: var(--vi-tag-avatar-size, calc(var(--vi-tag-height, #{func.to-rem(22px)}) - 10px));
       border-radius: 50%;
       object-fit: cover;
       display: block;
@@ -94,8 +77,8 @@
     // ── Status Dot indicator ────────────────────────────────────────────────
     .tag-dot {
       display: inline-block;
-      width: var(--vi-tag-dot-size);
-      height: var(--vi-tag-dot-size);
+      width: var(--vi-tag-dot-size, #{func.to-rem(6px)});
+      height: var(--vi-tag-dot-size, #{func.to-rem(6px)});
       border-radius: 50%;
       background-color: currentColor;
       flex-shrink: 0;
@@ -107,11 +90,11 @@
       align-items: center;
       justify-content: center;
       padding-inline: 5px;
-      height: calc(var(--vi-tag-height) - 10px);
-      min-width: calc(var(--vi-tag-height) - 10px);
-      font-size: 10px;
+      height: calc(var(--vi-tag-height, #{func.to-rem(22px)}) - 10px);
+      min-width: calc(var(--vi-tag-height, #{func.to-rem(22px)}) - 10px);
+      font-size: #{func.to-rem(10px)};
       font-weight: #{tokens.$font-weight-semibold};
-      border-radius: 9999px;
+      border-radius: #{tokens.$border-radius-full};
       background-color: rgba(0, 0, 0, 0.08);
       color: inherit;
       line-height: 1;
@@ -375,41 +358,41 @@
     // SIZES
     // ────────────────────────────────────────────────────────────────────────
     &.size-xs {
-      --vi-tag-height: 18px;
-      --vi-tag-font-size: 10px;
-      --vi-tag-padding-x: 6px;
-      --vi-tag-gap: 4px;
-      --vi-tag-remove-size: 12px;
-      --vi-tag-dot-size: 4px;
-      --vi-tag-avatar-size: 10px;
-      --vi-tag-icon-size: 10px;
+      --vi-tag-height: #{func.to-rem(18px)};
+      --vi-tag-font-size: #{func.to-rem(10px)};
+      --vi-tag-padding-x: #{func.to-rem(6px)};
+      --vi-tag-gap: #{func.to-rem(4px)};
+      --vi-tag-remove-size: #{func.to-rem(12px)};
+      --vi-tag-dot-size: #{func.to-rem(4px)};
+      --vi-tag-avatar-size: #{func.to-rem(10px)};
+      --vi-tag-icon-size: #{func.to-rem(10px)};
     }
 
     &.size-sm {
-      --vi-tag-height: 20px;
-      --vi-tag-font-size: 11px;
-      --vi-tag-padding-x: 8px;
-      --vi-tag-gap: 5px;
-      --vi-tag-remove-size: 14px;
-      --vi-tag-dot-size: 5px;
-      --vi-tag-avatar-size: 12px;
-      --vi-tag-icon-size: 12px;
+      --vi-tag-height: #{func.to-rem(20px)};
+      --vi-tag-font-size: #{func.to-rem(11px)};
+      --vi-tag-padding-x: #{func.to-rem(8px)};
+      --vi-tag-gap: #{func.to-rem(5px)};
+      --vi-tag-remove-size: #{func.to-rem(14px)};
+      --vi-tag-dot-size: #{func.to-rem(5px)};
+      --vi-tag-avatar-size: #{func.to-rem(12px)};
+      --vi-tag-icon-size: #{func.to-rem(12px)};
     }
 
     &.size-lg {
-      --vi-tag-height: 28px;
-      --vi-tag-font-size: 13px;
-      --vi-tag-padding-x: 12px;
-      --vi-tag-gap: 8px;
-      --vi-tag-remove-size: 18px;
-      --vi-tag-dot-size: 7px;
-      --vi-tag-avatar-size: 18px;
-      --vi-tag-icon-size: 16px;
+      --vi-tag-height: #{func.to-rem(28px)};
+      --vi-tag-font-size: #{func.to-rem(13px)};
+      --vi-tag-padding-x: #{func.to-rem(12px)};
+      --vi-tag-gap: #{func.to-rem(8px)};
+      --vi-tag-remove-size: #{func.to-rem(18px)};
+      --vi-tag-dot-size: #{func.to-rem(7px)};
+      --vi-tag-avatar-size: #{func.to-rem(18px)};
+      --vi-tag-icon-size: #{func.to-rem(16px)};
     }
 
     // ── Disabled state ───────────────────────────────────────────────────────
     &.is-disabled {
-      opacity: var(--vi-tag-disabled-opacity);
+      opacity: var(--vi-tag-disabled-opacity, 0.5);
       pointer-events: none;
       cursor: not-allowed;
       box-shadow: none !important;
@@ -422,9 +405,9 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: var(--vi-tag-remove-size);
-    height: var(--vi-tag-remove-size);
-    min-width: var(--vi-tag-remove-size);
+    width: var(--vi-tag-remove-size, #{func.to-rem(16px)});
+    height: var(--vi-tag-remove-size, #{func.to-rem(16px)});
+    min-width: var(--vi-tag-remove-size, #{func.to-rem(16px)});
     padding: 0;
     border-radius: 50%;
     margin-inline-start: 2px;
@@ -433,7 +416,7 @@
     background: transparent;
     border: none;
     color: inherit;
-    transition: var(--vi-tag-transition);
+    transition: var(--vi-tag-transition, all 150ms cubic-bezier(0.4, 0, 0.2, 1));
     flex-shrink: 0;
     line-height: 1;
 

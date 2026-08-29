@@ -82,7 +82,7 @@ export class ViDatePicker extends ValidityMixin(FlatpickrMixin(ViElement)) {
 
   @query('#fp-input') private accessor _fpInput!: HTMLInputElement;
   @query('#floating-menu-container')
-  private accessor _floatingMenuContainer?: HTMLDivElement;
+  private accessor _floatingMenuContainer!: HTMLDivElement;
   @queryAssignedElements({ selector: 'vi-date-picker-input' })
   private accessor _inputs!: ViDatePickerInput[];
   /** Light DOM container for flatpickr inline mode to inherit global CSS */
@@ -350,7 +350,7 @@ export class ViDatePicker extends ValidityMixin(FlatpickrMixin(ViElement)) {
 
     if (
       changed.has('disabled') ||
-      changed.has('invalid') ||
+      changed.has('status') ||
       changed.has('validityMessage') ||
       changed.has('required')
     ) {
@@ -358,7 +358,7 @@ export class ViDatePicker extends ValidityMixin(FlatpickrMixin(ViElement)) {
         this._inputs.forEach((input) => {
           input.disabled = this.disabled;
           input.required = this.required;
-          input.invalid = this.invalid;
+          input.invalid = this.status === 'invalid';
           input.validityMessage = this.validityMessage;
         });
       }
@@ -448,7 +448,7 @@ export class ViDatePicker extends ValidityMixin(FlatpickrMixin(ViElement)) {
       ignoredFocusElements: [
         this,
         ...this._inputs,
-        ...this._inputs.map((i) => i.shadowRoot as Node).filter(Boolean),
+        ...this._inputs.map((i) => i.shadowRoot as unknown as HTMLElement).filter(Boolean),
       ],
       ...(this.flat && this._inlineContainer
         ? { appendTo: this._inlineContainer }
@@ -727,7 +727,7 @@ export class ViDatePicker extends ValidityMixin(FlatpickrMixin(ViElement)) {
     this._inputs.forEach((input) => {
       input.disabled = this.disabled;
       input.required = this.required;
-      input.invalid = this.invalid;
+      input.invalid = this.status === 'invalid';
       input.validityMessage = this.validityMessage;
     });
 

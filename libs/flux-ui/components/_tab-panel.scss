@@ -1,4 +1,5 @@
 @use '@vialiq/flux-ui/styles/variables' as tokens;
+@use '../styles/functions' as func;
 
 @layer components {
 
@@ -12,7 +13,7 @@
     &:focus-visible {
       outline: 2px solid var(--vi-tabs-indicator-color, #{tokens.$color-primary});
       outline-offset: 2px;
-      border-radius: 2px;
+      border-radius: #{func.to-rem(2px)};
     }
   }
 

@@ -1,4 +1,5 @@
 @use '@vialiq/flux-ui/styles/variables' as tokens;
+@use '../styles/functions' as func;
 
 @layer components {
 
@@ -102,7 +103,7 @@
     }
 
     &:focus-visible {
-      border-radius: 4px; // Square focus ring for accessibility
+      border-radius: #{func.to-rem(4px)}; // Square focus ring for accessibility
       outline: 2px solid var(--vi-tabs-focus-ring, #{tokens.$color-primary});
       outline-offset: 2px;
     }
@@ -163,7 +164,7 @@
     height: var(--vi-tabs-indicator-thickness, 2px);
     width: 0;
     background: var(--vi-tabs-indicator-color, #{tokens.$color-primary});
-    border-radius: 2px 2px 0 0;
+    border-radius: #{func.to-rem(2px)} #{func.to-rem(2px)} 0 0;
     opacity: 0;
     pointer-events: none;
     z-index: 2;
@@ -201,7 +202,7 @@
       bottom: -1px;
       height: 2px;
       background: var(--vi-tabs-primary-color, #{tokens.$color-primary});
-      border-radius: 2px 2px 0 0;
+      border-radius: #{func.to-rem(2px)} #{func.to-rem(2px)} 0 0;
       box-shadow: 0 0 0 0 transparent; // no glow on line variant — keep clean
     }
   }
@@ -218,7 +219,7 @@
     .vi-tabs__tablist {
       background: var(--vi-tabs-pill-bg, #{tokens.$color-grey-100});
       border: 1px solid var(--vi-tabs-border-color, #{tokens.$color-border});
-      border-radius: 10px;
+      border-radius: #{func.to-rem(10px)};
       padding: var(--vi-tabs-spacing-xs, 4px);
       gap: var(--vi-tabs-gap-xs, 2px);
       // Inset shadow creates a "recessed tray" feel
@@ -229,7 +230,7 @@
     .vi-tabs__cursor {
       display: block;
       inset: 4px auto;          // matches tablist padding
-      border-radius: 7px;
+      border-radius: #{func.to-rem(7px)};
       background: var(--vi-tabs-surface-primary, #{tokens.$layer-01});
       // Multi-layer shadow for floating card feel
       box-shadow:
@@ -261,7 +262,7 @@
       bottom: -1px;
       height: 2px;
       background: var(--vi-tabs-primary-color, #{tokens.$color-primary});
-      border-radius: 2px 2px 0 0;
+      border-radius: #{func.to-rem(2px)} #{func.to-rem(2px)} 0 0;
     }
   }
 
@@ -286,7 +287,7 @@
     .vi-tabs__cursor {
       $surface-color: var(--vi-tabs-surface-primary, #{tokens.$layer-01});
       display: block;
-      border-radius: 8px 8px 0 0;
+      border-radius: #{func.to-rem(8px)} #{func.to-rem(8px)} 0 0;
       background: $surface-color;
       border: 1px solid var(--vi-tabs-border-color, #{tokens.$color-border});
       border-bottom-color: $surface-color; // Merges with content below
@@ -306,7 +307,7 @@
 
   .vi-tabs--enclosed {
     border: 1px solid var(--vi-tabs-border-color, #{tokens.$color-border});
-    border-radius: 10px;
+    border-radius: #{func.to-rem(10px)};
     overflow: clip;  // Enclosed: clip cursor inside rounded border box
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
 
@@ -367,7 +368,7 @@
       left: 4px !important;
       right: 4px;
       width: calc(100% - 8px) !important; // Override JS width — fills sidebar
-      border-radius: 8px;
+      border-radius: #{func.to-rem(8px)};
       background: var(--vi-tabs-surface-primary, #{tokens.$layer-01});
       box-shadow:
         0 1px 3px rgba(0, 0, 0, 0.08),
@@ -382,7 +383,7 @@
       right: 0;
       width: 3px !important;
       height: 0;
-      border-radius: 3px 0 0 3px;
+      border-radius: #{func.to-rem(3px)} 0 0 #{func.to-rem(3px)};
       background: var(--vi-tabs-primary-color, #{tokens.$color-primary});
       box-shadow: 0 0 6px color-mix(in srgb, #{tokens.$color-primary} 40%, transparent);
     }
@@ -395,7 +396,7 @@
 
     &.vi-tabs--line ::slotted(vi-tab[active]) {
       background: var(--vi-tabs-surface-primary, #{tokens.$layer-01});
-      border-radius: 8px;
+      border-radius: #{func.to-rem(8px)};
     }
   }
 
@@ -482,10 +483,10 @@
     background: transparent;
     cursor: pointer;
     font-family: inherit;
-    font-size: 13px;
+    font-size: #{func.to-rem(13px)};
     font-weight: 500;
     color: var(--vi-tabs-text-secondary, #{tokens.$text-secondary});
-    border-radius: 6px 6px 0 0;
+    border-radius: #{func.to-rem(6px)} #{func.to-rem(6px)} 0 0;
     transition: color 150ms ease, background-color 150ms ease;
 
     &:hover {
@@ -516,7 +517,7 @@
     min-width: 180px;
     background: var(--vi-tabs-surface-primary, #{tokens.$layer-01});
     border: 1px solid var(--vi-tabs-border-color, #{tokens.$color-border});
-    border-radius: 8px;
+    border-radius: #{func.to-rem(8px)};
     box-shadow:
       0 4px 6px -1px rgba(0, 0, 0, 0.10),
       0 2px 4px -1px rgba(0, 0, 0, 0.06),
@@ -538,10 +539,10 @@
     width: 100%;
     padding: var(--vi-tabs-spacing-md-lg, 8px 12px);
     border: none;
-    border-radius: 6px;
+    border-radius: #{func.to-rem(6px)};
     background: transparent;
     font-family: inherit;
-    font-size: 13.5px;
+    font-size: #{func.to-rem(13.5px)};
     font-weight: 500;
     color: var(--vi-tabs-text-secondary, #{tokens.$text-secondary});
     cursor: pointer;

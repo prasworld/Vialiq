@@ -1,4 +1,5 @@
 @use '../styles/variables' as tokens;
+@use '../styles/functions' as func;
 
 @layer components {
   // ── Wrapper ──────────────────────────────────────────────────────────────────
@@ -10,7 +11,7 @@
   .switch-wrapper {
     display: inline-flex;
     align-items: flex-start;
-    gap: var(--vi-switch-label-gap, 8px);
+    gap: var(--vi-switch-label-gap, #{tokens.$spacing-xs});
     cursor: pointer;
     font-family: #{tokens.$font-family-base};
     font-size: var(--vi-switch-label-font-size, #{tokens.$font-size-base});
@@ -52,15 +53,15 @@
   .switch-track {
     box-sizing: border-box;
     position: relative;
-    width: var(--vi-switch-track-width, 44px);
-    height: var(--vi-switch-track-height, 24px);
+    width: var(--vi-switch-track-width, func.to-rem(44px));
+    height: var(--vi-switch-track-height, func.to-rem(22px));
     background-color: var(--vi-switch-track-color-off, #{tokens.$border-03});
-    border-radius: var(--vi-border-radius-full, 9999px);
+    border-radius: var(--vi-border-radius-full, #{tokens.$border-radius-full});
     transition: background-color var(--vi-switch-transition-duration, 150ms) ease;
     flex-shrink: 0;
     // Align track centre with first-line cap-height
     margin-top: calc(
-      (1em * #{tokens.$line-height-normal} - var(--vi-switch-track-height, 24px)) / 2
+      (1em * #{tokens.$line-height-normal} - var(--vi-switch-track-height, func.to-rem(24px))) / 2
     );
   }
 
@@ -69,10 +70,10 @@
   .switch-thumb {
     position: absolute;
     top: 50%;
-    left: var(--vi-switch-thumb-offset, 2px);
+    left: var(--vi-switch-thumb-offset, func.to-rem(2px));
     transform: translateY(-50%);
-    width: var(--vi-switch-thumb-size, 18px);
-    height: var(--vi-switch-thumb-size, 18px);
+    width: var(--vi-switch-thumb-size, func.to-rem(18px));
+    height: var(--vi-switch-thumb-size, func.to-rem(18px));
     background-color: var(--vi-switch-thumb-color, #{tokens.$text-primary-inverse});
     border-radius: 50%;
     box-shadow: var(--vi-switch-thumb-shadow, 0 1px 3px rgba(0, 0, 0, 0.2));
@@ -86,7 +87,7 @@
 
     .switch-thumb {
       left: calc(
-        100% - var(--vi-switch-thumb-size, 18px) - var(--vi-switch-thumb-offset, 2px)
+        100% - var(--vi-switch-thumb-size, func.to-rem(18px)) - var(--vi-switch-thumb-offset, func.to-rem(2px))
       );
     }
   }
@@ -107,11 +108,11 @@
     opacity: var(--vi-switch-disabled-opacity, 0.5);
 
     .switch-track {
-      background-color: #{tokens.$border-03};
+      background-color: var(--vi-switch-track-color-disabled, #{tokens.$border-03});
     }
 
     .switch-input:checked ~ .switch-track {
-      background-color: #{tokens.$text-disabled};
+      background-color: var(--vi-switch-track-color-on-disabled, #{tokens.$text-disabled});
     }
   }
 

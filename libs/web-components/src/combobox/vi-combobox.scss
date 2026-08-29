@@ -1,4 +1,5 @@
 @use '@vialiq/flux-ui/styles/variables' as tokens;
+@use '@vialiq/flux-ui/styles/functions' as func;
 @use '@vialiq/flux-ui/components/combobox';
 
 :host {
@@ -43,7 +44,8 @@
 
 .combobox-listbox {
   @extend .combobox-listbox;
-  max-height: var(--vi-combobox-listbox-max-height, 300px);
+  overflow-y: auto;
+  max-height: var(--vi-combobox-listbox-max-height, func.to-rem(300px));
 }
 
 .combobox-list {

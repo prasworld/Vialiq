@@ -1,4 +1,5 @@
 @use 'variables' as tokens;
+@use '../styles/functions' as func;
 .flatpickr-calendar {
   background: transparent;
   opacity: 0;
@@ -10,9 +11,9 @@
           animation: none;
   direction: ltr;
   border: 0;
-  font-size: 14px;
+  font-size: #{func.to-rem(14px)};
   line-height: 24px;
-  border-radius: 5px;
+  border-radius: #{func.to-rem(5px)};
   position: absolute;
   width: 307.875px;
   -webkit-box-sizing: border-box;
@@ -501,7 +502,7 @@ span.flatpickr-weekday {
 .flatpickr-day {
   background: none;
   border: 1px solid transparent;
-  border-radius: 150px;
+  border-radius: #{func.to-rem(150px)};
   -webkit-box-sizing: border-box;
           box-sizing: border-box;
   color: #{tokens.$text-primary};
@@ -576,12 +577,12 @@ span.flatpickr-weekday {
 .flatpickr-day.selected.startRange,
 .flatpickr-day.startRange.startRange,
 .flatpickr-day.endRange.startRange {
-  border-radius: 50px 0 0 50px;
+  border-radius: #{func.to-rem(50px)} 0 0 #{func.to-rem(50px)};
 }
 .flatpickr-day.selected.endRange,
 .flatpickr-day.startRange.endRange,
 .flatpickr-day.endRange.endRange {
-  border-radius: 0 50px 50px 0;
+  border-radius: 0 #{func.to-rem(50px)} #{func.to-rem(50px)} 0;
 }
 .flatpickr-day.selected.startRange + .endRange:not(:nth-child(7n+1)),
 .flatpickr-day.startRange.startRange + .endRange:not(:nth-child(7n+1)),
@@ -592,7 +593,7 @@ span.flatpickr-weekday {
 .flatpickr-day.selected.startRange.endRange,
 .flatpickr-day.startRange.startRange.endRange,
 .flatpickr-day.endRange.startRange.endRange {
-  border-radius: 50px;
+  border-radius: #{func.to-rem(50px)};
 }
 .flatpickr-day.inRange {
   border-radius: 0;
@@ -719,7 +720,7 @@ span.flatpickr-weekday {
   height: inherit;
   line-height: inherit;
   color: #{tokens.$text-primary};
-  font-size: 14px;
+  font-size: #{func.to-rem(14px)};
   position: relative;
   -webkit-box-sizing: border-box;
           box-sizing: border-box;

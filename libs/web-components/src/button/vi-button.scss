@@ -12,6 +12,7 @@
  */
 
 @use '@vialiq/flux-ui/styles/variables' as tokens;
+@use '@vialiq/flux-ui/styles/functions' as func;
 @use '@vialiq/flux-ui/components/button';
 
 // ============================================================================
@@ -22,26 +23,37 @@
   display: inline-block;
 }
 
+.button {
+  padding-block: var(--vi-button-spacing-padding-block, #{tokens.$spacing-unit});
+  height: var(--vi-button-sizing-min-height, #{func.to-rem(32px)});
+}
+
 // ============================================================================
 // Size overrides — adjust padding and font-size per size attribute
 // ============================================================================
 
-:host([size='xs']) {
-  --vi-button-spacing-padding-block:  2px;
-  --vi-button-spacing-padding-inline: 8px;
-  --vi-button-typography-font-size:   #{tokens.$font-size-xs};
+:host([size='xs']) .button {
+  padding-block: var(--vi-button-spacing-padding-block, 0);
+  padding-inline: var(--vi-button-spacing-padding-inline, #{tokens.$spacing-unit});
+  font-size: var(--vi-button-typography-font-size, #{tokens.$font-size-xs});
+  border-radius: var(--vi-button-shape-border-radius, #{tokens.$border-radius-sm});
+  height: var(--vi-button-sizing-min-height, #{func.to-rem(20px)});
 }
 
-:host([size='sm']) {
-  --vi-button-spacing-padding-block:  4px;
-  --vi-button-spacing-padding-inline: 12px;
-  --vi-button-typography-font-size:   #{tokens.$font-size-sm};
+:host([size='sm']) .button {
+  padding-block: var(--vi-button-spacing-padding-block, 0);
+  padding-inline: var(--vi-button-spacing-padding-inline, #{tokens.$spacing-xs});
+  font-size: var(--vi-button-typography-font-size, #{tokens.$font-size-base});
+  border-radius: var(--vi-button-shape-border-radius, #{tokens.$border-radius-sm});
+  height: var(--vi-button-sizing-min-height, #{func.to-rem(24px)});
 }
 
-:host([size='lg']) {
-  --vi-button-spacing-padding-block:  12px;
-  --vi-button-spacing-padding-inline: 24px;
-  --vi-button-typography-font-size:   #{tokens.$font-size-lg};
+:host([size='lg']) .button {
+  padding-block: var(--vi-button-spacing-padding-block, #{tokens.$spacing-xs});
+  padding-inline: var(--vi-button-spacing-padding-inline, #{tokens.$spacing-md});
+  font-size: var(--vi-button-typography-font-size, #{tokens.$font-size-lg});
+  border-radius: var(--vi-button-shape-border-radius, #{tokens.$border-radius-lg});
+  height: var(--vi-button-sizing-min-height, #{func.to-rem(40px)});
 }
 
 // ============================================================================
@@ -57,9 +69,9 @@
 }
 
 :host([icon-only]) .button {
-  /* Set aspect ratio or fixed padding to make it a square */
+  /* Set aspect ratio to make it a square */
   aspect-ratio: 1 / 1;
-  padding: var(--vi-button-spacing-padding-block, #{tokens.$spacing-sm});
+  padding: 0;
   justify-content: center;
 }
 
@@ -201,14 +213,12 @@
 
 .button:focus-visible:not(:disabled) {
   outline: #{tokens.$border-width-base} solid var(--vi-button-focus-ring-color, #{tokens.$color-primary});
-  outline-offset: 3px;
-  box-shadow:
-    var(--vi-button-effect-shadow-raised,
-      inset 0 1px 0 rgba(255, 255, 255, 0.14),
-      0 2px 4px rgba(0, 0, 0, 0.18),
-      0 1px 2px rgba(0, 0, 0, 0.08)
-    ),
-    0 0 0 3px var(--vi-button-focus-ring-glow, #{tokens.$color-primary});
+  outline-offset: 0;
+  box-shadow: var(--vi-button-effect-shadow-raised,
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 2px 4px rgba(0, 0, 0, 0.18),
+    0 1px 2px rgba(0, 0, 0, 0.08)
+  );
 }
 
 // Honour user's reduced-motion preference — keep colour/opacity feedback
