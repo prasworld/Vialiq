@@ -40,7 +40,7 @@ export declare class ViDatePicker extends ViDatePicker_base {
     private accessor _resolvedLocale;
     private accessor _displayValue;
     private accessor _fpInput;
-    private accessor _floatingMenuContainer?;
+    private accessor _floatingMenuContainer;
     private accessor _inputs;
     /** Light DOM container for flatpickr inline mode to inherit global CSS */
     private _inlineContainer?;
