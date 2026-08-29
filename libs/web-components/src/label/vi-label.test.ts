@@ -130,7 +130,7 @@ describe('vi-label', () => {
     await new Promise(r => setTimeout(r, 0));
 
     const innerLabel = await label.shadow$('label');
-    await innerLabel.click();
+    await browser.execute((el: any) => el.click(), innerLabel);
     await expect(input).toBeFocused();
   });
 });

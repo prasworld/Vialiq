@@ -400,7 +400,7 @@ To maintain a robust, scalable, and accessible UI, Flux UI strictly adheres to t
 
 - **`rem`**: Used for **Typography**, **Spacing** (margin, padding, gap), and **Interactive Form Control Sizing** (button heights, input widths, etc.). This guarantees that everything defining the core layout grid and text hierarchy scales fluidly when a user changes their browser root font size for accessibility.
 - **`px`**: Reserved exclusively for rigid geometries that must never scale or blur. Used for **Borders** (`1px solid`), **Shadows** (offsets and blurs), small **Optical Adjustments** (e.g. `2px` focus outline offset), and **Visually Hidden Hacks** (e.g. `1px` clipping for screen readers).
-- **`vh` / `vw`**: Used for **Viewport-Relative Layouts**, such as full-screen modal overlays, drawer max-heights, or sticky banners that must span the entire screen regardless of the parent container size.
+- **`dvh` / `dvw`** (with `vh` / `vw` fallback): Used for **Viewport-Relative Layouts**, such as full-screen modal overlays, drawer max-heights, or sticky banners that must span the entire screen regardless of the parent container size. Dynamic viewport units correctly account for mobile browser UI (like address bars) expanding and contracting.
 - **`%`**: Used for **Container-Relative Fluidity**, such as a button being `width: 100%` of its parent column, or grid layouts.
 
 ## Contributing

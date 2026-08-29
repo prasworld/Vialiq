@@ -42,12 +42,7 @@ describe('vi-date-picker', () => {
     
     // Flatpickr should have created a calendar element in the DOM (usually appended to body)
     const calendar = el.shadowRoot!.querySelector('.flatpickr-calendar') || document.querySelector('.flatpickr-calendar');
-    if (!calendar) {
-      console.log('--- SHADOW ROOT ---');
-      console.log(el.shadowRoot!.innerHTML);
-      console.log('--- BODY ---');
-      console.log(document.body.innerHTML);
-    }
+   
     expect(calendar).toBeTruthy();
   });
 

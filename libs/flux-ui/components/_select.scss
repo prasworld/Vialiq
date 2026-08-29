@@ -6,6 +6,7 @@
  */
 
 @use '../styles/variables' as tokens;
+@use '../styles/functions' as func;
 
 @layer components {
   // -------------------------------------------------------------------------
@@ -38,14 +39,14 @@
     justify-content: space-between;
     box-sizing: border-box;
     width: 100%;
-    min-height: var(--vi-select-sizing-min-height, 32px);
-    padding: var(--vi-select-spacing-padding-block, 4px)
-             var(--vi-select-spacing-padding-inline, 11px);
+    min-height: var(--vi-select-sizing-min-height, #{tokens.$spacing-xl});
+    padding: var(--vi-select-spacing-padding-block, #{tokens.$spacing-unit})
+             var(--vi-select-spacing-padding-inline, #{func.to-rem(11px)});
     background-color: var(--vi-select-background-color, #{tokens.$color-background});
     border: var(--vi-select-border-width, #{tokens.$border-width-thin}) solid var(--vi-select-border-color, #{tokens.$border-03});
-    border-radius: var(--vi-select-shape-border-radius, 6px);
+    border-radius: var(--vi-select-shape-border-radius, #{func.to-rem(6px)});
     font-family: inherit;
-    font-size: var(--vi-font-size-base, 14px);
+    font-size: var(--vi-font-size-base, #{func.to-rem(14px)});
     color: var(--vi-select-text-color, #{tokens.$color-foreground});
     transition: border-color 150ms ease, box-shadow 150ms ease;
     cursor: pointer;

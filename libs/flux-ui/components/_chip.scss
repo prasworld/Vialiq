@@ -14,7 +14,7 @@
     // Tokens mapped directly from docs
     height: var(--vi-chip-height, var(--vi-chip-height-md, #{tokens.$spacing-xl}));
     padding: var(--vi-chip-padding, 0 10px);
-    border-radius: var(--vi-chip-border-radius, 999px);
+    border-radius: var(--vi-chip-border-radius, #{tokens.$border-radius-full});
     border-width: var(--vi-chip-border-width, 1px);
     gap: var(--vi-chip-gap, 6px);
     font-size: var(--vi-chip-font-size, #{tokens.$font-size-sm});

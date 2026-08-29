@@ -57,6 +57,15 @@
     box-shadow: 0 0 0 1px var(--vi-focus, tokens.$focus);
   }
 
+  :host([invalid]) & {
+    border-color: var(--vi-input-error-border-color, tokens.$color-error);
+  }
+
+  :host([invalid]:focus-within) & {
+    border-color: var(--vi-input-error-border-color, tokens.$color-error);
+    box-shadow: 0 0 0 1px var(--vi-input-error-border-color, tokens.$color-error);
+  }
+
   &:disabled {
     background: var(--vi-layer-disabled, tokens.$layer-02);
     color: var(--vi-text-disabled, tokens.$text-disabled);

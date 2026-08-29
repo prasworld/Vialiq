@@ -1,5 +1,6 @@
 @use '@vialiq/flux-ui/styles/variables' as tokens;
 @use '@vialiq/flux-ui/components/checkbox';
+@use '@vialiq/flux-ui/styles/functions' as func;
 
 :host {
   display: inline-block;
@@ -45,21 +46,21 @@
 
 :host([size='xs']) {
   --vi-checkbox-size: 12px;
-  --vi-checkbox-border-radius: 2px;
+  --vi-checkbox-border-radius: #{func.to-rem(2px)};
   --vi-checkbox-label-gap: 4px;
   --vi-checkbox-label-font-size: #{tokens.$font-size-xs};
 }
 
 :host([size='sm']) {
   --vi-checkbox-size: 14px;
-  --vi-checkbox-border-radius: 2px;
+  --vi-checkbox-border-radius: #{func.to-rem(2px)};
   --vi-checkbox-label-gap: 6px;
   --vi-checkbox-label-font-size: #{tokens.$font-size-sm};
 }
 
 :host([size='lg']) {
   --vi-checkbox-size: 22px;
-  --vi-checkbox-border-radius: 4px;
+  --vi-checkbox-border-radius: #{func.to-rem(4px)};
   --vi-checkbox-label-gap: 10px;
   --vi-checkbox-label-font-size: #{tokens.$font-size-lg};
 }

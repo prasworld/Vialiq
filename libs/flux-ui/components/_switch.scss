@@ -56,7 +56,7 @@
     width: var(--vi-switch-track-width, func.to-rem(44px));
     height: var(--vi-switch-track-height, func.to-rem(22px));
     background-color: var(--vi-switch-track-color-off, #{tokens.$border-03});
-    border-radius: var(--vi-border-radius-full, 9999px);
+    border-radius: var(--vi-border-radius-full, #{tokens.$border-radius-full});
     transition: background-color var(--vi-switch-transition-duration, 150ms) ease;
     flex-shrink: 0;
     // Align track centre with first-line cap-height

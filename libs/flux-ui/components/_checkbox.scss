@@ -7,6 +7,7 @@
  */
 
 @use '../styles/variables' as tokens;
+@use '../styles/functions' as func;
 
 @layer components {
   .checkbox-wrapper {
@@ -44,7 +45,7 @@
     width: var(--vi-checkbox-size, #{tokens.$spacing-md});
     height: var(--vi-checkbox-size, #{tokens.$spacing-md});
     border: #{tokens.$border-width-base} solid var(--vi-checkbox-border-color, #{tokens.$outline});
-    border-radius: var(--vi-checkbox-border-radius, 4px);
+    border-radius: var(--vi-checkbox-border-radius, #{func.to-rem(4px)});
     background-color: var(--vi-checkbox-background-color, #{tokens.$color-background});
     transition: border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease;
     flex-shrink: 0;

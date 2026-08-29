@@ -1,4 +1,5 @@
 import { expect } from '@wdio/globals';
+import { render, html } from 'lit';
 import './vi-combobox.js';
 import './vi-combobox-item.js';
 import type { ViCombobox } from './vi-combobox.js';

@@ -1,5 +1,6 @@
 @use '@vialiq/flux-ui/styles/variables' as tokens;
 @use '@vialiq/flux-ui/components/select';
+@use '@vialiq/flux-ui/styles/functions' as func;
 
 :host {
   display: block;
@@ -35,6 +36,6 @@ mark.highlight {
   background-color: tokens.$typeahead-highlight-bg;
   color: tokens.$typeahead-highlight-color;
   font-weight: 600;
-  border-radius: 2px;
+  border-radius: #{func.to-rem(2px)};
   padding: 0 1px;
 }

@@ -22,19 +22,19 @@
 // track-width must maintain an oval aspect ratio relative to track-height.
 // All three sizes use deliberate design values validated against Ant Design.
 :host([size='sm']) {
-  --vi-switch-track-width: #{func.to-rem(28px)};  // = 14px thumb x2, oval ratio 1.4:1
-  --vi-switch-track-height: #{tokens.$spacing-md}; // 16px
-  --vi-switch-thumb-size: #{tokens.$spacing-sm};   // 12px
+  --vi-switch-track-width: #{func.to-rem(28px)};  // oval ratio 1.75:1
+  --vi-switch-track-height: #{tokens.$spacing-md};
+  --vi-switch-thumb-size: #{tokens.$spacing-sm};
 }
 
 :host([size='md']) {
-  --vi-switch-track-width: #{func.to-rem(44px)};  // = 22px thumb x2, oval ratio ~1.83:1 (Ant default)
-  --vi-switch-track-height: #{tokens.$spacing-lg}; // 24px
-  --vi-switch-thumb-size: #{tokens.$spacing-md};   // 16px (fits inside 24px track with 4px offset each side)
+  --vi-switch-track-width: #{func.to-rem(44px)};  // oval ratio ~1.83:1 (Ant default)
+  --vi-switch-track-height: #{tokens.$spacing-lg};
+  --vi-switch-thumb-size: #{tokens.$spacing-md};
 }
 
 :host([size='lg']) {
-  --vi-switch-track-width: #{func.to-rem(52px)};  // = 28px thumb x2, oval ratio ~1.86:1
-  --vi-switch-track-height: #{tokens.$spacing-xl}; // 32px
-  --vi-switch-thumb-size: #{tokens.$spacing-lg};   // 24px (fits inside 32px track)
+  --vi-switch-track-width: #{func.to-rem(52px)};  // oval ratio ~1.63:1
+  --vi-switch-track-height: #{tokens.$spacing-xl};
+  --vi-switch-thumb-size: #{tokens.$spacing-lg};
 }

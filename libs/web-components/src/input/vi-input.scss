@@ -21,13 +21,14 @@
 :host {
   display: block;
   outline: none;
-  // Default = md size. These CSS custom properties are the public API:
-  // consumers may override any --vi-input-* to theme this component.
-  --vi-input-spacing-padding-block: #{tokens.$spacing-unit};
-  --vi-input-spacing-padding-inline: #{tokens.$spacing-sm};
-  --vi-input-typography-font-size: #{tokens.$font-size-base};
-  --vi-input-sizing-min-height: 32px;
-  --vi-input-shape-border-radius: #{tokens.$border-radius-md};
+}
+
+.input-control {
+  padding-block: var(--vi-input-spacing-padding-block, #{tokens.$spacing-unit});
+  padding-inline: var(--vi-input-spacing-padding-inline, #{tokens.$spacing-sm});
+  font-size: var(--vi-input-typography-font-size, #{tokens.$font-size-base});
+  border-radius: var(--vi-input-shape-border-radius, #{tokens.$border-radius-md});
+  min-height: var(--vi-input-sizing-min-height, 32px);
 }
 
 
@@ -101,30 +102,30 @@
 // Size overrides — adjust input padding and font-size
 // ============================================================================
 
-:host([size='xs']) {
-  --vi-input-spacing-padding-block: 0px;
-  --vi-input-spacing-padding-inline: #{tokens.$spacing-unit};
-  --vi-input-typography-font-size: #{tokens.$font-size-xs};
-  --vi-input-sizing-min-height: 20px;
-  --vi-input-shape-border-radius: #{tokens.$border-radius-sm};
+:host([size='xs']) .input-control {
+  padding-block: var(--vi-input-spacing-padding-block, 0px);
+  padding-inline: var(--vi-input-spacing-padding-inline, #{tokens.$spacing-unit});
+  font-size: var(--vi-input-typography-font-size, #{tokens.$font-size-xs});
+  border-radius: var(--vi-input-shape-border-radius, #{tokens.$border-radius-sm});
+  min-height: var(--vi-input-sizing-min-height, 20px);
 }
 
 
-:host([size='sm']) {
-  --vi-input-spacing-padding-block: 0px;
-  --vi-input-spacing-padding-inline: #{tokens.$spacing-xs};
-  --vi-input-typography-font-size: #{tokens.$font-size-base};
-  --vi-input-sizing-min-height: 24px;
-  --vi-input-shape-border-radius: #{tokens.$border-radius-sm};
+:host([size='sm']) .input-control {
+  padding-block: var(--vi-input-spacing-padding-block, 0px);
+  padding-inline: var(--vi-input-spacing-padding-inline, #{tokens.$spacing-xs});
+  font-size: var(--vi-input-typography-font-size, #{tokens.$font-size-base});
+  border-radius: var(--vi-input-shape-border-radius, #{tokens.$border-radius-sm});
+  min-height: var(--vi-input-sizing-min-height, 24px);
 }
 
 
-:host([size='lg']) {
-  --vi-input-spacing-padding-block: #{tokens.$spacing-xs};
-  --vi-input-spacing-padding-inline: #{tokens.$spacing-sm};
-  --vi-input-typography-font-size: #{tokens.$font-size-lg};
-  --vi-input-sizing-min-height: 40px;
-  --vi-input-shape-border-radius: #{tokens.$border-radius-lg};
+:host([size='lg']) .input-control {
+  padding-block: var(--vi-input-spacing-padding-block, #{tokens.$spacing-xs});
+  padding-inline: var(--vi-input-spacing-padding-inline, #{tokens.$spacing-sm});
+  font-size: var(--vi-input-typography-font-size, #{tokens.$font-size-lg});
+  border-radius: var(--vi-input-shape-border-radius, #{tokens.$border-radius-lg});
+  min-height: var(--vi-input-sizing-min-height, 40px);
 }
 
 
