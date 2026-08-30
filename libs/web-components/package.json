@@ -255,6 +255,14 @@
     "./tag/vi-tag": {
       "types": "./tag/vi-tag.d.ts",
       "default": "./tag/vi-tag.js"
+    },
+    "./progress": {
+      "types": "./progress/index.d.ts",
+      "default": "./progress/index.js"
+    },
+    "./progress/vi-progress": {
+      "types": "./progress/vi-progress.d.ts",
+      "default": "./progress/vi-progress.js"
     }
   },
   "peerDependencies": {
@@ -300,7 +308,8 @@
     "switch/",
     "tabs/",
     "tag/",
-    "textarea/"
+    "textarea/",
+    "progress/"
   ],
   "peerDependenciesMeta": {
     "flatpickr": {

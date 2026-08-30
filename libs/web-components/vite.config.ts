@@ -185,6 +185,8 @@ export default defineConfig({
         'alert/index': path.resolve(__dirname, 'src/alert/index.ts'),
         'modal/index': path.resolve(__dirname, 'src/modal/index.ts'),
         'animation/index': path.resolve(__dirname, 'src/animation/index.ts'),
+        'progress/vi-progress': path.resolve(__dirname, 'src/progress/vi-progress.ts'),
+        'progress/index': path.resolve(__dirname, 'src/progress/index.ts'),
       },
       formats: ['es'],
     },
