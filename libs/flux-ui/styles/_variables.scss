@@ -127,6 +127,8 @@ $layer-02:            var(--vi-layer-02,            #f3f4f6); // grey-100
 $layer-03:            var(--vi-layer-03,            #e5e7eb); // grey-200
 $layer-04:            var(--vi-layer-04,            #d1d5db); // grey-300
 $layer-dimmed:        var(--vi-layer-dimmed,        rgba(0, 0, 0, 0.02)); // Faint tint for visual anchors
+$layer-overlay:       var(--vi-layer-overlay,       rgba(0, 0, 0, 0.40)); // Scrim/backdrop for modals, drawers, sidebars
+
 
 $layer-hover-01:      var(--vi-layer-hover-01,      #f3f4f6); // grey-100
 $layer-hover-02:      var(--vi-layer-hover-02,      #e5e7eb); // grey-200

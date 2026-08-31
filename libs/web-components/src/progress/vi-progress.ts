@@ -31,7 +31,7 @@ export type ProgressGapPosition = 'top' | 'bottom' | 'left' | 'right';
  */
 @customElement('vi-progress')
 export class ViProgress extends LitElement {
-  override updated(changedProperties: Map<string, any>) {
+  override updated(changedProperties: Map<string, unknown>) {
     super.updated(changedProperties);
     // Remove aria-label from host to prevent Axe violations since it's forwarded to the inner progressbar
     if (this.hasAttribute('aria-label')) {
@@ -199,7 +199,7 @@ export class ViProgress extends LitElement {
   }
 
   private renderSteps() {
-    const stepsCount = Math.max(1, this.steps!);
+    const stepsCount = Math.max(1, this.steps ?? 1);
     const stepRatio = 100 / stepsCount;
     const currentStep = Math.floor(this.percentage / stepRatio);
 
@@ -349,7 +349,7 @@ export class ViProgress extends LitElement {
             strokeDashoffset: `${offset}`,
             stroke: circleStrokeColor
           })}
-        />
+        ></circle>
         ${this.successPercent > 0 ? html`
         <circle
           class="vi-progress-circle-success"
@@ -361,7 +361,7 @@ export class ViProgress extends LitElement {
             strokeDasharray: `${drawLength} ${circumference}`,
             strokeDashoffset: `${successOffset}`,
           })}
-        />` : nothing}
+        ></circle>` : nothing}
       </svg>
       ${this.renderInfo()}
     `;

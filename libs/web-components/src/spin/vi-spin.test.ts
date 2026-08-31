@@ -48,7 +48,7 @@ describe('vi-spin', () => {
     const el = container.querySelector('vi-spin') as ViSpin;
     // We do not await updateComplete immediately because we want to catch the state before delay
     
-    let wrapper = el.shadowRoot?.querySelector('.spin-wrapper');
+    const wrapper = el.shadowRoot?.querySelector('.spin-wrapper');
     expect(wrapper).toBeFalsy();
 
     await new Promise((resolve) => setTimeout(resolve, 150));

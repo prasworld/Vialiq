@@ -166,7 +166,7 @@ describe('vi-progress', () => {
     let host = document.querySelector('vi-progress') as ViProgress;
     await host.updateComplete;
     
-    let successIndicator = host.shadowRoot?.querySelector('.vi-progress-success-indicator');
+    const successIndicator = host.shadowRoot?.querySelector('.vi-progress-success-indicator');
     expect(successIndicator).not.toBeNull();
 
     // Test on Circle progress

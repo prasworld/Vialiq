@@ -28,7 +28,7 @@ const meta: Meta = {
 export default meta;
 type Story = StoryObj;
 
-const Template = (args: any) => html`
+const Template = (args: Record<string, unknown>) => html`
   <div style="width: 400px; max-width: 100%; padding: 2rem;">
     <vi-progress
       value=${ifDefined(args.value)}

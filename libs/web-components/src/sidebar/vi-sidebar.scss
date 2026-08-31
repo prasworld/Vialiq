@@ -1,0 +1,217 @@
+@use '@vialiq/flux-ui/styles/variables' as tokens;
+
+:host {
+  display: block;
+  position: absolute;
+  z-index: var(--vi-sidebar-z-index, 9999);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), width 0.4s cubic-bezier(0.16, 1, 0.3, 1), height 0.4s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.4s;
+  background-color: var(--vi-sidebar-bg, #{tokens.$layer-01});
+  box-shadow: var(--vi-sidebar-shadow, #{tokens.$shadow-lg});
+  will-change: transform, width, height;
+  /* overflow: hidden is NOT set here — it would clip the resizer handle that straddles the edge.
+   * It is applied selectively in dock+closed state to clip the width-collapse animation. */
+}
+
+:host([animations="false"]) {
+  transition: none !important;
+}
+
+.vi-sidebar {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.vi-sidebar__content {
+  flex: 1;
+}
+
+.vi-sidebar__resizer {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 12px;
+  cursor: col-resize;
+  z-index: 10;
+  background-color: transparent;
+  display: flex;
+  align-items: center;
+  /* justify-content is set per-position below to push the
+   * visible border line to the correct sidebar boundary edge */
+
+  &::after {
+    content: '';
+    display: block;
+    width: 3px;
+    height: 100%;
+    background-color: var(--vi-sidebar-resizer-color, #{tokens.$border-03});
+    transition: background-color 0s ease 0.15s;
+  }
+
+  &:hover::after, &:active::after {
+    background-color: var(--vi-sidebar-resizer-hover-color, #{tokens.$color-primary});
+    transition-delay: 0s;
+  }
+}
+
+/* Left/start sidebar: hit area (12px) at right edge, line at rightmost pixel.
+ * NO transform — no overflow — no dock animation clipping bugs. */
+:host([position="left"]) .vi-sidebar__resizer,
+:host([position="start"]) .vi-sidebar__resizer,
+:host(:not([position])) .vi-sidebar__resizer {
+  right: 0;
+  justify-content: flex-end; /* push visible 3px line to the right edge */
+}
+
+:host([position="right"]) .vi-sidebar__resizer,
+:host([position="end"]) .vi-sidebar__resizer {
+  left: 0;
+  justify-content: flex-start; /* push visible 3px line to the left edge */
+}
+
+:host([position="top"]) .vi-sidebar__resizer,
+:host([position="bottom"]) .vi-sidebar__resizer {
+  width: 100%;
+  height: 12px;
+  cursor: row-resize;
+  flex-direction: column;
+}
+
+:host([position="top"]) .vi-sidebar__resizer {
+  bottom: 0;
+  top: auto;
+  align-items: stretch;
+  justify-content: flex-end; /* line at bottom edge */
+  &::after {
+    width: 100%;
+    height: 3px;
+    flex-shrink: 0;
+  }
+}
+
+:host([position="bottom"]) .vi-sidebar__resizer {
+  top: 0;
+  bottom: auto;
+  align-items: stretch;
+  justify-content: flex-start; /* line at top edge */
+  &::after {
+    width: 100%;
+    height: 3px;
+    flex-shrink: 0;
+  }
+}
+
+:host([resizing]) {
+  transition: none !important;
+  will-change: width, height;
+}
+
+:host(:not([position])),
+:host([position="left"]),
+:host([position="start"]) {
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: var(--vi-sidebar-width, 250px);
+  transform: translateX(-100%);
+}
+
+:host([position="right"]), :host([position="end"]) {
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: var(--vi-sidebar-width, 250px);
+  transform: translateX(100%);
+}
+
+:host([position="top"]) {
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--vi-sidebar-height, 250px);
+  transform: translateY(-100%);
+}
+
+:host([position="bottom"]) {
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: var(--vi-sidebar-height, 250px);
+  transform: translateY(100%);
+}
+
+/* LOCK: In any dock state (open or closed), NEVER use translate-based sliding.
+ * This has specificity 0,2,0 which beats the base rule's 0,1,0, preventing
+ * the base translateX(-100%) from flashing on during open/close transitions. */
+:host([dock]:not([position])),
+:host([dock][position="left"]),
+:host([dock][position="start"]) {
+  transform: translateX(0);
+}
+
+:host([dock][position="right"]),
+:host([dock][position="end"]) {
+  transform: translateX(0);
+}
+
+:host([dock][position="top"]) {
+  transform: translateY(0);
+}
+
+:host([dock][position="bottom"]) {
+  transform: translateY(0);
+}
+
+/* Width control: when docked+closed, shrink to dockedSize (0px by default = fully hidden)
+ * Hide the resizer while dock-closed and clip the width animation.
+ * overflow:hidden is scoped here (not on :host globally) so it does NOT
+ * clip the resizer's translateX(50%) when the sidebar is open. */
+:host([dock]:not([opened]):not([position])),
+:host([dock]:not([opened])[position="left"]),
+:host([dock]:not([opened])[position="start"]) {
+  width: var(--vi-sidebar-docked-size, 0px);
+  overflow: hidden;
+}
+
+:host([dock]:not([opened])[position="right"]),
+:host([dock]:not([opened])[position="end"]) {
+  width: var(--vi-sidebar-docked-size, 0px);
+  overflow: hidden;
+}
+
+:host([dock]:not([opened])[position="top"]) {
+  height: var(--vi-sidebar-docked-size, 0px);
+  overflow: hidden;
+}
+
+:host([dock]:not([opened])[position="bottom"]) {
+  height: var(--vi-sidebar-docked-size, 0px);
+  overflow: hidden;
+}
+
+/* Opened state */
+:host([opened]:not([position])), :host([opened][position="left"]), :host([opened][position="start"]) {
+  transform: translateX(0);
+}
+:host([opened][position="right"]), :host([opened][position="end"]) {
+  transform: translateX(0);
+}
+:host([opened][position="top"]) {
+  transform: translateY(0);
+}
+:host([opened][position="bottom"]) {
+  transform: translateY(0);
+}
+
+/* Hidden state visibility delay */
+:host(:not([opened]):not([dock])) {
+  visibility: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :host {
+    transition: none !important;
+  }
+}
