@@ -50,7 +50,7 @@ export const FluidContainerQueries: StoryObj = {
             Notice how the padding and the title font-size dynamically scale down when this card is placed inside a tight column. This is powered by <code>cqi</code> math.
           </p>
           <div slot="footer">
-            <vi-button size="sm" variant="outline" style="width: 100%;">Read More</vi-button>
+            <vi-button variant="primary" style="width: 100%;">View Details &gt;</vi-button>
           </div>
         </vi-card>
       </div>
@@ -82,7 +82,7 @@ export const CoverImageAndActions: StoryObj = {
         <!-- Cover Image Slot -->
         <img 
           slot="cover" 
-          src="https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=400&q=80" 
+          src="https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&amp;fit=crop&amp;w=400&amp;q=80" 
           alt="Developer coding" 
           style="height: 200px;" 
         />

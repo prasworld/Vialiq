@@ -1,0 +1,259 @@
+@use '../styles/variables' as tokens;
+@use '../styles/functions' as func;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// COMPONENT: vi-progress
+// ─────────────────────────────────────────────────────────────────────────────
+
+:host {
+  display: block;
+  width: 100%;
+}
+
+.vi-progress {
+  display: flex;
+  align-items: center;
+  gap: var(--vi-progress-gap, #{tokens.$spacing-sm});
+  font-family: var(--vi-font-family, #{tokens.$font-family-base});
+
+  // Level 1: Consumer override
+  // Level 2: Component default
+  // Level 3: Semantic token
+  --progress-track-bg: var(--vi-progress-track-bg, #{tokens.$layer-03});
+  --progress-indicator-bg: var(--vi-progress-indicator-bg, #{tokens.$color-primary});
+  --progress-text-color: var(--vi-progress-text-color, #{tokens.$text-primary});
+  --progress-border-radius: var(--vi-progress-border-radius, #{tokens.$border-radius-full});
+  --progress-line-height: var(--vi-progress-line-height, #{func.to-rem(8px)});
+  --progress-circle-size: var(--vi-progress-circle-size, #{func.to-rem(120px)});
+  --progress-font-size: var(--vi-progress-font-size, #{tokens.$font-size-base});
+
+  // Variants
+  &.vi-progress--variant-primary {
+    --progress-indicator-bg: var(--vi-progress-primary-bg, #{tokens.$color-primary});
+  }
+  &.vi-progress--variant-success {
+    --progress-indicator-bg: var(--vi-progress-success-bg, #{tokens.$color-green-500});
+  }
+  &.vi-progress--variant-error {
+    --progress-indicator-bg: var(--vi-progress-error-bg, #{tokens.$color-red-500});
+  }
+  &.vi-progress--variant-warning {
+    --progress-indicator-bg: var(--vi-progress-warning-bg, #{tokens.$color-yellow-500});
+  }
+
+  // Sizes
+  &.vi-progress--size-sm {
+    --progress-line-height: var(--vi-progress-line-height-sm, #{func.to-rem(6px)});
+    --progress-font-size: var(--vi-progress-font-size-sm, #{tokens.$font-size-sm});
+    --progress-circle-size: var(--vi-progress-circle-size-sm, #{func.to-rem(80px)});
+  }
+  &.vi-progress--size-md {
+    --progress-line-height: var(--vi-progress-line-height-md, #{func.to-rem(8px)});
+    --progress-font-size: var(--vi-progress-font-size-md, #{tokens.$font-size-base});
+    --progress-circle-size: var(--vi-progress-circle-size-md, #{func.to-rem(120px)});
+  }
+  &.vi-progress--size-lg {
+    --progress-line-height: var(--vi-progress-line-height-lg, #{func.to-rem(12px)});
+    --progress-font-size: var(--vi-progress-font-size-lg, #{tokens.$font-size-lg});
+    --progress-circle-size: var(--vi-progress-circle-size-lg, #{func.to-rem(160px)});
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TYPE: LINE
+// ─────────────────────────────────────────────────────────────────────────────
+
+.vi-progress--line {
+  .vi-progress-outer {
+    flex: 1 1 auto;
+  }
+
+  .vi-progress-track {
+    background-color: var(--progress-track-bg);
+    border-radius: var(--progress-border-radius);
+    height: var(--progress-line-height);
+    overflow: hidden; // Ensures indicator is clipped to radius
+    position: relative;
+    width: 100%;
+  }
+
+  .vi-progress-success-indicator {
+    background-color: var(--progress-success-bg, #{tokens.$color-success});
+    border-radius: var(--progress-border-radius);
+    height: 100%;
+    position: absolute;
+    left: 0;
+    top: 0;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .vi-progress-indicator {
+    background-color: var(--progress-indicator-bg);
+    border-radius: var(--progress-border-radius);
+    height: 100%;
+    position: absolute;
+    left: 0;
+    top: 0;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease;
+  }
+
+  // Status: active (gleaming sweep animation)
+  &.vi-progress--status-active .vi-progress-indicator::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    background: var(--vi-progress-gleam-bg, #{tokens.$layer-01});
+    opacity: 0;
+    animation: vi-progress-active-gleam 2s cubic-bezier(0.23, 1, 0.32, 1) infinite;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TYPE: CIRCLE
+// ─────────────────────────────────────────────────────────────────────────────
+
+.vi-progress--circle,
+.vi-progress--dashboard {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: var(--progress-circle-size);
+  height: var(--progress-circle-size);
+  gap: 0; // Text is overlaid
+
+  .vi-progress-circle-svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+  }
+
+  .vi-progress-circle-track {
+    fill: transparent;
+    stroke: var(--progress-track-bg);
+    // stroke-width is provided inline via JS based on props, but fallback here
+    stroke-width: var(--vi-progress-circle-stroke-width, 6);
+  }
+
+  .vi-progress-circle-success {
+    fill: transparent;
+    stroke: var(--progress-success-bg, #{tokens.$color-success});
+    stroke-width: var(--vi-progress-circle-stroke-width, 6);
+    transition: stroke-dashoffset 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .vi-progress-circle-indicator {
+    fill: transparent;
+    stroke: var(--progress-indicator-bg);
+    stroke-width: var(--vi-progress-circle-stroke-width, 6);
+    transition: stroke-dashoffset 0.3s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.3s ease;
+  }
+
+  .vi-progress-info {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    text-align: center;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TYPE: STEPS
+// ─────────────────────────────────────────────────────────────────────────────
+
+.vi-progress--steps {
+  .vi-progress-steps {
+    flex: 1 1 auto;
+    display: flex;
+    gap: var(--vi-progress-step-gap, #{func.to-rem(4px)});
+    align-items: center;
+  }
+
+  .vi-progress-step-item {
+    flex: 1;
+    border-radius: var(--progress-border-radius);
+    transition: background-color 0.3s ease, height 0.3s ease;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// INFO TEXT & ICONS
+// ─────────────────────────────────────────────────────────────────────────────
+
+.vi-progress-info {
+  color: var(--progress-text-color);
+  font-size: var(--progress-font-size);
+  line-height: 1;
+  white-space: nowrap;
+  word-break: keep-all;
+
+  // Align icons nicely
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  vi-icon {
+    font-size: calc(var(--progress-font-size) * 1.15); // icons slightly larger than text
+  }
+  
+  // Specific icon colors overriding text color
+  .vi-progress--variant-success & vi-icon {
+    color: var(--progress-indicator-bg); 
+  }
+  .vi-progress--variant-error & vi-icon {
+    color: var(--progress-indicator-bg);
+  }
+
+  // Simulate filled icons for Line mode
+  .vi-progress--line.vi-progress--status-success & vi-icon,
+  .vi-progress--line.vi-progress--status-exception & vi-icon {
+    background-color: var(--progress-indicator-bg);
+    color: #{tokens.$text-inverse};
+    border-radius: 50%;
+    // Ensure the background is tightly fitted to the icon
+    width: 1em;
+    height: 1em;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ANIMATIONS
+// ─────────────────────────────────────────────────────────────────────────────
+
+@keyframes vi-progress-active-gleam {
+  0% {
+    opacity: 0.1;
+    width: 0;
+  }
+  20% {
+    opacity: 0.5;
+    width: 0;
+  }
+  100% {
+    opacity: 0;
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vi-progress-indicator {
+    transition: none !important;
+  }
+  
+  .vi-progress--status-active .vi-progress-indicator::before {
+    animation: none !important;
+  }
+  
+  .vi-progress-circle-indicator {
+    transition: none !important;
+  }
+}

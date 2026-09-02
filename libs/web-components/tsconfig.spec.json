@@ -1,7 +1,7 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "types": ["@wdio/globals/types", "mocha"],
+    "types": ["@wdio/globals/types", "mocha", "sinon"],
     "lib": ["ES2022", "DOM", "DOM.Iterable"]
   },
   "include": ["src/**/*.test.ts", "test/**/*.ts", "wdio.config.ts", "src/**/*.d.ts"]

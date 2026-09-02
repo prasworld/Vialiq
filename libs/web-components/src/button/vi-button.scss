@@ -95,7 +95,9 @@
 
 :host([variant='primary']) .button {
   background-color: var(--vi-button-surface-primary-background-color, #{tokens.$color-primary});
-  color: var(--vi-button-surface-primary-text-color, #{tokens.$color-grey-100});
+  /* $text-primary-inverse (#ffffff) gives 4.50:1 contrast on $color-primary (#3676d0) — passes WCAG AA.
+   * grey-100 (#f5f5f5) only gives 4.13:1 which fails. */
+  color: var(--vi-button-surface-primary-text-color, #{tokens.$text-primary-inverse});
 }
 
 :host([variant='secondary']) .button {
@@ -106,17 +108,18 @@
 
 :host([variant='danger']) .button {
   background-color: var(--vi-button-surface-danger-background-color, #{tokens.$color-error});
-  color: var(--vi-button-surface-danger-text-color, #{tokens.$color-grey-100});
+  /* White text on colored backgrounds — consistent AA compliance across variants. */
+  color: var(--vi-button-surface-danger-text-color, #{tokens.$text-primary-inverse});
 }
 
 :host([variant='success']) .button {
   background-color: var(--vi-button-surface-success-background-color, #{tokens.$color-success});
-  color: var(--vi-button-surface-success-text-color, #{tokens.$color-grey-100});
+  color: var(--vi-button-surface-success-text-color, #{tokens.$text-primary-inverse});
 }
 
 :host([variant='info']) .button {
   background-color: var(--vi-button-surface-info-background-color, #{tokens.$color-info});
-  color: var(--vi-button-surface-info-text-color, #{tokens.$color-grey-100});
+  color: var(--vi-button-surface-info-text-color, #{tokens.$text-primary-inverse});
 }
 
 :host([variant='ghost']) .button {
