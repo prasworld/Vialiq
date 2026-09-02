@@ -30,7 +30,7 @@ The wrapper component that coordinates the sidebar layout and the main content.
 | Name | Type | Default | Description |
 |---|---|---|---|
 | `show-backdrop` | `boolean` | `false` | Shows a backdrop overlaying the main content. |
-| `animate` | `boolean` | `true` | Enables sliding animations for container content (used in push/slide modes). |
+| `animations` | `boolean` | `true` | Enables sliding animations for container content (used in push/slide modes). |
 | `allow-sidebar-backdrop-control` | `boolean` | `true` | Allows the child `vi-sidebar` to control the container's backdrop state. |
 
 ### Events
@@ -60,7 +60,7 @@ The sidebar panel itself.
 | `docked-size` | `string` | `'0px'` | Width/Height of the docked sidebar when closed (e.g., `'50px'`). |
 | `auto-collapse-width` | `number` | `undefined` | Window width (px) to automatically close the sidebar. |
 | `auto-collapse-height` | `number` | `undefined` | Window height (px) to automatically close the sidebar. |
-| `animate` | `boolean` | `true` | Animates the open/close state. |
+| `animations` | `boolean` | `true` | Animates the open/close state. |
 | `trap-focus` | `boolean` | `false` | Traps keyboard focus within the sidebar when open. |
 | `auto-focus` | `boolean` | `true` | Automatically focuses the first focusable element when opened. |
 | `show-backdrop` | `boolean` | `false` | Shows the backdrop when opened (if container allows). |
@@ -78,10 +78,11 @@ The sidebar panel itself.
 | `vi-opened-change` | `{ opened: boolean }` | Emitted when the `opened` state changes. |
 | `vi-open-start` | `{}` | Emitted when the opening animation starts. |
 | `vi-opened` | `{}` | Emitted when the opening animation completes. |
+| `vi-after-opened` | `{}` | Emitted after the sidebar finishes its transition to the open state. |
 | `vi-close-start` | `{}` | Emitted when the closing animation starts. |
 | `vi-closed` | `{}` | Emitted when the closing animation completes. |
-| `vi-mode-change` | `{ mode: string }` | Emitted when the `mode` property changes. |
-| `vi-position-change` | `{ position: string }` | Emitted when the `position` property changes. |
+| `vi-after-closed` | `{}` | Emitted after the sidebar finishes its transition to the closed state. |
+| `vi-transition-end` | `{}` | Emitted when any transform or dimensional transition finishes. |
 
 ### Slots
 - `default`: The content of the sidebar. Note: docked mode content is just the regular content; it is simply clipped via CSS using the `docked-size` dimension.

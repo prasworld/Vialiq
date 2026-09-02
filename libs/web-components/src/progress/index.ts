@@ -1,1 +1,1 @@
-export * from './vi-progress';
+export * from './vi-progress.js';

@@ -5,7 +5,7 @@ import { styleMap } from 'lit/directives/style-map.js';
 import styles from './vi-progress.scss?inline';
 
 // Import icons
-import '../icons/vi-icon';
+import '../icons/vi-icon.js';
 import { registerIcons } from '../icons/registry.js';
 import { checkIcon, xIcon, checkCircleIcon } from '@vialiq/icons';
 
@@ -31,13 +31,7 @@ export type ProgressGapPosition = 'top' | 'bottom' | 'left' | 'right';
  */
 @customElement('vi-progress')
 export class ViProgress extends LitElement {
-  override updated(changedProperties: Map<string, unknown>) {
-    super.updated(changedProperties);
-    // Remove aria-label from host to prevent Axe violations since it's forwarded to the inner progressbar
-    if (this.hasAttribute('aria-label')) {
-      this.removeAttribute('aria-label');
-    }
-  }
+
   static styles = unsafeCSS(styles);
 
   private _gradId = `vi-grad-${Math.random().toString(36).substring(2, 9)}`;
@@ -131,6 +125,7 @@ export class ViProgress extends LitElement {
   }
 
   private get percentage(): number {
+    if (this.max <= 0) return 0;
     const clampedValue = Math.max(0, Math.min(this.value, this.max));
     return Math.floor((clampedValue / this.max) * 100);
   }
@@ -383,9 +378,9 @@ export class ViProgress extends LitElement {
         class=${classMap(classes)}
         style=${styleMap(this.baseStyles)}
         role="progressbar"
-        aria-valuenow=${this.value}
+        aria-valuenow=${Math.max(0, Math.min(this.value, Math.max(0, this.max)))}
         aria-valuemin="0"
-        aria-valuemax=${this.max}
+        aria-valuemax=${Math.max(0, this.max)}
         aria-label=${this.ariaLabel || 'progress'}
       >
         ${this.steps !== undefined && this.type === 'line' 

@@ -3,7 +3,11 @@ import type { Meta, StoryObj } from '@storybook/web-components';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './index.js';
 import '../button/vi-button.js';
+import '../icons/vi-icon.js';
+import { registerIcons } from '../icons/registry.js';
+import { homeIcon, usersIcon, documentIcon, edit1Icon, chevronRightIcon } from '@vialiq/icons';
 
+registerIcons([homeIcon, usersIcon, documentIcon, edit1Icon, chevronRightIcon]);
 const meta: Meta = {
   title: 'Components/Sidebar',
   component: 'vi-sidebar',
@@ -89,14 +93,14 @@ const renderSidebarTemplate = (args: Record<string, unknown>) => html`
       >
         <div style="padding: 24px; display: flex; flex-direction: column; height: 100%; box-sizing: border-box;">
           <h3 style="margin-top: 0; margin-bottom: 32px; font-family: Inter, sans-serif; font-weight: 600; color: #111827; display: flex; align-items: center; gap: 8px;">
-            <vi-icon name="layout" style="color: #4f46e5;"></vi-icon>
+            <vi-icon name="document" style="color: #4f46e5;"></vi-icon>
             Menu
           </h3>
           <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; flex: 1;">
             <li><vi-button variant="text" style="width: 100%; justify-content: flex-start; color: #4b5563;"><vi-icon name="home" slot="prefix"></vi-icon> Dashboard</vi-button></li>
             <li><vi-button variant="text" style="width: 100%; justify-content: flex-start; color: #4b5563;"><vi-icon name="users" slot="prefix"></vi-icon> Team</vi-button></li>
-            <li><vi-button variant="text" style="width: 100%; justify-content: flex-start; color: #4b5563;"><vi-icon name="folder" slot="prefix"></vi-icon> Projects</vi-button></li>
-            <li><vi-button variant="text" style="width: 100%; justify-content: flex-start; color: #4b5563;"><vi-icon name="settings" slot="prefix"></vi-icon> Settings</vi-button></li>
+            <li><vi-button variant="text" style="width: 100%; justify-content: flex-start; color: #4b5563;"><vi-icon name="document" slot="prefix"></vi-icon> Projects</vi-button></li>
+            <li><vi-button variant="text" style="width: 100%; justify-content: flex-start; color: #4b5563;"><vi-icon name="edit-1" slot="prefix"></vi-icon> Settings</vi-button></li>
           </ul>
           <div style="margin-top: auto; padding-top: 24px; border-top: 1px solid #f3f4f6;">
             <vi-button 
@@ -126,7 +130,7 @@ const renderSidebarTemplate = (args: Record<string, unknown>) => html`
                 document.querySelector('#demo-sidebar')?.setAttribute('opened', 'true');
               }}
             >
-              <vi-icon name="menu" slot="prefix"></vi-icon>
+              <vi-icon name="chevron-right" slot="prefix"></vi-icon>
               Open Menu
             </vi-button>
           </div>

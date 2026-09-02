@@ -251,6 +251,9 @@ export class ViSidebar extends FocusTrapMixin(ViElement) {
         part="base"
         class="vi-sidebar"
         aria-hidden=${!effectivelyVisible}
+        role=${this.trapFocus ? 'dialog' : undefined}
+        aria-modal=${this.trapFocus ? 'true' : undefined}
+        aria-label=${this.trapFocus ? (this.getAttribute('aria-label') || 'Sidebar') : undefined}
       >
         <div class="vi-sidebar__content">
           <slot></slot>

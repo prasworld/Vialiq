@@ -263,6 +263,18 @@
     "./progress/vi-progress": {
       "types": "./progress/vi-progress.d.ts",
       "default": "./progress/vi-progress.js"
+    },
+    "./sidebar": {
+      "types": "./sidebar/index.d.ts",
+      "default": "./sidebar/index.js"
+    },
+    "./sidebar/vi-sidebar": {
+      "types": "./sidebar/vi-sidebar.d.ts",
+      "default": "./sidebar/vi-sidebar.js"
+    },
+    "./sidebar/vi-sidebar-container": {
+      "types": "./sidebar/vi-sidebar-container.d.ts",
+      "default": "./sidebar/vi-sidebar-container.js"
     }
   },
   "peerDependencies": {
@@ -309,7 +321,8 @@
     "tabs/",
     "tag/",
     "textarea/",
-    "progress/"
+    "progress/",
+    "sidebar/"
   ],
   "peerDependenciesMeta": {
     "flatpickr": {

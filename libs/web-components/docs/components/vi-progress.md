@@ -36,7 +36,7 @@ Used for:
 | `strokeLinecap`| `stroke-linecap`| `StrokeLinecap` | `'round'` | ✅ | Shape of the stroke ends |
 
 ```typescript
-type ProgressType = 'line' | 'circle';
+type ProgressType = 'line' | 'circle' | 'dashboard';
 type ProgressVariant = 'primary' | 'success' | 'error' | 'warning';
 type ProgressSize = 'sm' | 'md' | 'lg';
 type ProgressStatus = 'normal' | 'active' | 'exception' | 'success';
@@ -76,9 +76,9 @@ type StrokeLinecap = 'round' | 'butt' | 'square';
 |----------|---------|-------------|
 | `--vi-progress-track-bg` | `var(--vi-layer-03, #{tokens.$layer-03})` | Track background color |
 | `--vi-progress-indicator-bg` | `var(--vi-color-primary, #{tokens.$color-primary})` | Indicator fill color |
-| `--vi-progress-height` | `var(--vi-spacing-sm, #{tokens.$spacing-sm})` | Thickness of the linear bar |
+| `--vi-progress-line-height` | `var(--vi-spacing-sm, #{tokens.$spacing-sm})` | Thickness of the linear bar |
 | `--vi-progress-circle-size` | `120px` | Diameter for circle type |
-| `--vi-progress-circle-thickness`| `6px` | Stroke width for circle type |
+| `--vi-progress-circle-stroke-width`| `6px` | Stroke width for circle type |
 | `--vi-progress-border-radius` | `var(--vi-border-radius-full, #{tokens.$border-radius-full})` | Border radius of track/indicator |
 | `--vi-progress-text-color` | `var(--vi-text-primary, #{tokens.$text-primary})` | Info text color |
 
