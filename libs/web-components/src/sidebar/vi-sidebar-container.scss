@@ -32,7 +32,7 @@
     transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
-:host([animations="false"]) .vi-sidebar-container__content-wrapper {
+:host(:not([animations])) .vi-sidebar-container__content-wrapper {
   transition: none !important;
 }
 

@@ -54,8 +54,8 @@ export class ViSidebarContainer extends ViElement {
   private _handleSidebarSlotChange() {
     this._sidebars.forEach((sidebar) => {
       sidebar.container = this;
-      this.updateLayout();
     });
+    this.updateLayout();
   }
 
   private _onBackdropClick() {

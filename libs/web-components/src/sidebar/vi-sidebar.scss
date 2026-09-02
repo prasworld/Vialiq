@@ -12,7 +12,7 @@
    * It is applied selectively in dock+closed state to clip the width-collapse animation. */
 }
 
-:host([animations="false"]) {
+:host(:not([animations])) {
   transition: none !important;
 }
 
