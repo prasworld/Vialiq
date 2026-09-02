@@ -1,0 +1,3 @@
+export * from './vi-sidebar.js';
+export * from './vi-sidebar-container.js';
+//# sourceMappingURL=index.d.ts.map

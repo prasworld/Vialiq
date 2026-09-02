@@ -56,4 +56,5 @@ export { ViTabPanel } from './tabs/vi-tab-panel.js';
 export { ViSpin } from './spin/vi-spin.js';
 export type { SpinSize } from './spin/vi-spin.js';
 export * from './skeleton/vi-skeleton.js';
+export * from './sidebar/index.js';
 //# sourceMappingURL=index.d.ts.map
