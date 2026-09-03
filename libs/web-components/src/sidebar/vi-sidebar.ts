@@ -21,14 +21,14 @@ export type SidebarPosition =
  * @element vi-sidebar
  * @slot - The content of the sidebar
  *
- * @fires vi-open-start - Fired before the sidebar begins opening
- * @fires vi-opened - Fired when the sidebar becomes open
- * @fires vi-after-opened - Fired when the open transition finishes
- * @fires vi-close-start - Fired before the sidebar begins closing
- * @fires vi-closed - Fired when the sidebar becomes closed
- * @fires vi-after-closed - Fired when the close transition finishes
- * @fires vi-opened-change - Fired whenever `opened` changes. Detail: `{ opened: boolean }`
- * @fires vi-transition-end - Fired whenever any open/close transition ends
+ * @fires vi-sidebar-open-start - Fired before the sidebar begins opening
+ * @fires vi-sidebar-opened - Fired when the sidebar becomes open
+ * @fires vi-sidebar-after-opened - Fired when the open transition finishes
+ * @fires vi-sidebar-close-start - Fired before the sidebar begins closing
+ * @fires vi-sidebar-closed - Fired when the sidebar becomes closed
+ * @fires vi-sidebar-after-closed - Fired when the close transition finishes
+ * @fires vi-sidebar-opened-change - Fired whenever `opened` changes. Detail: `{ opened: boolean }`
+ * @fires vi-sidebar-transition-end - Fired whenever any open/close transition ends
  */
 @customElement('vi-sidebar')
 export class ViSidebar extends FocusTrapMixin(ViElement) {
@@ -207,12 +207,12 @@ export class ViSidebar extends FocusTrapMixin(ViElement) {
     }
 
     if (changedProperties.has('opened')) {
-      const eventName = this.opened ? 'vi-opened' : 'vi-closed';
+      const eventName = this.opened ? 'vi-sidebar-opened' : 'vi-sidebar-closed';
       this.dispatchEvent(
         new CustomEvent(eventName, { bubbles: true, composed: true }),
       );
       this.dispatchEvent(
-        new CustomEvent('vi-opened-change', {
+        new CustomEvent('vi-sidebar-opened-change', {
           detail: { opened: this.opened },
           bubbles: true,
           composed: true,
@@ -273,7 +273,7 @@ export class ViSidebar extends FocusTrapMixin(ViElement) {
   open() {
     if (!this.opened) {
       this.dispatchEvent(
-        new CustomEvent('vi-open-start', { bubbles: true, composed: true }),
+        new CustomEvent('vi-sidebar-open-start', { bubbles: true, composed: true }),
       );
       this.opened = true;
     }
@@ -283,7 +283,7 @@ export class ViSidebar extends FocusTrapMixin(ViElement) {
   close() {
     if (this.opened) {
       this.dispatchEvent(
-        new CustomEvent('vi-close-start', { bubbles: true, composed: true }),
+        new CustomEvent('vi-sidebar-close-start', { bubbles: true, composed: true }),
       );
       this.opened = false;
     }
@@ -411,15 +411,15 @@ export class ViSidebar extends FocusTrapMixin(ViElement) {
        e.propertyName === 'height')
     ) {
       this.dispatchEvent(
-        new CustomEvent('vi-transition-end', { bubbles: true, composed: true }),
+        new CustomEvent('vi-sidebar-transition-end', { bubbles: true, composed: true }),
       );
       if (this.opened) {
         this.dispatchEvent(
-          new CustomEvent('vi-after-opened', { bubbles: true, composed: true }),
+          new CustomEvent('vi-sidebar-after-opened', { bubbles: true, composed: true }),
         );
       } else {
         this.dispatchEvent(
-          new CustomEvent('vi-after-closed', { bubbles: true, composed: true }),
+          new CustomEvent('vi-sidebar-after-closed', { bubbles: true, composed: true }),
         );
       }
     }

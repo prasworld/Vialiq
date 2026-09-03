@@ -39,7 +39,7 @@ describe('vi-sidebar-container', () => {
       <vi-sidebar-container></vi-sidebar-container>
     `);
     const backdropSpy = sinon.spy();
-    el.addEventListener('vi-show-backdrop-change', backdropSpy);
+    el.addEventListener('vi-sidebar-show-backdrop-change', backdropSpy);
 
     el.requestBackdrop(true);
     await el.updateComplete;
@@ -58,7 +58,7 @@ describe('vi-sidebar-container', () => {
     `);
     
     const clickSpy = sinon.spy();
-    el.addEventListener('vi-backdrop-click', clickSpy);
+    el.addEventListener('vi-sidebar-backdrop-click', clickSpy);
     
     const backdropEl = el.shadowRoot!.querySelector('.vi-sidebar-container__backdrop') as HTMLElement;
     backdropEl.click();

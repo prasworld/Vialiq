@@ -301,8 +301,8 @@ export function ValidityMixin<
      * properties change. This ensures `.validity` is always fresh without
      * mutating `status` or dispatching events.
      */
-    override updated(changed: PropertyValues): void {
-      super.updated(changed);
+    override willUpdate(changed: PropertyValues): void {
+      super.willUpdate(changed);
 
       if (changed.has('value') || changed.has('required')) {
         this._syncValidity();

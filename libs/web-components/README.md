@@ -752,7 +752,7 @@ The [ViModal](./src/modal/vi-modal.ts) is a focus-trapping dialog that dynamical
 - `vi-modal-before-close`: Fires immediately on `open=false` (cancelable). Detail: `{ reason: string }`
 - `vi-modal-close`: Fires as the modal begins closing. Detail: `{ reason: string }`
 - `vi-modal-after-close`: Fires after exit animations complete and modal is removed.
-- `vi-modal-request-close`: Fires when user attempts to close via backdrop/escape. Detail: `{ reason: 'escape' \| 'backdrop' }`
+- `vi-modal-close-request`: Fires when user attempts to close via backdrop/escape. Detail: `{ reason: 'escape' \| 'backdrop' }`
 
 #### Snippets
 

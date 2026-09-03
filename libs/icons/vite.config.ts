@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import path from 'path';
 import { readdirSync } from 'fs';
+import dts from 'vite-plugin-dts';
 
 // Each icon file becomes its own output module for per-icon tree shaking.
 // types.ts and index.ts are excluded — they are not runnable modules.
@@ -25,6 +26,12 @@ export default defineConfig({
   // rather than from process.cwd() (workspace root), which would place output
   // two levels above the workspace root.
   root: __dirname,
+  plugins: [
+    dts({
+      entryRoot: 'src',
+      tsconfigPath: path.join(__dirname, 'tsconfig.lib.json'),
+    }),
+  ],
   build: {
     emptyOutDir: true,
     lib: {

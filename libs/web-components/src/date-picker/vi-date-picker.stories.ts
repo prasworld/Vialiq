@@ -23,7 +23,7 @@ const meta: Meta<DatePickerArgs> = {
   title: 'Components/DatePicker',
   tags: ['autodocs'],
   argTypes: {
-    onVialiqChange: { action: 'vialiq-change' },
+    onViDatePickerChange: { action: 'vi-date-picker-change' },
     mode: {
       control: 'select',
       options: ['date', 'range', 'month', 'month-year', 'week'],
@@ -122,7 +122,7 @@ const render = ({
       locale=${locale || ''}
       min=${min || ''}
       max=${max || ''}
-      @vialiq-change=${(e: CustomEvent) => onVialiqChange?.(e.detail)}
+      @vi-date-picker-change=${(e: CustomEvent) => onViDatePickerChange?.(e.detail)}
     >
       ${mode === 'range'
         ? html`
@@ -175,7 +175,7 @@ export const RangeMode: Story = {
     docs: {
       description: {
         story:
-          'Allows the user to select a start and end date. `vialiq-change` detail includes both `rawValue` and `rawEndValue`.',
+          'Allows the user to select a start and end date. `vi-date-picker-change` detail includes both `rawValue` and `rawEndValue`.',
       },
     },
   },
@@ -215,7 +215,7 @@ export const MonthMode: Story = {
         locale=${args.locale || ''}
         min=${args.min || ''}
         max=${args.max || ''}
-        @vialiq-change=${(e: CustomEvent) => args.onVialiqChange?.(e.detail)}
+        @vi-date-picker-change=${(e: CustomEvent) => args.onViDatePickerChange?.(e.detail)}
       >
         <vi-date-picker-input
           label="Select a Month"
@@ -328,7 +328,7 @@ export const ProgrammaticRange: Story = {
           ?disabled=${args.disabled}
           ?required=${args.required}
           name=${args.name}
-          @vialiq-change=${(e: CustomEvent) => args.onVialiqChange?.(e.detail)}
+          @vi-date-picker-change=${(e: CustomEvent) => args.onViDatePickerChange?.(e.detail)}
         >
           <vi-date-picker-input
             kind="from"
@@ -469,7 +469,7 @@ export const ProgrammaticValueUpdate: Story = {
         mode=${args.mode}
         value=${args.value || ''}
         locale=${args.locale || 'en'}
-        @vialiq-change=${(e: CustomEvent) => args.onVialiqChange?.(e.detail)}
+        @vi-date-picker-change=${(e: CustomEvent) => args.onViDatePickerChange?.(e.detail)}
       >
         <vi-date-picker-input
           label="Select a Date"

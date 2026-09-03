@@ -36,8 +36,8 @@ The wrapper component that coordinates the sidebar layout and the main content.
 ### Events
 | Event | Detail | Description |
 |---|---|---|
-| `vi-backdrop-click` | `{}` | Emitted when the backdrop is clicked. |
-| `vi-show-backdrop-change` | `{ showBackdrop: boolean }` | Emitted when the backdrop state changes. |
+| `vi-sidebar-backdrop-click` | `{}` | Emitted when the backdrop is clicked. |
+| `vi-sidebar-show-backdrop-change` | `{ showBackdrop: boolean }` | Emitted when the backdrop state changes. |
 
 ### Slots
 - `sidebar`: The slot for `<vi-sidebar>` elements.
@@ -75,14 +75,14 @@ The sidebar panel itself.
 ### Events
 | Event | Detail | Description |
 |---|---|---|
-| `vi-opened-change` | `{ opened: boolean }` | Emitted when the `opened` state changes. |
-| `vi-open-start` | `{}` | Emitted when the opening animation starts. |
-| `vi-opened` | `{}` | Emitted when the opening animation completes. |
-| `vi-after-opened` | `{}` | Emitted after the sidebar finishes its transition to the open state. |
-| `vi-close-start` | `{}` | Emitted when the closing animation starts. |
-| `vi-closed` | `{}` | Emitted when the closing animation completes. |
-| `vi-after-closed` | `{}` | Emitted after the sidebar finishes its transition to the closed state. |
-| `vi-transition-end` | `{}` | Emitted when any transform or dimensional transition finishes. |
+| `vi-sidebar-opened-change` | `{ opened: boolean }` | Emitted when the `opened` state changes. |
+| `vi-sidebar-open-start` | `{}` | Emitted when the opening animation starts. |
+| `vi-sidebar-opened` | `{}` | Emitted when the opening animation completes. |
+| `vi-sidebar-after-opened` | `{}` | Emitted after the sidebar finishes its transition to the open state. |
+| `vi-sidebar-close-start` | `{}` | Emitted when the closing animation starts. |
+| `vi-sidebar-closed` | `{}` | Emitted when the closing animation completes. |
+| `vi-sidebar-after-closed` | `{}` | Emitted after the sidebar finishes its transition to the closed state. |
+| `vi-sidebar-transition-end` | `{}` | Emitted when any transform or dimensional transition finishes. |
 
 ### Slots
 - `default`: The content of the sidebar. Note: docked mode content is just the regular content; it is simply clipped via CSS using the `docked-size` dimension.

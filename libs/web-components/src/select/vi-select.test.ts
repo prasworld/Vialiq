@@ -73,12 +73,12 @@ describe('vi-select', () => {
     expect(label?.textContent?.trim()).toBe('Two');
   });
 
-  it('fires vialiq-change event on selection', async () => {
+  it('fires vi-select-change event on selection', async () => {
     let detail: any = null;
     let eventFired = false;
     
     render(html`
-      <vi-select @vialiq-change=${(e: CustomEvent) => { eventFired = true; detail = e.detail; }}>
+      <vi-select @vi-select-change=${(e: CustomEvent) => { eventFired = true; detail = e.detail; }}>
         <vi-select-option value="1" label="One"></vi-select-option>
       </vi-select>
     `, container);
@@ -100,7 +100,7 @@ describe('vi-select', () => {
     let changeValue = '1';
     
     render(html`
-      <vi-select clearable value="1" @vialiq-clear=${() => clearFired = true} @vialiq-change=${(e: CustomEvent) => changeValue = e.detail.value}>
+      <vi-select clearable value="1" @vi-select-clear=${() => clearFired = true} @vi-select-change=${(e: CustomEvent) => changeValue = e.detail.value}>
         <vi-select-option value="1" label="One"></vi-select-option>
       </vi-select>
     `, container);

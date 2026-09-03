@@ -78,7 +78,7 @@ export function ViMonthYearPlugin(config: ViMonthYearPluginConfig = {}) {
         yearSelect.appendChild(opt);
       }
       
-      yearSelect.addEventListener('vialiq-change', (e: Event) => {
+      yearSelect.addEventListener('vi-select-change', (e: Event) => {
         e.stopPropagation(); // prevent it from bubbling up to Storybook
         const selectedYear = parseInt((e as CustomEvent).detail.value, 10);
         if (!isNaN(selectedYear)) {
