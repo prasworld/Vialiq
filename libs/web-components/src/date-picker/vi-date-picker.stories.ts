@@ -16,7 +16,7 @@ interface DatePickerArgs {
   status: ControlStatus;
   validityMessage: string;
   name: string;
-  onVialiqChange?: (e: Event) => void;
+  onViDatePickerChange?: (e: Event) => void;
 }
 
 const meta: Meta<DatePickerArgs> = {
@@ -106,7 +106,7 @@ const render = ({
   validityMessage,
   name,
   value,
-  onVialiqChange,
+  onViDatePickerChange,
 }: DatePickerArgs) => html`
   <div style="padding: 1.5rem; font-family: sans-serif;">
     <vi-date-picker

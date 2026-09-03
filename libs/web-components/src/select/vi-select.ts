@@ -256,7 +256,7 @@ export class ViSelect extends ValidityMixin(FocusableMixin(ViElement)) {
       this._setHostFocusable(!this.disabled);
     }
 
-    if (changedProperties.has('open')) {
+    if (changedProperties.has('open') && this.open !== changedProperties.get('open')) {
       if (this.open) {
         this._floatingController.start();
         if (this.value && this._activeIndex >= 0) {
@@ -265,7 +265,10 @@ export class ViSelect extends ValidityMixin(FocusableMixin(ViElement)) {
         }
       } else {
         this._floatingController.stop();
-        this._triggerEl?.focus();
+        // Only focus if the select isn't disabled
+        if (!this.disabled) {
+          this._triggerEl?.focus();
+        }
         window.clearTimeout(this._typeaheadTimeout);
         this._typeaheadBuffer = '';
         this._syncHighlightToOptions();

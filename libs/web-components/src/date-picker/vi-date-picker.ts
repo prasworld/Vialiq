@@ -666,6 +666,15 @@ export class ViDatePicker extends ValidityMixin(FlatpickrMixin(ViElement)) {
         composed: true,
       }),
     );
+
+    // TODO(v2): Remove legacy alias
+    this.dispatchEvent(
+      new CustomEvent<DatePickerChangeDetail>('vialiq-change', {
+        detail,
+        bubbles: true,
+        composed: true,
+      }),
+    );
   }
 
   private _buildIsoValue(start: Date | null, end: Date | null): string | null {
