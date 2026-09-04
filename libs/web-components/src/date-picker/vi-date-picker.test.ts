@@ -90,7 +90,7 @@ describe('vi-date-picker', () => {
     expect(input.value).toContain('2025');
   });
 
-  it('dispatches vialiq-change event with DatePickerChangeDetail on selection', async () => {
+  it('dispatches vi-date-picker-change event with DatePickerChangeDetail on selection', async () => {
     render(html`
       <vi-date-picker>
         <vi-date-picker-input></vi-date-picker-input>
@@ -101,7 +101,7 @@ describe('vi-date-picker', () => {
     await waitForUpdate(picker);
 
     let eventDetail: DatePickerChangeDetail | undefined;
-    picker.addEventListener('vialiq-change', (e: Event) => {
+    picker.addEventListener('vi-date-picker-change', (e: Event) => {
       eventDetail = (e as CustomEvent<DatePickerChangeDetail>).detail;
     });
 
@@ -144,7 +144,7 @@ describe('vi-date-picker', () => {
     await waitForUpdate(picker);
 
     let eventDetail: DatePickerChangeDetail | undefined;
-    picker.addEventListener('vialiq-change', (e: Event) => {
+    picker.addEventListener('vi-date-picker-change', (e: Event) => {
       eventDetail = (e as CustomEvent<DatePickerChangeDetail>).detail;
     });
     

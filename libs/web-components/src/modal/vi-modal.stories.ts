@@ -269,7 +269,7 @@ export const ProgrammaticGuard: Story = {
     docs: {
       description: {
         story:
-          'Demonstrates listening to `vi-modal-request-close` to prevent the modal from closing if there are unsaved changes. Cancel the event via `e.preventDefault()`.',
+          'Demonstrates listening to `vi-modal-close-request` to prevent the modal from closing if there are unsaved changes. Cancel the event via `e.preventDefault()`.',
       },
     },
   },
@@ -291,7 +291,7 @@ export const ProgrammaticGuard: Story = {
       <vi-modal
         id="modal-guard"
         size="sm"
-        @vi-modal-request-close=${handleRequestClose}
+        @vi-modal-close-request=${handleRequestClose}
       >
         <vi-modal-header slot="header" alert-variant=${ifDefined(args?.alertVariant)} ?closable=${args?.closable ?? true} ?maximizable=${args?.maximizable ?? false}>Edit Record</vi-modal-header>
         <vi-input placeholder="Type something..."></vi-input>
@@ -460,7 +460,7 @@ When \`persistent\` is \`true\`, pressing **Escape** or clicking the **backdrop*
 will not close the modal. Instead, the dialog shakes to signal "blocked" — 
 matching the macOS alert dialog and MUI Dialog patterns.
 
-The modal also dispatches a \`vi-modal-request-close\` event with \`detail.reason\`
+The modal also dispatches a \`vi-modal-close-request\` event with \`detail.reason\`
 so consumers can show a custom in-modal warning message instead.
         `,
       },
@@ -501,7 +501,7 @@ so consumers can show a custom in-modal warning message instead.
         persistent
         closable=${false}
         size="sm"
-        @vi-modal-request-close=${handleRequestClose}
+        @vi-modal-close-request=${handleRequestClose}
       >
         <vi-modal-header slot="header" alert-variant=${ifDefined(args?.alertVariant)} ?closable=${args?.closable ?? true} ?maximizable=${args?.maximizable ?? false}>⚠️ Action Required</vi-modal-header>
         <div>
@@ -1201,7 +1201,7 @@ export const EventLifecycle: Story = {
     };
 
     const handleRequestClose = (e: CustomEvent) => {
-      logEvent('vi-modal-request-close', e.detail);
+      logEvent('vi-modal-close-request', e.detail);
     };
 
     const handleClose = (e: CustomEvent) => {
@@ -1249,7 +1249,7 @@ export const EventLifecycle: Story = {
         @vi-modal-before-open=${handleBeforeOpen}
         @vi-modal-open=${handleOpen}
         @vi-modal-after-open=${handleAfterOpen}
-        @vi-modal-request-close=${handleRequestClose}
+        @vi-modal-close-request=${handleRequestClose}
         @vi-modal-before-close=${handleBeforeClose}
         @vi-modal-close=${handleClose}
         @vi-modal-after-close=${handleAfterClose}
@@ -1264,7 +1264,7 @@ export const EventLifecycle: Story = {
         </ol>
         <p>And when closing:</p>
         <ol style="font-family: sans-serif;">
-          <li><code>vi-modal-request-close</code> (cancelable, provides reason)</li>
+          <li><code>vi-modal-close-request</code> (cancelable, provides reason)</li>
           <li><code>vi-modal-before-close</code> (cancelable)</li>
           <li><code>vi-modal-close</code></li>
           <li><code>vi-modal-after-close</code> (post-animation)</li>

@@ -530,7 +530,7 @@ export class ViModal extends ResizableMixin(
   public close(
     reason: 'escape' | 'backdrop' | 'button' | 'programmatic' = 'programmatic',
   ): void {
-    const requestCloseEvent = new CustomEvent('vi-modal-request-close', {
+    const requestCloseEvent = new CustomEvent('vi-modal-close-request', {
       bubbles: true,
       composed: true,
       cancelable: true,
@@ -546,7 +546,7 @@ export class ViModal extends ResizableMixin(
   }
 
   private _requestClose(reason: 'escape' | 'backdrop'): void {
-    const requestCloseEvent = new CustomEvent('vi-modal-request-close', {
+    const requestCloseEvent = new CustomEvent('vi-modal-close-request', {
       bubbles: true,
       composed: true,
       cancelable: true,

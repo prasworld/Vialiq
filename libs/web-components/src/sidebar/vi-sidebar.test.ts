@@ -15,7 +15,7 @@ describe('vi-sidebar', () => {
   it('should dispatch events on open/close', async () => {
     const el = await fixture<ViSidebar>(html`<vi-sidebar></vi-sidebar>`);
     const openedSpy = sinon.spy();
-    el.addEventListener('vi-opened-change', openedSpy);
+    el.addEventListener('vi-sidebar-opened-change', openedSpy);
 
     el.open();
     await el.updateComplete;

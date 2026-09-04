@@ -86,7 +86,7 @@ describe('vi-modal', () => {
     let requestCloseFired = false;
     let closeFired = false;
 
-    el.addEventListener('vi-modal-request-close', () => {
+    el.addEventListener('vi-modal-close-request', () => {
       requestCloseFired = true;
       // Let it continue to actual close
     });
@@ -111,7 +111,7 @@ describe('vi-modal', () => {
 
     let closeFired = false;
 
-    el.addEventListener('vi-modal-request-close', (e: Event) => {
+    el.addEventListener('vi-modal-close-request', (e: Event) => {
       e.preventDefault();
     });
 
@@ -155,7 +155,7 @@ describe('vi-modal', () => {
     await el.updateComplete;
 
     let requestCloseFired = false;
-    el.addEventListener('vi-modal-request-close', () => {
+    el.addEventListener('vi-modal-close-request', () => {
       requestCloseFired = true;
     });
 

@@ -35,6 +35,9 @@ registerIcons([chevronDownIcon, xIcon]);
  * Form-associated single-choice select control.
  *
  * @element vi-select
+ * 
+ * @fires {CustomEvent<{value:string; label:string}>} vi-select-change - Fires when selection changes
+ * @fires {CustomEvent<void>} vi-select-clear - Fires when selection is cleared
  */
 @customElement('vi-select')
 export class ViSelect extends ValidityMixin(FocusableMixin(ViElement)) {
@@ -208,6 +211,36 @@ export class ViSelect extends ValidityMixin(FocusableMixin(ViElement)) {
     super.formResetCallback();
   }
 
+  override willUpdate(changedProperties: PropertyValues): void {
+    super.willUpdate(changedProperties);
+
+    if (changedProperties.has('value')) {
+      this._internals.setFormValue(this.value || null);
+      this._syncSlottedSelectedState();
+      this._syncSelectedLabel();
+    }
+
+    if (changedProperties.has('open')) {
+      if (this.open) {
+        if (this.disabled) {
+          this.open = false;
+        } else {
+          if (this.value) {
+            const idx = this._slottedItems
+              .filter((i) => !i.hidden)
+              .findIndex((i) => i.value === this.value);
+            this._activeIndex = idx;
+          } else {
+            this._activeIndex = -1;
+          }
+        }
+      } else {
+        this._activeIndex = -1;
+        this._typeAheadString = '';
+      }
+    }
+  }
+
   override updated(changedProperties: PropertyValues): void {
     super.updated(changedProperties);
 
@@ -219,43 +252,25 @@ export class ViSelect extends ValidityMixin(FocusableMixin(ViElement)) {
       }
     }
 
-    if (changedProperties.has('value')) {
-      this._internals.setFormValue(this.value || null);
-      this._syncSlottedSelectedState();
-      this._syncSelectedLabel();
-    }
-
     if (changedProperties.has('disabled')) {
       this._setHostFocusable(!this.disabled);
     }
 
-    if (changedProperties.has('open')) {
+    if (changedProperties.has('open') && this.open !== changedProperties.get('open')) {
       if (this.open) {
-        if (this.disabled) {
-          this.open = false;
-          return;
-        }
         this._floatingController.start();
-
-        // Focus selected item
-        if (this.value) {
-          const idx = this._slottedItems
-            .filter((i) => !i.hidden)
-            .findIndex((i) => i.value === this.value);
-          this._activeIndex = idx;
-          if (idx >= 0) this._updateSlottedActiveState(idx);
+        if (this.value && this._activeIndex >= 0) {
+          this._updateSlottedActiveState(this._activeIndex);
           this._scrollToActiveIndex();
-        } else {
-          this._activeIndex = -1;
         }
       } else {
-        this._activeIndex = -1;
         this._floatingController.stop();
-        this._triggerEl?.focus();
-        // Clear typeahead state when dropdown closes
+        // Only focus if the select isn't disabled
+        if (!this.disabled) {
+          this._triggerEl?.focus();
+        }
         window.clearTimeout(this._typeaheadTimeout);
         this._typeaheadBuffer = '';
-        this._typeAheadString = '';
         this._syncHighlightToOptions();
       }
     }
@@ -375,7 +390,7 @@ export class ViSelect extends ValidityMixin(FocusableMixin(ViElement)) {
     this.close();
 
     this.dispatchEvent(
-      new CustomEvent<{ value: string; label: string }>('vialiq-change', {
+      new CustomEvent<{ value: string; label: string }>('vi-select-change', {
         detail: { value: this.value, label: opt.label },
         bubbles: true,
         composed: true,
@@ -495,14 +510,14 @@ export class ViSelect extends ValidityMixin(FocusableMixin(ViElement)) {
     this._selectedLabel = '';
 
     this.dispatchEvent(
-      new CustomEvent<void>('vialiq-clear', {
+      new CustomEvent<void>('vi-select-clear', {
         bubbles: true,
         composed: true,
       }),
     );
 
     this.dispatchEvent(
-      new CustomEvent<{ value: string; label: string }>('vialiq-change', {
+      new CustomEvent<{ value: string; label: string }>('vi-select-change', {
         detail: { value: '', label: '' },
         bubbles: true,
         composed: true,

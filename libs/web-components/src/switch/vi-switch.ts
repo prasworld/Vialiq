@@ -33,7 +33,7 @@ export type LabelPlacement = 'start' | 'end';
  * @slot on-label - Optional text inside the track when on
  * @slot off-label - Optional text inside the track when off
  *
- * @fires {CustomEvent<{checked:boolean}>} vialiq-change - Fires when user toggles checked state.
+ * @fires {CustomEvent<{checked:boolean}>} vi-switch-change - Fires when user toggles checked state.
  *
  * @csspart track - The pill-shaped background
  * @csspart thumb - The sliding circle
@@ -66,7 +66,8 @@ export class ViSwitch extends ValidityMixin(FocusableMixin(ViElement)) {
   @property({ type: String, reflect: true }) accessor size: SwitchSize = 'md';
 
   /** Label position relative to switch. */
-  @property({ type: String, reflect: true, attribute: 'label-placement' }) accessor labelPlacement: LabelPlacement = 'end';
+  @property({ type: String, reflect: true, attribute: 'label-placement' })
+  accessor labelPlacement: LabelPlacement = 'end';
 
   /** Form submission value when checked. */
   @property() accessor value = 'on';
@@ -144,7 +145,7 @@ export class ViSwitch extends ValidityMixin(FocusableMixin(ViElement)) {
         detail: { checked: this.checked },
         bubbles: true,
         composed: true,
-      })
+      }),
     );
   }
 
@@ -164,9 +165,9 @@ export class ViSwitch extends ValidityMixin(FocusableMixin(ViElement)) {
 
     return html`
       <label class=${wrapperClasses} data-placement=${this.labelPlacement}>
-        ${this.labelPlacement === 'start' ? html`
-          <span part="label" class="switch-label"><slot></slot></span>
-        ` : nothing}
+        ${this.labelPlacement === 'start'
+          ? html`<span part="label" class="switch-label"><slot></slot></span>`
+          : nothing}
 
         <input
           type="checkbox"
@@ -183,9 +184,9 @@ export class ViSwitch extends ValidityMixin(FocusableMixin(ViElement)) {
           <span part="thumb" class="switch-thumb"></span>
         </span>
 
-        ${this.labelPlacement === 'end' ? html`
-          <span part="label" class="switch-label"><slot></slot></span>
-        ` : nothing}
+        ${this.labelPlacement === 'end'
+          ? html`<span part="label" class="switch-label"><slot></slot></span>`
+          : nothing}
       </label>
     `;
   }

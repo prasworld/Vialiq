@@ -80,9 +80,9 @@ export class ViInput extends ValidityMixin(FocusableMixin(ViElement)) {
 
   // ── ValidityMixin contract — must be declared as @property —————————————
 
-  @property({ reflect: true }) accessor status: ControlStatus = 'default';
-  @property({ type: Boolean, reflect: true }) accessor required = false;
-  @property() accessor validityMessage = '';
+  @property({ reflect: true }) override accessor status: ControlStatus = 'default';
+  @property({ type: Boolean, reflect: true }) override accessor required = false;
+  @property() override accessor validityMessage = '';
 
   // ── Public API ─────────────────────────────────────────────────────────────
 
@@ -96,7 +96,7 @@ export class ViInput extends ValidityMixin(FocusableMixin(ViElement)) {
   @property() accessor name = '';
 
   /** Current value. Synced to ElementInternals for form participation. */
-  @property() accessor value = '';
+  @property() override accessor value = '';
 
   /** When true, disables the input and removes it from the tab order. */
   @property({ type: Boolean, reflect: true }) accessor disabled = false;
@@ -108,7 +108,7 @@ export class ViInput extends ValidityMixin(FocusableMixin(ViElement)) {
   @property({ type: Boolean, reflect: true }) accessor readonly = false;
 
   /** The accessibility label. */
-  @property({ attribute: 'aria-label' }) accessor ariaLabel = '';
+  @property({ attribute: 'aria-label' }) override accessor ariaLabel = '';
 
   /** Reference to an element id containing the label. */
   @property({ attribute: 'aria-labelledby' }) accessor ariaLabelledby = '';
@@ -118,7 +118,7 @@ export class ViInput extends ValidityMixin(FocusableMixin(ViElement)) {
   // _testValidity is declared protected in ValidityInterface, but TypeScript's
   // mixin intersection type does not always surface protected members for
   // `override` checking. The method is still an override at runtime.
-  protected _testValidity(): Partial<ValidityStateFlags> {
+  protected override _testValidity(): Partial<ValidityStateFlags> {
     if (this._internals.validity.customError) {
       return { customError: true };
     }
@@ -166,14 +166,14 @@ export class ViInput extends ValidityMixin(FocusableMixin(ViElement)) {
   }
 
   /** Resets value and validation state when the associated form resets. */
-  formResetCallback(): void {
+  override formResetCallback(): void {
     this.value = this.getAttribute('value') ?? '';
     this.status = 'default';
     this.validityMessage = '';
   }
 
   /** Keeps disabled in sync when a containing fieldset or form is disabled. */
-  formDisabledCallback(disabled: boolean): void {
+  override formDisabledCallback(disabled: boolean): void {
     this.disabled = disabled;
   }
 

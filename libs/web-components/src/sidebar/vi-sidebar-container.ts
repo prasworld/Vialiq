@@ -59,7 +59,7 @@ export class ViSidebarContainer extends ViElement {
   }
 
   private _onBackdropClick() {
-    this.dispatchEvent(new CustomEvent('vi-backdrop-click', { bubbles: true, composed: true }));
+    this.dispatchEvent(new CustomEvent('vi-sidebar-backdrop-click', { bubbles: true, composed: true }));
     this._sidebars.forEach(sidebar => {
       if (sidebar.opened && sidebar.closeOnClickBackdrop) {
         sidebar.close();
@@ -71,7 +71,7 @@ export class ViSidebarContainer extends ViElement {
     if (this.allowSidebarBackdropControl) {
       if (this.showBackdrop !== show) {
         this.showBackdrop = show;
-        this.dispatchEvent(new CustomEvent('vi-show-backdrop-change', { 
+        this.dispatchEvent(new CustomEvent('vi-sidebar-show-backdrop-change', { 
           detail: { showBackdrop: show },
           bubbles: true, 
           composed: true 

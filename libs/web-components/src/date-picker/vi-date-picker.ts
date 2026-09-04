@@ -32,14 +32,14 @@ import type {
 } from './types.js';
 
 /** Emitted when the user selects a date. Detail: DatePickerChangeDetail. */
-export const VIALIQ_CHANGE = 'vialiq-change';
+export const VI_DATE_PICKER_CHANGE = 'vi-date-picker-change';
 
 /**
  * A form-associated date-picker built on flatpickr.
  *
  * @element vi-date-picker
  *
- * @fires {CustomEvent<DatePickerChangeDetail>} vialiq-change  - Date selection changed.
+ * @fires {CustomEvent<DatePickerChangeDetail>} vi-date-picker-change  - Date selection changed.
  *
  * @attr {string}          value            - ISO date string (read/write).
  * @attr {string}          name             - Form field name.
@@ -660,7 +660,16 @@ export class ViDatePicker extends ValidityMixin(FlatpickrMixin(ViElement)) {
     };
 
     this.dispatchEvent(
-      new CustomEvent<DatePickerChangeDetail>(VIALIQ_CHANGE, {
+      new CustomEvent<DatePickerChangeDetail>(VI_DATE_PICKER_CHANGE, {
+        detail,
+        bubbles: true,
+        composed: true,
+      }),
+    );
+
+    // TODO(v2): Remove legacy alias
+    this.dispatchEvent(
+      new CustomEvent<DatePickerChangeDetail>('vialiq-change', {
         detail,
         bubbles: true,
         composed: true,
