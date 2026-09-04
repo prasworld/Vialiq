@@ -7,6 +7,9 @@ declare const ViSelect_base: typeof ViElement & (new (...args: any[]) => import(
  * Form-associated single-choice select control.
  *
  * @element vi-select
+ *
+ * @fires {CustomEvent<{value:string; label:string}>} vi-select-change - Fires when selection changes
+ * @fires {CustomEvent<void>} vi-select-clear - Fires when selection is cleared
  */
 export declare class ViSelect extends ViSelect_base {
     static styles: import('lit').CSSResult;
@@ -45,6 +48,7 @@ export declare class ViSelect extends ViSelect_base {
     private _defaultValue;
     protected firstUpdated(changedProperties: PropertyValues): void;
     formResetCallback(): void;
+    willUpdate(changedProperties: PropertyValues): void;
     updated(changedProperties: PropertyValues): void;
     formDisabledCallback(disabled: boolean): void;
     private _observeSlottedItems;

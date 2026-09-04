@@ -2,14 +2,14 @@ import { PropertyValues } from 'lit';
 import { ViElement } from '../base/vi-element.js';
 import { DatePickerMode } from './types.js';
 /** Emitted when the user selects a date. Detail: DatePickerChangeDetail. */
-export declare const VIALIQ_CHANGE = "vialiq-change";
+export declare const VI_DATE_PICKER_CHANGE = "vi-date-picker-change";
 declare const ViDatePicker_base: (new (...args: any[]) => import('../base/flatpickr-mixin.js').FlatpickrMixinInterface) & typeof ViElement & (new (...args: any[]) => import('../base/validity-mixin.js').ValidityInterface<unknown>);
 /**
  * A form-associated date-picker built on flatpickr.
  *
  * @element vi-date-picker
  *
- * @fires {CustomEvent<DatePickerChangeDetail>} vialiq-change  - Date selection changed.
+ * @fires {CustomEvent<DatePickerChangeDetail>} vi-date-picker-change  - Date selection changed.
  *
  * @attr {string}          value            - ISO date string (read/write).
  * @attr {string}          name             - Form field name.

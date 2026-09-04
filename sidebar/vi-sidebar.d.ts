@@ -11,14 +11,14 @@ declare const ViSidebar_base: typeof ViElement & (new (...args: any[]) => import
  * @element vi-sidebar
  * @slot - The content of the sidebar
  *
- * @fires vi-open-start - Fired before the sidebar begins opening
- * @fires vi-opened - Fired when the sidebar becomes open
- * @fires vi-after-opened - Fired when the open transition finishes
- * @fires vi-close-start - Fired before the sidebar begins closing
- * @fires vi-closed - Fired when the sidebar becomes closed
- * @fires vi-after-closed - Fired when the close transition finishes
- * @fires vi-opened-change - Fired whenever `opened` changes. Detail: `{ opened: boolean }`
- * @fires vi-transition-end - Fired whenever any open/close transition ends
+ * @fires vi-sidebar-open-start - Fired before the sidebar begins opening
+ * @fires vi-sidebar-opened - Fired when the sidebar becomes open
+ * @fires vi-sidebar-after-opened - Fired when the open transition finishes
+ * @fires vi-sidebar-close-start - Fired before the sidebar begins closing
+ * @fires vi-sidebar-closed - Fired when the sidebar becomes closed
+ * @fires vi-sidebar-after-closed - Fired when the close transition finishes
+ * @fires vi-sidebar-opened-change - Fired whenever `opened` changes. Detail: `{ opened: boolean }`
+ * @fires vi-sidebar-transition-end - Fired whenever any open/close transition ends
  */
 export declare class ViSidebar extends ViSidebar_base {
     static styles: import('lit').CSSResult;

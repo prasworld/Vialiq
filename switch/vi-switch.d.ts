@@ -21,7 +21,7 @@ declare const ViSwitch_base: typeof ViElement & (new (...args: any[]) => import(
  * @slot on-label - Optional text inside the track when on
  * @slot off-label - Optional text inside the track when off
  *
- * @fires {CustomEvent<{checked:boolean}>} vialiq-change - Fires when user toggles checked state.
+ * @fires {CustomEvent<{checked:boolean}>} vi-switch-change - Fires when user toggles checked state.
  *
  * @csspart track - The pill-shaped background
  * @csspart thumb - The sliding circle
