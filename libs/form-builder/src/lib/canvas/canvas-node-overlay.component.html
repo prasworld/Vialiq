@@ -1,0 +1,29 @@
+<div class="overlay-container"
+      [class.active]="isActive"
+      [class.dragging]="isDragging"
+      (click)="selectNode($event)">
+    
+      <!-- Selection Border -->
+      <div class="selection-border"></div>
+    
+      <!-- Content wrapper -->
+      <div class="content-wrapper">
+        @if (node.label) {
+          <div class="node-label">{{ node.label }}</div>
+        }
+        <ng-content></ng-content>
+      </div>
+    
+      <!-- Actions Overlay -->
+      <div class="actions-toolbar" (click)="$event.stopPropagation()">
+        <vi-button variant="ghost" icon-only (click)="selectNode($event)" title="Settings">
+          <vi-icon slot="icon" name="edit-1"></vi-icon>
+        </vi-button>
+        <vi-button variant="ghost" icon-only (click)="duplicateNode()" title="Duplicate">
+          <vi-icon slot="icon" name="document"></vi-icon>
+        </vi-button>
+        <vi-button variant="danger" icon-only (click)="deleteNode()" title="Delete">
+          <vi-icon slot="icon" name="trash"></vi-icon>
+        </vi-button>
+      </div>
+    </div>

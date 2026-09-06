@@ -1,0 +1,27 @@
+@use 'flux-ui/styles/variables' as tokens;
+
+.form-title-container {
+      padding: 1.5rem 2rem 1rem;
+      border-bottom: 1px solid tokens.$border-03;
+      background: tokens.$layer-01;
+    }
+    .form-title-input {
+      width: 100%;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: tokens.$text-primary;
+      border: 1px solid transparent;
+      background: transparent;
+      padding: 0.25rem 0.5rem;
+      margin-left: -0.5rem;
+      border-radius: 0.375rem;
+      transition: all 0.2s;
+    }
+    .form-title-input:hover {
+      background: tokens.$layer-02;
+    }
+    .form-title-input:focus {
+      outline: none;
+      border-color: tokens.$border-03;
+      background: tokens.$layer-01;
+    }

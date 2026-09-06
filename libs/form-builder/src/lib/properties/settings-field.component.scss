@@ -1,0 +1,36 @@
+@use 'flux-ui/styles/variables' as tokens;
+
+.settings-field {
+      margin-bottom: 1.25rem;
+    }
+    .field-label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: tokens.$text-primary;
+      margin-bottom: 0.5rem;
+    }
+    .field-desc {
+      font-size: 0.75rem;
+      font-weight: 400;
+      color: tokens.$text-secondary;
+      margin-top: 0.125rem;
+    }
+    .checkbox-field {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+    .checkbox-text {
+      display: flex;
+      flex-direction: column;
+    }
+    .checkbox-text label {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: tokens.$text-primary;
+      cursor: pointer;
+    }
+    vi-input, vi-textarea, vi-select {
+      width: 100%;
+    }

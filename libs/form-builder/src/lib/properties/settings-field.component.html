@@ -1,0 +1,62 @@
+<div class="settings-field">
+      <!-- Label & Description -->
+      @if (field.type !== 'boolean') {
+        <vi-label class="field-label" [attr.for]="'field-' + field.key">
+          {{ field.label }}
+          @if (field.hint) {
+            <div class="field-desc">{{ field.hint }}</div>
+          }
+        </vi-label>
+      }
+    
+      <!-- Text / Number / Label / Key -->
+      @if (field.type === 'text' || field.type === 'number' || field.type === 'label' || field.type === 'key') {
+        <vi-input
+          [id]="'field-' + field.key"
+          [type]="field.type === 'number' ? 'number' : 'text'"
+          [value]="value() ?? ''"
+          (vi-input-change)="onValueChange($event)">
+        </vi-input>
+      }
+    
+      <!-- Code / Textarea -->
+      @if (field.type === 'code') {
+        <vi-textarea
+          [id]="'field-' + field.key"
+          [value]="value() ?? ''"
+          (vi-textarea-change)="onValueChange($event)">
+        </vi-textarea>
+      }
+    
+      <!-- Boolean / Switch -->
+      @if (field.type === 'boolean') {
+        <div class="checkbox-field">
+          <vi-switch
+            [id]="'field-' + field.key"
+            [checked]="!!value()"
+            (vi-switch-change)="onValueChange($event)">
+          </vi-switch>
+          <div class="checkbox-text">
+            <vi-label [attr.for]="'field-' + field.key">{{ field.label }}</vi-label>
+            @if (field.hint) {
+              <div class="field-desc">{{ field.hint }}</div>
+            }
+          </div>
+        </div>
+      }
+    
+      <!-- Select -->
+      @if (field.type === 'select') {
+        <vi-select
+          [id]="'field-' + field.key"
+          [value]="value()"
+          (vi-select-change)="onValueChange($event)">
+          @for (opt of field.options; track opt) {
+            <vi-select-option [value]="opt.value">
+              {{ opt.label }}
+            </vi-select-option>
+          }
+        </vi-select>
+      }
+    
+    </div>

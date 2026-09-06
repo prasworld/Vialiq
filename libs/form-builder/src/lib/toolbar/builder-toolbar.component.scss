@@ -1,0 +1,54 @@
+@use 'flux-ui/styles/variables' as tokens;
+
+.builder-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 3.5rem;
+      padding: 0 1.5rem;
+      border-bottom: 1px solid tokens.$border-03;
+      background: tokens.$layer-01;
+      z-index: 20;
+    }
+    .toolbar-left h2 {
+      margin: 0;
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: tokens.$text-primary;
+    }
+    .toolbar-center {
+      display: flex;
+      gap: 0.5rem;
+    }
+    .toolbar-right {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+    }
+
+    .mode-toggle {
+      display: flex;
+      background: tokens.$layer-02;
+      border-radius: 0.375rem;
+      padding: 0.25rem;
+      border: 1px solid tokens.$border-03;
+    }
+    .mode-toggle button {
+      background: transparent;
+      border: none;
+      padding: 0.375rem 0.75rem;
+      border-radius: 0.25rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: tokens.$text-secondary;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .mode-toggle button:hover {
+      color: tokens.$text-secondary;
+    }
+    .mode-toggle button.active {
+      background: tokens.$layer-01;
+      color: tokens.$text-primary;
+      box-shadow: tokens.$shadow-sm;
+    }

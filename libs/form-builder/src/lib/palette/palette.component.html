@@ -1,0 +1,18 @@
+<div class="palette-container">
+      <vi-palette-search (search)="onSearch($event)"></vi-palette-search>
+    
+      <div class="palette-content">
+        @if (groupedItems().length > 0) {
+          @for (group of groupedItems(); track group) {
+            <vi-palette-group
+              [title]="group.group"
+              [items]="group.items">
+            </vi-palette-group>
+          }
+        } @else {
+          <div class="no-results">
+            No components found matching "{{ searchQuery() }}"
+          </div>
+        }
+      </div>
+    </div>

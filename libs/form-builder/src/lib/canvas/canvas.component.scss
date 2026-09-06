@@ -1,0 +1,47 @@
+@use 'flux-ui/styles/variables' as tokens;
+
+:host {
+      display: block;
+      height: 100%;
+    }
+
+    .canvas-container {
+      height: 100%;
+      overflow-y: auto;
+      background: tokens.$layer-02;
+      padding: 2rem;
+      display: flex;
+      justify-content: center;
+      box-sizing: border-box;
+    }
+    .canvas-paper {
+      width: 100%;
+      max-width: 800px;
+      background: tokens.$layer-01;
+      border-radius: 0.5rem;
+      box-shadow: tokens.$shadow-md;
+      min-height: 600px;
+      display: flex;
+      flex-direction: column;
+    }
+    .canvas-content {
+      padding: 1.5rem 2rem;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .canvas-content.is-empty {
+      justify-content: center;
+    }
+    .empty-drop-zone-wrapper {
+      position: relative;
+    }
+    .empty-drop-zone-wrapper vi-canvas-drop-zone {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      z-index: 10;
+    }
+    .bottom-padding {
+      height: 4rem;
+    }
