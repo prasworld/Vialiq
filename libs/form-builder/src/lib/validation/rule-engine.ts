@@ -66,7 +66,7 @@ export function evaluatePattern(value: unknown, pattern: string, flags?: string)
 }
 
 // RFC 5322 simplified — robust enough for form validation
-const EMAIL_REGEX = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
+const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
 export function evaluateEmail(value: unknown): boolean {
   if (isEmpty(value)) return true;
@@ -202,7 +202,7 @@ function evaluateRule(
       if (!options.allowCustomJs) {
         throw new CustomJsDisabledError();
       }
-      // eslint-disable-next-line no-new-func
+       
       const fn = new Function('value', 'formData', descriptor.fn) as (v: unknown, d: unknown) => boolean;
       return fn(value, formData) ? { valid: true } : fail('custom-js');
     }

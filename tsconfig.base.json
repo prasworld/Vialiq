@@ -21,12 +21,7 @@
       "remote1/Routes": [
         "apps/remote1/src/app/remote-entry/entry.routes.ts"
       ],
-      "@vialiq/icons": [
-        "dist/libs/icons"
-      ],
-      "@vialiq/icons/*": [
-        "dist/libs/icons/*"
-      ],
+
       "@vialiq/flux-ui": [
         "libs/flux-ui/src/index.ts"
       ],
@@ -78,12 +73,7 @@
       "@vialiq/state-fp/bus": [
         "libs/state-fp/src/bus/index.ts"
       ],
-      "@vialiq/web-components": [
-        "dist/libs/web-components"
-      ],
-      "@vialiq/web-components/*": [
-        "dist/libs/web-components/*"
-      ],
+
       "@vialiq/form-builder": [
         "./libs/form-builder/src/index.ts"
       ],

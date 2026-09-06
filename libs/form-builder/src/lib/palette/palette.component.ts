@@ -12,7 +12,7 @@ import { PaletteGroupComponent } from './palette-group.component';
   imports: [PaletteSearchComponent, PaletteGroupComponent],
   templateUrl: './palette.component.html',
   styleUrl: './palette.component.scss',})
-export class PaletteComponent implements OnInit {
+export class PaletteComponent {
   private registry = inject(BuilderRegistryService);
   private config = inject<BuilderConfig>(BUILDER_CONFIG);
 
@@ -40,7 +40,6 @@ export class PaletteComponent implements OnInit {
     return result;
   });
 
-  ngOnInit() {}
 
   onSearch(query: string) {
     this.searchQuery.set(query);

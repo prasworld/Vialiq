@@ -2,18 +2,13 @@ import nx from '@nx/eslint-plugin';
 import baseConfig from '../../eslint.config.mjs';
 
 export default [
+  ...baseConfig,
   ...nx.configs['flat/angular'],
   ...nx.configs['flat/angular-template'],
-  ...baseConfig,
   {
     files: ['**/*.json'],
     rules: {
-      '@nx/dependency-checks': [
-        'error',
-        {
-          ignoredFiles: ['{projectRoot}/eslint.config.{js,cjs,mjs,ts,cts,mts}'],
-        },
-      ],
+      '@nx/dependency-checks': 'off',
     },
     languageOptions: {
       parser: await import('jsonc-eslint-parser'),
@@ -26,7 +21,7 @@ export default [
         'error',
         {
           type: 'attribute',
-          prefix: 'lib',
+          prefix: 'vi',
           style: 'camelCase',
         },
       ],
@@ -34,7 +29,7 @@ export default [
         'error',
         {
           type: 'element',
-          prefix: 'lib',
+          prefix: 'vi',
           style: 'kebab-case',
         },
       ],
