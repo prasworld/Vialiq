@@ -1,0 +1,27 @@
+@use 'flux-ui/styles/variables' as tokens;
+
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+    .palette-container {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
+      background: tokens.$layer-01;
+      border-right: 1px solid tokens.$border-03;
+    }
+    .palette-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem;
+    }
+    .no-results {
+      padding: 2rem 1rem;
+      text-align: center;
+      color: tokens.$text-secondary;
+      font-size: 0.875rem;
+    }

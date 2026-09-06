@@ -22,8 +22,12 @@
           }
         ],
         "styles": ["apps/remote1/src/styles.scss"],
+        "allowedCommonJsDependencies": ["flatpickr"],
         "customWebpackConfig": {
           "path": "apps/remote1/webpack.config.ts"
+        },
+        "stylePreprocessorOptions": {
+          "includePaths": ["libs"]
         }
       },
       "configurations": {

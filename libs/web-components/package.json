@@ -1,6 +1,6 @@
 {
   "name": "@vialiq/web-components",
-  "version": "0.1.1",
+  "version": "0.28.0",
   "private": false,
   "publishConfig": {
     "access": "public"
@@ -279,8 +279,8 @@
   },
   "peerDependencies": {
     "@floating-ui/dom": ">=1.0.0",
-    "@vialiq/flux-ui": ">=0.0.4",
-    "@vialiq/icons": ">=0.0.3",
+    "@vialiq/flux-ui": ">=0.22.0",
+    "@vialiq/icons": ">=0.7.0",
     "flatpickr": ">=4.6.0",
     "lit": "^3.0.0"
   },

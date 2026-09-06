@@ -1,0 +1,17 @@
+{
+  "name": "@vialiq/form-builder",
+  "version": "0.1.0",
+  "sideEffects": false,
+  "peerDependencies": {
+    "@angular/common": ">=21.0.0",
+    "@angular/core": ">=21.0.0",
+    "@angular/cdk": ">=21.0.0",
+    "@vialiq/web-components": ">=0.1.0",
+    "@vialiq/state-fp": ">=1.0.0"
+  },
+  "dependencies": {
+    "@atlaskit/pragmatic-drag-and-drop": "^1.0.0",
+    "@atlaskit/pragmatic-drag-and-drop-hitbox": "^1.0.0",
+    "json-logic-js": "^2.0.0"
+  }
+}

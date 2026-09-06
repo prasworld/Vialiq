@@ -1,0 +1,112 @@
+@use 'flux-ui/styles/variables' as tokens;
+
+.overlay-container {
+      position: relative;
+      border-radius: 0.375rem;
+      transition: all 0.2s;
+      border: 1px solid transparent;
+      margin: 0.25rem 0;
+      cursor: grab;
+    }
+    .overlay-container:active {
+      cursor: grabbing;
+    }
+    .overlay-container.dragging {
+      opacity: 0.4;
+    }
+    
+    .selection-border {
+      position: absolute;
+      top: -1px; right: -1px; bottom: -1px; left: -1px;
+      border: 1px dashed tokens.$color-success;
+      border-radius: 0.25rem;
+      pointer-events: none;
+      z-index: 5;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .overlay-container:hover .selection-border,
+    .overlay-container.active .selection-border {
+      opacity: 1;
+    }
+
+    .content-wrapper {
+      position: relative;
+      z-index: 1;
+      pointer-events: none; /* Block interaction in edit mode */
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    
+    .node-label {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: tokens.$text-primary;
+    }
+
+    /* Invisible shield to catch clicks */
+    .overlay-container::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+    }
+    
+    /* Bridge the gap to the toolbar on hover so mouse doesn't fall off */
+    .overlay-container:hover::after,
+    .overlay-container.active::after {
+      right: -50px;
+    }
+
+    .actions-toolbar {
+      position: absolute;
+      top: 50%;
+      right: -36px;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: tokens.$layer-inverse;
+      border-radius: 0.375rem;
+      z-index: 10;
+      box-shadow: tokens.$shadow-md;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s, right 0.2s;
+      overflow: hidden;
+
+      /* Button token overrides to match the exact mockup */
+      --vi-button-surface-ghost-text-color: #{tokens.$text-primary-inverse};
+      --vi-button-shape-border-radius: 0; /* Square so it fills the toolbar and gets clipped by overflow:hidden */
+      --vi-button-effect-shadow-raised: none; /* Flat design */
+      --vi-button-effect-shadow-hover: none;
+      --vi-button-effect-shadow-pressed: none;
+    }
+    
+    .actions-toolbar vi-button {
+      --vi-button-sizing-min-height: 2.25rem;
+      width: 2.25rem;
+      display: block;
+    }
+
+    /* Subtle divider lines between buttons */
+    .actions-toolbar vi-button:not(:last-child)::part(button) {
+      border-bottom: 1px solid tokens.$border-inverse-01;
+    }
+    
+    /* Override ghost hover state for the dark background */
+    .actions-toolbar vi-button[variant="ghost"]::part(button):hover {
+      background-color: color-mix(in srgb, tokens.$layer-01 15%, transparent);
+      color: tokens.$text-primary-inverse;
+      text-decoration: none;
+    }
+    
+    .overlay-container:hover .actions-toolbar,
+    .overlay-container.active .actions-toolbar {
+      opacity: 1;
+      pointer-events: auto;
+      right: -42px; /* Slight pop out effect */
+    }
+    

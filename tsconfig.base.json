@@ -10,34 +10,90 @@
     "importHelpers": true,
     "target": "es2015",
     "module": "esnext",
-    "lib": ["es2020", "dom"],
+    "lib": [
+      "es2020",
+      "dom"
+    ],
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "remote1/Routes": ["apps/remote1/src/app/remote-entry/entry.routes.ts"],
-      "@vialiq/icons": ["libs/icons/src/index.ts"],
-      "@vialiq/icons/*": ["libs/icons/src/*"],
-      "@vialiq/flux-ui": ["libs/flux-ui/src/index.ts"],
-      "@vialiq/flux-ui/styles": ["libs/flux-ui/src/styles/index.ts"],
-      "@vialiq/flux-ui/tokens": ["libs/flux-ui/src/tokens/index.ts"],
-      "@vialiq/automapper": ["libs/automapper/src/index.ts"],
-      "@vialiq/automapper/angular": ["libs/automapper/src/angular.ts"],
-      "@vialiq/automapper/zod": ["libs/automapper/src/zod.ts"],
-      "@vialiq/automapper/orm": ["libs/automapper/src/orm.ts"],
-      "@vialiq/automapper/fetch-adapter": ["libs/automapper/src/fetch-adapter.ts"],
-      "@vialiq/automapper/deep-clone": ["libs/automapper/src/deep-clone.ts"],
-      "@vialiq/state-fp": ["libs/state-fp/src/index.ts"],
-      "@vialiq/state-fp/core": ["libs/state-fp/src/core/index.ts"],
-      "@vialiq/state-fp/kernel": ["libs/state-fp/src/kernel/index.ts"],
-      "@vialiq/state-fp/storage": ["libs/state-fp/src/storage/index.ts"],
-      "@vialiq/state-fp/sync": ["libs/state-fp/src/sync/index.ts"],
-      "@vialiq/state-fp/devtools": ["libs/state-fp/src/devtools/index.ts"],
-      "@vialiq/state-fp/adapter": ["libs/state-fp/src/adapter/index.ts"],
-      "@vialiq/state-fp/bus": ["libs/state-fp/src/bus/index.ts"],
-      "@vialiq/web-components": ["libs/web-components/src/index.ts"],
-      "@vialiq/web-components/*": ["libs/web-components/src/*"]
+      "remote1/Routes": [
+        "apps/remote1/src/app/remote-entry/entry.routes.ts"
+      ],
+      "@vialiq/icons": [
+        "dist/libs/icons"
+      ],
+      "@vialiq/icons/*": [
+        "dist/libs/icons/*"
+      ],
+      "@vialiq/flux-ui": [
+        "libs/flux-ui/src/index.ts"
+      ],
+      "@vialiq/flux-ui/styles": [
+        "libs/flux-ui/src/styles/index.ts"
+      ],
+      "@vialiq/flux-ui/tokens": [
+        "libs/flux-ui/src/tokens/index.ts"
+      ],
+      "@vialiq/automapper": [
+        "libs/automapper/src/index.ts"
+      ],
+      "@vialiq/automapper/angular": [
+        "libs/automapper/src/angular.ts"
+      ],
+      "@vialiq/automapper/zod": [
+        "libs/automapper/src/zod.ts"
+      ],
+      "@vialiq/automapper/orm": [
+        "libs/automapper/src/orm.ts"
+      ],
+      "@vialiq/automapper/fetch-adapter": [
+        "libs/automapper/src/fetch-adapter.ts"
+      ],
+      "@vialiq/automapper/deep-clone": [
+        "libs/automapper/src/deep-clone.ts"
+      ],
+      "@vialiq/state-fp": [
+        "libs/state-fp/src/index.ts"
+      ],
+      "@vialiq/state-fp/core": [
+        "libs/state-fp/src/core/index.ts"
+      ],
+      "@vialiq/state-fp/kernel": [
+        "libs/state-fp/src/kernel/index.ts"
+      ],
+      "@vialiq/state-fp/storage": [
+        "libs/state-fp/src/storage/index.ts"
+      ],
+      "@vialiq/state-fp/sync": [
+        "libs/state-fp/src/sync/index.ts"
+      ],
+      "@vialiq/state-fp/devtools": [
+        "libs/state-fp/src/devtools/index.ts"
+      ],
+      "@vialiq/state-fp/adapter": [
+        "libs/state-fp/src/adapter/index.ts"
+      ],
+      "@vialiq/state-fp/bus": [
+        "libs/state-fp/src/bus/index.ts"
+      ],
+      "@vialiq/web-components": [
+        "dist/libs/web-components"
+      ],
+      "@vialiq/web-components/*": [
+        "dist/libs/web-components/*"
+      ],
+      "@vialiq/form-builder": [
+        "./libs/form-builder/src/index.ts"
+      ],
+      "@vialiq/form-renderer": [
+        "./libs/form-renderer/src/index.ts"
+      ]
     }
   },
-  "exclude": ["node_modules", "tmp"]
+  "exclude": [
+    "node_modules",
+    "tmp"
+  ]
 }

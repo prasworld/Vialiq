@@ -1,0 +1,34 @@
+<vi-canvas-node-overlay [node]="node()">
+    
+      <!-- Component Instantiation -->
+      @if (hasDescriptor) {
+        <div [viDynamicElement]="node()"></div>
+      }
+    
+      @if (!hasDescriptor) {
+        <div class="missing-component">
+          No renderer found for type: {{ node().type }}
+        </div>
+      }
+    
+      <!-- Recursive Children for Layout Components -->
+      @if (isLayoutNode) {
+        <div class="layout-children-container">
+          <!-- Drop zone 0 (before first child) -->
+          <vi-canvas-drop-zone
+            [parentId]="node().id"
+            [index]="0">
+          </vi-canvas-drop-zone>
+          @for (child of getChildren(); track child.id; let i = $index) {
+            <!-- Recursive Child -->
+            <vi-canvas-node [node]="child"></vi-canvas-node>
+            <!-- Drop zone after child -->
+            <vi-canvas-drop-zone
+              [parentId]="node().id"
+              [index]="i + 1">
+            </vi-canvas-drop-zone>
+          }
+        </div>
+      }
+    
+    </vi-canvas-node-overlay>

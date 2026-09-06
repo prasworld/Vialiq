@@ -1,0 +1,58 @@
+<div class="builder-layout">
+    
+      <!-- Toolbar -->
+      <vi-builder-toolbar></vi-builder-toolbar>
+    
+      <!-- Main Workspace -->
+      <vi-sidebar-container class="builder-workspace">
+    
+        <!-- Palette (Left Sidebar) -->
+        <vi-sidebar 
+          slot="sidebar" 
+          position="start" 
+          mode="push" 
+          [opened]="viewMode() === 'design'"
+          [resizable]="true"
+          resize-min="250"
+          resize-max="500"
+          class="left-sidebar">
+          <vi-palette></vi-palette>
+        </vi-sidebar>
+    
+        <!-- Property Editor (Right Sidebar) -->
+        <vi-sidebar 
+          slot="sidebar" 
+          position="end" 
+          mode="push" 
+          [opened]="viewMode() === 'design'"
+          [resizable]="true"
+          resize-min="250"
+          resize-max="500"
+          class="right-sidebar">
+          <vi-properties-panel></vi-properties-panel>
+        </vi-sidebar>
+    
+        <!-- Canvas / JSON / Preview (Center) -->
+        <div class="canvas-area" slot="content">
+          @if (viewMode() === 'design') {
+            <vi-canvas></vi-canvas>
+          }
+    
+          @if (viewMode() === 'json') {
+            <div class="json-mode">
+              <!-- Phase 3: JSON View will go here (schema-json-view component) -->
+              <pre>{{ schema() | json }}</pre>
+            </div>
+          }
+    
+          @if (viewMode() === 'preview') {
+            <div class="preview-mode">
+              <!-- Phase 8: Renderer will go here -->
+              <h3>Preview Mode</h3>
+              <p>Form renderer will be displayed here.</p>
+            </div>
+          }
+        </div>
+    
+      </vi-sidebar-container>
+    </div>

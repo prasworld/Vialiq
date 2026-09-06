@@ -9,6 +9,7 @@
   // on the cap-height of the first text line.
 
   .switch-wrapper {
+    position: relative;
     display: inline-flex;
     align-items: flex-start;
     gap: var(--vi-switch-label-gap, #{tokens.$spacing-xs});

@@ -1,0 +1,43 @@
+<div class="form-settings-panel">
+      <div class="panel-header">
+        <h3>Form Settings</h3>
+      </div>
+      
+      <div class="panel-content">
+        <!-- Form Title -->
+        <div class="settings-field">
+          <vi-label class="field-label" [attr.for]="'form-title'">Form Title</vi-label>
+          <vi-input 
+            id="form-title"
+            [value]="schema().title"
+            (vi-input-input)="updateTitle($event)">
+          </vi-input>
+        </div>
+
+        <!-- Validate On -->
+        <div class="settings-field">
+          <vi-label class="field-label" [attr.for]="'validate-on'">Validate On</vi-label>
+          <div class="field-desc">When should the form trigger validation?</div>
+          <vi-select 
+            id="validate-on"
+            [value]="schema().settings?.validateOn || 'change'"
+            (vi-select-change)="updateValidateOn($event)">
+            <vi-select-option value="change">On Change (Immediate)</vi-select-option>
+            <vi-select-option value="blur">On Blur (Lost Focus)</vi-select-option>
+            <vi-select-option value="submit">On Submit Only</vi-select-option>
+          </vi-select>
+        </div>
+        
+        <!-- Display Mode -->
+        <div class="settings-field">
+          <vi-label class="field-label" [attr.for]="'display-mode'">Display Mode</vi-label>
+          <vi-select 
+            id="display-mode"
+            [value]="schema().display || 'form'"
+            (vi-select-change)="updateDisplay($event)">
+            <vi-select-option value="form">Standard Form</vi-select-option>
+            <vi-select-option value="wizard">Wizard (Multi-step)</vi-select-option>
+          </vi-select>
+        </div>
+      </div>
+    </div>

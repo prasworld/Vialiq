@@ -22,8 +22,12 @@
           }
         ],
         "styles": ["apps/shell/src/styles.scss"],
+        "allowedCommonJsDependencies": ["flatpickr"],
         "customWebpackConfig": {
           "path": "apps/shell/webpack.config.ts"
+        },
+        "stylePreprocessorOptions": {
+          "includePaths": ["libs"]
         }
       },
       "configurations": {
