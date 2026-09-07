@@ -1,12 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ComponentRef } from '@angular/core';
+
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { SettingsFieldComponent } from './settings-field.component';
 
 describe('SettingsFieldComponent', () => {
   let component: SettingsFieldComponent;
   let fixture: ComponentFixture<SettingsFieldComponent>;
-  let componentRef: ComponentRef<SettingsFieldComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -17,7 +16,6 @@ describe('SettingsFieldComponent', () => {
   beforeEach(() => {
     fixture = TestBed.createComponent(SettingsFieldComponent);
     component = fixture.componentInstance;
-    componentRef = fixture.componentRef;
     
     component.field = { name: 'test', label: 'Test', type: 'text' };
     fixture.detectChanges();

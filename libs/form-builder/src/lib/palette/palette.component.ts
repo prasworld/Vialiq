@@ -1,4 +1,4 @@
-import { Component, computed, signal, OnInit, inject } from '@angular/core';
+import { Component, computed, signal, inject } from '@angular/core';
 
 import { BUILDER_CONFIG, type BuilderConfig } from '../tokens';
 import { BuilderRegistryService } from '../registry/builder-registry.service';

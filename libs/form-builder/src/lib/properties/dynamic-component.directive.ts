@@ -21,7 +21,7 @@ export type DynamicOutputs = Record<string, (event: unknown) => void>;
 export type DynamicAttributes = Record<string, string | number | boolean | null | undefined>;
 
 @Directive({
-  selector: '[dynamicComponent]',
+  selector: '[viDynamicComponent]',
   standalone: true,
 })
 export class DynamicComponentDirective<T = unknown> {
@@ -33,21 +33,21 @@ export class DynamicComponentDirective<T = unknown> {
 
   // 1. Signal Inputs
   readonly component = input<Type<T> | null | undefined>(null, {
-    alias: 'dynamicComponent',
+    alias: 'viDynamicComponent',
   });
   readonly inputs = input<DynamicInputs>({});
   readonly outputs = input<DynamicOutputs>({});
   readonly attributes = input<DynamicAttributes>({});
   readonly projectableNodes = input<Node[][] | undefined>(undefined, {
-    alias: 'dynamicComponentNodes',
+    alias: 'viDynamicComponentNodes',
   });
 
   // Injector Overrides
   readonly injector = input<Injector | undefined>(undefined, {
-    alias: 'dynamicComponentInjector',
+    alias: 'viDynamicComponentInjector',
   });
   readonly environmentInjector = input<EnvironmentInjector | undefined>(undefined, {
-    alias: 'dynamicComponentEnvInjector',
+    alias: 'viDynamicComponentEnvInjector',
   });
 
   // 2. Signal Outputs

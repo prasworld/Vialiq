@@ -1,4 +1,4 @@
-import { Component, signal, OnInit, input } from '@angular/core';
+import { Component, input } from '@angular/core';
 
 import { ComponentDescriptor } from '../types';
 import { PaletteItemComponent } from './palette-item.component';

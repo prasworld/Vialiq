@@ -12,6 +12,7 @@ import { DynamicComponentDirective } from './dynamic-component.directive';
 class TestDynamicComponent {
   @Input() testInput = '';
   @Output() testOutput = new EventEmitter<string>();
+  // eslint-disable-next-line @angular-eslint/no-output-rename
   @Output('aliasedOutput') actualOutput = new EventEmitter<number>();
   newOutput = output<boolean>();
 }
@@ -22,7 +23,7 @@ class TestDynamicComponent {
   imports: [DynamicComponentDirective],
   template: `
     <ng-container
-      [dynamicComponent]="compType()"
+      [viDynamicComponent]="compType()"
       [inputs]="dynamicInputs()"
       [outputs]="dynamicOutputs()"
       [attributes]="dynamicAttributes()">

@@ -1,10 +1,9 @@
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Component, Input, Output, EventEmitter, ComponentRef } from '@angular/core';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { SettingsHostComponent } from './settings-host.component';
 import { ExtensionRegistryService } from '../services/extension-registry.service';
 import { BuilderStateService } from '../services/builder-state.service';
-import { ComponentDescriptor, ComponentSchema } from '../types';
 import { SettingsTabComponent } from './settings-tab.component';
 import { DynamicComponentDirective } from './dynamic-component.directive';
 
@@ -16,14 +15,14 @@ class MockSettingsTab {
   @Output() schemaChange = new EventEmitter<any>();
 }
 
-@Component({ selector: 'test-custom-settings', standalone: true, template: '<div>Custom Settings</div>' })
+@Component({ selector: 'vi-test-custom-settings', standalone: true, template: '<div>Custom Settings</div>' })
 class TestCustomSettingsComponent {
   @Input() schema: any;
   @Output() schemaChange = new EventEmitter<any>();
 }
 
 // Dummy directive to override DynamicComponentDirective
-@Component({ selector: '[viDynamicComponent]', standalone: true, template: '' })
+@Component({ selector: 'vi-dynamic-component, [viDynamicComponent]', standalone: true, template: '' })
 class MockDynamicComponentDirective {
   @Input('viDynamicComponent') type!: any;
   @Input() inputs!: Record<string, unknown>;

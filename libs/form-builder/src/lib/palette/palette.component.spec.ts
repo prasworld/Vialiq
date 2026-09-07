@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Component, Input, Output, EventEmitter, ComponentRef } from '@angular/core';
+import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { PaletteComponent } from './palette.component';
 import { BuilderRegistryService } from '../registry/builder-registry.service';

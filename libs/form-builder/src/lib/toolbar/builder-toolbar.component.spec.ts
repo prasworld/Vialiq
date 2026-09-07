@@ -10,7 +10,6 @@ describe('BuilderToolbarComponent', () => {
   let component: BuilderToolbarComponent;
   let fixture: ComponentFixture<BuilderToolbarComponent>;
   let stateService: BuilderStateService;
-  let historyService: HistoryService;
   let schemaService: FormSchemaService;
 
   beforeEach(async () => {
@@ -24,7 +23,6 @@ describe('BuilderToolbarComponent', () => {
     fixture = TestBed.createComponent(BuilderToolbarComponent);
     component = fixture.componentInstance;
     stateService = TestBed.inject(BuilderStateService);
-    historyService = TestBed.inject(HistoryService);
     schemaService = TestBed.inject(FormSchemaService);
     fixture.detectChanges();
   });

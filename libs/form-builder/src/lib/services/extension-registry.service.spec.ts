@@ -1,15 +1,13 @@
-import { TestBed, fakeAsync, tick, flush } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { ExtensionRegistryService } from './extension-registry.service';
 import { BuilderStateService } from './builder-state.service';
 import { EXTENSION_PROVIDERS } from '../tokens/extension.token';
 import { of, throwError } from 'rxjs';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { signal, Injector, runInInjectionContext } from '@angular/core';
-import { toObservable } from '@angular/core/rxjs-interop';
-import { firstValueFrom, filter } from 'rxjs';
+import { describe, it, expect, vi } from 'vitest';
+import { signal } from '@angular/core';
 
 describe('ExtensionRegistryService', () => {
-  const waitForResource = async (service: ExtensionRegistryService) => {
+  const waitForResource = async () => {
     // Because we are not in a component, we need to trigger effects manually
     TestBed.flushEffects();
     // Wait for the resource to finish loading
@@ -27,7 +25,7 @@ describe('ExtensionRegistryService', () => {
     });
     
     const service = TestBed.inject(ExtensionRegistryService);
-    await waitForResource(service);
+    await waitForResource();
     expect(service.extensions.value()).toEqual([]);
   });
 
@@ -41,7 +39,7 @@ describe('ExtensionRegistryService', () => {
     });
     
     const service = TestBed.inject(ExtensionRegistryService);
-    await waitForResource(service);
+    await waitForResource();
     expect(service.extensions.value()).toEqual([]);
   });
 
@@ -63,7 +61,7 @@ describe('ExtensionRegistryService', () => {
     });
     
     const service = TestBed.inject(ExtensionRegistryService);
-    await waitForResource(service);
+    await waitForResource();
     
     const value = service.extensions.value();
     // Ordered by weight: undefined(0) -> 10 -> 20
@@ -94,7 +92,7 @@ describe('ExtensionRegistryService', () => {
     });
     
     const service = TestBed.inject(ExtensionRegistryService);
-    await waitForResource(service);
+    await waitForResource();
     
     const value = service.extensions.value();
     

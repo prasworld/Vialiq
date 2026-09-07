@@ -42,7 +42,9 @@ export class HistoryService {
 
         this._debounceTimer = setTimeout(() => {
           this._past.update(past => {
-            const newPast = [...past, this._lastSavedState!];
+            const state = this._lastSavedState;
+            if (!state) return past;
+            const newPast = [...past, state];
             if (newPast.length > this.config.maxHistorySize) {
               newPast.shift();
             }

@@ -13,7 +13,6 @@ describe('CanvasDropZoneComponent', () => {
   let component: CanvasDropZoneComponent;
   let fixture: ComponentFixture<CanvasDropZoneComponent>;
   let componentRef: ComponentRef<CanvasDropZoneComponent>;
-  let stateService: BuilderStateService;
 
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -28,7 +27,6 @@ describe('CanvasDropZoneComponent', () => {
     fixture = TestBed.createComponent(CanvasDropZoneComponent);
     component = fixture.componentInstance;
     componentRef = fixture.componentRef;
-    stateService = TestBed.inject(BuilderStateService);
     
     // Provide inputs
     componentRef.setInput('index', 0);

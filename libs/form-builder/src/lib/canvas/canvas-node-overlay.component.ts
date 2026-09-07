@@ -1,4 +1,4 @@
-import { Component, Input, ElementRef, ViewChild, OnInit, OnDestroy, CUSTOM_ELEMENTS_SCHEMA, inject } from '@angular/core';
+import { Component, Input, ElementRef, OnInit, OnDestroy, CUSTOM_ELEMENTS_SCHEMA, inject } from '@angular/core';
 
 import { ComponentSchema } from '../types';
 import { draggable } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';

@@ -2,7 +2,7 @@
       <!-- Custom settings component from descriptor -->
       @if (customComponentType) {
         <ng-container
-          [dynamicComponent]="customComponentType"
+          [viDynamicComponent]="customComponentType"
           [inputs]="{ schema: schema(), descriptor: descriptor() }"
           [outputs]="{ schemaChange: onChange }">
         </ng-container>

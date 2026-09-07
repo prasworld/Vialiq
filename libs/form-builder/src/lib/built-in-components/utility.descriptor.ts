@@ -4,7 +4,7 @@ import type {
   ContentComponentSchema,
   ButtonComponentSchema,
 } from '../types/component-schemas';
-import { displayTab, dataTab, logicTab } from './settings-helpers';
+import { displayTab, logicTab } from './settings-helpers';
 
 export const HIDDEN_DESCRIPTOR: ComponentDescriptor = {
   type: 'hidden',

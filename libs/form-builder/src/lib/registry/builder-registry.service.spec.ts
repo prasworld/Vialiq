@@ -3,7 +3,7 @@ import { BuilderRegistryService } from './builder-registry.service';
 import { BUILDER_CONFIG } from '../tokens/builder-config.token';
 import { BUILDER_COMPONENTS } from '../tokens/builder-components.token';
 import type { ComponentDescriptor } from '../types/component-descriptor';
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { vi, describe, it, expect } from 'vitest';
 
 describe('BuilderRegistryService', () => {
   const mockDescriptor1: ComponentDescriptor = {

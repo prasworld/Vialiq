@@ -4,10 +4,8 @@ import type {
   ComboboxComponentSchema,
   CheckboxComponentSchema,
   RadioComponentSchema,
-  CheckboxGroupComponentSchema,
-  RadioGroupComponentSchema,
 } from '../types/component-schemas';
-import { standardSettings, dataTab, displayTab, validationTab, logicTab } from './settings-helpers';
+import { standardSettings, displayTab, validationTab, logicTab } from './settings-helpers';
 
 export const SELECT_DESCRIPTOR: ComponentDescriptor = {
   type: 'select',

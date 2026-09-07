@@ -6,7 +6,6 @@ import { CanvasFormTitleComponent } from './canvas-form-title.component';
 import { CanvasEmptyStateComponent } from './canvas-empty-state.component';
 import { CanvasDropZoneComponent } from './canvas-drop-zone.component';
 import { CanvasNodeComponent } from './canvas-node.component';
-import type { ComponentSchema } from '../types';
 
 @Component({
   selector: 'vi-canvas',

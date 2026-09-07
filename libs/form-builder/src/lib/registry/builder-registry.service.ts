@@ -56,7 +56,7 @@ export class BuilderRegistryService {
       if (!grouped.has(groupName)) {
         grouped.set(groupName, []);
       }
-      grouped.get(groupName)!.push(descriptor);
+      grouped.get(groupName)?.push(descriptor);
     }
 
     for (const items of grouped.values()) {
@@ -67,7 +67,7 @@ export class BuilderRegistryService {
     const sortedGrouped = new Map<string, ComponentDescriptor[]>();
     for (const key of this._groupOrder) {
       if (grouped.has(key)) {
-        sortedGrouped.set(key, grouped.get(key)!);
+        sortedGrouped.set(key, grouped.get(key) || []);
         grouped.delete(key);
       }
     }

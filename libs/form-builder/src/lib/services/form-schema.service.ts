@@ -177,8 +177,6 @@ export class FormSchemaService {
   }
 
   private _isDescendant(components: ComponentSchema[], parentId: string, targetId: string): boolean {
-    const inDescendantTree = false;
-
     const check = (comps: ComponentSchema[], inTargetTree: boolean): boolean => {
       for (const comp of comps) {
         if (comp.id === targetId && inTargetTree) return true;
