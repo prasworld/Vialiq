@@ -21,7 +21,7 @@ class MockCanvasEmptyState {}
 
 @Component({ selector: 'vi-canvas-drop-zone', standalone: true, template: '' })
 class MockCanvasDropZone {
-  parentId = input<>();
+  parentId = input<string | null>(null);
   index = input(0);
   expandToFill = input(false);
 }
@@ -29,7 +29,7 @@ class MockCanvasDropZone {
 @Component({ selector: 'vi-canvas-node', standalone: true, template: '' })
 class MockCanvasNode {
   node = input<any>();
-  parentId = input<>();
+  parentId = input<string | null>(null);
   index = input(0);
 }
 

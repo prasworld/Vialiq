@@ -56,7 +56,9 @@ export class DynamicElementDirective implements OnChanges {
           const safeValue = this.sanitizer.sanitize(SecurityContext.HTML, value as string) || '';
           const parser = new DOMParser();
           const doc = parser.parseFromString(safeValue, 'text/html');
-          this.currentElement!.replaceChildren(...Array.from(doc.body.childNodes));
+          if (this.currentElement) {
+            this.currentElement.replaceChildren(...Array.from(doc.body.childNodes));
+          }
           continue;
         }
         // Property binding — safe cast via Record<string, unknown>
