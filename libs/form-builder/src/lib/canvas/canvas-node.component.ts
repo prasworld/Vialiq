@@ -1,4 +1,4 @@
-import { Component, OnInit, OnChanges, SimpleChanges, forwardRef, Directive, ElementRef, Renderer2, inject, input } from '@angular/core';
+import { Component, OnChanges, SimpleChanges, forwardRef, Directive, ElementRef, Renderer2, inject, input, computed } from '@angular/core';
 
 import { ComponentSchema, LayoutComponentSchema } from '../types';
 import { CanvasDropZoneComponent } from './canvas-drop-zone.component';
@@ -69,16 +69,12 @@ export class DynamicElementDirective implements OnChanges {
 ],
   templateUrl: './canvas-node.component.html',
   styleUrl: './canvas-node.component.scss',})
-export class CanvasNodeComponent implements OnInit {
+export class CanvasNodeComponent {
   private registry = inject(BuilderRegistryService);
 
   readonly node = input.required<ComponentSchema>();
   
-  hasDescriptor = false;
-
-  ngOnInit() {
-    this.hasDescriptor = !!this.registry.getByType(this.node().type);
-  }
+  readonly hasDescriptor = computed(() => !!this.registry.getByType(this.node().type));
 
   get isLayoutNode(): boolean {
     const node = this.node();

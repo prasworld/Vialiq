@@ -57,8 +57,15 @@ export class DynamicComponentDirective<T = unknown> {
   // Internal Reactive State
   private readonly activeComponentRef = signal<ComponentRef<T> | null>(null);
   private outputSubscriptions = new Subscription();
+  private isDestroying = false;
 
   constructor() {
+    this.destroyRef.onDestroy(() => {
+      this.isDestroying = true;
+      this.outputSubscriptions.unsubscribe();
+      this.vcr.clear();
+    });
+
     // Effect 1: Lifecycle & Instantiation (Tracks component, injectors, projectableNodes)
     effect((onCleanup) => {
       const compType = this.component();
@@ -83,7 +90,9 @@ export class DynamicComponentDirective<T = unknown> {
       this.componentCreated.emit(ref);
 
       onCleanup(() => {
-        this.componentDestroyed.emit();
+        if (!this.isDestroying) {
+          this.componentDestroyed.emit();
+        }
         ref.destroy();
       });
     });
@@ -156,11 +165,6 @@ export class DynamicComponentDirective<T = unknown> {
         appliedAttrs.forEach((attr) => this.renderer.removeAttribute(hostElement, attr));
         appliedClasses.forEach((cls) => this.renderer.removeClass(hostElement, cls));
       });
-    });
-
-    this.destroyRef.onDestroy(() => {
-      this.outputSubscriptions.unsubscribe();
-      this.vcr.clear();
     });
   }
 

@@ -38,6 +38,7 @@ describe('evaluateMinLength', () => {
   it('passes for empty (required handles that)', () => expect(evaluateMinLength('', 3)).toBe(true));
   it('handles array length', () => expect(evaluateMinLength(['a', 'b'], 2)).toBe(true));
   it('fails for short array', () => expect(evaluateMinLength(['a'], 2)).toBe(false));
+  it('passes for non-string/array', () => expect(evaluateMinLength(5, 3)).toBe(true));
 });
 
 describe('evaluateMaxLength', () => {
@@ -46,6 +47,7 @@ describe('evaluateMaxLength', () => {
   it('passes for empty', () => expect(evaluateMaxLength('', 3)).toBe(true));
   it('handles array length', () => expect(evaluateMaxLength(['a', 'b', 'c'], 3)).toBe(true));
   it('fails for long array', () => expect(evaluateMaxLength(['a', 'b', 'c', 'd'], 3)).toBe(false));
+  it('passes for non-string/array', () => expect(evaluateMaxLength(5, 3)).toBe(true));
 });
 
 // ─── min / max ────────────────────────────────────────────────────────────────
@@ -170,5 +172,53 @@ describe('evaluate()', () => {
     ];
     expect(evaluate(rules, 'pass', fd, { jsonLogicEvaluator: mockEvaluator })).toEqual({ valid: true });
     expect(evaluate(rules, 'fail', fd, { jsonLogicEvaluator: mockEvaluator }).valid).toBe(false);
+  });
+
+  it('skips json-logic and returns valid if evaluator is not provided', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const rules: ValidationRule[] = [
+      { descriptor: { type: 'json-logic', rule: {} } },
+    ];
+    expect(evaluate(rules, 'anything', fd)).toEqual({ valid: true });
+    expect(warnSpy).toHaveBeenCalled();
+    warnSpy.mockRestore();
+  });
+
+  it('handles unknown rule types gracefully', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const rules = [
+      { descriptor: { type: 'unknown-type' as any } },
+    ];
+    expect(evaluate(rules, 'anything', fd)).toEqual({ valid: true });
+    expect(warnSpy).toHaveBeenCalled();
+    warnSpy.mockRestore();
+  });
+
+  it('evaluates all rule types correctly via evaluate()', () => {
+    expect(evaluate([{ descriptor: { type: 'maxLength', value: 3 } }], 'hi', fd).valid).toBe(true);
+    expect(evaluate([{ descriptor: { type: 'maxLength', value: 3 } }], 'hello', fd).valid).toBe(false);
+    expect(evaluate([{ descriptor: { type: 'maxLength', value: 3 } }], ['a', 'b'], fd).valid).toBe(true);
+    expect(evaluate([{ descriptor: { type: 'maxLength', value: 3 } }], ['a', 'b', 'c', 'd'], fd).valid).toBe(false);
+
+    expect(evaluate([{ descriptor: { type: 'minLength', value: 3 } }], ['a', 'b', 'c'], fd).valid).toBe(true);
+    expect(evaluate([{ descriptor: { type: 'minLength', value: 3 } }], ['a', 'b'], fd).valid).toBe(false);
+
+    expect(evaluate([{ descriptor: { type: 'min', value: 5 } }], 6, fd).valid).toBe(true);
+    expect(evaluate([{ descriptor: { type: 'min', value: 5 } }], 4, fd).valid).toBe(false);
+
+    expect(evaluate([{ descriptor: { type: 'max', value: 5 } }], 4, fd).valid).toBe(true);
+    expect(evaluate([{ descriptor: { type: 'max', value: 5 } }], 6, fd).valid).toBe(false);
+
+    expect(evaluate([{ descriptor: { type: 'pattern', value: '^[0-9]+$' } }], '123', fd).valid).toBe(true);
+    expect(evaluate([{ descriptor: { type: 'pattern', value: '^[0-9]+$' } }], 'abc', fd).valid).toBe(false);
+
+    expect(evaluate([{ descriptor: { type: 'email' } }], 'user@example.com', fd).valid).toBe(true);
+    expect(evaluate([{ descriptor: { type: 'email' } }], 'invalid-email', fd).valid).toBe(false);
+
+    expect(evaluate([{ descriptor: { type: 'url' } }], 'https://test.com', fd).valid).toBe(true);
+    expect(evaluate([{ descriptor: { type: 'url' } }], 'invalid-url', fd).valid).toBe(false);
+
+    expect(evaluate([{ descriptor: { type: 'integer' } }], 5, fd).valid).toBe(true);
+    expect(evaluate([{ descriptor: { type: 'integer' } }], 5.5, fd).valid).toBe(false);
   });
 });

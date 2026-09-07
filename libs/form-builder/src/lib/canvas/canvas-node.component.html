@@ -1,11 +1,11 @@
 <vi-canvas-node-overlay [node]="node()">
     
       <!-- Component Instantiation -->
-      @if (hasDescriptor) {
+      @if (hasDescriptor()) {
         <div [viDynamicElement]="node()"></div>
       }
     
-      @if (!hasDescriptor) {
+      @if (!hasDescriptor()) {
         <div class="missing-component">
           No renderer found for type: {{ node().type }}
         </div>
