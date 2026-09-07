@@ -1,6 +1,5 @@
 import {
   Component,
-  Input,
   CUSTOM_ELEMENTS_SCHEMA,
   input,
   output,
@@ -17,7 +16,7 @@ import { SettingsField } from '../types';
   styleUrl: './settings-field.component.scss',
 })
 export class SettingsFieldComponent {
-  @Input({ required: true }) field!: SettingsField;
+  readonly field = input.required<SettingsField>();
   readonly value = input<unknown>();
   readonly valueChange = output<unknown>();
 
@@ -44,7 +43,7 @@ export class SettingsFieldComponent {
     }
 
     // Convert to number if field type is number
-    if (this.field.type === 'number' && typeof val === 'string') {
+    if (this.field().type === 'number' && typeof val === 'string') {
       const num = Number(val);
       if (!isNaN(num)) val = num;
     }

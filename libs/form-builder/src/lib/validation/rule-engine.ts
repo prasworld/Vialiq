@@ -194,8 +194,13 @@ function evaluateRule(
         console.warn('[rule-engine] json-logic rule found but no evaluator provided. Skipping.');
         return { valid: true };
       }
-      const result = options.jsonLogicEvaluator(descriptor.rule, { value, ...formData });
-      return result ? { valid: true } : fail('json-logic');
+      try {
+        const result = options.jsonLogicEvaluator(descriptor.rule, { value, ...formData });
+        return result ? { valid: true } : fail('json-logic');
+      } catch (err) {
+        console.error('[rule-engine] json-logic evaluation failed:', err);
+        return fail('json-logic');
+      }
     }
 
     case 'custom-js': {

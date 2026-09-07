@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, input, Output, EventEmitter } from '@angular/core';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { PaletteComponent } from './palette.component';
 import { BuilderRegistryService } from '../registry/builder-registry.service';
@@ -16,8 +16,8 @@ class MockPaletteSearch {
 
 @Component({ selector: 'vi-palette-group', standalone: true, template: '' })
 class MockPaletteGroup {
-  @Input() title!: string;
-  @Input() items!: ComponentDescriptor[];
+  title = input.required<string>();
+  items = input.required<ComponentDescriptor[]>();
 }
 
 describe('PaletteComponent', () => {

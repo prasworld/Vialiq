@@ -90,9 +90,9 @@ describe('FormSettingsPanelComponent', () => {
   describe('updateValidateOn', () => {
     it('should update validateOn setting', () => {
       const patchSpy = vi.spyOn(schemaService, 'patchFormSchema');
-      component.updateValidateOn('blur');
+      component.updateValidateOn('onBlur');
       expect(patchSpy).toHaveBeenCalledWith({
-        settings: { validateOn: 'blur' }
+        settings: { validateOn: 'onBlur' }
       });
     });
 
@@ -109,25 +109,22 @@ describe('FormSettingsPanelComponent', () => {
         }
       });
       
-      component.updateValidateOn('change');
+      component.updateValidateOn('onChange');
       expect(patchSpy).toHaveBeenCalledWith({
         settings: {
           clearOnHide: true,
           submitContext: 'json',
-          validateOn: 'change'
+          validateOn: 'onChange'
         }
       });
     });
     
-    it('should handle CustomEvent with checked detail', () => {
+    it('should handle CustomEvent but not patch on invalid value', () => {
       const patchSpy = vi.spyOn(schemaService, 'patchFormSchema');
       const event = new CustomEvent('change', { detail: { checked: true } });
       
-      // Though validateOn is string, we just want to test extractValue logic
       component.updateValidateOn(event);
-      expect(patchSpy).toHaveBeenCalledWith({
-        settings: { validateOn: true }
-      });
+      expect(patchSpy).not.toHaveBeenCalled();
     });
   });
 });

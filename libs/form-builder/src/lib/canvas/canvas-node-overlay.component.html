@@ -8,8 +8,8 @@
     
       <!-- Content wrapper -->
       <div class="content-wrapper">
-        @if (node.label) {
-          <div class="node-label">{{ node.label }}</div>
+        @if (node().label) {
+          <div class="node-label">{{ node().label }}</div>
         }
         <ng-content></ng-content>
       </div>

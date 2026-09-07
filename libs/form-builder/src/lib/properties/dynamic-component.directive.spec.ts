@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Component, Input, Output, EventEmitter, signal, output } from '@angular/core';
+import { Component, input, Output, EventEmitter, signal, output } from '@angular/core';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { DynamicComponentDirective } from './dynamic-component.directive';
 
@@ -7,10 +7,10 @@ import { DynamicComponentDirective } from './dynamic-component.directive';
 @Component({
   selector: 'vi-test-dynamic',
   standalone: true,
-  template: `<div class="test-comp">{{ testInput }}</div>`
+  template: `<div class="test-comp">{{ testInput() }}</div>`
 })
 class TestDynamicComponent {
-  @Input() testInput = '';
+  testInput = input('');
   @Output() testOutput = new EventEmitter<string>();
   // eslint-disable-next-line @angular-eslint/no-output-rename
   @Output('aliasedOutput') actualOutput = new EventEmitter<number>();

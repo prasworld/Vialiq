@@ -17,7 +17,7 @@ describe('SettingsFieldComponent', () => {
     fixture = TestBed.createComponent(SettingsFieldComponent);
     component = fixture.componentInstance;
     
-    component.field = { name: 'test', label: 'Test', type: 'text' };
+    fixture.componentRef.setInput('field', { name: 'test', label: 'Test', type: 'text' });
     fixture.detectChanges();
   });
 
@@ -92,7 +92,7 @@ describe('SettingsFieldComponent', () => {
 
     it('should convert string to number if field type is number', () => {
       const emitSpy = vi.spyOn(component.valueChange, 'emit');
-      component.field = { name: 'testNum', label: 'Test Num', type: 'number' };
+      fixture.componentRef.setInput('field', { name: 'testNum', label: 'Test Num', type: 'number' });
       
       component.onValueChange('42');
       expect(emitSpy).toHaveBeenCalledWith(42);
@@ -100,7 +100,7 @@ describe('SettingsFieldComponent', () => {
     
     it('should not convert invalid string to number', () => {
       const emitSpy = vi.spyOn(component.valueChange, 'emit');
-      component.field = { name: 'testNum', label: 'Test Num', type: 'number' };
+      fixture.componentRef.setInput('field', { name: 'testNum', label: 'Test Num', type: 'number' });
       
       component.onValueChange('invalid-num');
       expect(emitSpy).toHaveBeenCalledWith('invalid-num'); // Remains as string because isNaN is true

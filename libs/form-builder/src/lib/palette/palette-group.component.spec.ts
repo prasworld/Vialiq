@@ -1,12 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Component, Input, ComponentRef } from '@angular/core';
+import { Component, input, ComponentRef } from '@angular/core';
 import { PaletteGroupComponent } from './palette-group.component';
 import { PaletteItemComponent } from './palette-item.component';
 import { ComponentDescriptor } from '../types';
 
 @Component({ selector: 'vi-palette-item', standalone: true, template: '' })
 class MockPaletteItem {
-  @Input() descriptor!: ComponentDescriptor;
+  descriptor = input.required<ComponentDescriptor>();
 }
 
 describe('PaletteGroupComponent', () => {

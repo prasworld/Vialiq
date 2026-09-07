@@ -88,7 +88,7 @@ describe('CanvasNodeOverlayComponent', () => {
     const container = document.createElement('div');
     previewConfig.render({ container } as any);
     
-    expect(container.innerHTML).toContain('Test Node');
+    expect(container.textContent).toContain('Test Node');
   });
 
   it('should cleanup on destroy', () => {

@@ -17,7 +17,8 @@ import { RemoteEntry } from './app/remote-entry/entry';
     { tag: 'vi-button', load: () => import('@vialiq/web-components/button/vi-button') },
     { tag: 'vi-label', load: () => import('@vialiq/web-components/label/vi-label') },
     { tag: 'vi-sidebar', load: () => import('@vialiq/web-components/sidebar/vi-sidebar') },
-    { tag: 'vi-sidebar-container', load: () => import('@vialiq/web-components/sidebar/vi-sidebar-container') }
+    { tag: 'vi-sidebar-container', load: () => import('@vialiq/web-components/sidebar/vi-sidebar-container') },
+    { tag: 'vi-icon', load: () => import('@vialiq/web-components/icons/vi-icon') }
   ];
 
   for (const { tag, load } of components) {

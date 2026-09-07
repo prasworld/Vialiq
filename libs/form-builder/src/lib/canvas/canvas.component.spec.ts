@@ -3,7 +3,7 @@ import { CanvasComponent } from './canvas.component';
 import { FormSchemaService } from '../services/form-schema.service';
 import { BuilderStateService } from '../services/builder-state.service';
 import { KeyGeneratorService } from '../services/key-generator.service';
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, input, Output, EventEmitter } from '@angular/core';
 import { CanvasFormTitleComponent } from './canvas-form-title.component';
 import { CanvasEmptyStateComponent } from './canvas-empty-state.component';
 import { CanvasDropZoneComponent } from './canvas-drop-zone.component';
@@ -12,7 +12,7 @@ import { CanvasNodeComponent } from './canvas-node.component';
 // Mock components
 @Component({ selector: 'vi-canvas-form-title', standalone: true, template: '' })
 class MockCanvasFormTitle {
-  @Input() title = '';
+  title = input('');
   @Output() titleChange = new EventEmitter<string>();
 }
 
@@ -21,16 +21,16 @@ class MockCanvasEmptyState {}
 
 @Component({ selector: 'vi-canvas-drop-zone', standalone: true, template: '' })
 class MockCanvasDropZone {
-  @Input() parentId: string | null = null;
-  @Input() index = 0;
-  @Input() expandToFill = false;
+  parentId = input<>();
+  index = input(0);
+  expandToFill = input(false);
 }
 
 @Component({ selector: 'vi-canvas-node', standalone: true, template: '' })
 class MockCanvasNode {
-  @Input() node: any;
-  @Input() parentId: string | null = null;
-  @Input() index = 0;
+  node = input<any>();
+  parentId = input<>();
+  index = input(0);
 }
 
 describe('CanvasComponent', () => {

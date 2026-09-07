@@ -184,6 +184,18 @@ describe('evaluate()', () => {
     warnSpy.mockRestore();
   });
 
+  it('fails json-logic and catches error if evaluator throws', () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const mockEvaluator = () => { throw new Error('Boom'); };
+    const rules: ValidationRule[] = [
+      { descriptor: { type: 'json-logic', rule: {} } },
+    ];
+    const result = evaluate(rules, 'anything', fd, { jsonLogicEvaluator: mockEvaluator });
+    expect(result.valid).toBe(false);
+    expect(errorSpy).toHaveBeenCalled();
+    errorSpy.mockRestore();
+  });
+
   it('handles unknown rule types gracefully', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const rules = [

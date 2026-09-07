@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Component, Input, Output, EventEmitter, ComponentRef } from '@angular/core';
+import { Component, input, Output, EventEmitter, ComponentRef } from '@angular/core';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { SettingsTabComponent } from './settings-tab.component';
 import { SettingsFieldComponent } from './settings-field.component';
@@ -7,8 +7,8 @@ import { SettingsField } from '../types';
 
 @Component({ selector: 'vi-settings-field', standalone: true, template: '' })
 class MockSettingsField {
-  @Input() field!: SettingsField;
-  @Input() value!: unknown;
+  field = input.required<SettingsField>();
+  value = input.required<unknown>();
   @Output() valueChange = new EventEmitter<unknown>();
 }
 

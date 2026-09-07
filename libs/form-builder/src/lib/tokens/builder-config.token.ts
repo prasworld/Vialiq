@@ -45,6 +45,6 @@ export const DEFAULT_BUILDER_CONFIG: BuilderConfig = {
  * ]
  */
 export const BUILDER_CONFIG = new InjectionToken<BuilderConfig>('BUILDER_CONFIG', {
-  providedIn: null,
+  providedIn: 'root',
   factory: () => DEFAULT_BUILDER_CONFIG,
 });

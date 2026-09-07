@@ -35,11 +35,13 @@ export class PaletteItemComponent implements OnInit, OnDestroy {
         setCustomNativeDragPreview({
           nativeSetDragImage,
           render: ({ container }: { container: HTMLElement }) => {
-            container.innerHTML = `
-              <div style="padding: 8px 12px; background: var(--vi-layer-01); border: 1px solid var(--vi-border-03); border-radius: 6px; box-shadow: var(--vi-shadow-md); font-family: sans-serif; font-size: 14px; display: flex; align-items: center; gap: 8px;">
-                <span style="font-weight: 500; color: var(--vi-text-secondary);">${this.descriptor().label}</span>
-              </div>
-            `;
+            const div = document.createElement('div');
+            div.setAttribute('style', 'padding: 8px 12px; background: var(--vi-layer-01); border: 1px solid var(--vi-border-03); border-radius: 6px; box-shadow: var(--vi-shadow-md); font-family: sans-serif; font-size: 14px; display: flex; align-items: center; gap: 8px;');
+            const span = document.createElement('span');
+            span.setAttribute('style', 'font-weight: 500; color: var(--vi-text-secondary);');
+            span.textContent = this.descriptor().label;
+            div.appendChild(span);
+            container.replaceChildren(div);
           }
         });
       }

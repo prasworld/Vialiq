@@ -1,5 +1,5 @@
-import { Component, OnChanges, SimpleChanges, forwardRef, Directive, ElementRef, Renderer2, inject, input, computed } from '@angular/core';
-
+import { Component, OnChanges, SimpleChanges, forwardRef, Directive, ElementRef, Renderer2, inject, input, computed, SecurityContext } from '@angular/core';
+import { DomSanitizer } from '@angular/platform-browser';
 import { ComponentSchema, LayoutComponentSchema } from '../types';
 import { CanvasDropZoneComponent } from './canvas-drop-zone.component';
 import { CanvasNodeOverlayComponent } from './canvas-node-overlay.component';
@@ -15,6 +15,7 @@ export class DynamicElementDirective implements OnChanges {
   private registry = inject(BuilderRegistryService);
   private el = inject(ElementRef);
   private renderer = inject(Renderer2);
+  private sanitizer = inject(DomSanitizer);
   
   private currentElement: HTMLElement | null = null;
 
@@ -51,6 +52,13 @@ export class DynamicElementDirective implements OnChanges {
           this.renderer.setAttribute(this.currentElement, attrName, value === true ? '' : String(value));
         }
       } else {
+        if (key === 'htmlContent') {
+          const safeValue = this.sanitizer.sanitize(SecurityContext.HTML, value as string) || '';
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(safeValue, 'text/html');
+          this.currentElement!.replaceChildren(...Array.from(doc.body.childNodes));
+          continue;
+        }
         // Property binding — safe cast via Record<string, unknown>
         (this.currentElement as unknown as Record<string, unknown>)[key] = value;
       }

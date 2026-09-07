@@ -87,7 +87,7 @@ describe('PaletteItemComponent', () => {
     const container = document.createElement('div');
     previewConfig.render({ container } as any);
     
-    expect(container.innerHTML).toContain('Text Input');
+    expect(container.textContent).toContain('Text Input');
   });
 
   it('should cleanup on destroy', () => {

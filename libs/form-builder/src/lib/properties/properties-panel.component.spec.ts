@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, input, Output, EventEmitter } from '@angular/core';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { PropertiesPanelComponent } from './properties-panel.component';
 import { BuilderStateService } from '../services/builder-state.service';
@@ -14,14 +14,14 @@ import { BUILDER_CONFIG } from '../tokens';
 // Mock components
 @Component({ selector: 'vi-settings-host', standalone: true, template: '' })
 class MockSettingsHost {
-  @Input() descriptor!: ComponentDescriptor;
-  @Input() schema!: ComponentSchema;
+  descriptor = input.required<ComponentDescriptor>();
+  schema = input.required<ComponentSchema>();
   @Output() schemaChange = new EventEmitter<Partial<ComponentSchema>>();
 }
 
 @Component({ selector: 'vi-form-settings-panel', standalone: true, template: '' })
 class MockFormSettingsPanel {
-  @Input() schema: any;
+  schema = input<any>();
 }
 
 describe('PropertiesPanelComponent', () => {

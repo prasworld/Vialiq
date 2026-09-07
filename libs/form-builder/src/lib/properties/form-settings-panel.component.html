@@ -20,11 +20,11 @@
           <div class="field-desc">When should the form trigger validation?</div>
           <vi-select 
             id="validate-on"
-            [value]="schema().settings?.validateOn || 'change'"
+            [value]="schema().settings?.validateOn || 'onBlur'"
             (vi-select-change)="updateValidateOn($event)">
-            <vi-select-option value="change">On Change (Immediate)</vi-select-option>
-            <vi-select-option value="blur">On Blur (Lost Focus)</vi-select-option>
-            <vi-select-option value="submit">On Submit Only</vi-select-option>
+            <vi-select-option value="onChange">On Change (Immediate)</vi-select-option>
+            <vi-select-option value="onBlur">On Blur (Lost Focus)</vi-select-option>
+            <vi-select-option value="onSubmit">On Submit Only</vi-select-option>
           </vi-select>
         </div>
         

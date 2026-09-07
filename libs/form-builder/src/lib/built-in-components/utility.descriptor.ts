@@ -48,7 +48,7 @@ export const CONTENT_DESCRIPTOR: ComponentDescriptor = {
   canvasElement: 'div',
   canvasProps: (s) => {
     const schema = s as ContentComponentSchema;
-    return { innerHTML: schema.content ?? '<p>Content block</p>' };
+    return { htmlContent: schema.content ?? '<p>Content block</p>' };
   },
   defaultSchema: {
     type: 'content',

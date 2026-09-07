@@ -1,4 +1,4 @@
-import { Component, Input, ElementRef, OnInit, OnDestroy, CUSTOM_ELEMENTS_SCHEMA, inject } from '@angular/core';
+import { Component, ElementRef, OnInit, OnDestroy, CUSTOM_ELEMENTS_SCHEMA, inject, input } from '@angular/core';
 
 import { ComponentSchema } from '../types';
 import { draggable } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
@@ -18,13 +18,13 @@ export class CanvasNodeOverlayComponent implements OnInit, OnDestroy {
   private schemaService = inject(FormSchemaService);
   private el = inject(ElementRef);
 
-  @Input({ required: true }) node!: ComponentSchema;
+  readonly node = input.required<ComponentSchema>();
 
   private _cleanup: (() => void) | null = null;
   isDragging = false;
 
   get isActive() {
-    return this.state.activeNodeId() === this.node.id;
+    return this.state.activeNodeId() === this.node().id;
   }
 
   ngOnInit() {
@@ -32,7 +32,7 @@ export class CanvasNodeOverlayComponent implements OnInit, OnDestroy {
       element: this.el.nativeElement,
       getInitialData: () => ({
         source: 'canvas',
-        nodeId: this.node.id
+        nodeId: this.node().id
       }),
       onDragStart: () => {
         this.isDragging = true;
@@ -44,11 +44,10 @@ export class CanvasNodeOverlayComponent implements OnInit, OnDestroy {
         setCustomNativeDragPreview({
           nativeSetDragImage,
           render: ({ container }) => {
-            container.innerHTML = `
-              <div style="padding: 8px 12px; background: white; border: 1px solid #cbd5e1; border-radius: 6px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); font-family: sans-serif; font-size: 14px; font-weight: 500;">
-                ${this.node.label}
-              </div>
-            `;
+            const div = document.createElement('div');
+            div.setAttribute('style', 'padding: 8px 12px; background: white; border: 1px solid #cbd5e1; border-radius: 6px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); font-family: sans-serif; font-size: 14px; font-weight: 500;');
+            div.textContent = this.node().label ?? '';
+            container.replaceChildren(div);
           }
         });
       }
@@ -63,15 +62,15 @@ export class CanvasNodeOverlayComponent implements OnInit, OnDestroy {
 
   selectNode(event: Event) {
     event.stopPropagation();
-    this.state.setActiveNode(this.node.id);
+    this.state.setActiveNode(this.node().id);
   }
 
   duplicateNode() {
-    this.schemaService.duplicateComponent(this.node.id);
+    this.schemaService.duplicateComponent(this.node().id);
   }
 
   deleteNode() {
-    this.schemaService.removeComponent(this.node.id);
+    this.schemaService.removeComponent(this.node().id);
     if (this.isActive) {
       this.state.setActiveNode(null);
     }

@@ -59,13 +59,13 @@ describe('Utility Descriptors', () => {
 
       const props = CONTENT_DESCRIPTOR.canvasProps(schema);
       expect(props).toEqual({
-        innerHTML: '<h1>Test</h1>'
+        htmlContent: '<h1>Test</h1>'
       });
     });
 
-    it('should provide default innerHTML', () => {
+    it('should provide default htmlContent', () => {
       const props = CONTENT_DESCRIPTOR.canvasProps({ type: 'content', id: '1' });
-      expect(props.innerHTML).toBe('<p>Content block</p>');
+      expect(props.htmlContent).toBe('<p>Content block</p>');
     });
   });
 

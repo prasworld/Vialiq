@@ -53,9 +53,11 @@ export class FormSettingsPanelComponent {
 
   updateValidateOn(event: unknown): void {
     const val = this.extractValue(event);
-    const currentSettings: Partial<FormSettings> = this.schema().settings ?? {};
-    this.schemaService.patchFormSchema({
-      settings: { ...currentSettings, validateOn: val } as FormSettings,
-    });
+    if (val === 'onChange' || val === 'onBlur' || val === 'onSubmit') {
+      const currentSettings: Partial<FormSettings> = this.schema().settings ?? {};
+      this.schemaService.patchFormSchema({
+        settings: { ...currentSettings, validateOn: val } as FormSettings,
+      });
+    }
   }
 }

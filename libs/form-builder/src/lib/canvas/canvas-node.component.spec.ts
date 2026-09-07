@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Component, ComponentRef, Input } from '@angular/core';
+import { Component, ComponentRef, input } from '@angular/core';
 import { CanvasNodeComponent, DynamicElementDirective } from './canvas-node.component';
 import { CanvasDropZoneComponent } from './canvas-drop-zone.component';
 import { CanvasNodeOverlayComponent } from './canvas-node-overlay.component';
@@ -12,7 +12,7 @@ class MockCanvasDropZone {}
 
 @Component({ selector: 'vi-canvas-node-overlay', standalone: true, template: '<ng-content></ng-content>' })
 class MockCanvasNodeOverlay {
-  @Input() node: any;
+  node = input<any>();
 }
 
 describe('CanvasNodeComponent & DynamicElementDirective', () => {
