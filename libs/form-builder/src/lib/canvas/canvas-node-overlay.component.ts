@@ -32,7 +32,8 @@ export class CanvasNodeOverlayComponent implements OnInit, OnDestroy {
       element: this.el.nativeElement,
       getInitialData: () => ({
         source: 'canvas',
-        nodeId: this.node().id
+        nodeId: this.node().id,
+        builderId: this.state.builderId,
       }),
       onDragStart: () => {
         this.isDragging = true;
@@ -63,6 +64,17 @@ export class CanvasNodeOverlayComponent implements OnInit, OnDestroy {
   selectNode(event: Event) {
     event.stopPropagation();
     this.state.setActiveNode(this.node().id);
+  }
+
+  handleKeydown(event: KeyboardEvent) {
+    // Only intercept if the user is focused directly on the container, not on an inner button
+    const target = event.target as HTMLElement;
+    if (target.classList.contains('overlay-container')) {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        this.selectNode(event);
+      }
+    }
   }
 
   duplicateNode() {

@@ -4,12 +4,12 @@ import { standardSettings } from './settings-helpers';
 
 function dateCanvasProps(schema: DateComponentSchema): Record<string, unknown> {
   return {
-    type: schema.type,
     value: schema.defaultValue ?? null,
     min: schema.min ?? null,
     max: schema.max ?? null,
     step: schema.step ?? null,
     readonly: schema.readOnly ?? null,
+    htmlContent: '<vi-date-picker-input></vi-date-picker-input>',
   };
 }
 
@@ -44,8 +44,12 @@ export const TIME_DESCRIPTOR: ComponentDescriptor = {
   group: 'Text Inputs',
   icon: 'clock',
   weight: 40,
-  canvasElement: 'vi-date-picker',
-  canvasProps: (s) => dateCanvasProps(s as DateComponentSchema),
+  canvasElement: 'input',
+  canvasProps: (s) => {
+    const props = dateCanvasProps(s as DateComponentSchema);
+    delete props['htmlContent'];
+    return { ...props, type: 'time' };
+  },
   defaultSchema: {
     type: 'time',
     label: 'Time',
@@ -60,10 +64,14 @@ export const DATETIME_LOCAL_DESCRIPTOR: ComponentDescriptor = {
   label: 'Date & Time',
   category: 'advanced',
   group: 'Text Inputs',
-  icon: 'calendar-clock',
+  icon: 'alarm-clock',
   weight: 50,
-  canvasElement: 'vi-date-picker',
-  canvasProps: (s) => dateCanvasProps(s as DateComponentSchema),
+  canvasElement: 'input',
+  canvasProps: (s) => {
+    const props = dateCanvasProps(s as DateComponentSchema);
+    delete props['htmlContent'];
+    return { ...props, type: 'datetime-local' };
+  },
   defaultSchema: {
     type: 'datetime-local',
     label: 'Date & Time',

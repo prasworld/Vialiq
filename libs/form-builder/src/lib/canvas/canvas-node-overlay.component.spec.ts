@@ -52,11 +52,10 @@ describe('CanvasNodeOverlayComponent', () => {
   it('should provide correct data to draggable', () => {
     const config = vi.mocked(draggable).mock.calls[0][0];
     const data = config.getInitialData!({ input: null, element: document.createElement('div'), source: {} as any });
-    
-    expect(data).toEqual({
+        expect(data).toEqual(expect.objectContaining({
       source: 'canvas',
       nodeId: 'test-node'
-    });
+    }));
   });
 
   it('should update isDragging state on drag start and drop', () => {

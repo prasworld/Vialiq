@@ -74,36 +74,15 @@ export function dataTab(extras: SettingsField[] = []): SettingsTab {
 }
 
 /** Standard "Validation" tab */
-export function validationTab(): SettingsTab {
-  return {
-    id: 'validation',
-    label: 'Validation',
-    fields: [
-      // ValidationRulesEditorComponent handles this via custom type
-      {
-        key: 'validation',
-        label: 'Rules',
-        type: 'custom',
-        hint: 'Add required, minLength, pattern, and other rules',
-      },
-    ],
-  };
+export function validationTab(): SettingsTab | null {
+  // TODO(Phase X): ValidationRulesEditorComponent handles this via custom type.
+  return null;
 }
 
 /** Standard "Logic" tab — conditional visibility */
-export function logicTab(): SettingsTab {
-  return {
-    id: 'logic',
-    label: 'Logic',
-    fields: [
-      {
-        key: 'conditional',
-        label: 'Conditional visibility',
-        type: 'custom',
-        hint: 'Show or hide this field based on another field\'s value',
-      },
-    ],
-  };
+export function logicTab(): SettingsTab | null {
+  // TODO(Phase X): ConditionalLogicEditorComponent handles this via custom type.
+  return null;
 }
 
 /** Convenience: build a standard 4-tab settings schema */
@@ -112,8 +91,6 @@ export function standardSettings(displayExtras: SettingsField[] = [], dataExtras
     tabs: [
       displayTab(displayExtras),
       dataTab(dataExtras),
-      validationTab(),
-      logicTab(),
-    ],
+    ].filter(Boolean) as SettingsTab[],
   };
 }

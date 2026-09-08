@@ -7,6 +7,8 @@ import {
   computed,
   inject,
   CUSTOM_ELEMENTS_SCHEMA,
+  signal,
+  effect,
 } from '@angular/core';
 
 import { ComponentSchema, ComponentDescriptor } from '../types';
@@ -22,15 +24,35 @@ import type { ExtensionFieldDefinition } from '../types/extension';
   templateUrl: './settings-host.component.html',
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
-export class SettingsHostComponent implements OnInit {
+export class SettingsHostComponent {
   readonly schema = input.required<ComponentSchema>();
   readonly descriptor = input.required<ComponentDescriptor>();
   readonly schemaChange = output<Partial<ComponentSchema>>();
 
-  customComponentType: Type<unknown> | null = null;
-  isLoaded = false;
+  customComponentType = signal<Type<unknown> | null>(null);
+  isLoaded = signal(false);
 
   extensionRegistry = inject(ExtensionRegistryService);
+
+  constructor() {
+    effect(async () => {
+      const descriptor = this.descriptor();
+      
+      // Reset state for new descriptor
+      this.isLoaded.set(false);
+      this.customComponentType.set(null);
+
+      if (descriptor.settingsComponent) {
+        try {
+          const comp = await descriptor.settingsComponent();
+          this.customComponentType.set(comp);
+        } catch (err) {
+          console.error('Failed to load custom settings component', err);
+        }
+      }
+      this.isLoaded.set(true);
+    }, { allowSignalWrites: true });
+  }
 
   readonly groupedExtensions = computed(() => {
     const fields = this.extensionRegistry.extensions.value() || [];
@@ -98,16 +120,4 @@ export class SettingsHostComponent implements OnInit {
     });
   }
 
-  async ngOnInit() {
-    const descriptor = this.descriptor();
-    if (descriptor.settingsComponent) {
-      try {
-        // settingsComponent is typed as Promise<Type<unknown>> — safe cast
-        this.customComponentType = await descriptor.settingsComponent();
-      } catch (err) {
-        console.error('Failed to load custom settings component', err);
-      }
-    }
-    this.isLoaded = true;
-  }
 }

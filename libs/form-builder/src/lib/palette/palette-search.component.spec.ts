@@ -25,7 +25,7 @@ describe('PaletteSearchComponent', () => {
   it('should emit search on input', () => {
     const emitSpy = vi.spyOn(component.search, 'emit');
     
-    const event = { target: { value: 'test query' } } as unknown as Event;
+    const event = new CustomEvent('vi-input-input', { detail: { value: 'test query' } });
     component.onInput(event);
     
     expect(emitSpy).toHaveBeenCalledWith('test query');

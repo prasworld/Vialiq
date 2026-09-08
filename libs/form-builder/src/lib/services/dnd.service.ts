@@ -9,35 +9,38 @@ import type { ComponentSchema } from '../types';
 // ─── Drop Payload Types ────────────────────────────────────────────────────────
 
 /** Data attached to palette items when dragging from the component palette */
-export interface PaletteDropData {
+export interface PaletteDropData extends Record<string, unknown> {
   readonly source: 'palette';
   readonly descriptorType: string;
+  readonly builderId: string;
 }
 
 /** Data attached to canvas nodes when dragging to reorder */
-export interface CanvasDropData {
+export interface CanvasDropData extends Record<string, unknown> {
   readonly source: 'canvas';
   readonly nodeId: string;
+  readonly builderId: string;
 }
 
 /** Drop target data attached to all CanvasDropZone components */
-export interface DropTargetData {
+export interface DropTargetData extends Record<string, unknown> {
   readonly parentId: string | null;
   readonly index: number;
+  readonly builderId: string;
 }
 
 export type DragSourceData = PaletteDropData | CanvasDropData;
 
 function isPaletteSource(data: Record<string, unknown>): data is PaletteDropData & Record<string, unknown> {
-  return data['source'] === 'palette' && typeof data['descriptorType'] === 'string';
+  return data['source'] === 'palette' && typeof data['descriptorType'] === 'string' && typeof data['builderId'] === 'string';
 }
 
 function isCanvasSource(data: Record<string, unknown>): data is CanvasDropData & Record<string, unknown> {
-  return data['source'] === 'canvas' && typeof data['nodeId'] === 'string';
+  return data['source'] === 'canvas' && typeof data['nodeId'] === 'string' && typeof data['builderId'] === 'string';
 }
 
 function isDropTarget(data: Record<string, unknown>): data is DropTargetData & Record<string, unknown> {
-  return 'index' in data && typeof data['index'] === 'number';
+  return 'index' in data && typeof data['index'] === 'number' && typeof data['builderId'] === 'string';
 }
 
 @Injectable({ providedIn: null })
@@ -53,6 +56,10 @@ export class DndService implements OnDestroy {
     if (this._cleanup) return;
 
     this._cleanup = monitorForElements({
+      canMonitor: ({ source }) => {
+        const data = source.data as Record<string, unknown>;
+        return data['builderId'] === this.state.builderId;
+      },
       onDragStart: () => {
         this.state.setDragging(true);
       },
@@ -65,13 +72,13 @@ export class DndService implements OnDestroy {
         const sourceData = source.data as Record<string, unknown>;
         const targetData = dropTarget.data as Record<string, unknown>;
 
-        if (!isDropTarget(targetData)) return;
+        if (!isDropTarget(targetData) || targetData['builderId'] !== this.state.builderId) return;
 
         const targetParentId = (targetData['parentId'] as string | null) ?? null;
         const targetIndex = targetData['index'];
 
         if (isPaletteSource(sourceData)) {
-          this.handlePaletteDrop(sourceData.descriptorType, targetParentId, targetIndex);
+          this.addFromPalette(sourceData.descriptorType, targetParentId, targetIndex);
         } else if (isCanvasSource(sourceData)) {
           this.handleCanvasMove(sourceData.nodeId, targetParentId, targetIndex);
         }
@@ -84,7 +91,7 @@ export class DndService implements OnDestroy {
     this._cleanup = null;
   }
 
-  private handlePaletteDrop(descriptorType: string, parentId: string | null, index: number): void {
+  public addFromPalette(descriptorType: string, parentId: string | null, index: number): void {
     const descriptor = this.registry.getByType(descriptorType);
     if (!descriptor) return;
 
@@ -97,7 +104,7 @@ export class DndService implements OnDestroy {
       id: crypto.randomUUID(),
       type: descriptor.type,
       key: uniqueKey,
-      label: descriptor.label,
+      label: descriptor.defaultSchema.label || descriptor.label,
     } as ComponentSchema;
 
     this.formSchemaService.addComponent(parentId, index, component);

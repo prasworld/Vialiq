@@ -98,7 +98,7 @@ describe('FormSchemaService', () => {
       service.addComponent(null, 0, { id: '1', type: 'text-input', label: 'Test 1' });
       service.addComponent(null, 1, { id: '2', type: 'text-input', label: 'Test 2' });
       
-      service.moveComponent('1', null, 1);
+      service.moveComponent('1', null, 2);
       
       expect(service.schema().components[0].id).toBe('2');
       expect(service.schema().components[1].id).toBe('1');
@@ -167,11 +167,20 @@ describe('FormSchemaService', () => {
       expect(service.schema().components[1].key).not.toBe('test');
     });
 
-    it('should duplicate nested layout components', () => {
+    it('should duplicate nested layout components and remap layoutConfig assignments', () => {
       const layout: ComponentSchema = {
-        id: 'parent', type: 'panel', label: 'Panel', components: [
-          { id: 'child', type: 'text-input', label: 'Child', key: 'child_key' }
-        ], layoutConfig: {}
+        id: 'parent', type: 'columns', label: 'Columns', components: [
+          { id: 'child1', type: 'text-input', label: 'Child', key: 'child_key1' },
+          { id: 'child2', type: 'text-input', label: 'Child', key: 'child_key2' }
+        ], layoutConfig: {
+          columnAssignments: {
+            'child1': 0,
+            'child2': 1
+          },
+          tabAssignments: {
+            'child1': 'tabA'
+          }
+        }
       };
       service.addComponent(null, 0, layout);
       
@@ -180,9 +189,22 @@ describe('FormSchemaService', () => {
       expect(service.schema().components.length).toBe(2);
       const duplicate = service.schema().components[1] as any;
       expect(duplicate.id).not.toBe('parent');
-      expect(duplicate.components.length).toBe(1);
-      expect(duplicate.components[0].id).not.toBe('child');
-      expect(duplicate.components[0].key).not.toBe('child_key');
+      expect(duplicate.components.length).toBe(2);
+      
+      const newChild1 = duplicate.components[0];
+      const newChild2 = duplicate.components[1];
+      
+      expect(newChild1.id).not.toBe('child1');
+      expect(newChild2.id).not.toBe('child2');
+      
+      // Verify mappings
+      expect(duplicate.layoutConfig.columnAssignments[newChild1.id]).toBe(0);
+      expect(duplicate.layoutConfig.columnAssignments[newChild2.id]).toBe(1);
+      expect(duplicate.layoutConfig.tabAssignments[newChild1.id]).toBe('tabA');
+      
+      // Ensure old IDs are not in the new config
+      expect(duplicate.layoutConfig.columnAssignments['child1']).toBeUndefined();
+      expect(duplicate.layoutConfig.tabAssignments['child1']).toBeUndefined();
     });
 
     it('should do nothing if component not found', () => {

@@ -3,6 +3,9 @@
       @if (field().type !== 'boolean') {
         <vi-label class="field-label" [attr.for]="'field-' + field().key">
           {{ field().label }}
+          @if (field().required) {
+            <span class="required-asterisk">*</span>
+          }
           @if (field().hint) {
             <div class="field-desc">{{ field().hint }}</div>
           }
@@ -37,7 +40,12 @@
             (vi-switch-change)="onValueChange($event)">
           </vi-switch>
           <div class="checkbox-text">
-            <vi-label [attr.for]="'field-' + field().key">{{ field().label }}</vi-label>
+            <vi-label [attr.for]="'field-' + field().key">
+              {{ field().label }}
+              @if (field().required) {
+                <span class="required-asterisk">*</span>
+              }
+            </vi-label>
             @if (field().hint) {
               <div class="field-desc">{{ field().hint }}</div>
             }

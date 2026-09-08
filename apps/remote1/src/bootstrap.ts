@@ -18,7 +18,9 @@ import { RemoteEntry } from './app/remote-entry/entry';
     { tag: 'vi-label', load: () => import('@vialiq/web-components/label/vi-label') },
     { tag: 'vi-sidebar', load: () => import('@vialiq/web-components/sidebar/vi-sidebar') },
     { tag: 'vi-sidebar-container', load: () => import('@vialiq/web-components/sidebar/vi-sidebar-container') },
-    { tag: 'vi-icon', load: () => import('@vialiq/web-components/icons/vi-icon') }
+    { tag: 'vi-icon', load: () => import('@vialiq/web-components/icons/vi-icon') },
+    { tag: 'vi-date-picker', load: () => import('@vialiq/web-components/date-picker/vi-date-picker') },
+    { tag: 'vi-date-picker-input', load: () => import('@vialiq/web-components/date-picker/vi-date-picker-input') }
   ];
 
   for (const { tag, load } of components) {

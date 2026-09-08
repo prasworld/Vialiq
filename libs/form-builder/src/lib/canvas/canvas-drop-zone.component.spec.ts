@@ -43,11 +43,10 @@ describe('CanvasDropZoneComponent', () => {
   it('should provide correct data to drop target', () => {
     const config = vi.mocked(dropTargetForElements).mock.calls[0][0];
     const data = config.getData({ input: null, element: document.createElement('div'), source: {} as any });
-    
-    expect(data).toEqual({
+        expect(data).toEqual(expect.objectContaining({
       parentId: 'test-parent',
       index: 0
-    });
+    }));
   });
 
   it('should update isDragOver state on drag enter and leave', () => {

@@ -12,7 +12,7 @@ export const SELECT_DESCRIPTOR: ComponentDescriptor = {
   label: 'Select',
   category: 'basic',
   group: 'Basic Info',
-  icon: 'chevrons-up-down',
+  icon: 'chevron-down',
   weight: 70,
   canvasElement: 'vi-select',
   canvasProps: (s) => {
@@ -43,17 +43,12 @@ export const SELECT_DESCRIPTOR: ComponentDescriptor = {
         label: 'Data',
         fields: [
           { key: 'key', label: 'Field key', type: 'key', required: true },
-          {
-            key: 'optionSource',
-            label: 'Options',
-            type: 'custom',
-            hint: 'Static list or codelist reference',
-          },
+          // TODO(Phase X): optionSource editor is currently unimplemented
         ],
       },
       validationTab(),
       logicTab(),
-    ],
+    ].filter(Boolean) as any[],
   },
   supportsRepeating: false,
   rendererRef: 'vi-renderer-select',
@@ -64,7 +59,7 @@ export const COMBOBOX_DESCRIPTOR: ComponentDescriptor = {
   label: 'Combobox',
   category: 'basic',
   group: 'Basic Info',
-  icon: 'list-filter',
+  icon: 'search',
   weight: 80,
   canvasElement: 'vi-combobox',
   canvasProps: (s) => {
@@ -91,12 +86,12 @@ export const COMBOBOX_DESCRIPTOR: ComponentDescriptor = {
         label: 'Data',
         fields: [
           { key: 'key', label: 'Field key', type: 'key', required: true },
-          { key: 'optionSource', label: 'Options', type: 'custom' },
+          // TODO(Phase X): optionSource editor is currently unimplemented
         ],
       },
       validationTab(),
       logicTab(),
-    ],
+    ].filter(Boolean) as any[],
   },
   supportsRepeating: false,
   rendererRef: 'vi-renderer-combobox',
@@ -107,7 +102,7 @@ export const CHECKBOX_DESCRIPTOR: ComponentDescriptor = {
   label: 'Checkbox',
   category: 'basic',
   group: 'Basic Info',
-  icon: 'square-check',
+  icon: 'check-circle',
   weight: 90,
   canvasElement: 'vi-checkbox',
   canvasProps: (s) => {
@@ -135,7 +130,7 @@ export const RADIO_DESCRIPTOR: ComponentDescriptor = {
   label: 'Radio',
   category: 'basic',
   group: 'Basic Info',
-  icon: 'circle-dot',
+  icon: 'check-circle',
   weight: 100,
   canvasElement: 'vi-radio',
   canvasProps: (s) => {
@@ -162,7 +157,7 @@ export const CHECKBOX_GROUP_DESCRIPTOR: ComponentDescriptor = {
   label: 'Checkbox Group',
   category: 'advanced',
   group: 'Basic Info',
-  icon: 'list-checks',
+  icon: 'task-checklist',
   weight: 10,
   canvasElement: 'vi-checkbox',  // Preview with first option; renderer handles the full group
   canvasProps: () => ({}),
@@ -178,12 +173,12 @@ export const CHECKBOX_GROUP_DESCRIPTOR: ComponentDescriptor = {
         label: 'Data',
         fields: [
           { key: 'key', label: 'Field key', type: 'key', required: true },
-          { key: 'optionSource', label: 'Options', type: 'custom' },
+          // TODO(Phase X): optionSource editor is currently unimplemented
         ],
       },
       validationTab(),
       logicTab(),
-    ],
+    ].filter(Boolean) as any[],
   },
   supportsRepeating: false,
   rendererRef: 'vi-renderer-checkbox-group',
@@ -194,7 +189,7 @@ export const RADIO_GROUP_DESCRIPTOR: ComponentDescriptor = {
   label: 'Radio Group',
   category: 'advanced',
   group: 'Basic Info',
-  icon: 'circle-dot',
+  icon: 'check-circle',
   weight: 20,
   canvasElement: 'vi-radio-group',
   canvasProps: () => ({}),
@@ -210,12 +205,12 @@ export const RADIO_GROUP_DESCRIPTOR: ComponentDescriptor = {
         label: 'Data',
         fields: [
           { key: 'key', label: 'Field key', type: 'key', required: true },
-          { key: 'optionSource', label: 'Options', type: 'custom' },
+          // TODO(Phase X): optionSource editor is currently unimplemented
         ],
       },
       validationTab(),
       logicTab(),
-    ],
+    ].filter(Boolean) as any[],
   },
   supportsRepeating: false,
   rendererRef: 'vi-renderer-radio-group',

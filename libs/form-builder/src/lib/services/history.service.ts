@@ -1,4 +1,4 @@
-import { Injectable, effect, signal, untracked, computed, inject } from '@angular/core';
+import { Injectable, effect, signal, untracked, computed, inject, OnDestroy } from '@angular/core';
 import { BUILDER_CONFIG, type BuilderConfig } from '../tokens';
 import { FormSchemaService } from './form-schema.service';
 import type { FormSchema } from '../types';
@@ -6,7 +6,7 @@ import type { FormSchema } from '../types';
 const deepClone = <T>(obj: T): T => structuredClone(obj);
 
 @Injectable({ providedIn: null })
-export class HistoryService {
+export class HistoryService implements OnDestroy {
   private config = inject<BuilderConfig>(BUILDER_CONFIG);
   private formSchemaService = inject(FormSchemaService);
 
@@ -36,9 +36,7 @@ export class HistoryService {
           return; // Initial load
         }
 
-        if (this._debounceTimer) {
-          clearTimeout(this._debounceTimer);
-        }
+        this._clearDebounce();
 
         this._debounceTimer = setTimeout(() => {
           this._past.update(past => {
@@ -57,9 +55,21 @@ export class HistoryService {
     });
   }
 
+  ngOnDestroy() {
+    this._clearDebounce();
+  }
+
+  private _clearDebounce() {
+    if (this._debounceTimer) {
+      clearTimeout(this._debounceTimer);
+      this._debounceTimer = null;
+    }
+  }
+
   undo(): void {
     if (!this.canUndo()) return;
 
+    this._clearDebounce();
     this._isNavigating.set(true);
 
     const past = this._past();
@@ -75,6 +85,7 @@ export class HistoryService {
   redo(): void {
     if (!this.canRedo()) return;
 
+    this._clearDebounce();
     this._isNavigating.set(true);
 
     const future = this._future();

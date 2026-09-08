@@ -23,6 +23,10 @@
 .palette-item:active {
   cursor: grabbing;
 }
+.palette-item:focus-visible {
+  outline: 2px solid tokens.$color-primary;
+  outline-offset: -2px; /* Inner outline looks better on palette */
+}
 .palette-item.dragging {
   opacity: 0.4;
 }

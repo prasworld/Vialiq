@@ -28,7 +28,8 @@ export class CanvasDropZoneComponent implements OnInit, OnDestroy {
       element: this.dropZone.nativeElement,
       getData: () => ({
         parentId: this.parentId(),
-        index: this.index()
+        index: this.index(),
+        builderId: this.state.builderId,
       }),
       onDragEnter: () => this.isDragOver = true,
       onDragLeave: () => this.isDragOver = false,

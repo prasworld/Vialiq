@@ -1,9 +1,11 @@
 <div class="settings-tab-content">
       @for (field of tab().fields; track field) {
-        <vi-settings-field
-          [field]="field"
-          [value]="getFieldValue(field.key)"
-          (valueChange)="onValueChange(field.key, $event)">
-        </vi-settings-field>
+        @if (!field.showWhen || field.showWhen(schema())) {
+          <vi-settings-field
+            [field]="field"
+            [value]="getFieldValue(field.key) ?? field.defaultValue"
+            (valueChange)="onValueChange(field.key, $event)">
+          </vi-settings-field>
+        }
       }
     </div>

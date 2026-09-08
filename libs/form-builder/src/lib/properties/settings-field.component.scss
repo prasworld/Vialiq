@@ -34,3 +34,7 @@
     vi-input, vi-textarea, vi-select {
       width: 100%;
     }
+    .required-asterisk {
+      color: var(--vi-color-danger, #ef4444);
+      margin-left: 0.125rem;
+    }

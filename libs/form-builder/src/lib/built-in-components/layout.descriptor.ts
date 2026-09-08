@@ -6,7 +6,7 @@ export const PANEL_DESCRIPTOR: ComponentDescriptor = {
   label: 'Panel',
   category: 'layout',
   group: 'Layout',
-  icon: 'layout-panel-top',
+  icon: 'building',
   weight: 10,
   canvasElement: 'div',
   canvasProps: () => ({ class: 'vi-panel' }),
@@ -20,7 +20,7 @@ export const PANEL_DESCRIPTOR: ComponentDescriptor = {
     tabs: [
       displayTab(),
       logicTab(),
-    ],
+    ].filter(Boolean) as any[],
   },
   rendererRef: 'vi-renderer-panel',
 };
@@ -30,7 +30,7 @@ export const COLUMNS_DESCRIPTOR: ComponentDescriptor = {
   label: 'Columns',
   category: 'layout',
   group: 'Layout',
-  icon: 'columns',
+  icon: 'folder-download',
   weight: 20,
   canvasElement: 'div',
   canvasProps: () => ({ class: 'vi-columns' }),
@@ -46,10 +46,10 @@ export const COLUMNS_DESCRIPTOR: ComponentDescriptor = {
   settingsSchema: {
     tabs: [
       displayTab([
-        { key: 'columns', label: 'Number of columns', type: 'number', defaultValue: 2 },
+        { key: 'layoutConfig.columns', label: 'Number of columns', type: 'number', defaultValue: 2 },
       ]),
       logicTab(),
-    ],
+    ].filter(Boolean) as any[],
   },
   rendererRef: 'vi-renderer-columns',
 };
@@ -59,7 +59,7 @@ export const TABS_DESCRIPTOR: ComponentDescriptor = {
   label: 'Tabs',
   category: 'layout',
   group: 'Layout',
-  icon: 'folder-open',
+  icon: 'folder-download',
   weight: 30,
   canvasElement: 'vi-tabs',
   canvasProps: () => ({}),
@@ -74,11 +74,8 @@ export const TABS_DESCRIPTOR: ComponentDescriptor = {
   },
   settingsSchema: {
     tabs: [
-      displayTab([
-        { key: 'tabs', label: 'Tabs configuration', type: 'custom', hint: 'Add, remove, and rename tabs' },
-      ]),
-      logicTab(),
-    ],
+      displayTab(),
+    ].filter(Boolean) as any[],
   },
   rendererRef: 'vi-renderer-tabs',
 };
@@ -88,7 +85,7 @@ export const FIELDSET_DESCRIPTOR: ComponentDescriptor = {
   label: 'Fieldset',
   category: 'layout',
   group: 'Layout',
-  icon: 'box',
+  icon: 'save',
   weight: 40,
   canvasElement: 'fieldset',
   canvasProps: () => ({ class: 'vi-fieldset' }),
@@ -102,7 +99,7 @@ export const FIELDSET_DESCRIPTOR: ComponentDescriptor = {
     tabs: [
       displayTab(),
       logicTab(),
-    ],
+    ].filter(Boolean) as any[],
   },
   rendererRef: 'vi-renderer-fieldset', // note: generic renderer can just wrap in <fieldset>
 };
@@ -112,7 +109,7 @@ export const REPEATER_DESCRIPTOR: ComponentDescriptor = {
   label: 'Repeater',
   category: 'layout',
   group: 'Layout',
-  icon: 'copy',
+  icon: 'document',
   weight: 50,
   canvasElement: 'div',
   canvasProps: () => ({ class: 'vi-repeater' }),
@@ -127,12 +124,12 @@ export const REPEATER_DESCRIPTOR: ComponentDescriptor = {
   settingsSchema: {
     tabs: [
       displayTab([
-        { key: 'minRows', label: 'Minimum repeats', type: 'number', defaultValue: 1 },
-        { key: 'maxRows', label: 'Maximum repeats', type: 'number' },
-        { key: 'addLabel', label: 'Add button label', type: 'text', defaultValue: 'Add Item' },
+        { key: 'layoutConfig.minRows', label: 'Minimum repeats', type: 'number', defaultValue: 1 },
+        { key: 'layoutConfig.maxRows', label: 'Maximum repeats', type: 'number' },
+        { key: 'layoutConfig.addLabel', label: 'Add button label', type: 'text', defaultValue: 'Add Item' },
       ]),
       logicTab(),
-    ],
+    ].filter(Boolean) as any[],
   },
   rendererRef: 'vi-renderer-repeater',
 };

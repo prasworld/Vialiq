@@ -11,6 +11,11 @@
     .overlay-container:active {
       cursor: grabbing;
     }
+    .overlay-container:focus-visible {
+      outline: 2px solid tokens.$color-primary;
+      outline-offset: 2px;
+      z-index: 10;
+    }
     .overlay-container.dragging {
       opacity: 0.4;
     }

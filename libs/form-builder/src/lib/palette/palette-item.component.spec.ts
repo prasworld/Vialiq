@@ -1,7 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ComponentRef } from '@angular/core';
+import { By } from '@angular/platform-browser';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { PaletteItemComponent } from './palette-item.component';
+import { BuilderStateService } from '../services/builder-state.service';
 import { draggable } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { setCustomNativeDragPreview } from '@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview';
 
@@ -17,12 +19,23 @@ describe('PaletteItemComponent', () => {
   let component: PaletteItemComponent;
   let fixture: ComponentFixture<PaletteItemComponent>;
   let componentRef: ComponentRef<PaletteItemComponent>;
+  
+  const mockDescriptor = {
+    type: 'text-input',
+    label: 'Text Input',
+    category: 'basic',
+    icon: 'type',
+    defaultSchema: { type: 'text-input', label: 'Text Input' },
+    canvasElement: 'div',
+    canvasProps: () => ({})
+  };
 
   beforeEach(async () => {
     vi.clearAllMocks();
 
     await TestBed.configureTestingModule({
-      imports: [PaletteItemComponent]
+      imports: [PaletteItemComponent],
+      providers: [BuilderStateService]
     }).compileComponents();
   });
 
@@ -31,31 +44,25 @@ describe('PaletteItemComponent', () => {
     component = fixture.componentInstance;
     componentRef = fixture.componentRef;
     
-    componentRef.setInput('descriptor', {
-      type: 'text-input',
-      label: 'Text Input',
-      category: 'basic',
-      icon: 'type',
-      defaultSchema: { type: 'text-input', label: 'Text Input' },
-      canvasElement: 'div',
-      canvasProps: () => ({})
-    });
+    fixture.componentRef.setInput('descriptor', mockDescriptor);
     fixture.detectChanges();
   });
 
   it('should create and initialize draggable', () => {
     expect(component).toBeTruthy();
-    expect(draggable).toHaveBeenCalledOnce();
+    expect(draggable).toHaveBeenCalledWith(expect.objectContaining({
+      element: fixture.debugElement.query(By.css('.palette-item')).nativeElement
+    }));
   });
 
   it('should provide correct data to draggable', () => {
     const config = vi.mocked(draggable).mock.calls[0][0];
     const data = config.getInitialData!({ input: null, element: document.createElement('div'), source: {} as any });
     
-    expect(data).toEqual({
+    expect(data).toEqual(expect.objectContaining({
       source: 'palette',
       descriptorType: 'text-input'
-    });
+    }));
   });
 
   it('should update isDragging state on drag start and drop', () => {

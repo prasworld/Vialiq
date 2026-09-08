@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject, CUSTOM_ELEMENTS_SCHEMA, input, output } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, CUSTOM_ELEMENTS_SCHEMA, input, output, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { debounceTime } from 'rxjs';
@@ -22,8 +22,33 @@ import { registerIcons } from '@vialiq/web-components/icons/registry';
 import { edit1Icon } from '@vialiq/icons/edit-1';
 import { documentIcon } from '@vialiq/icons/document';
 import { trashIcon } from '@vialiq/icons/trash';
+import { plusIcon } from '@vialiq/icons/plus';
+import { pencilIcon } from '@vialiq/icons/pencil';
+import { userIcon } from '@vialiq/icons/user';
+import { calculatorSimpleIcon } from '@vialiq/icons/calculator-simple';
+import { calendarIcon } from '@vialiq/icons/calendar';
+import { clockIcon } from '@vialiq/icons/clock';
+import { checkCircleIcon } from '@vialiq/icons/check-circle';
+import { taskChecklistIcon } from '@vialiq/icons/task-checklist';
+import { chevronDownIcon } from '@vialiq/icons/chevron-down';
+import { searchIcon } from '@vialiq/icons/search';
+import { alarmClockIcon } from '@vialiq/icons/alarm-clock';
+import { xIcon } from '@vialiq/icons/x';
+import { minusIcon } from '@vialiq/icons/minus';
+import { uploadIcon } from '@vialiq/icons/upload';
+import { buildingIcon } from '@vialiq/icons/building';
+import { folderDownloadIcon } from '@vialiq/icons/folder-download';
+import { saveIcon } from '@vialiq/icons/save';
+import { lockIcon } from '@vialiq/icons/lock';
+import { hospitalIcon } from '@vialiq/icons/hospital';
 
-registerIcons([edit1Icon, documentIcon, trashIcon]);
+registerIcons([
+  edit1Icon, documentIcon, trashIcon, plusIcon, pencilIcon, userIcon, 
+  calculatorSimpleIcon, calendarIcon, clockIcon, checkCircleIcon, 
+  taskChecklistIcon, chevronDownIcon, searchIcon, alarmClockIcon, xIcon, 
+  minusIcon, uploadIcon, buildingIcon, folderDownloadIcon, saveIcon, 
+  lockIcon, hospitalIcon
+]);
 
 
 
@@ -69,11 +94,15 @@ export class FormBuilderComponent implements OnInit, OnDestroy {
     .pipe(debounceTime(300))
     .subscribe(schema => this.schemaChange.emit(schema));
 
+  constructor() {
+    effect(() => {
+      // Keep state in sync if contextId input changes (e.g. host component re-uses builder)
+      this.state.setContextId(this.contextId());
+    });
+  }
+
   ngOnInit() {
     this.dnd.init();
-    
-    // Bind contextId to state service
-    this.state.setContextId(this.contextId());
 
     const initialSchema = this.initialSchema();
     if (initialSchema) {

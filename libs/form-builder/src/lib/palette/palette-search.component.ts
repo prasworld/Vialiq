@@ -1,17 +1,18 @@
-import { Component, output } from '@angular/core';
+import { Component, CUSTOM_ELEMENTS_SCHEMA, output } from '@angular/core';
 
 
 @Component({
   selector: 'vi-palette-search',
   standalone: true,
   imports: [],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   templateUrl: './palette-search.component.html',
   styleUrl: './palette-search.component.scss',})
 export class PaletteSearchComponent {
   readonly search = output<string>();
 
   onInput(event: Event) {
-    const input = event.target as HTMLInputElement;
-    this.search.emit(input.value);
+    const value = event instanceof CustomEvent ? event.detail?.value ?? event.detail : (event.target as HTMLInputElement)?.value;
+    this.search.emit(value);
   }
 }

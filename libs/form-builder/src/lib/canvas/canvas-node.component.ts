@@ -61,6 +61,14 @@ export class DynamicElementDirective implements OnChanges {
           }
           continue;
         }
+        if (key === 'class') {
+          if (value === null || value === undefined || value === false) {
+            this.renderer.removeAttribute(this.currentElement, 'class');
+          } else {
+            this.renderer.setAttribute(this.currentElement, 'class', String(value));
+          }
+          continue;
+        }
         // Property binding — safe cast via Record<string, unknown>
         (this.currentElement as unknown as Record<string, unknown>)[key] = value;
       }

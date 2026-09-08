@@ -1,4 +1,6 @@
-<div #dragHandle class="palette-item" [class.dragging]="isDragging()">
+<div #dragHandle class="palette-item" [class.dragging]="isDragging()" 
+     role="button" tabindex="0" 
+     (click)="handleClick()" (keydown)="handleKeydown($event)">
   @if (descriptor().type === 'regex') {
     <div class="ribbon-wrapper">
       <div class="ribbon">NEW</div>

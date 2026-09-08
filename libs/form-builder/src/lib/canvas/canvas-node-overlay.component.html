@@ -1,7 +1,10 @@
 <div class="overlay-container"
       [class.active]="isActive"
       [class.dragging]="isDragging"
-      (click)="selectNode($event)">
+      role="button"
+      tabindex="0"
+      (click)="selectNode($event)"
+      (keydown)="handleKeydown($event)">
     
       <!-- Selection Border -->
       <div class="selection-border"></div>

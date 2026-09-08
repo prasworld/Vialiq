@@ -8,12 +8,13 @@ export type SettingsFieldType =
   | 'number'
   | 'boolean'
   | 'select'
-  | 'multiselect'
   | 'code'       // JSON/expression editor
-  | 'color'
-  | 'icon'
   | 'key'        // special: shows auto-generated key + uniqueness validation
   | 'label'      // special: links to canvas label debounced update
+  // TODO(Phase X): The following field renderers are currently unimplemented in settings-field.component.html
+  | 'multiselect'
+  | 'color'
+  | 'icon'
   | 'custom';    // falls back to settingsComponent
 
 export interface SettingsSelectOption {

@@ -69,11 +69,12 @@ describe('SettingsHostComponent', () => {
 
   it('should create and load default descriptor', async () => {
     fixture.detectChanges();
+    TestBed.flushEffects();
     await fixture.whenStable();
     
     expect(component).toBeTruthy();
-    expect(component.isLoaded).toBe(true);
-    expect(component.customComponentType).toBeNull();
+    expect(component.isLoaded()).toBe(true);
+    expect(component.customComponentType()).toBeNull();
   });
 
   it('should load custom settings component if provided', async () => {
@@ -91,10 +92,11 @@ describe('SettingsHostComponent', () => {
     });
     
     fixture.detectChanges();
+    TestBed.flushEffects();
     await fixture.whenStable();
     
-    expect(component.isLoaded).toBe(true);
-    expect(component.customComponentType).toBe(TestCustomSettingsComponent);
+    expect(component.isLoaded()).toBe(true);
+    expect(component.customComponentType()).toBe(TestCustomSettingsComponent);
   });
 
   it('should handle custom settings component load failure gracefully', async () => {
@@ -112,11 +114,12 @@ describe('SettingsHostComponent', () => {
     });
     
     fixture.detectChanges();
+    TestBed.flushEffects();
     await fixture.whenStable();
     
     expect(errorSpy).toHaveBeenCalled();
-    expect(component.isLoaded).toBe(true);
-    expect(component.customComponentType).toBeNull();
+    expect(component.isLoaded()).toBe(true);
+    expect(component.customComponentType()).toBeNull();
     errorSpy.mockRestore();
   });
 

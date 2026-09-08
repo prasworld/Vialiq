@@ -11,7 +11,7 @@ export const HIDDEN_DESCRIPTOR: ComponentDescriptor = {
   label: 'Hidden',
   category: 'advanced',
   group: 'Utilities',
-  icon: 'eye-off',
+  icon: 'x',
   weight: 60,
   canvasElement: 'div',  // rendered as a placeholder badge on canvas
   canvasProps: (s) => {
@@ -43,7 +43,7 @@ export const CONTENT_DESCRIPTOR: ComponentDescriptor = {
   label: 'Content',
   category: 'advanced',
   group: 'Utilities',
-  icon: 'file-text',
+  icon: 'document',
   weight: 70,
   canvasElement: 'div',
   canvasProps: (s) => {
@@ -66,7 +66,7 @@ export const CONTENT_DESCRIPTOR: ComponentDescriptor = {
         ],
       },
       logicTab(),
-    ],
+    ].filter(Boolean) as any[],
   },
 };
 
@@ -86,7 +86,7 @@ export const DIVIDER_DESCRIPTOR: ComponentDescriptor = {
   settingsSchema: {
     tabs: [
       logicTab(),
-    ],
+    ].filter(Boolean) as any[],
   },
 };
 
@@ -95,7 +95,7 @@ export const BUTTON_DESCRIPTOR: ComponentDescriptor = {
   label: 'Button',
   category: 'advanced',
   group: 'Utilities',
-  icon: 'square',
+  icon: 'plus',
   weight: 90,
   canvasElement: 'vi-button',
   canvasProps: (s) => {
@@ -149,7 +149,7 @@ export const BUTTON_DESCRIPTOR: ComponentDescriptor = {
         ],
       },
       logicTab(),
-    ],
+    ].filter(Boolean) as any[],
   },
 };
 
@@ -158,7 +158,7 @@ export const SUBMIT_DESCRIPTOR: ComponentDescriptor = {
   label: 'Submit',
   category: 'advanced',
   group: 'Utilities',
-  icon: 'send',
+  icon: 'upload',
   weight: 100,
   canvasElement: 'vi-button',
   canvasProps: () => ({ variant: 'primary', type: 'submit' }),
@@ -189,6 +189,6 @@ export const SUBMIT_DESCRIPTOR: ComponentDescriptor = {
         ],
       },
       logicTab(),
-    ],
+    ].filter(Boolean) as any[],
   },
 };

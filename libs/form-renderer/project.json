@@ -2,7 +2,7 @@
   "name": "form-renderer",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/form-renderer/src",
-  "prefix": "lib",
+  "prefix": "vi",
   "projectType": "library",
   "tags": ["scope:form-renderer", "type:lib", "framework:angular"],
   "targets": {

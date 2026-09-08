@@ -34,28 +34,22 @@ describe('settings-helpers', () => {
   });
 
   describe('validationTab', () => {
-    it('should create validation tab', () => {
-      const tab = validationTab();
-      expect(tab.id).toBe('validation');
-      expect(tab.fields.length).toBe(1);
-      expect(tab.fields[0].key).toBe('validation');
+    it('should return null since custom editor is unimplemented', () => {
+      expect(validationTab()).toBeNull();
     });
   });
 
   describe('logicTab', () => {
-    it('should create logic tab', () => {
-      const tab = logicTab();
-      expect(tab.id).toBe('logic');
-      expect(tab.fields.length).toBe(1);
-      expect(tab.fields[0].key).toBe('conditional');
+    it('should return null since custom editor is unimplemented', () => {
+      expect(logicTab()).toBeNull();
     });
   });
 
   describe('standardSettings', () => {
-    it('should combine all standard tabs', () => {
+    it('should combine all standard tabs (excluding unimplemented)', () => {
       const schema = standardSettings();
-      expect(schema.tabs.length).toBe(4);
-      expect(schema.tabs.map(t => t.id)).toEqual(['display', 'data', 'validation', 'logic']);
+      expect(schema.tabs.length).toBe(2);
+      expect(schema.tabs.map(t => t.id)).toEqual(['display', 'data']);
     });
 
     it('should pass extras to tabs', () => {

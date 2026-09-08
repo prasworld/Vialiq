@@ -79,22 +79,34 @@ export class FormSchemaService {
         return s; // No change
       }
 
-      // Find and remove the node from its current location
-      const nodeToMove = this._removeNode(newSchema.components, nodeId);
-      if (!nodeToMove) return s; // Node not found
+      // Capture source context
+      const sourceContext = this._findNodeWithContext(newSchema.components, nodeId);
+      if (!sourceContext.node || !sourceContext.parentArray || sourceContext.index === -1) {
+        return s; // Node not found
+      }
 
-      // Add to new location
+      // Determine target array
+      let targetArray: ComponentSchema[];
       if (targetParentId === null) {
-        newSchema.components.splice(targetIndex, 0, nodeToMove);
+        targetArray = newSchema.components;
       } else {
         const parent = this._findNode(newSchema.components, targetParentId) as LayoutComponentSchema;
         if (parent && 'components' in parent) {
-          parent.components.splice(targetIndex, 0, nodeToMove);
+          targetArray = parent.components;
         } else {
-          // If parent is not found or not a layout component, restore the node to root (fallback)
-           newSchema.components.push(nodeToMove);
+          targetArray = newSchema.components; // fallback
         }
       }
+
+      // Adjust target index if moving forward within the same array
+      let adjustedTargetIndex = targetIndex;
+      if (sourceContext.parentArray === targetArray && sourceContext.index < targetIndex) {
+        adjustedTargetIndex--;
+      }
+
+      // Remove from source and insert at target
+      const nodeToMove = sourceContext.parentArray.splice(sourceContext.index, 1)[0];
+      targetArray.splice(adjustedTargetIndex, 0, nodeToMove);
 
       return newSchema;
     });
@@ -106,7 +118,17 @@ export class FormSchemaService {
       const newSchema = structuredClone(s);
       const node = this._findNode(newSchema.components, nodeId);
       if (node) {
-        Object.assign(node, patch);
+        const deepMerge = (target: any, source: any) => {
+          for (const key of Object.keys(source)) {
+            if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+              if (!target[key] || typeof target[key] !== 'object') target[key] = {};
+              deepMerge(target[key], source[key]);
+            } else {
+              target[key] = source[key];
+            }
+          }
+        };
+        deepMerge(node, patch);
       }
       return newSchema;
     });
@@ -120,7 +142,9 @@ export class FormSchemaService {
 
       if (node && parentArray && index !== -1) {
         const existingKeys = this._getAllKeys(newSchema.components);
-        const duplicate = this._deepCloneAndResetIds(node, existingKeys);
+        const idMap = new Map<string, string>();
+        const duplicate = this._deepCloneAndResetIds(node, existingKeys, idMap);
+        this._remapLayoutConfigs(duplicate, idMap);
         parentArray.splice(index + 1, 0, duplicate);
       }
 
@@ -213,10 +237,13 @@ export class FormSchemaService {
 
   private _deepCloneAndResetIds(
     node: ComponentSchema,
-    existingKeys: string[]
+    existingKeys: string[],
+    idMap: Map<string, string>
   ): ComponentSchema {
     const clone = structuredClone(node);
+    const oldId = clone.id;
     clone.id = crypto.randomUUID();
+    idMap.set(oldId, clone.id);
 
     if (clone.key) {
       clone.key = this._keyGen.deduplicateKey(clone.key, existingKeys);
@@ -225,9 +252,37 @@ export class FormSchemaService {
 
     if ('components' in clone && Array.isArray((clone as LayoutComponentSchema).components)) {
       (clone as LayoutComponentSchema).components = (clone as LayoutComponentSchema).components
-        .map(c => this._deepCloneAndResetIds(c, existingKeys));
+        .map(c => this._deepCloneAndResetIds(c, existingKeys, idMap));
     }
 
     return clone;
+  }
+
+  private _remapLayoutConfigs(node: ComponentSchema, idMap: Map<string, string>): void {
+    if ('layoutConfig' in node && node.layoutConfig) {
+      const config = node.layoutConfig as any;
+      
+      if (config.columnAssignments) {
+        const newAssignments: Record<string, number> = {};
+        for (const [oldId, colIndex] of Object.entries(config.columnAssignments)) {
+          const newId = idMap.get(oldId) || oldId;
+          newAssignments[newId] = colIndex as number;
+        }
+        config.columnAssignments = newAssignments;
+      }
+      
+      if (config.tabAssignments) {
+        const newAssignments: Record<string, string> = {};
+        for (const [oldId, tabId] of Object.entries(config.tabAssignments)) {
+          const newId = idMap.get(oldId) || oldId;
+          newAssignments[newId] = tabId as string;
+        }
+        config.tabAssignments = newAssignments;
+      }
+    }
+
+    if ('components' in node && Array.isArray((node as LayoutComponentSchema).components)) {
+      (node as LayoutComponentSchema).components.forEach(c => this._remapLayoutConfigs(c, idMap));
+    }
   }
 }

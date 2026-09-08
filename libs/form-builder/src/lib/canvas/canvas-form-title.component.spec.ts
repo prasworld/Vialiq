@@ -31,7 +31,7 @@ describe('CanvasFormTitleComponent', () => {
   it('should emit titleChange on input change', () => {
     const emitSpy = vi.spyOn(component.titleChange, 'emit');
     
-    const event = { target: { value: 'New Title' } } as unknown as Event;
+    const event = new CustomEvent('vi-input-input', { detail: { value: 'New Title' } });
     component.onTitleChange(event);
     
     expect(emitSpy).toHaveBeenCalledWith('New Title');

@@ -7,7 +7,7 @@ export const NUMBER_DESCRIPTOR: ComponentDescriptor = {
   label: 'Number',
   category: 'basic',
   group: 'Text Inputs',
-  icon: 'hash',
+  icon: 'calculator-simple',
   weight: 50,
   canvasElement: 'vi-input',
   canvasProps: (s) => {
@@ -46,7 +46,7 @@ export const TEXTAREA_DESCRIPTOR: ComponentDescriptor = {
   label: 'Text Area',
   category: 'basic',
   group: 'Text Inputs',
-  icon: 'align-left',
+  icon: 'document',
   weight: 60,
   canvasElement: 'vi-textarea',
   canvasProps: (s) => {

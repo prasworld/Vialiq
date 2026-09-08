@@ -8,6 +8,9 @@ export class BuilderStateService {
   private readonly _propertiesPanelOpen = signal<boolean>(true);
   private readonly _contextId = signal<string>('default-context');
 
+  /** Unique identifier for this builder instance to scope drag-and-drop operations */
+  readonly builderId = crypto.randomUUID();
+
   /** Currently selected component ID on the canvas */
   readonly activeNodeId = this._activeNodeId.asReadonly();
 

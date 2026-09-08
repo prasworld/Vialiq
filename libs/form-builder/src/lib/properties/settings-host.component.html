@@ -1,14 +1,14 @@
-@if (isLoaded) {
+@if (isLoaded()) {
       <!-- Custom settings component from descriptor -->
-      @if (customComponentType) {
+      @if (customComponentType()) {
         <ng-container
-          [viDynamicComponent]="customComponentType"
+          [viDynamicComponent]="customComponentType()"
           [inputs]="{ schema: schema(), descriptor: descriptor() }"
           [outputs]="{ schemaChange: onChange }">
         </ng-container>
       }
       <!-- Default settings schema generated tabs -->
-      @if (!customComponentType) {
+      @if (!customComponentType()) {
         @for (tab of descriptor().settingsSchema?.tabs; track tab) {
           <vi-settings-tab
             [tab]="tab"
