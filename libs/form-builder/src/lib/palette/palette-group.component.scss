@@ -1,0 +1,21 @@
+@use 'flux-ui/styles/variables' as tokens;
+
+.palette-group {
+  margin-bottom: 1.5rem;
+}
+.group-header {
+  margin-bottom: 0.75rem;
+  padding: 0 0.25rem;
+}
+.title {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: tokens.$text-secondary;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.items-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+}

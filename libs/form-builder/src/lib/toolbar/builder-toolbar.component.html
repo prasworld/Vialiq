@@ -1,0 +1,36 @@
+<header class="builder-toolbar">
+      <div class="toolbar-left">
+        <h2>Form Builder</h2>
+      </div>
+      
+      <div class="toolbar-center">
+        <vi-button variant="ghost" icon-only [disabled]="!canUndo()" (click)="history.undo()" title="Undo">
+          <svg slot="icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/>
+          </svg>
+        </vi-button>
+        <vi-button variant="ghost" icon-only [disabled]="!canRedo()" (click)="history.redo()" title="Redo">
+          <svg slot="icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"/>
+          </svg>
+        </vi-button>
+      </div>
+
+      <div class="toolbar-right">
+        <div class="mode-toggle">
+          <button 
+            [class.active]="viewMode() === 'design'" 
+            (click)="setViewMode('design')">Design</button>
+          <button 
+            [class.active]="viewMode() === 'json'" 
+            (click)="setViewMode('json')">JSON</button>
+          <button 
+            [class.active]="viewMode() === 'preview'" 
+            (click)="setViewMode('preview')">Preview</button>
+        </div>
+
+        <vi-button variant="primary" (click)="save()">
+          Save Form
+        </vi-button>
+      </div>
+    </header>

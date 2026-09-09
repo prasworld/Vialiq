@@ -1,0 +1,11 @@
+<div
+      #dropZone
+      class="drop-zone"
+      [class.is-dragging]="isDragging()"
+      [class.is-drag-over]="isDragOver"
+      [class.horizontal]="orientation() === 'horizontal'"
+      [class.expand-to-fill]="expandToFill()">
+      @if (isDragging() || isDragOver) {
+        <div class="indicator"></div>
+      }
+    </div>

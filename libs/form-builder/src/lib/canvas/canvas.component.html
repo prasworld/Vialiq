@@ -1,0 +1,28 @@
+<div class="canvas-container" (click)="clearSelection()">
+      <div class="canvas-paper" (click)="$event.stopPropagation()">
+    
+        <vi-canvas-form-title
+          [title]="schema().title"
+          (titleChange)="onTitleChange($event)">
+        </vi-canvas-form-title>
+    
+        <div class="canvas-content" [class.is-empty]="isEmpty()">
+    
+          @if (isEmpty()) {
+            <div class="empty-drop-zone-wrapper">
+              <vi-canvas-drop-zone [parentId]="null" [index]="0" orientation="vertical" [expandToFill]="true"></vi-canvas-drop-zone>
+              <vi-canvas-empty-state></vi-canvas-empty-state>
+            </div>
+          } @else {
+            <vi-canvas-drop-zone [parentId]="null" [index]="0"></vi-canvas-drop-zone>
+            @for (node of schema().components; track node.id; let i = $index) {
+              <vi-canvas-node [node]="node"></vi-canvas-node>
+              <vi-canvas-drop-zone [parentId]="null" [index]="i + 1"></vi-canvas-drop-zone>
+            }
+            <div class="bottom-padding"></div>
+          }
+    
+    
+        </div>
+      </div>
+    </div>

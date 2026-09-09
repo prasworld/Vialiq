@@ -1,0 +1,13 @@
+{
+  "$schema": "../../node_modules/ng-packagr/ng-package.schema.json",
+  "dest": "../../dist/libs/form-builder",
+  "lib": {
+    "entryFile": "src/index.ts",
+    "styleIncludePaths": ["../../libs"]
+  },
+  "allowedNonPeerDependencies": [
+    "@atlaskit/pragmatic-drag-and-drop",
+    "@atlaskit/pragmatic-drag-and-drop-hitbox",
+    "json-logic-js"
+  ]
+}

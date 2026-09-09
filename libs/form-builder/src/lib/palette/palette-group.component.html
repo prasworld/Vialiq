@@ -1,0 +1,12 @@
+<div class="palette-group">
+  <div class="group-header">
+    <span class="title">{{ title() }}</span>
+  </div>
+  <div class="items-grid">
+    @for (item of items(); track item) {
+      <vi-palette-item
+        [descriptor]="item">
+      </vi-palette-item>
+    }
+  </div>
+</div>

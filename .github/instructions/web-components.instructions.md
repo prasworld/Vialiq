@@ -118,7 +118,7 @@ Controllers should:
 
 ### 2.5 Eventing
 - Emit semantic events (intent) not “implementation events”.
-  - Examples: `vialiq-change`, `vialiq-select`, `vialiq-dismiss`
+  - Examples: `vi-select-change`, `vi-checkbox-change`, `vi-modal-close`
 - Always include typed `detail` payload for non-trivial events.
 - Use:
   - `bubbles: true`

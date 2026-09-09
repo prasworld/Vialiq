@@ -1,0 +1,30 @@
+@use 'flux-ui/styles/variables' as tokens;
+
+.empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 4rem 2rem;
+      text-align: center;
+      border: 2px dashed tokens.$border-03;
+      border-radius: 0.5rem;
+      background: tokens.$layer-02;
+      color: tokens.$text-secondary;
+      margin: 2rem;
+    }
+    .empty-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      opacity: 0.5;
+    }
+    h3 {
+      margin: 0 0 0.5rem 0;
+      color: tokens.$text-secondary;
+      font-size: 1.125rem;
+    }
+    p {
+      margin: 0;
+      max-width: 300px;
+      font-size: 0.875rem;
+    }

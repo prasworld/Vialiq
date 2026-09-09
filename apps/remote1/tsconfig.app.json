@@ -6,7 +6,9 @@
     "target": "ES2022",
     "lib": ["ES2022", "DOM", "DOM.Iterable"]
   },
-  "include": ["src/**/*.ts"],
+  "include": [
+    "src/**/*.ts"
+  ],
   "exclude": [
     "src/**/*.spec.ts",
     "src/**/*.test.ts",

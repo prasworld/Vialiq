@@ -35,7 +35,6 @@
       "inputs": ["default", "^production"]
     },
     "postbuild-publish": {
-      "$comment": "dependsOn omits ^build intentionally — each publishable lib defines its own dependsOn on this target, which fully replaces this default per Nx merge rules. Adding ^build here would be silently ignored for all current libs.",
       "cache": true,
       "dependsOn": ["build"]
     },
@@ -74,6 +73,15 @@
         "packageRoot": "dist/{projectRoot}",
         "provenance": true
       }
+    },
+    "@nx/angular:ng-packagr-lite": {
+      "cache": true,
+      "dependsOn": ["^build"],
+      "inputs": ["production", "^production"]
+    },
+    "@nx/angular:unit-test": {
+      "cache": true,
+      "inputs": ["default", "^production"]
     }
   },
   "plugins": [
@@ -111,19 +119,42 @@
     },
     "@nx/js:library": {
       "directory": "libs"
+    },
+    "@nx/angular:library": {
+      "linter": "eslint",
+      "unitTestRunner": "vitest-angular"
+    },
+    "@nx/angular:component": {
+      "style": "css"
     }
   },
   "release": {
-    "projects": ["flux-ui", "state-fp", "automapper", "icons", "web-components"],
+    "projects": [
+      "flux-ui",
+      "state-fp",
+      "automapper",
+      "icons",
+      "web-components"
+    ],
     "projectsRelationship": "independent",
     "conventionalCommits": {
       "useCommitScope": true,
       "types": {
-        "feat":     { "semverBump": "minor" },
-        "fix":      { "semverBump": "patch" },
-        "refactor": { "semverBump": "patch" },
-        "perf":     { "semverBump": "patch" },
-        "chore":    { "semverBump": "none" }
+        "feat": {
+          "semverBump": "minor"
+        },
+        "fix": {
+          "semverBump": "patch"
+        },
+        "refactor": {
+          "semverBump": "patch"
+        },
+        "perf": {
+          "semverBump": "patch"
+        },
+        "chore": {
+          "semverBump": "none"
+        }
       }
     },
     "version": {

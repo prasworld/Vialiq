@@ -1,0 +1,17 @@
+@use 'flux-ui/styles/variables' as tokens;
+
+.layout-children-container {
+      padding: 1rem;
+      border: 1px dashed tokens.$border-03;
+      border-radius: 0.25rem;
+      margin-top: 0.5rem;
+      background: tokens.$layer-dimmed;
+      min-height: 3rem;
+    }
+    .missing-component {
+      padding: 1rem;
+      background: tokens.$bg-error;
+      border: 1px solid tokens.$color-error;
+      color: tokens.$text-error;
+      border-radius: 0.25rem;
+    }

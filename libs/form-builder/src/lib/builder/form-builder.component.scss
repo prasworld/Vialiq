@@ -1,0 +1,86 @@
+@use 'flux-ui/styles/variables' as tokens;
+
+:host {
+      display: block;
+      height: 100vh;
+    }
+    
+    .builder-layout {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      background: tokens.$layer-01;
+      color: tokens.$text-secondary;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+
+    /* Toolbar */
+    .builder-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 3.5rem;
+      padding: 0 1.5rem;
+      border-bottom: 1px solid tokens.$border-02;
+      background: tokens.$layer-01;
+      z-index: 20;
+    }
+    .toolbar-left h2 {
+      margin: 0;
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: tokens.$text-primary;
+    }
+    .toolbar-center {
+      display: flex;
+      gap: 0.5rem;
+    }
+    .toolbar-right {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    /* Workspace Layout */
+    .builder-workspace {
+      display: block; // vi-sidebar-container is a block element
+      flex: 1;
+      height: 100%;
+      min-height: 0; // Prevent flex item from expanding past viewport
+    }
+    
+    vi-sidebar.left-sidebar {
+      --vi-sidebar-width: 300px;
+      border-right: 1px solid tokens.$border-02;
+    }
+    
+    vi-sidebar.right-sidebar {
+      --vi-sidebar-width: 320px;
+      border-left: 1px solid tokens.$border-02;
+    }
+
+    .canvas-area {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .preview-mode {
+      padding: 2rem;
+      height: 100%;
+      overflow-y: auto;
+      background: tokens.$layer-02;
+    }
+
+    .json-mode {
+      padding: 1.5rem;
+      height: 100%;
+      overflow-y: auto;
+      background: tokens.$layer-01;
+    }
+    .json-mode pre {
+      background: tokens.$layer-02;
+      padding: 1rem;
+      border-radius: 0.375rem;
+      font-size: 0.875rem;
+      overflow-x: auto;
+    }

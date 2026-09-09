@@ -1,0 +1,14 @@
+@use 'flux-ui/styles/variables' as tokens;
+
+.search-container {
+      padding: 1rem;
+      border-bottom: 1px solid tokens.$border-03;
+    }
+    .search-input {
+      width: 100%;
+      display: block;
+    }
+    .search-input:focus,
+    .search-input:focus-within {
+      outline: none;
+    }
