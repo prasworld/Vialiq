@@ -4,6 +4,8 @@ import { By } from '@angular/platform-browser';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { PaletteItemComponent } from './palette-item.component';
 import { BuilderStateService } from '../services/builder-state.service';
+import { DndService } from '../services/dnd.service';
+import { FormSchemaService } from '../services/form-schema.service';
 import { draggable } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { setCustomNativeDragPreview } from '@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview';
 
@@ -35,7 +37,11 @@ describe('PaletteItemComponent', () => {
 
     await TestBed.configureTestingModule({
       imports: [PaletteItemComponent],
-      providers: [BuilderStateService]
+      providers: [
+        BuilderStateService,
+        { provide: DndService, useValue: { addFromPalette: vi.fn() } },
+        { provide: FormSchemaService, useValue: { getNode: vi.fn() } }
+      ]
     }).compileComponents();
   });
 

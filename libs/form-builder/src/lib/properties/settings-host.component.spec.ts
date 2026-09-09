@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Component, input, Output, EventEmitter, ComponentRef } from '@angular/core';
+import { Component, Directive, input, Output, EventEmitter, ComponentRef } from '@angular/core';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { SettingsHostComponent } from './settings-host.component';
 import { ExtensionRegistryService } from '../services/extension-registry.service';
@@ -22,7 +22,7 @@ class TestCustomSettingsComponent {
 }
 
 // Dummy directive to override DynamicComponentDirective
-@Component({ selector: 'vi-dynamic-component, [viDynamicComponent]', standalone: true, template: '' })
+@Directive({ selector: '[viDynamicComponent]', standalone: true })
 class MockDynamicComponentDirective {
   type = input<any>(undefined, { alias: 'viDynamicComponent' });
   inputs = input.required<Record<string, unknown>>();
