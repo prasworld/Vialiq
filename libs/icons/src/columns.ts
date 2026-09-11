@@ -1,0 +1,10 @@
+// AUTO-GENERATED — do not edit by hand.
+// Source: tools/icons-src/columns.svg
+// Regenerate with: node libs/icons/tools/generate-icons.mjs
+import type { SvgIconDef } from './types';
+
+export const columnsIcon: SvgIconDef = {
+  name: 'columns',
+  data: `<svg stroke="var(--vi-icon-color, currentColor)" fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+><path d="M4 6l5.5 0" /><path d="M4 10l5.5 0" /><path d="M4 14l5.5 0" /><path d="M4 18l5.5 0" /><path d="M14.5 6l5.5 0" /><path d="M14.5 10l5.5 0" /><path d="M14.5 14l5.5 0" /><path d="M14.5 18l5.5 0" /></svg>`,
+};
