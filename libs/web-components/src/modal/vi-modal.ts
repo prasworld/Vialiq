@@ -240,7 +240,9 @@ export class ViModal extends ResizableMixin(
     this._activeAnimation = null;
   }
 
-  private _handleHeaderCloseRequest = () => {
+  private _handleHeaderCloseRequest = (e: Event) => {
+    // Ignore events dispatched by this element itself (e.g., from _requestClose)
+    if (e.target === this) return;
     this.close('button');
   };
 
