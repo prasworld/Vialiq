@@ -1,7 +1,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { rxResource } from '@angular/core/rxjs-interop';
+import { rxResource, toObservable } from '@angular/core/rxjs-interop';
 import { DOCUMENT } from '@angular/common';
-import { from, tap } from 'rxjs';
+import { from, tap, filter, firstValueFrom, skip } from 'rxjs';
 import { engine } from '../core/translation-engine';
 import { loader, TranslationManifest } from '../core/translation-loader';
 import { INITIAL_LOCALE, LOCALE_STORAGE } from './locale-storage';
@@ -41,6 +41,11 @@ export class TranslationService {
 
   private _previousLocale = this._requestedLocale();
   private readonly _manifests = signal<TranslationManifest[]>([]);
+  private readonly _version = signal(0);
+
+  private notifyTranslationsChanged(): void {
+    this._version.update(v => v + 1);
+  }
 
   // rxResource: manages async translation file loading
   private readonly _resource = rxResource({
@@ -50,15 +55,18 @@ export class TranslationService {
         this._previousLocale = params.locale;
         engine.setLocale(params.locale);
         this.document.documentElement.lang = params.locale;
+        this.notifyTranslationsChanged();
       })
     ),
   });
+
+  private readonly _status$ = toObservable(this._resource.status);
 
   // PUBLIC API
 
   // Signal that updates only when translations are fully loaded.
   // Pipe reads this to avoid race conditions.
-  readonly translations = computed(() => this._resource.value());
+  readonly translations = this._version.asReadonly();
 
   // Effective locale — only updates when load completes, never flickers mid-flight
   readonly locale = computed(() =>
@@ -79,15 +87,22 @@ export class TranslationService {
    */
   async get(key: string, params?: Record<string, unknown>, namespace?: string): Promise<string> {
     if (this._resource.isLoading()) {
-      // Wait for the resource to resolve.
-      // rxResource's underlying mechanisms don't easily expose a Promise for the *current* load,
-      // but we know it will resolve when `status()` is no longer 'loading'.
-      // A simple polling or returning the instant if resolved is one way.
-      // Since it's RxJS backed, we can convert it. But let's just use `this.activeLoader.loadAll` directly if needed,
-      // or just await `this.activeLoader.loadAll` again (it's cached anyway).
-      await this.activeLoader.loadAll(this._manifests(), this._requestedLocale());
+      await this.waitForResource();
     }
     return engine.instant(key, params, namespace);
+  }
+
+  private async waitForResource(): Promise<void> {
+    const finalStatus = await firstValueFrom(
+      this._status$.pipe(
+        skip(1), // skip the current synchronous emission; wait for the next transition
+        filter(s => s === 'resolved' || s === 'error'),
+      ),
+      { defaultValue: 'resolved' as const }
+    );
+    if (finalStatus === 'error') {
+      throw this._resource.error();
+    }
   }
 
   registerNamespace(manifest: TranslationManifest): void {
@@ -107,11 +122,13 @@ export class TranslationService {
     if (!manifest) throw new Error(`[vi18n] Namespace "${namespace}" not registered`);
     try {
       await this.activeLoader.loadAll([manifest], this._requestedLocale());
+      this.notifyTranslationsChanged();
     } catch (e: unknown) {
       if (e instanceof Error && e.name === 'AbortError') return;
       // TODO: wire to a proper error-reporting surface once the error bus
       // architecture is finalised (ownership, MFE sharing, DI scope).
       console.error(`[vi18n] Failed to load namespace: ${namespace}`, e);
+      throw e;
     }
   }
 
@@ -121,6 +138,7 @@ export class TranslationService {
   async loadInitial(): Promise<void> {
     try {
       await this.activeLoader.loadAll(this._manifests(), this._requestedLocale());
+      this.notifyTranslationsChanged();
     } catch (e: unknown) {
       if (e instanceof Error && e.name === 'AbortError') return;
       // TODO: wire to a proper error-reporting surface once the error bus
@@ -141,13 +159,13 @@ export class TranslationService {
     this.storage?.set(locale);
     this._requestedLocale.set(locale);
     
-    // Await the loader directly so callers can optionally await this method.
-    // This fetch will be deduplicated with the rxResource fetch because 
-    // the loader now caches in-flight promises.
+    // Wait for rxResource to finish loading to coordinate the awaited completion.
+    // We do not call activeLoader.loadAll() manually here because rxResource already handles
+    // abort signals; a manual uncancellable loadAll() would circumvent the abort process 
+    // and pollute the loader cache on rapid locale switches.
     try {
-      await this.activeLoader.loadAll(this._manifests(), locale);
+      await this.waitForResource();
     } catch (e: unknown) {
-      if (e instanceof Error && e.name === 'AbortError') return;
       // TODO: wire to a proper error-reporting surface once the error bus
       // architecture is finalised (ownership, MFE sharing, DI scope).
       console.error('[vi18n] Failed to set locale', e);

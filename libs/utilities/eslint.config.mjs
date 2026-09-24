@@ -52,5 +52,14 @@ export default [
         ],
         // Override or add rules here
         rules: {}
+    },
+    {
+        // Angular-eslint's template processor extracts inline templates from .spec.ts files
+        // and then tries to lint them as HTML with template rules — but those rules require
+        // @angular-eslint/template-parser as the parser, which is not configured for .ts files.
+        // Excluding spec-file virtual HTML targets suppresses the crash.
+        ignores: [
+            "**/*.spec.ts/**"
+        ]
     }
 ];

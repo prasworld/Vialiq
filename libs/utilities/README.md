@@ -10,10 +10,10 @@ The i18n library is designed to solve translation sharing across independently d
 
 ### Key Features
 
-- **Signal-native & Zoneless Ready:** Uses Angular 21+ Signals (`input()`, `computed()`, `rxResource`) and `pure: true` pipes without race conditions.
+- **Signal-native & Zoneless Ready:** Uses Angular 21+ Signals (`signal()`, `computed()`, `rxResource`) with an explicit `_version` signal to notify reactive consumers (pipes/directives) when a locale load completes.
 - **MFE Namespace Isolation:** Each micro-frontend manages its own translation JSON files. The engine prevents key collisions.
 - **Zero Flicker:** Eager loading hooks into Angular's bootstrap sequence, ensuring components only render _after_ translations are loaded.
-- **Smart Fallback:** Missing keys degrade gracefully to human-readable text (e.g., `FORM.ADVERSE_EVENT` -> `Adverse event`), never exposing raw screaming snake case keys to the user.
+- **Smart Fallback:** Missing keys degrade gracefully to human-readable text (e.g., `FORM.ADVERSE_EVENT` → `Adverse event`), never exposing raw screaming snake case keys to the user.
 - **Deep Interpolation:** Supports `{{user.profile.name}}` syntax out of the box. _(Note: Complex ICU pluralization is deliberately out of scope)_.
 - **Cross-Framework Bridge:** Includes a vanilla TS store (`translationStore`) for React, Lit, or Web Component remotes to react to locale changes synchronously.
 
@@ -92,6 +92,11 @@ export const remoteRoutes: Route[] = [
 > In development, the shell runs on port `4200` and your remote might run on `4201`.
 > Ensure your `baseUrl` is correct for production (often an absolute URL pointing to your MFE's origin, e.g., `environment.i18nBaseUrl`).
 
+> [!IMPORTANT]
+> **Resolver failure cancels navigation.** `resolveTranslation()` calls `loadNamespace()`, which re-throws
+> any non-abort fetch error. If the translation JSON is unreachable, Angular's router will cancel the
+> navigation rather than activate the route with missing translations.
+
 ### 3. Ensure Assets are Built
 
 Verify your `project.json` (or `angular.json`) copies the assets folder to the build output:
@@ -113,7 +118,7 @@ A common issue in SPAs is the "translation flicker" — components render immedi
 When you use `provideTranslations({ eager: true })`, it hooks into Angular's `APP_INITIALIZER` injection token.
 
 - The factory function inside `APP_INITIALIZER` triggers `TranslationService.loadInitial()`, which returns a `Promise`.
-- The `Promise` is resolved _only after_ both the requested locale (e.g., `fr.json`) and the fallback locale (`en.json`) have been fully downloaded and parsed.
+- The `Promise` resolves _only after_ both the requested locale (e.g., `fr.json`) and the fallback locale (`en.json`) have been fully downloaded and parsed.
 - **Angular's bootstrapper halts.** It will absolutely not bootstrap the application or begin rendering the component tree until all `APP_INITIALIZER` promises resolve.
 - By the time your first component runs its constructor, the Translation Engine's registry is fully populated.
 
@@ -123,7 +128,7 @@ When you use `provideTranslations({ eager: true })`, it hooks into Angular's `AP
 
 ### Translate Pipe (Recommended)
 
-Use the `translate` pipe in templates. It is `pure: true` and reacts seamlessly to locale changes via Signals.
+Use the `translate` pipe in templates. It is `pure: false` so it re-evaluates whenever the `TranslationService.translations` signal increments (i.e., when a locale load completes), ensuring locale switches are reflected in the UI without requiring a route change.
 
 ```html
 <!-- Simple -->
@@ -183,6 +188,9 @@ window.__vi18n.t('ERRORS.SYSTEM_FAILURE');
 
 // Dump all loaded keys for your MFE to inspect the flattened paths
 window.__vi18n.keys('your-mfe');
+
+// Force a cache-bust reload of all translation files (e.g. after a new deploy)
+await window.__vi18n.reload();
 ```
 
 ---
@@ -203,7 +211,9 @@ export const remoteProviders = [{ provide: MFE_NAMESPACE, useValue: 'form-builde
 
 ### 2. `TRANSLATION_LOADER` (Swappable HTTP Loaders)
 
-By default, the library uses a framework-agnostic `window.fetch` loader. If you need your translations to be fetched via Angular's `HttpClient` (e.g., to pass through authentication Interceptors), provide the built-in `HttpTranslationLoader` or create your own.
+By default, the library uses a framework-agnostic `window.fetch` loader. If you need your translations to be fetched via Angular's `HttpClient` (e.g., to pass through authentication interceptors), provide the built-in `HttpTranslationLoader` or create your own.
+
+The `HttpTranslationLoader` implements `clearCache()`, so `TranslationService.reload()` correctly invalidates its cache before re-fetching.
 
 ```typescript
 import { TRANSLATION_LOADER, HttpTranslationLoader } from '@vialiq/utilities';
@@ -211,9 +221,11 @@ import { TRANSLATION_LOADER, HttpTranslationLoader } from '@vialiq/utilities';
 export const appProviders = [{ provide: TRANSLATION_LOADER, useClass: HttpTranslationLoader }];
 ```
 
+**Custom loaders** should implement the `ViTranslationLoader` interface. The optional `clearCache?()` method is called by `reload()`—if absent, the cache is not cleared and `reload()` may serve stale data.
+
 ### 3. `MISSING_KEY_HANDLER` (Production Telemetry)
 
-By default, missing keys trigger a `console.warn` in dev mode and a smart fallback (e.g., `Missing key` -> `Missing key`). To pipe missing keys to Datadog, Sentry, or another telemetry service in production, implement the `ViMissingKeyHandler` interface.
+By default, missing keys trigger a `console.warn` in dev mode and a smart fallback (e.g., `Missing key` → `Missing key`). To pipe missing keys to Datadog, Sentry, or another telemetry service in production, implement the `ViMissingKeyHandler` interface.
 
 ```typescript
 import { MISSING_KEY_HANDLER, ViMissingKeyHandler } from '@vialiq/utilities';
@@ -235,32 +247,38 @@ export const appProviders = [{ provide: MISSING_KEY_HANDLER, useClass: SentryMis
 ### 1. Architectural Overview
 The translation library (`@vialiq/utilities/i18n`) is architected with a decoupled, framework-agnostic core (`TranslationEngine` and `TranslationLoader`). Angular-specific bindings (`TranslationService`, `TranslatePipe`, `TranslateDirective`) wrap this core.
 
-- **Reactivity**: In Angular, it leverages Signals (`translations()`) to trigger UI updates without relying on RxJS `BehaviorSubject`s. 
+- **Reactivity**: `TranslationService` maintains a private `_version` signal that increments each time a locale payload is fully loaded. `TranslatePipe` (marked `pure: false`) and `TranslateDirective` read this signal so they re-evaluate after every successful fetch, without relying on Angular's zone-based change detection.
+- **Locale Switching**: `setLocale()` sets `_requestedLocale`, which triggers `rxResource` to start a new, abortable fetch. A duplicate manual `loadAll()` is deliberately **not** issued — doing so would bypass the `AbortSignal` and pollute the shared loader cache on rapid locale switches. Instead, callers that `await setLocale()` subscribe to the resource's status observable via `toObservable`.
 - **Micro-Frontend Ready**: The `translationStore` acts as a Vanilla TS bridge, ensuring React, Vue, and Lit web components share the exact same translation registry and locale state as the Angular host.
-- **Performance**: Flattened key-value maps (`Map<string, string>`) are used internally, providing `O(1)` access time during `instant()` lookups instead of expensive deep object traversal on every Angular change detection cycle.
+- **Performance**: Flattened key-value maps (`Map<string, string>`) are used internally, providing `O(1)` access time during `instant()` lookups instead of expensive deep object traversal on every change detection cycle.
 
 ### 2. Corner Cases & Limitations
 
-#### 2.1 Nested Arrays in JSON
+#### 2.1 Fail-Fast Namespace Loading
+**Behavior**: Both `TranslationLoader` and `HttpTranslationLoader` use `Promise.all` internally. If **any** namespace fails to load, the entire batch rejects immediately and the remaining in-flight requests are abandoned (though not aborted at the network level).
+**Impact on locale switching**: A single 404 will reject `loadAll()`, causing `rxResource` to enter an `'error'` state. The UI keeps showing the previous locale's text (via `_previousLocale`) rather than partially switching.
+**Recommendation**: Ensure all registered namespace URLs are reachable. For optional namespaces that may be missing in some environments, register them lazily via `registerNamespace()` + `loadNamespace()` rather than including them in the root manifest.
+
+#### 2.2 Nested Arrays in JSON
 **Behavior**: If a JSON translation file contains an array (`"ITEMS": ["One", "Two"]`), the `flatten()` method explicitly ignores it (`!Array.isArray(v)`). The array keys are silently dropped.
 **Recommendation**: Developers must use objects for lists (e.g., `"ITEMS": { "0": "One", "1": "Two" }`) or rely on a different structure. This is standard in most i18n libraries, but should be documented in developer guidelines.
 
-#### 2.2 Namespace Collisions
+#### 2.3 Namespace Collisions
 **Behavior**: If `instant('FORM.SUBMIT')` is called without providing a namespace parameter, the engine loops through all registered namespaces and returns the first match it finds.
 **Risk**: If two MFEs register the same key (e.g., `APP.TITLE`), the resolution order depends on which MFE was loaded first.
 **Mitigation**: The `TranslatePipe` and `TranslateDirective` automatically inject the `MFE_NAMESPACE` token. Developers using the `TranslationService` imperatively must be careful to provide the namespace if they are outside a properly tokenized module.
 
-#### 2.3 Partial Locales & Fallbacks
-**Behavior**: If a user switches to `fr` (French), the loader fetches `fr.json`. Simultaneously, it fetches `en.json` (if not already cached) and registers it first. 
-**Benefit**: This creates a guaranteed "base layer". If the French file is missing a newly added key (e.g., `"NEW_FEATURE"`), the engine will automatically serve the English translation instead of a raw key.
-**Edge Case**: If both `fr.json` and `en.json` 404 (e.g., network failure), the engine degrades gracefully to its humanizer fallback (`"FORM.SUBMIT"` -> "Submit"). 
+#### 2.4 Partial Locales & Fallbacks
+**Behavior**: If a user switches to `fr` (French), the loader fetches both `fr.json` and `en.json` concurrently (if `en` is not already cached) and registers `en` first as a base layer.
+**Benefit**: If the French file is missing a newly added key (e.g., `"NEW_FEATURE"`), the engine automatically serves the English translation instead of a raw key.
+**Edge Case**: If both `fr.json` and `en.json` 404 (e.g., network failure), the batch rejects (fail-fast), `rxResource` enters `'error'` state, and the UI remains on the previous locale. The engine degrades to its humanizer fallback (`"FORM.SUBMIT"` → "Submit") only for keys already absent from the _previous_ locale's registry.
 
 ### 3. Real-World Usage Considerations
 
-#### 3.1 Network Throttling & Flicker
-When switching locales, `loadAll()` fires parallel HTTP requests for all registered namespaces. The `translations()` signal is **not updated** until `Promise.allSettled` completes. 
-- **Pros**: The UI will not "flash" missing keys mid-transition. 
-- **Cons**: On a slow 3G connection, the user might see the old language for a few seconds after selecting a new one. Implementing an app-wide loading spinner during `setLocale` is recommended for optimal UX.
+#### 3.1 Network Throttling & Locale Switch UX
+When switching locales, `setLocale()` triggers `rxResource` to fire parallel HTTP requests for all registered namespaces (one `en.json` + one target locale JSON per namespace). The `translations()` signal is **not updated** until `Promise.all` resolves across all namespaces — a single slow or failing namespace blocks the whole batch.
+- **Pros**: The UI will not "flash" missing keys mid-transition; the previous locale's text stays visible until all files are ready.
+- **Cons**: On a slow 3G connection, the user might see the old language for several seconds. Implementing an app-wide loading spinner keyed off `TranslationService.isLoading` is recommended for optimal UX.
 
 #### 3.2 Non-Angular Frameworks
-The recent fix to `translationStore.ts` ensures that when a React or Vue MFE calls `loadNamespace()`, the manifest is permanently registered in the engine. When the Angular Shell later calls `setLocale()`, the core engine knows to re-fetch the React/Vue JSON files automatically, keeping the entire distributed app in absolute sync.
+The `translationStore.ts` bridge ensures that when a React or Vue MFE calls `loadNamespace()`, the manifest is permanently registered in the engine. When the Angular Shell later calls `setLocale()`, the core engine knows to re-fetch the React/Vue JSON files automatically, keeping the entire distributed app in sync.

@@ -6,6 +6,15 @@ import { engine } from '../core/translation-engine';
 import { DOCUMENT } from '@angular/common';
 import { vi } from 'vitest';
 import { MISSING_KEY_HANDLER } from './tokens';
+import { Component } from '@angular/core';
+import { TranslatePipe } from './translate.pipe';
+
+@Component({
+  template: '{{ "TEST_REACTIVE" | translate }}',
+  standalone: true,
+  imports: [TranslatePipe]
+})
+class TestIntegrationComponent {}
 
 describe('TranslationService', () => {
   let service: TranslationService;
@@ -146,11 +155,11 @@ describe('TranslationService', () => {
     await expect(service.loadInitial()).resolves.toBeUndefined();
   });
 
-  it('should NOT throw on loadNamespace if translations fail (graceful degradation)', async () => {
+  it('should throw on loadNamespace if translations fail (so route resolvers can block)', async () => {
     service.registerNamespace({ namespace: 'lazy', baseUrl: '/assets' });
     loadAllMock.mockRejectedValue(new Error('Network error'));
     
-    await expect(service.loadNamespace('lazy')).resolves.toBeUndefined();
+    await expect(service.loadNamespace('lazy')).rejects.toThrow('Network error');
   });
   it('should wire up custom MISSING_KEY_HANDLER if provided in DI', () => {
     TestBed.resetTestingModule();
@@ -238,6 +247,38 @@ describe('TranslationService', () => {
   it('loadNamespace() should throw for a namespace that was never registered', async () => {
     await expect(service.loadNamespace('never-registered'))
       .rejects.toThrow('[vi18n] Namespace "never-registered" not registered');
+  });
+
+  // ─── Integration: Reactivity ────────────────────────────────────────────────
+
+  it('should trigger component re-render on translations() signal change when locale loads', async () => {
+
+    // Initial state: key missing
+    const fixture = TestBed.createComponent(TestIntegrationComponent);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toBe('Test reactive'); // Smart fallback
+
+    // 1. Load English
+    engine.register('app', 'en', { 'TEST_REACTIVE': 'English Reactive' });
+    
+    // Simulate rxResource finishing the load
+    await service.loadInitial(); 
+    TestBed.flushEffects();
+    await Promise.resolve();
+    await Promise.resolve();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toBe('English Reactive');
+
+    // 2. Switch to French
+    engine.register('app', 'fr', { 'TEST_REACTIVE': 'French Reactive' });
+    await service.setLocale('fr');
+    
+    // Translations signal updates -> Pipe re-evaluates -> DOM updates
+    TestBed.flushEffects();
+    await Promise.resolve();
+    await Promise.resolve();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toBe('French Reactive');
   });
 });
 

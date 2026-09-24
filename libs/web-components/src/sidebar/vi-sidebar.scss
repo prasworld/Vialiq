@@ -26,6 +26,7 @@
 
 .vi-sidebar__content {
   flex: 1;
+  min-height: 0; /* flex children have min-height: auto by default, which prevents shrinking below content size and breaks overflow-y scrolling */
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }

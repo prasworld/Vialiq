@@ -64,4 +64,8 @@ export class HttpTranslationLoader implements ViTranslationLoader {
       throw err;
     }
   }
+
+  clearCache(): void {
+    this.cache.clear();
+  }
 }

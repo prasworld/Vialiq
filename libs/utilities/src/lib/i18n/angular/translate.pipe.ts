@@ -5,7 +5,7 @@ import { MFE_NAMESPACE } from './tokens';
 @Pipe({
   name: 'translate',
   standalone: true,
-  pure: true
+  pure: false
 })
 export class TranslatePipe implements PipeTransform {
   private readonly ts = inject(TranslationService);

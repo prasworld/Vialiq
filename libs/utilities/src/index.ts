@@ -1,5 +1,4 @@
 // Core
-export * from './lib/i18n/core/error-bus';
 export * from './lib/i18n/core/translation-engine';
 export * from './lib/i18n/core/translation-loader';
 

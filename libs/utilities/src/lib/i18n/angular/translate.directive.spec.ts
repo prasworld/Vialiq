@@ -17,10 +17,10 @@ class TestComponent {
 describe('TranslateDirective', () => {
   let fixture: ComponentFixture<TestComponent>;
   let mockTranslationService: Partial<TranslationService>;
-  let dummySignal: WritableSignal<void | undefined>;
+  let dummySignal: WritableSignal<number>;
 
   beforeEach(() => {
-    dummySignal = signal(undefined);
+    dummySignal = signal(0);
 
     mockTranslationService = {
       translations: dummySignal,
@@ -94,7 +94,7 @@ describe('TranslateDirective', () => {
     // Update mock to return French value, then fire the translations signal
     // Use a non-identical value so Angular's signal equality detects a change.
     (mockTranslationService.instant as any).mockReturnValue('Bonjour');
-    dummySignal.set(null as any); // new reference — triggers signal consumers
+    dummySignal.set(1); // new reference — triggers signal consumers
     fixture.detectChanges();
     await fixture.whenStable();
 
