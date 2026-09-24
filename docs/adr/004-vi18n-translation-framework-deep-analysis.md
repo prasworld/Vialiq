@@ -367,7 +367,7 @@ Router navigates to /patient
 | Concurrent namespace fetches | `Promise.all` — parallel but fail-fast |
 | Duplicate fetches for same locale | In-memory cache `Set<'namespace:locale'>` |
 | Optimistic cache + failure | `cache.delete(key)` on error so retries work |
-| EN fallback overwriting FR | Removed concurrent EN fetch; replaced with humanizer fallback |
+| EN fallback registration | Loads `en` concurrently for non-English locales and keeps it in the locale-isolated registry |
 
 ---
 
