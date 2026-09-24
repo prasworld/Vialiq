@@ -1,6 +1,6 @@
 import { inject, Injectable, isDevMode } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { firstValueFrom, fromEvent, takeUntil } from 'rxjs';
+import { firstValueFrom, fromEvent, takeUntil, EmptyError } from 'rxjs';
 import { ViTranslationLoader } from './tokens';
 import { engine } from '../core/translation-engine';
 
@@ -48,6 +48,12 @@ export class HttpTranslationLoader implements ViTranslationLoader {
   }
 
   private async fetchAndRegister(namespace: string, locale: string, url: string, abortSignal?: AbortSignal): Promise<void> {
+    if (abortSignal?.aborted) {
+      const abortErr = new Error('Aborted');
+      abortErr.name = 'AbortError';
+      throw abortErr;
+    }
+
     try {
       let request$ = this.http.get<Record<string, unknown>>(url);
       if (abortSignal) {
@@ -56,6 +62,11 @@ export class HttpTranslationLoader implements ViTranslationLoader {
       const json = await firstValueFrom(request$);
       engine.register(namespace, locale, json);
     } catch (err) {
+      if (err instanceof EmptyError && abortSignal?.aborted) {
+        const abortErr = new Error('Aborted');
+        abortErr.name = 'AbortError';
+        throw abortErr;
+      }
       // AbortError = intentional cancellation (rapid locale switch). Completely silent.
       if (err instanceof Error && err.name === 'AbortError') throw err;
       if (isDevMode()) {
