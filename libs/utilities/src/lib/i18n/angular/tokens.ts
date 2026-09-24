@@ -11,8 +11,9 @@ export const MFE_NAMESPACE = new InjectionToken<string>('vi18n.MFE_NAMESPACE');
  * Interface for a custom translation loader.
  */
 export interface ViTranslationLoader {
-  loadAll(manifests: { namespace: string; baseUrl: string }[], locale: string): Promise<void>;
-  load(namespace: string, locale: string, url: string): Promise<void>;
+  loadAll(manifests: { namespace: string; baseUrl: string }[], locale: string, abortSignal?: AbortSignal): Promise<void>;
+  load(namespace: string, locale: string, url: string, abortSignal?: AbortSignal): Promise<void>;
+  clearCache?(): void;
 }
 
 /**

@@ -5,6 +5,7 @@ import { loader } from '../core/translation-loader';
 import { engine } from '../core/translation-engine';
 import { DOCUMENT } from '@angular/common';
 import { vi } from 'vitest';
+import { MISSING_KEY_HANDLER } from './tokens';
 
 describe('TranslationService', () => {
   let service: TranslationService;
@@ -60,7 +61,7 @@ describe('TranslationService', () => {
     await Promise.resolve(); // extra cycle for rxResource
 
     expect(storage.set).toHaveBeenCalledWith('fr');
-    expect(loadAllMock).toHaveBeenCalledWith([], 'fr'); // no manifests registered yet
+    expect(loadAllMock).toHaveBeenCalledWith([], 'fr', expect.anything()); // no manifests registered yet
     
     expect(document.documentElement.lang).toBe('fr');
     expect(engine.currentLocale).toBe('fr');
@@ -109,4 +110,134 @@ describe('TranslationService', () => {
     
     expect(result).toBe('translated-value');
   });
+
+  it('should abort stale fetches on rapid locale switching (race condition fix)', async () => {
+    // Setup manifests
+    service.registerNamespace({ namespace: 'app', baseUrl: '/assets' });
+
+    // Mock loadAll to check if it receives an AbortSignal
+    let passedSignal: AbortSignal | undefined;
+    loadAllMock.mockImplementation(async (manifests: any[], locale: string, signal?: AbortSignal) => {
+      passedSignal = signal;
+      return new Promise((resolve) => setTimeout(resolve, 50));
+    });
+
+    service.setLocale('fr');
+    TestBed.flushEffects();
+    await Promise.resolve();
+
+    const firstSignal = passedSignal;
+    expect(firstSignal).toBeDefined();
+    expect(firstSignal?.aborted).toBe(false);
+
+    // Rapidly switch to ES before FR finishes
+    service.setLocale('es');
+    TestBed.flushEffects();
+    await Promise.resolve();
+
+    // The first signal should now be aborted!
+    expect(firstSignal?.aborted).toBe(true);
+    expect(passedSignal).not.toBe(firstSignal);
+  });
+
+  it('should NOT throw on loadInitial if translations fail (graceful degradation)', async () => {
+    loadAllMock.mockRejectedValue(new Error('Network error'));
+    
+    await expect(service.loadInitial()).resolves.toBeUndefined();
+  });
+
+  it('should NOT throw on loadNamespace if translations fail (graceful degradation)', async () => {
+    service.registerNamespace({ namespace: 'lazy', baseUrl: '/assets' });
+    loadAllMock.mockRejectedValue(new Error('Network error'));
+    
+    await expect(service.loadNamespace('lazy')).resolves.toBeUndefined();
+  });
+  it('should wire up custom MISSING_KEY_HANDLER if provided in DI', () => {
+    TestBed.resetTestingModule();
+    engine.missingKeyHandler = undefined;
+
+    const mockHandler = {
+      handle: vi.fn().mockReturnValue('CUSTOM_MISSING_FORMAT')
+    };
+
+    TestBed.configureTestingModule({
+      providers: [
+        TranslationService,
+        { provide: MISSING_KEY_HANDLER, useValue: mockHandler }
+      ]
+    });
+    
+    // Injecting triggers the constructor
+    TestBed.inject(TranslationService);
+    
+    // Trigger missing key
+    const result = engine.instant('NON_EXISTENT_KEY', undefined, 'test_ns');
+    
+    expect(mockHandler.handle).toHaveBeenCalledWith('NON_EXISTENT_KEY', 'test_ns');
+    expect(result).toBe('CUSTOM_MISSING_FORMAT');
+    
+    // Reset missingKeyHandler to avoid polluting other tests
+    engine.missingKeyHandler = undefined;
+  });
+
+  // ─── Same-locale no-op ──────────────────────────────────────────────────────
+
+  it('setLocale() should be a no-op when called with the already active locale', async () => {
+    const storage = TestBed.inject(LOCALE_STORAGE);
+
+    // locale is 'en' by default
+    await service.setLocale('en');
+
+    expect(loadAllMock).not.toHaveBeenCalled();
+    expect(storage.set).not.toHaveBeenCalled();
+  });
+
+  // ─── reload() stale key verification ────────────────────────────────────────
+
+  it('reload() should clear the loader cache and re-fetch, removing stale keys', async () => {
+    // Prime the engine with a key that will be absent after reload
+    engine.register('app', 'en', { OLD_KEY: 'old value', KEEP: 'keep' });
+    service.registerNamespace({ namespace: 'app', baseUrl: '/assets' });
+
+    // After reload, only KEEP remains
+    loadAllMock.mockImplementation(() => {
+      engine.register('app', 'en', { KEEP: 'keep' });
+      return Promise.resolve();
+    });
+
+    await service.reload();
+
+    expect(engine.has('KEEP')).toBe(true);
+    expect(engine.has('OLD_KEY')).toBe(false);
+  });
+
+  it('reload() should call clearCache() on the active loader before loading', async () => {
+    const clearCacheSpy = vi.spyOn(loader, 'clearCache');
+    await service.reload();
+    expect(clearCacheSpy).toHaveBeenCalledOnce();
+  });
+
+  // ─── registerNamespace() triggers rxResource ─────────────────────────────────
+
+  it('registerNamespace() should trigger rxResource reload with the new manifest', async () => {
+    service.registerNamespace({ namespace: 'lazy', baseUrl: '/lazy' });
+
+    TestBed.flushEffects();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(loadAllMock).toHaveBeenCalledWith(
+      expect.arrayContaining([{ namespace: 'lazy', baseUrl: '/lazy' }]),
+      expect.any(String),
+      expect.anything()
+    );
+  });
+
+  // ─── loadNamespace() unregistered namespace ───────────────────────────────────
+
+  it('loadNamespace() should throw for a namespace that was never registered', async () => {
+    await expect(service.loadNamespace('never-registered'))
+      .rejects.toThrow('[vi18n] Namespace "never-registered" not registered');
+  });
 });
+

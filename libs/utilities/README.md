@@ -10,7 +10,7 @@ The i18n library is designed to solve translation sharing across independently d
 
 ### Key Features
 
-- **Signal-native & Zoneless Ready:** Uses Angular 17+ Signals (`input()`, `computed()`, `rxResource`) and `pure: true` pipes without race conditions.
+- **Signal-native & Zoneless Ready:** Uses Angular 21+ Signals (`input()`, `computed()`, `rxResource`) and `pure: true` pipes without race conditions.
 - **MFE Namespace Isolation:** Each micro-frontend manages its own translation JSON files. The engine prevents key collisions.
 - **Zero Flicker:** Eager loading hooks into Angular's bootstrap sequence, ensuring components only render _after_ translations are loaded.
 - **Smart Fallback:** Missing keys degrade gracefully to human-readable text (e.g., `FORM.ADVERSE_EVENT` -> `Adverse event`), never exposing raw screaming snake case keys to the user.

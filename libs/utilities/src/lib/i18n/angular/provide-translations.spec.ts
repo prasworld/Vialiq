@@ -1,8 +1,23 @@
 import { TestBed } from '@angular/core/testing';
 import { provideTranslations } from './provide-translations';
 import { APP_INITIALIZER } from '@angular/core';
+import { vi } from 'vitest';
 
 describe('provideTranslations', () => {
+  let originalFetch: typeof globalThis.fetch;
+
+  beforeEach(() => {
+    originalFetch = globalThis.fetch;
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({})
+    });
+  });
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+  });
+
   it('should provide eager APP_INITIALIZER by default', () => {
     TestBed.configureTestingModule({
       providers: [

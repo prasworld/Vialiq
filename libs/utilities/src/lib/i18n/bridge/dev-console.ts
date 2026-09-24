@@ -1,11 +1,11 @@
 import { isDevMode } from '@angular/core';
 import { engine } from '../core/translation-engine';
-import { loader } from '../core/translation-loader';
 
 /** Minimal interface of TranslationService needed by the dev console — avoids a circular import. */
 interface DevConsoleHost {
-  setLocale(locale: string): void;
+  setLocale(locale: string): Promise<void>;
   loadInitial(): Promise<void>;
+  reload(): Promise<void>;
 }
 
 export function installDevConsole(translationService: DevConsoleHost): void {
@@ -14,7 +14,7 @@ export function installDevConsole(translationService: DevConsoleHost): void {
 
   (window as Window & { __vi18n?: unknown }).__vi18n = {
     setLocale: async (locale: string) => {
-      translationService.setLocale(locale);
+      await translationService.setLocale(locale);
       console.info(`[vi18n] Locale switched to "${locale}"`);
     },
     getLocale: () => engine.currentLocale,
@@ -22,8 +22,7 @@ export function installDevConsole(translationService: DevConsoleHost): void {
     keys: (ns: string) => engine.dump(ns),
     t: (key: string, params?: Record<string, unknown>) => engine.instant(key, params),
     reload: async () => {
-      loader.clearCache();
-      await translationService.loadInitial();
+      await translationService.reload();
       console.info('[vi18n] Translations reloaded');
     }
   };

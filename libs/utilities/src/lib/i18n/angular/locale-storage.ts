@@ -20,12 +20,25 @@ export const LOCAL_STORAGE_LOCALE_PROVIDER: Provider = {
   provide: LOCALE_STORAGE,
   useValue: {
     get: () => {
-      if (typeof localStorage === 'undefined') return null;
-      return localStorage.getItem('vi18n:locale');
+      try {
+        if (typeof localStorage === 'undefined') return null;
+        return localStorage.getItem('vi18n:locale');
+      } catch (err: unknown) {
+        // TODO: wire to a proper error-reporting surface once the error bus
+        // architecture is finalised (ownership, MFE sharing, DI scope).
+        console.error('[vi18n] Failed to read locale from localStorage', err);
+        return null;
+      }
     },
     set: (locale: string) => {
-      if (typeof localStorage !== 'undefined') {
-        localStorage.setItem('vi18n:locale', locale);
+      try {
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('vi18n:locale', locale);
+        }
+      } catch (err: unknown) {
+        // TODO: wire to a proper error-reporting surface once the error bus
+        // architecture is finalised (ownership, MFE sharing, DI scope).
+        console.error('[vi18n] Failed to save locale to localStorage', err);
       }
     }
   } satisfies LocaleStorage
@@ -48,13 +61,26 @@ export const COOKIE_LOCALE_PROVIDER: Provider = {
   provide: LOCALE_STORAGE,
   useValue: {
     get: (): string | null => {
-      if (typeof document === 'undefined') return null;
-      const match = document.cookie.match(/(?:^|; )vi18n:locale=([^;]*)/);
-      return match ? decodeURIComponent(match[1]) : null;
+      try {
+        if (typeof document === 'undefined') return null;
+        const match = document.cookie.match(/(?:^|; )vi18n:locale=([^;]*)/);
+        return match ? decodeURIComponent(match[1]) : null;
+      } catch (err: unknown) {
+        // TODO: wire to a proper error-reporting surface once the error bus
+        // architecture is finalised (ownership, MFE sharing, DI scope).
+        console.error('[vi18n] Failed to read locale from cookie', err);
+        return null; // ignore malformed cookies
+      }
     },
     set: (locale: string): void => {
-      if (typeof document !== 'undefined') {
-        document.cookie = `vi18n:locale=${encodeURIComponent(locale)};path=/;max-age=31536000;SameSite=Lax`;
+      try {
+        if (typeof document !== 'undefined') {
+          document.cookie = `vi18n:locale=${encodeURIComponent(locale)};path=/;max-age=31536000;SameSite=Lax`;
+        }
+      } catch (err: unknown) {
+        // TODO: wire to a proper error-reporting surface once the error bus
+        // architecture is finalised (ownership, MFE sharing, DI scope).
+        console.error('[vi18n] Failed to save locale to cookie', err);
       }
     }
   } satisfies LocaleStorage

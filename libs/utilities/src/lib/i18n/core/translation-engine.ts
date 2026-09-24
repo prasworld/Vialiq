@@ -2,8 +2,8 @@ declare const process: { env: Record<string, string> };
 import { TranslationManifest } from './translation-loader';
 
 export class TranslationEngine {
-  // Map<namespace, Map<key, string>>
-  private registry = new Map<string, Map<string, string>>();
+  // Map<locale, Map<namespace, Map<key, string>>>
+  private registry = new Map<string, Map<string, Map<string, string>>>();
   private manifestRegistry = new Map<string, TranslationManifest>();
   private _currentLocale = 'en';
 
@@ -35,15 +35,21 @@ export class TranslationEngine {
   }
 
   /**
-   * Registers a map of translations for a specific namespace.
-   * Merges with existing keys so that fallback locales (en) can be loaded first
-   * and subsequently overridden by the target locale.
+   * Registers a map of translations for a specific namespace and locale.
    */
-  register(namespace: string, translations: Record<string, unknown>): void {
-    let nsMap = this.registry.get(namespace);
+  register(namespace: string, locale: string, translations: Record<string, unknown>): void {
+    let localeMap = this.registry.get(locale);
+    if (!localeMap) {
+      localeMap = new Map<string, Map<string, string>>();
+      this.registry.set(locale, localeMap);
+    }
+    
+    let nsMap = localeMap.get(namespace);
     if (!nsMap) {
       nsMap = new Map<string, string>();
-      this.registry.set(namespace, nsMap);
+      localeMap.set(namespace, nsMap);
+    } else {
+      nsMap.clear();
     }
     
     this.flatten(translations, '', nsMap);
@@ -55,14 +61,36 @@ export class TranslationEngine {
   instant(key: string, params?: Record<string, unknown>, namespace?: string): string {
     let rawString: string | undefined;
 
-    if (namespace) {
-      rawString = this.registry.get(namespace)?.get(key);
-    } else {
-      // Find the first namespace that has this key
-      for (const map of this.registry.values()) {
-        if (map.has(key)) {
-          rawString = map.get(key);
-          break;
+    const localeMap = this.registry.get(this._currentLocale);
+
+    if (localeMap) {
+      if (namespace) {
+        rawString = localeMap.get(namespace)?.get(key);
+      } else {
+        // Find the first namespace that has this key
+        for (const map of localeMap.values()) {
+          if (map.has(key)) {
+            rawString = map.get(key);
+            break;
+          }
+        }
+      }
+    }
+
+    if (rawString === undefined) {
+      if (this._currentLocale !== 'en') {
+        const enMap = this.registry.get('en');
+        if (enMap) {
+          if (namespace) {
+            rawString = enMap.get(namespace)?.get(key);
+          } else {
+            for (const map of enMap.values()) {
+              if (map.has(key)) {
+                rawString = map.get(key);
+                break;
+              }
+            }
+          }
         }
       }
     }
@@ -82,12 +110,20 @@ export class TranslationEngine {
   }
 
   has(key: string, namespace?: string): boolean {
-    if (namespace) {
-      return this.registry.get(namespace)?.has(key) ?? false;
-    }
-    for (const map of this.registry.values()) {
-      if (map.has(key)) return true;
-    }
+    const checkMap = (locale: string): boolean => {
+      const localeMap = this.registry.get(locale);
+      if (!localeMap) return false;
+      if (namespace) {
+        return localeMap.get(namespace)?.has(key) ?? false;
+      }
+      for (const map of localeMap.values()) {
+        if (map.has(key)) return true;
+      }
+      return false;
+    };
+
+    if (checkMap(this._currentLocale)) return true;
+    if (this._currentLocale !== 'en' && checkMap('en')) return true;
     return false;
   }
 
@@ -97,11 +133,12 @@ export class TranslationEngine {
   }
 
   getNamespaces(): Set<string> {
-    return new Set(this.registry.keys());
+    const localeMap = this.registry.get(this._currentLocale);
+    return localeMap ? new Set(localeMap.keys()) : new Set();
   }
 
   dump(namespace: string): Record<string, string> {
-    const map = this.registry.get(namespace);
+    const map = this.registry.get(this._currentLocale)?.get(namespace);
     if (!map) return {};
     return Object.fromEntries(map);
   }

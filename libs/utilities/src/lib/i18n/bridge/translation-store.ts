@@ -6,6 +6,8 @@ import { loader, TranslationManifest } from '../core/translation-loader';
  * Exposes the TranslationEngine to React, Lit, and Web Components without Angular dependencies.
  * Shared as a Module Federation singleton across the MFE.
  */
+let _abortController: AbortController | undefined;
+
 export const translationStore = {
   /**
    * Translate a key synchronously using the shared engine.
@@ -17,8 +19,23 @@ export const translationStore = {
    * Switch locale — fetches new JSON for all registered namespaces, then notifies listeners.
    */
   setLocale: async (locale: string): Promise<void> => {
-    await loader.loadAll(engine.getManifests(), locale);
-    engine.setLocale(locale); // fires onChange → all framework listeners re-render
+    if (_abortController) {
+      _abortController.abort();
+    }
+    _abortController = new AbortController();
+    const signal = _abortController.signal;
+
+    try {
+      await loader.loadAll(engine.getManifests(), locale, signal);
+      if (!signal.aborted) {
+        engine.setLocale(locale); // fires onChange → all framework listeners re-render
+      }
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name === 'AbortError') return;
+      // TODO: wire to a proper error-reporting surface once the error bus
+      // architecture is finalised (ownership, MFE sharing, DI scope).
+      console.error('[vi18n] Failed to switch locale', err);
+    }
   },
 
   /**
