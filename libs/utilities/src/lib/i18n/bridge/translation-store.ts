@@ -4,9 +4,17 @@ import { loader, TranslationManifest } from '../core/translation-loader';
 /**
  * Vanilla JS/TS translation bridge.
  * Exposes the TranslationEngine to React, Lit, and Web Components without Angular dependencies.
- * Shared as a Module Federation singleton across the MFE.
+ *
+ * ⚠️  SINGLETON REQUIREMENT: For locale changes and registered dictionaries to cross the Module
+ * Federation boundary, `@vialiq/utilities` MUST be listed as a shared singleton in every
+ * host and remote's Module Federation config. Without this, each MFE bundles its own copy of
+ * the engine and loader — locale changes will be local-only and will not propagate to other MFEs.
+ *
+ * Example (module-federation.config.ts):
+ *   shared: (libName, config) => libName === '@vialiq/utilities' ? { ...config, singleton: true, strictVersion: false } : config
  */
 let _abortController: AbortController | undefined;
+
 
 export const translationStore = {
   /**

@@ -52,10 +52,10 @@ describe('TranslationService', () => {
     service.registerNamespace({ namespace: 'app', baseUrl: '/assets' });
     service.registerNamespace({ namespace: 'auth', baseUrl: '/assets' });
     
-    // Test deduplication
+    // Deduplication: engine uses a Map keyed by namespace, so re-registering has no effect
     service.registerNamespace({ namespace: 'app', baseUrl: '/assets' });
 
-    expect((service as any)._manifests().length).toBe(2);
+    expect(engine.getManifests().length).toBe(2);
   });
 
   it('should switch locale, update storage and HTML lang', async () => {

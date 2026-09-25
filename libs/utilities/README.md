@@ -15,7 +15,7 @@ The i18n library is designed to solve translation sharing across independently d
 - **Zero Flicker:** Eager loading hooks into Angular's bootstrap sequence, ensuring components only render _after_ translations are loaded.
 - **Smart Fallback:** Missing keys degrade gracefully to human-readable text (e.g., `FORM.ADVERSE_EVENT` → `Adverse event`), never exposing raw screaming snake case keys to the user.
 - **Deep Interpolation:** Supports `{{user.profile.name}}` syntax out of the box. _(Note: Complex ICU pluralization is deliberately out of scope)_.
-- **Cross-Framework Bridge:** Includes a vanilla TS store (`translationStore`) for React, Lit, or Web Component remotes to react to locale changes synchronously.
+- **Cross-Framework Bridge:** Includes a vanilla TS store (`translationStore`) for React, Lit, or Web Component remotes to react to locale changes. **Requires `@vialiq/utilities` to be configured as a Module Federation shared singleton** — otherwise each MFE bundles its own engine copy and locale changes stay local.
 
 ---
 
@@ -249,7 +249,7 @@ The translation library (`@vialiq/utilities/i18n`) is architected with a decoupl
 
 - **Reactivity**: `TranslationService` maintains a private `_version` signal that increments each time a locale payload is fully loaded. `TranslatePipe` (marked `pure: false`) and `TranslateDirective` read this signal so they re-evaluate after every successful fetch, without relying on Angular's zone-based change detection.
 - **Locale Switching**: `setLocale()` sets `_requestedLocale`, which triggers `rxResource` to start a new, abortable fetch. A duplicate manual `loadAll()` is deliberately **not** issued — doing so would bypass the `AbortSignal` and pollute the shared loader cache on rapid locale switches. Instead, callers that `await setLocale()` subscribe to the resource's status observable via `toObservable`.
-- **Micro-Frontend Ready**: The `translationStore` acts as a Vanilla TS bridge, ensuring React, Vue, and Lit web components share the exact same translation registry and locale state as the Angular host.
+- **Micro-Frontend Ready**: The `translationStore` acts as a Vanilla TS bridge so React, Vue, and Lit web components can share the same translation registry and locale state as the Angular host — **but only when `@vialiq/utilities` is declared as a shared singleton in every host and remote's Module Federation config**. Without this, each MFE bundles its own engine copy and locale changes do not cross the federation boundary.
 - **Performance**: Flattened key-value maps (`Map<string, string>`) are used internally, providing `O(1)` access time during `instant()` lookups instead of expensive deep object traversal on every change detection cycle.
 
 ### 2. Corner Cases & Limitations
@@ -281,4 +281,14 @@ When switching locales, `setLocale()` triggers `rxResource` to fire parallel HTT
 - **Cons**: On a slow 3G connection, the user might see the old language for several seconds. Implementing an app-wide loading spinner keyed off `TranslationService.isLoading` is recommended for optimal UX.
 
 #### 3.2 Non-Angular Frameworks
-The `translationStore.ts` bridge ensures that when a React or Vue MFE calls `loadNamespace()`, the manifest is permanently registered in the engine. When the Angular Shell later calls `setLocale()`, the core engine knows to re-fetch the React/Vue JSON files automatically, keeping the entire distributed app in sync.
+The `translationStore.ts` bridge allows a React or Vue MFE to call `loadNamespace()`, registering its manifest in the shared engine. When the Angular Shell later calls `setLocale()`, the engine re-fetches all registered namespaces — including those from React/Vue MFEs — keeping the entire distributed app in sync.
+
+> [!IMPORTANT]
+> **Shared singleton is not automatic.** For the engine to be truly shared across MFE boundaries, you must explicitly configure `@vialiq/utilities` as a Module Federation singleton in **every** host and remote `module-federation.config.ts`:
+> ```typescript
+> shared: (libName, config) =>
+>   libName === '@vialiq/utilities'
+>     ? { ...config, singleton: true, strictVersion: false }
+>     : config
+> ```
+> Without this, Webpack bundles a separate engine instance per MFE and locale changes are invisible across the boundary.

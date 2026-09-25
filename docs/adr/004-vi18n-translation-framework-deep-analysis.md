@@ -209,7 +209,7 @@ Three built-in `LOCALE_STORAGE` providers:
 ### 3.8 `angular/translate.pipe.ts` — Signal-Reactive Pipe
 
 ```typescript
-@Pipe({ name: 'translate', pure: true })
+@Pipe({ name: 'translate', pure: false })
 export class TranslatePipe implements PipeTransform {
   transform(key, params?, namespace?) {
     this.ts.translations(); // ← establishes signal dependency
@@ -218,7 +218,7 @@ export class TranslatePipe implements PipeTransform {
 }
 ```
 
-`pure: true` + signal dependency is the key pattern: Angular's signal graph marks the pipe as stale when `translations` signal updates, triggering a re-render. No `async` pipe, no Observable subscriptions needed.
+`pure: false` + signal dependency is the key pattern: Because the pipe is impure, Angular executes its `transform` method on every change detection cycle. This allows the `this.ts.translations()` signal read to register as a dependency for the component, ensuring the view re-renders when the `_version` signal bumps (e.g. after a locale switch). No `async` pipe or Observable subscriptions needed.
 
 ---
 

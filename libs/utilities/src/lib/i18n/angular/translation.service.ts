@@ -26,6 +26,15 @@ export class TranslationService {
     if (this.missingKeyHandler) {
       engine.missingKeyHandler = (key, namespace) => this.missingKeyHandler?.handle(key, namespace) ?? key;
     }
+
+    // React to locale changes initiated outside Angular (e.g., translationStore bridge)
+    engine.onChange(() => {
+      const activeLocale = engine.currentLocale;
+      if (this._requestedLocale() !== activeLocale) {
+        this._requestedLocale.set(activeLocale);
+      }
+      this.notifyTranslationsChanged();
+    });
   }
 
   // Locale resolution order (first non-null wins):
@@ -40,7 +49,10 @@ export class TranslationService {
   );
 
   private _previousLocale = this._requestedLocale();
-  private readonly _manifests = signal<TranslationManifest[]>([]);
+  // Version counter — increments each time a manifest is added so rxResource
+  // re-reads engine.getManifests() (the single source of truth that the bridge
+  // also writes to via translationStore.loadNamespace).
+  private readonly _manifestsVersion = signal(0);
   private readonly _version = signal(0);
 
   private notifyTranslationsChanged(): void {
@@ -49,8 +61,11 @@ export class TranslationService {
 
   // rxResource: manages async translation file loading
   private readonly _resource = rxResource({
-    params: () => ({ locale: this._requestedLocale(), manifests: this._manifests() }),
-    stream: ({ params, abortSignal }) => from(this.activeLoader.loadAll(params.manifests, params.locale, abortSignal)).pipe(
+    // _manifestsVersion is a reactive sentinel: when it changes, rxResource re-runs
+    // and reads the full manifest list from the engine (single source of truth for
+    // both Angular and bridge-registered namespaces).
+    params: () => ({ locale: this._requestedLocale(), _mv: this._manifestsVersion() }),
+    stream: ({ params, abortSignal }) => from(this.activeLoader.loadAll(engine.getManifests(), params.locale, abortSignal)).pipe(
       tap(() => {
         this._previousLocale = params.locale;
         engine.setLocale(params.locale);
@@ -107,10 +122,9 @@ export class TranslationService {
 
   registerNamespace(manifest: TranslationManifest): void {
     engine.registerManifest(manifest);
-    const current = this._manifests();
-    if (!current.some(m => m.namespace === manifest.namespace)) {
-      this._manifests.set([...current, manifest]);
-    }
+    // Increment the sentinel to trigger rxResource re-evaluation;
+    // the actual list is read from engine.getManifests() inside the stream.
+    this._manifestsVersion.update(v => v + 1);
   }
 
   /**
@@ -139,15 +153,18 @@ export class TranslationService {
     try {
       await this.activeLoader.loadAll(this._manifests(), this._requestedLocale());
       this.notifyTranslationsChanged();
+      this._previousLocale = this._requestedLocale();
+      engine.setLocale(this._requestedLocale());
+      this.document.documentElement.lang = this._requestedLocale();
     } catch (e: unknown) {
       if (e instanceof Error && e.name === 'AbortError') return;
       // TODO: wire to a proper error-reporting surface once the error bus
       // architecture is finalised (ownership, MFE sharing, DI scope).
       console.error('[vi18n] Failed to load initial translations', e);
+      // Re-throw so APP_INITIALIZER rejects and Angular does not bootstrap
+      // with missing translations (zero-flicker / fail-fast contract).
+      throw e;
     }
-    this._previousLocale = this._requestedLocale();
-    engine.setLocale(this._requestedLocale());
-    this.document.documentElement.lang = this._requestedLocale();
   }
 
   /**
