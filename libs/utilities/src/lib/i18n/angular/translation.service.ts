@@ -132,7 +132,7 @@ export class TranslationService {
    * Use this in a route resolver to block a lazy-loaded route until its translations are ready.
    */
   async loadNamespace(namespace: string): Promise<void> {
-    const manifest = this._manifests().find(m => m.namespace === namespace);
+    const manifest = engine.getManifests().find(m => m.namespace === namespace);
     if (!manifest) throw new Error(`[vi18n] Namespace "${namespace}" not registered`);
     try {
       await this.activeLoader.loadAll([manifest], this._requestedLocale());
@@ -151,7 +151,7 @@ export class TranslationService {
    */
   async loadInitial(): Promise<void> {
     try {
-      await this.activeLoader.loadAll(this._manifests(), this._requestedLocale());
+      await this.activeLoader.loadAll(engine.getManifests(), this._requestedLocale());
       this.notifyTranslationsChanged();
       this._previousLocale = this._requestedLocale();
       engine.setLocale(this._requestedLocale());

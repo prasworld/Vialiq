@@ -24,6 +24,7 @@ describe('TranslationService', () => {
   beforeEach(() => {
     // Reset singleton engine
     (engine as any).registry.clear();
+    (engine as any).manifestRegistry.clear();
     (engine as any)._currentLocale = 'en';
 
     loadAllMock = vi.spyOn(loader, 'loadAll').mockResolvedValue(undefined);
@@ -149,10 +150,10 @@ describe('TranslationService', () => {
     expect(passedSignal).not.toBe(firstSignal);
   });
 
-  it('should NOT throw on loadInitial if translations fail (graceful degradation)', async () => {
+  it('should throw on loadInitial if translations fail (so eager bootstrap fails)', async () => {
     loadAllMock.mockRejectedValue(new Error('Network error'));
     
-    await expect(service.loadInitial()).resolves.toBeUndefined();
+    await expect(service.loadInitial()).rejects.toThrow('Network error');
   });
 
   it('should throw on loadNamespace if translations fail (so route resolvers can block)', async () => {
