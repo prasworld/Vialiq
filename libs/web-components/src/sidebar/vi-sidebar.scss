@@ -20,12 +20,15 @@
   position: relative;
   width: 100%;
   height: 100%;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
 }
 
 .vi-sidebar__content {
   flex: 1;
+  min-height: 0; /* flex children have min-height: auto by default, which prevents shrinking below content size and breaks overflow-y scrolling */
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .vi-sidebar__resizer {

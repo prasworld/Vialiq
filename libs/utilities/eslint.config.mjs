@@ -1,0 +1,65 @@
+import nx from "@nx/eslint-plugin";
+import baseConfig from "../../eslint.config.mjs";
+
+export default [
+    ...nx.configs["flat/angular"],
+    ...nx.configs["flat/angular-template"],
+    ...baseConfig,
+    {
+        files: [
+            "**/*.json"
+        ],
+        rules: {
+            "@nx/dependency-checks": [
+                "error",
+                {
+                    ignoredFiles: [
+                        "{projectRoot}/eslint.config.{js,cjs,mjs,ts,cts,mts}"
+                    ]
+                }
+            ]
+        },
+        languageOptions: {
+            parser: await import("jsonc-eslint-parser")
+        }
+    },
+    {
+        files: [
+            "**/*.ts"
+        ],
+        rules: {
+            "@angular-eslint/directive-selector": [
+                "error",
+                {
+                    type: "attribute",
+                    prefix: "vi",
+                    style: "camelCase"
+                }
+            ],
+            "@angular-eslint/component-selector": [
+                "error",
+                {
+                    type: "element",
+                    prefix: "vi",
+                    style: "kebab-case"
+                }
+            ]
+        }
+    },
+    {
+        files: [
+            "**/*.html"
+        ],
+        // Override or add rules here
+        rules: {}
+    },
+    {
+        // Angular-eslint's template processor extracts inline templates from .spec.ts files
+        // and then tries to lint them as HTML with template rules — but those rules require
+        // @angular-eslint/template-parser as the parser, which is not configured for .ts files.
+        // Excluding spec-file virtual HTML targets suppresses the crash.
+        ignores: [
+            "**/*.spec.ts/**"
+        ]
+    }
+];

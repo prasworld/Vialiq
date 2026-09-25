@@ -71,4 +71,24 @@ describe('vi-sidebar', () => {
     await sidebar.updateComplete;
     expect(sidebar.opened).to.be.false;
   });
+  it('should constrain height and allow scrolling when slotted content is tall', async () => {
+    // Render the sidebar in a constrained host (200px tall), with tall content inside
+    const el = await fixture<ViSidebar>(html`
+      <vi-sidebar opened style="height: 200px; display: block;">
+        <div style="height: 1000px;">Tall content</div>
+      </vi-sidebar>
+    `);
+    
+    // The host should remain at the constrained height
+    expect(el.getBoundingClientRect().height).to.equal(200);
+
+    const contentArea = el.shadowRoot!.querySelector('.vi-sidebar__content')!;
+    
+    // The content area should shrink to fit within the host and become scrollable.
+    // If the min-height: 0 flexbox fix is missing, contentArea.clientHeight will grow 
+    // to fit the 1000px child, breaking overflow scrolling.
+    expect(contentArea.clientHeight).to.be.at.most(200);
+    expect(contentArea.scrollHeight).to.be.at.least(1000);
+    expect(contentArea.scrollHeight).to.be.greaterThan(contentArea.clientHeight);
+  });
 });
