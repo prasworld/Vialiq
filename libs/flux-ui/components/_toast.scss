@@ -1,0 +1,85 @@
+/**
+ * Toast component base styles.
+ *
+ * Shared foundation styles for the toast component.
+ * Provides flexbox layout, spacing via tokens, and animation base.
+ */
+
+@use '../styles/variables' as tokens;
+
+@layer components {
+  .toast-root {
+    display: flex;
+    align-items: flex-start;
+    box-sizing: border-box;
+    width: var(--vi-toast-width, 360px);
+
+    background-color: var(--vi-toast-bg, #{tokens.$color-background});
+    border: 1px solid var(--vi-toast-border-color, #{tokens.$border-02});
+    border-radius: var(--vi-toast-border-radius, #{tokens.$border-radius-md});
+    box-shadow: var(--vi-toast-shadow, #{tokens.$shadow-lg});
+    padding: var(--vi-toast-padding, #{tokens.$spacing-sm} #{tokens.$spacing-md});
+    padding-left: calc(var(--vi-toast-padding-left-base, #{tokens.$spacing-md}) + 4px);
+    gap: var(--vi-toast-gap, #{tokens.$spacing-sm});
+    
+    font-family: var(--vi-toast-font-family, #{tokens.$font-family-base});
+    font-size: #{tokens.$font-size-sm};
+    line-height: #{tokens.$line-height-normal};
+    
+    position: relative;
+    overflow: hidden; // For progress bar
+    
+    pointer-events: auto;
+  }
+
+  .toast-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    padding-top: 2px; // Align with title
+  }
+
+  .toast-content {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    min-width: 0;
+  }
+
+  .toast-title {
+    font-weight: tokens.$font-weight-semibold;
+    margin-bottom: #{tokens.$spacing-unit};
+    display: block;
+    color: #{tokens.$text-primary};
+  }
+  
+  .toast-message {
+    color: #{tokens.$text-secondary};
+  }
+
+  .toast-actions {
+    display: flex;
+    align-items: center;
+    gap: tokens.$spacing-xs;
+    margin-top: tokens.$spacing-sm;
+  }
+
+  .toast-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: var(--vi-toast-progress-height, 3px);
+    background-color: var(--vi-toast-progress-bg, #{tokens.$layer-03});
+    transform-origin: left center;
+  }
+
+  .toast-progress-bar {
+    height: 100%;
+    background-color: var(--vi-toast-progress-color, #{tokens.$color-primary});
+    width: 100%;
+    transform-origin: left center;
+    /* Animation handled in component level CSS where duration is known */
+  }
+}

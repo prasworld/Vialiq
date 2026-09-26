@@ -1,0 +1,76 @@
+@use '@vialiq/flux-ui/styles/variables' as tokens;
+
+:host {
+  display: block;
+  position: fixed;
+  z-index: var(--vi-toast-z-index, 10000);
+  pointer-events: none;
+}
+
+// Positioning variants
+:host([position^="top"]) {
+  top: var(--vi-toast-top-offset, #{tokens.$spacing-lg});
+}
+:host([position^="bottom"]) {
+  bottom: var(--vi-toast-bottom-offset, #{tokens.$spacing-lg});
+}
+:host([position$="right"]) {
+  right: var(--vi-toast-right-offset, #{tokens.$spacing-lg});
+}
+:host([position$="left"]) {
+  left: var(--vi-toast-left-offset, #{tokens.$spacing-lg});
+}
+:host([position$="center"]) {
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.toast-stack {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$spacing-sm;
+  /* Ensure children can receive pointer events, unlike the container */
+  pointer-events: none;
+}
+
+/* If bottom positioned, we want newest toasts to appear at the bottom (stack up) */
+:host([position^="bottom"]) .toast-stack {
+  flex-direction: column-reverse;
+}
+
+::slotted(vi-toast) {
+  transition: all 0.25s cubic-bezier(0.2, 0, 0, 1);
+  transform-origin: center;
+  pointer-events: auto;
+}
+
+/* Enter animation */
+::slotted(vi-toast.entering) {
+  opacity: 0;
+}
+
+:host([position$="right"]) ::slotted(vi-toast.entering) {
+  transform: translateX(var(--vi-toast-slide-distance, 24px));
+}
+:host([position$="left"]) ::slotted(vi-toast.entering) {
+  transform: translateX(calc(-1 * var(--vi-toast-slide-distance, 24px)));
+}
+:host([position$="center"][position^="top"]) ::slotted(vi-toast.entering) {
+  transform: translateY(calc(-1 * var(--vi-toast-slide-distance, 24px)));
+}
+:host([position$="center"][position^="bottom"]) ::slotted(vi-toast.entering) {
+  transform: translateY(var(--vi-toast-slide-distance, 24px));
+}
+
+/* Exit animation */
+::slotted(vi-toast.exiting) {
+  opacity: 0 !important;
+  max-height: 0 !important;
+  margin-top: calc(-1 * #{tokens.$spacing-sm}) !important; /* Collapse the gap */
+  margin-bottom: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  border: none !important;
+  overflow: hidden !important;
+  transform: scale(0.9) !important;
+}

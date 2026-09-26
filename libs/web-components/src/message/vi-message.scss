@@ -1,0 +1,69 @@
+@use '@vialiq/flux-ui/styles/variables' as tokens;
+
+
+:host {
+  display: block;
+}
+
+:host([hidden]) {
+  display: none !important;
+}
+
+.message-root {
+  display: flex;
+  align-items: center;
+  gap: tokens.$spacing-sm;
+  background-color: var(--vi-message-bg, #{tokens.$color-background});
+  border-radius: var(--vi-message-border-radius, 8px);
+  box-shadow: var(--vi-message-shadow, #{tokens.$shadow-md});
+  padding: var(--vi-message-padding, 9px 16px);
+  font-size: var(--vi-message-font-size, #{tokens.$font-size-sm});
+}
+
+.message-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+vi-icon,
+::slotted(vi-icon),
+::slotted(svg) {
+  --vi-icon-size: 1.25em;
+  width: 1.25em;
+  height: 1.25em;
+}
+
+// ============================================================================
+// Variants
+// ============================================================================
+
+.message-root[data-variant='info'] .message-icon {
+  color: var(--vi-message-info-icon, #{tokens.$color-info});
+}
+
+.message-root[data-variant='success'] .message-icon {
+  color: var(--vi-message-success-icon, #{tokens.$color-success});
+}
+
+.message-root[data-variant='warning'] .message-icon {
+  color: var(--vi-message-warning-icon, #{tokens.$color-warning});
+}
+
+.message-root[data-variant='error'] .message-icon {
+  color: var(--vi-message-error-icon, #{tokens.$color-error});
+}
+
+.message-root[data-variant='loading'] .message-icon {
+  color: var(--vi-message-loading-icon, #{tokens.$color-primary});
+  animation: vi-message-spin 1s linear infinite;
+}
+
+@keyframes vi-message-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

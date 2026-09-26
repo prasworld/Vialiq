@@ -135,6 +135,11 @@ describe('vi-modal', () => {
     el.addEventListener('vi-modal-close', (e: Event) => {
       closeReason = (e as CustomEvent).detail.reason;
     });
+    
+    let requestCloseCount = 0;
+    el.addEventListener('vi-modal-close-request', () => {
+      requestCloseCount++;
+    });
 
     const header = el.querySelector('vi-modal-header') as HTMLElement;
     const closeBtn = header.shadowRoot!.querySelector('[part="close-btn"]') as HTMLElement;
@@ -145,6 +150,7 @@ describe('vi-modal', () => {
     );
     await new Promise((r) => setTimeout(r, 350));
 
+    expect(requestCloseCount).toBe(2); // fires once from vi-modal-header bubbling up, once from vi-modal.close() itself
     expect(closeReason).toBe('button');
     expect(el.open).toBe(false);
   });
@@ -154,9 +160,9 @@ describe('vi-modal', () => {
     const el = getModal() as ViModal;
     await el.updateComplete;
 
-    let requestCloseFired = false;
+    let requestCloseCount = 0;
     el.addEventListener('vi-modal-close-request', () => {
-      requestCloseFired = true;
+      requestCloseCount++;
     });
 
     const backdrop = el.shadowRoot!.querySelector(
@@ -175,7 +181,7 @@ describe('vi-modal', () => {
     await el.updateComplete;
 
     // Since it's persistent, it should fire request-close but NOT close automatically
-    expect(requestCloseFired).toBe(true);
+    expect(requestCloseCount).toBe(1);
     expect(el.open).toBe(true);
 
     // Now make it non-persistent
@@ -196,6 +202,7 @@ describe('vi-modal', () => {
     await new Promise((r) => setTimeout(r, 350));
 
     // Now it should close automatically with reason 'backdrop'
+    expect(requestCloseCount).toBe(2);
     expect(closeReason).toBe('backdrop');
     expect(el.open).toBe(false);
   });
@@ -413,15 +420,19 @@ describe('vi-modal', () => {
       return originalAnimate.call(this, keyframes, options);
     };
 
-    const escEvent = new KeyboardEvent('keydown', {
-      key: 'Escape',
-      bubbles: true,
-      cancelable: true,
+    let requestCloseCount = 0;
+    el.addEventListener('vi-modal-close-request', () => {
+      requestCloseCount++;
     });
-    el.dispatchEvent(escEvent);
+
+    const cancelEvent = new Event('cancel', { bubbles: false, cancelable: true });
+    dialog.dispatchEvent(cancelEvent);
 
     await el.updateComplete;
+    // Allow any async microtasks from _requestClose to flush
+    await new Promise((r) => setTimeout(r, 50));
 
+    expect(requestCloseCount).toBe(1);
     expect(el.open).toBe(true);
     expect(animateCalled).toBe(true);
 
