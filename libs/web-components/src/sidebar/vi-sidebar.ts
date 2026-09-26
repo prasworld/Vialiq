@@ -1,4 +1,5 @@
 import { css, html, unsafeCSS, type PropertyValues } from 'lit';
+import { ifDefined } from 'lit/directives/if-defined.js';
 import { property, customElement, state } from 'lit/decorators.js';
 import { ViElement } from '../base/vi-element.js';
 import { FocusTrapMixin } from '../base/focus-trap-mixin.js';
@@ -251,9 +252,9 @@ export class ViSidebar extends FocusTrapMixin(ViElement) {
         part="base"
         class="vi-sidebar"
         aria-hidden=${!effectivelyVisible}
-        role=${this.trapFocus ? 'dialog' : undefined}
-        aria-modal=${this.trapFocus ? 'true' : undefined}
-        aria-label=${this.trapFocus ? (this.getAttribute('aria-label') || 'Sidebar') : undefined}
+        role=${ifDefined(this.trapFocus ? 'dialog' : undefined)}
+        aria-modal=${ifDefined(this.trapFocus ? 'true' : undefined)}
+        aria-label=${ifDefined(this.trapFocus ? (this.getAttribute('aria-label') || 'Sidebar') : undefined)}
       >
         <div class="vi-sidebar__content">
           <slot></slot>

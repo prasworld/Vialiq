@@ -1,0 +1,83 @@
+@use '@vialiq/flux-ui/styles/variables' as tokens;
+@use '@vialiq/flux-ui/components/toast';
+
+:host {
+  display: block;
+}
+
+:host([hidden]) {
+  display: none !important;
+}
+
+.toast-root {
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 4px;
+    background-color: transparent;
+  }
+}
+
+// ============================================================================
+// Variants
+// ============================================================================
+
+.toast-root[data-variant='info'] {
+  &::before { background-color: var(--vi-toast-info-border, #{tokens.$color-info}); }
+  .toast-icon { color: var(--vi-toast-info-icon, #{tokens.$color-info}); }
+  .toast-progress-bar { background-color: var(--vi-toast-info-progress, #{tokens.$color-info}); }
+}
+
+.toast-root[data-variant='success'] {
+  &::before { background-color: var(--vi-toast-success-border, #{tokens.$color-success}); }
+  .toast-icon { color: var(--vi-toast-success-icon, #{tokens.$color-success}); }
+  .toast-progress-bar { background-color: var(--vi-toast-success-progress, #{tokens.$color-success}); }
+}
+
+.toast-root[data-variant='warning'] {
+  &::before { background-color: var(--vi-toast-warning-border, #{tokens.$color-warning}); }
+  .toast-icon { color: var(--vi-toast-warning-icon, #{tokens.$color-warning}); }
+  .toast-progress-bar { background-color: var(--vi-toast-warning-progress, #{tokens.$color-warning}); }
+}
+
+.toast-root[data-variant='danger'] {
+  &::before { background-color: var(--vi-toast-danger-border, #{tokens.$color-error}); }
+  .toast-icon { color: var(--vi-toast-danger-icon, #{tokens.$color-error}); }
+  .toast-progress-bar { background-color: var(--vi-toast-danger-progress, #{tokens.$color-error}); }
+}
+
+vi-icon,
+::slotted(vi-icon),
+::slotted(svg) {
+  --vi-icon-size: 1.25em;
+  width: 1.25em;
+  height: 1.25em;
+}
+
+vi-button[part="close-btn"] {
+  margin-top: -4px;
+  margin-right: -4px;
+  margin-left: 4px;
+}
+
+@keyframes vi-toast-progress {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+.toast-progress-bar {
+  animation-name: vi-toast-progress;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
+:host([paused]) .toast-progress-bar {
+  animation-play-state: paused;
+}

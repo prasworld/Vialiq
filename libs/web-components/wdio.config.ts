@@ -84,6 +84,16 @@ export const config: Options.Testrunner &
   ],
   framework: 'mocha',
   specs: ['./src/**/*.test.ts'],
+  // Exclude date-picker utility tests: they import from 'vitest' and use Node.js
+  // built-ins (path, module) that cannot run in a browser WDIO environment.
+  // These are pure unit tests that run under the Vitest runner instead.
+  exclude: [
+    './src/date-picker/i18n.test.ts',
+    './src/date-picker/iso-week.test.ts',
+    './src/date-picker/locale-registry.test.ts',
+    './src/date-picker/plugin-registry.test.ts',
+    './src/date-picker/plugin-utils.test.ts',
+  ],
   maxInstances: 1,
   reporters: ['spec'],
   mochaOpts: {

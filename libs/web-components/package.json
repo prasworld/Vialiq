@@ -275,6 +275,38 @@
     "./sidebar/vi-sidebar-container": {
       "types": "./sidebar/vi-sidebar-container.d.ts",
       "default": "./sidebar/vi-sidebar-container.js"
+    },
+    "./toast": {
+      "types": "./toast/index.d.ts",
+      "default": "./toast/index.js"
+    },
+    "./toast/vi-toast": {
+      "types": "./toast/vi-toast.d.ts",
+      "default": "./toast/vi-toast.js"
+    },
+    "./toast/vi-toast-container": {
+      "types": "./toast/vi-toast-container.d.ts",
+      "default": "./toast/vi-toast-container.js"
+    },
+    "./toast/vi-toast-service": {
+      "types": "./toast/vi-toast-service.d.ts",
+      "default": "./toast/vi-toast-service.js"
+    },
+    "./message": {
+      "types": "./message/index.d.ts",
+      "default": "./message/index.js"
+    },
+    "./message/vi-message": {
+      "types": "./message/vi-message.d.ts",
+      "default": "./message/vi-message.js"
+    },
+    "./message/vi-message-container": {
+      "types": "./message/vi-message-container.d.ts",
+      "default": "./message/vi-message-container.js"
+    },
+    "./message/vi-message-service": {
+      "types": "./message/vi-message-service.d.ts",
+      "default": "./message/vi-message-service.js"
     }
   },
   "peerDependencies": {
@@ -282,7 +314,8 @@
     "@vialiq/flux-ui": ">=0.22.0",
     "@vialiq/icons": ">=0.7.0",
     "flatpickr": ">=4.6.0",
-    "lit": "^3.0.0"
+    "lit": "^3.0.0",
+    "tsyringe": "^4.8.0"
   },
   "keywords": [
     "web-components",
@@ -322,7 +355,9 @@
     "tag/",
     "textarea/",
     "progress/",
-    "sidebar/"
+    "sidebar/",
+    "toast/",
+    "message/"
   ],
   "peerDependenciesMeta": {
     "flatpickr": {

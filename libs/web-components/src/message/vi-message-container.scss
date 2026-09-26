@@ -1,0 +1,45 @@
+@use '@vialiq/flux-ui/styles/variables' as tokens;
+
+:host {
+  display: block;
+  position: fixed;
+  z-index: var(--vi-message-z-index, 1010);
+  top: var(--vi-message-top, 24px);
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.message-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: tokens.$spacing-sm;
+  /* Ensure children can receive pointer events */
+  pointer-events: none;
+}
+
+::slotted(vi-message) {
+  transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
+  transform-origin: top center;
+  pointer-events: auto;
+}
+
+/* Enter animation */
+::slotted(vi-message.entering) {
+  opacity: 0;
+  transform: translateY(-24px);
+}
+
+/* Exit animation */
+::slotted(vi-message.exiting) {
+  opacity: 0 !important;
+  max-height: 0 !important;
+  margin-top: calc(-1 * #{tokens.$spacing-sm}) !important; /* Collapse gap */
+  margin-bottom: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  border: none !important;
+  overflow: hidden !important;
+  transform: scale(0.9) !important;
+}
