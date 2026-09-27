@@ -57,4 +57,6 @@ export { ViSpin } from './spin/vi-spin.js';
 export type { SpinSize } from './spin/vi-spin.js';
 export * from './skeleton/vi-skeleton.js';
 export * from './sidebar/index.js';
+export * from './message/index.js';
+export * from './toast/index.js';
 //# sourceMappingURL=index.d.ts.map
