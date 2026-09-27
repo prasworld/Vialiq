@@ -1,0 +1,10 @@
+@use '../styles/variables' as tokens;
+
+.vi-dropdown-popover {
+  /* Context menus should be denser than standard dropdowns */
+  --vi-menu-padding: var(--vi-context-menu-padding, #{tokens.$spacing-unit} 0);
+  --vi-menu-item-padding: var(--vi-context-menu-item-padding, #{tokens.$spacing-unit} #{tokens.$spacing-sm});
+  --vi-menu-item-margin: var(--vi-context-menu-item-margin, 0);
+  --vi-menu-min-width: var(--vi-context-menu-min-width, 160px);
+  --vi-menu-item-gap: var(--vi-context-menu-item-gap, #{tokens.$spacing-xs});
+}

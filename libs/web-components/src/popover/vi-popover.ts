@@ -17,7 +17,7 @@ export type PopoverPlacement =
   | 'bottom' | 'bottom-start' | 'bottom-end'
   | 'left' | 'right';
 
-export type PopoverTrigger = 'click' | 'hover' | 'focus';
+export type PopoverTrigger = 'click' | 'hover' | 'focus' | 'contextmenu';
 
 /**
  * vi-popover
@@ -26,7 +26,7 @@ export type PopoverTrigger = 'click' | 'hover' | 'focus';
  *
  * @element vi-popover
  * @attr placement - Preferred position: top | bottom | left | right (default: bottom)
- * @attr trigger - Events that trigger: click | hover | focus (default: click)
+ * @attr trigger - Events that trigger: click | hover | focus | contextmenu (default: click)
  * @attr title - Optional plain text title
  * @attr content - Optional plain text content
  * @attr open - Controls visibility programmatically
@@ -70,6 +70,7 @@ export class ViPopover extends ViElement {
   private _triggerElement: HTMLElement | null = null;
   private _showTimeout?: number;
   private _hideTimeout?: number;
+  private _contextMenuEvent?: MouseEvent;
 
   override connectedCallback() {
     super.connectedCallback();
@@ -91,10 +92,10 @@ export class ViPopover extends ViElement {
     if (changedProperties.has('open')) {
       if (this.open) {
         this._setupPosition();
-        this.dispatchEvent(new CustomEvent('vialiq-show', { bubbles: true, composed: true }));
+        this.dispatchEvent(new CustomEvent('vi-popover-show', { bubbles: true, composed: true }));
       } else {
         this._cleanupPosition();
-        this.dispatchEvent(new CustomEvent('vialiq-hide', { bubbles: true, composed: true }));
+        this.dispatchEvent(new CustomEvent('vi-popover-hide', { bubbles: true, composed: true }));
       }
     }
   }
@@ -116,6 +117,7 @@ export class ViPopover extends ViElement {
     
     if (this.trigger === 'click') {
       this._triggerElement.addEventListener('click', this._handleTriggerClick);
+      this._triggerElement.addEventListener('keydown', this._handleTriggerKeyDown);
     } else if (this.trigger === 'hover') {
       this._triggerElement.addEventListener('mouseenter', this._handleMouseEnter);
       this._triggerElement.addEventListener('mouseleave', this._handleMouseLeave);
@@ -124,16 +126,20 @@ export class ViPopover extends ViElement {
     } else if (this.trigger === 'focus') {
       this._triggerElement.addEventListener('focus', this._handleFocus);
       this._triggerElement.addEventListener('blur', this._handleBlur);
+    } else if (this.trigger === 'contextmenu') {
+      this._triggerElement.addEventListener('contextmenu', this._handleContextMenu);
     }
   }
 
   private _detachTriggerListeners() {
     if (!this._triggerElement) return;
     this._triggerElement.removeEventListener('click', this._handleTriggerClick);
+    this._triggerElement.removeEventListener('keydown', this._handleTriggerKeyDown);
     this._triggerElement.removeEventListener('mouseenter', this._handleMouseEnter);
     this._triggerElement.removeEventListener('mouseleave', this._handleMouseLeave);
     this._triggerElement.removeEventListener('focus', this._handleFocus);
     this._triggerElement.removeEventListener('blur', this._handleBlur);
+    this._triggerElement.removeEventListener('contextmenu', this._handleContextMenu);
     this.removeEventListener('mouseenter', this._handleMouseEnter);
     this.removeEventListener('mouseleave', this._handleMouseLeave);
   }
@@ -145,8 +151,30 @@ export class ViPopover extends ViElement {
     }
   };
 
+  private _handleTriggerKeyDown = (e: KeyboardEvent) => {
+    if (this.trigger === 'click' && (e.key === 'Enter' || e.key === ' ')) {
+      e.preventDefault();
+      this._handleTriggerClick();
+    }
+  };
+
+  private _handleContextMenu = (e: MouseEvent) => {
+    e.preventDefault();
+    this._contextMenuEvent = e;
+    
+    if (this.open) {
+      this._setupPosition();
+    } else {
+      this.open = true;
+    }
+    
+    if (this._triggerElement) {
+      this._triggerElement.setAttribute('aria-expanded', String(this.open));
+    }
+  };
+
   private _handleDocumentClick = (e: MouseEvent) => {
-    if (!this.open || this.trigger !== 'click') return;
+    if (!this.open) return;
     const path = e.composedPath();
     if (!path.includes(this)) {
       this.open = false;
@@ -193,13 +221,34 @@ export class ViPopover extends ViElement {
 
     this._cleanupPosition();
 
+    let referenceElement: any = this._triggerElement;
+
+    if (this.trigger === 'contextmenu' && this._contextMenuEvent) {
+      const { clientX, clientY } = this._contextMenuEvent;
+      referenceElement = {
+        contextElement: this._triggerElement,
+        getBoundingClientRect() {
+          return {
+            width: 0,
+            height: 0,
+            x: clientX,
+            y: clientY,
+            top: clientY,
+            left: clientX,
+            right: clientX,
+            bottom: clientY,
+          };
+        }
+      };
+    }
+
     this._cleanupFloating = autoUpdate(
-      this._triggerElement,
+      referenceElement,
       this._panel,
       () => {
         if (!this._triggerElement || !this._panel) return;
         
-        computePosition(this._triggerElement, this._panel, {
+        computePosition(referenceElement, this._panel, {
           placement: this.placement,
           middleware: [
             offset(8),

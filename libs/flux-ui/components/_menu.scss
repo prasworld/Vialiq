@@ -1,0 +1,90 @@
+@use '../styles/variables' as tokens;
+
+.vi-menu {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: var(--vi-menu-padding, #{tokens.$spacing-xs});
+  list-style-type: none;
+  background-color: var(--vi-menu-bg, #{tokens.$layer-01});
+  color: var(--vi-menu-color, #{tokens.$text-primary});
+  border-radius: var(--vi-menu-border-radius, #{tokens.$border-radius-md});
+  box-shadow: var(--vi-menu-shadow, #{tokens.$shadow-md});
+  min-width: var(--vi-menu-min-width, 200px);
+  outline: none;
+
+  ::slotted(.vi-menu-divider) {
+    height: 1px;
+    background-color: var(--vi-menu-divider-color, #{tokens.$border-02});
+    margin: tokens.$spacing-xs 0;
+    overflow: hidden;
+  }
+
+  ::slotted(.vi-menu-group-title) {
+    padding: tokens.$spacing-xs tokens.$spacing-sm;
+    font-size: tokens.$font-size-xs;
+    color: var(--vi-menu-group-title-color, #{tokens.$text-secondary});
+    font-weight: tokens.$font-weight-medium;
+    letter-spacing: tokens.$letter-spacing-wide;
+    text-transform: uppercase;
+    margin-top: tokens.$spacing-xs;
+  }
+}
+
+.vi-menu-item {
+  display: flex;
+  align-items: center;
+  padding: var(--vi-menu-item-padding, #{tokens.$spacing-sm} #{tokens.$spacing-sm});
+  margin: var(--vi-menu-item-margin, 2px 0);
+  border-radius: var(--vi-menu-item-border-radius, #{tokens.$border-radius-sm});
+  cursor: pointer;
+  font-size: tokens.$font-size-base;
+  line-height: tokens.$line-height-tight;
+  color: var(--vi-menu-item-color, #{tokens.$text-primary});
+  transition: background-color 0.2s ease, color 0.2s ease;
+  user-select: none;
+  outline: none;
+  background-color: var(--vi-menu-item-bg, transparent);
+  gap: var(--vi-menu-item-gap, #{tokens.$spacing-sm});
+
+  &:hover,
+  &:focus-visible,
+  &.is-active {
+    background-color: var(--vi-menu-item-bg-hover, #{tokens.$layer-hover-01});
+  }
+
+  &.is-disabled {
+    color: var(--vi-menu-item-color-disabled, #{tokens.$text-disabled});
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  &.is-danger {
+    color: var(--vi-menu-item-color-danger, #{tokens.$text-error});
+
+    &:hover,
+    &:focus-visible {
+      background-color: var(--vi-menu-item-bg-danger-hover, #{tokens.$bg-error});
+    }
+  }
+
+  // Support for prefix/suffix icons or avatars
+  ::slotted(vi-icon) {
+    font-size: tokens.$font-size-lg;
+    display: inline-flex;
+    color: var(--vi-menu-item-icon-color, #{tokens.$text-secondary});
+    transition: color 0.2s ease;
+  }
+
+  &:hover ::slotted(vi-icon),
+  &:focus-visible ::slotted(vi-icon),
+  &.is-active ::slotted(vi-icon) {
+    color: var(--vi-menu-item-icon-color-hover, #{tokens.$text-primary});
+  }
+
+  &.is-danger ::slotted(vi-icon) {
+    color: var(--vi-menu-item-color-danger, #{tokens.$text-error});
+  }
+}
+
+
