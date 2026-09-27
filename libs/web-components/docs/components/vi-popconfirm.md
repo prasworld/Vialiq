@@ -34,7 +34,7 @@ Following the TC39 Decorator pattern:
 | `okText` | `ok-text` | `string` | `'OK'` | — | Text for the confirmation button |
 | `cancelText` | `cancel-text` | `string` | `'Cancel'` | — | Text for the cancellation button |
 | `okVariant` | `ok-variant` | `ViVariant` | `'primary'` | — | Variant for the OK button (often `'danger'`) |
-| `cancelVariant` | `cancel-variant` | `ViVariant`| `'default'` | — | Variant for the Cancel button |
+| `cancelVariant` | `cancel-variant` | `ButtonVariant`| `'secondary'` | — | Variant for the Cancel button |
 | `placement` | `placement` | `Placement` | `'top'` | ✅ | Preferred position |
 | `disabled` | `disabled` | `boolean` | `false` | ✅ | Disables the popconfirm from opening |
 
