@@ -59,4 +59,9 @@ export * from './skeleton/vi-skeleton.js';
 export * from './sidebar/index.js';
 export * from './message/index.js';
 export * from './toast/index.js';
+export * from './popover/index.js';
+export * from './popconfirm/index.js';
+export * from './menu/index.js';
+export * from './dropdown/index.js';
+export * from './context-menu/index.js';
 //# sourceMappingURL=index.d.ts.map
