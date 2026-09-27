@@ -1,4 +1,4 @@
-import { expect, describe, it, beforeEach, afterEach } from 'vitest';
+import { expect } from '@wdio/globals';
 import { render, html } from 'lit';
 import './vi-popconfirm.js';
 import type { ViPopconfirm } from './vi-popconfirm.js';

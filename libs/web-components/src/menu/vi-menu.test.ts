@@ -74,7 +74,7 @@ describe('vi-menu', () => {
     item1Li.focus();
     expect(document.activeElement).toBe(item1);
 
-    el.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    item1.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, composed: true }));
 
     await el.updateComplete;
     await new Promise(r => setTimeout(r, 50));

@@ -1,4 +1,4 @@
-import { expect, describe, it, beforeEach, afterEach } from 'vitest';
+import { expect } from '@wdio/globals';
 import { render, html } from 'lit';
 import './vi-popover.js';
 import type { ViPopover } from './vi-popover.js';
@@ -107,10 +107,10 @@ describe('vi-popover', () => {
     await new Promise(r => setTimeout(r, 0));
     const trigger = popover.querySelector('#trigger') as HTMLButtonElement;
     
-    trigger.dispatchEvent(new FocusEvent('focus'));
+    trigger.dispatchEvent(new FocusEvent('focusin', { bubbles: true, composed: true }));
     expect(popover.open).toBe(true);
 
-    trigger.dispatchEvent(new FocusEvent('blur'));
+    trigger.dispatchEvent(new FocusEvent('focusout', { bubbles: true, composed: true, relatedTarget: document.body }));
     expect(popover.open).toBe(false);
   });
 
