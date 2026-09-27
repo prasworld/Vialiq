@@ -243,6 +243,11 @@ export class ViModal extends ResizableMixin(
   private _handleHeaderCloseRequest = (e: Event) => {
     // Ignore events dispatched by this element itself (e.g., from _requestClose)
     if (e.target === this) return;
+    
+    // Stop the header's raw event from bubbling out to consumers
+    e.stopPropagation();
+    
+    // Trigger the modal's close flow which fires the properly constructed public event
     this.close('button');
   };
 

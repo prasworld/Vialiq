@@ -21,9 +21,7 @@ export default defineConfig({
       { find: /^flatpickr\/plugins\/(.+)$/, replacement: 'flatpickr/dist/plugins/$1' },
     ],
   },
-  optimizeDeps: {
-    exclude: ['@vialiq/icons'],
-  },
+
   plugins: [
     swc.vite({
       jsc: {
@@ -190,6 +188,14 @@ export default defineConfig({
         'sidebar/vi-sidebar': path.resolve(__dirname, 'src/sidebar/vi-sidebar.ts'),
         'sidebar/vi-sidebar-container': path.resolve(__dirname, 'src/sidebar/vi-sidebar-container.ts'),
         'sidebar/index': path.resolve(__dirname, 'src/sidebar/index.ts'),
+        'toast/vi-toast': path.resolve(__dirname, 'src/toast/vi-toast.ts'),
+        'toast/vi-toast-container': path.resolve(__dirname, 'src/toast/vi-toast-container.ts'),
+        'toast/vi-toast-service': path.resolve(__dirname, 'src/toast/vi-toast-service.ts'),
+        'toast/index': path.resolve(__dirname, 'src/toast/index.ts'),
+        'message/vi-message': path.resolve(__dirname, 'src/message/vi-message.ts'),
+        'message/vi-message-container': path.resolve(__dirname, 'src/message/vi-message-container.ts'),
+        'message/vi-message-service': path.resolve(__dirname, 'src/message/vi-message-service.ts'),
+        'message/index': path.resolve(__dirname, 'src/message/index.ts'),
       },
       formats: ['es'],
     },

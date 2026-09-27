@@ -13,6 +13,9 @@ Buildable and publishable Lit web component library for the Vi design system.
 
 ```bash
 npm install @vialiq/web-components lit
+
+# If you plan to use programmatic services (like Toast or Message):
+npm install tsyringe reflect-metadata
 ```
 
 ## Integration Guide
@@ -1008,7 +1011,174 @@ The `value` property can be set directly via JavaScript. The value should always
   // - week: 'YYYY-Www'
   // - range: 'YYYY-MM-DD to YYYY-MM-DD'
 </script>
+</script>
 ```
+
+---
+
+### Toast & Message Services (\`vi-toast\`, \`vi-message\`)
+
+The **Toast** and **Message** components are ephemeral, floating notifications triggered programmatically. Rather than manually mounting web components to the DOM, developers should use the provided Singleton services (\`ViToastService\` and \`ViMessageService\`) powered by \`tsyringe\`. 
+
+These services handle DOM injection, automatic teardown, animation syncing, container limits (\`maxVisible\`), and queueing automatically.
+
+#### Setting up the Services
+
+Regardless of your framework, you should resolve the singleton service instances from \`tsyringe\` once at the application boundary, or directly within your utility files.
+
+**Vanilla JS / TypeScript Setup:**
+```typescript
+import 'reflect-metadata';
+import { container } from 'tsyringe';
+import { ViToastService } from '@vialiq/web-components/toast';
+import { ViMessageService } from '@vialiq/web-components/message';
+
+export const toastService = container.resolve(ViToastService);
+export const messageService = container.resolve(ViMessageService);
+
+// Optional: Configure global defaults (e.g. at app bootstrap)
+toastService.configure({ position: 'top-right', maxVisible: 3 });
+messageService.configure({ maxVisible: 1 });
+```
+
+**React Setup:**
+You can expose the resolved services through a context provider or a custom hook, or simply export them from a dedicated utility file.
+```tsx
+import { toastService, messageService } from './notification-services';
+import { useEffect } from 'react';
+
+export function NetworkStatusWatcher() {
+  useEffect(() => {
+    const handleOffline = () => {
+      // 0 duration creates a sticky/persistent message
+      messageService.error('Network disconnected. Attempting to reconnect...', 0);
+    };
+    
+    window.addEventListener('offline', handleOffline);
+    return () => window.removeEventListener('offline', handleOffline);
+  }, []);
+  
+  return null;
+}
+```
+
+**Vue Setup:**
+You can provide the services globally or use them directly in the \`<script setup>\` tag.
+```vue
+<script setup>
+import { toastService } from './notification-services';
+
+const onSave = async () => {
+  try {
+    await saveDraft();
+    toastService.show({ variant: 'success', title: 'Saved!', message: 'Draft saved successfully.' });
+  } catch (e) {
+    toastService.show({ variant: 'danger', title: 'Error', message: 'Failed to save.' });
+  }
+};
+</script>
+```
+
+**Angular Setup:**
+In Angular, you can wrap the service inside an \`Injectable\` so it integrates nicely with Angular's dependency injection system.
+```typescript
+import { Injectable } from '@angular/core';
+import { container } from 'tsyringe';
+import { ViToastService, ToastOptions } from '@vialiq/web-components/toast';
+
+@Injectable({ providedIn: 'root' })
+export class NotificationService {
+  private toast = container.resolve(ViToastService);
+
+  showToast(options: ToastOptions) {
+    return this.toast.show(options);
+  }
+}
+```
+
+#### Passing Custom DOM Elements (Custom Implementation)
+
+Both \`Toast\` and \`Message\` services support passing raw HTML \`Node\` elements via the \`content\` property instead of basic strings. This allows you to construct highly complex, interactive layouts directly inside your notifications!
+
+This is extremely powerful for building rich notifications (like retry dialogs, interactive prompts, or notifications with rich links).
+
+**Vanilla JS Example:**
+```typescript
+const frag = document.createDocumentFragment();
+const wrapper = document.createElement('div');
+wrapper.innerHTML = \`
+  <strong>Network Offline!</strong>
+  <span style="display: block; margin-top: 4px;">
+    Please check your cables. <a href="#" style="color: inherit;">Retry connection</a>
+  </span>
+\`;
+frag.appendChild(wrapper);
+
+// Pass the fragment as 'content'
+messageService.error(frag, 0); // 0 = persistent/sticky
+```
+
+**React Example (Using Refs/Portals or React-DOM rendering):**
+Since \`content\` expects a raw DOM Node, you can use \`ReactDOM.createRoot\` or raw DOM APIs to mount React trees into the notification body.
+```tsx
+import { createRoot } from 'react-dom/client';
+
+const showCustomToast = () => {
+  const container = document.createElement('div');
+  const root = createRoot(container);
+  
+  // Render your React component into the DOM node
+  root.render(<MyCustomNotificationComponent onRetry={() => doRetry()} />);
+  
+  toastService.show({
+    variant: 'warning',
+    content: container,
+    duration: 0, // sticky
+    closable: false,
+    onClose: () => {
+      // Clean up React tree when notification is dismissed!
+      root.unmount();
+    }
+  });
+};
+```
+
+**Angular Example:**
+```typescript
+import { ComponentFactoryResolver, ApplicationRef, Injector, Injectable } from '@angular/core';
+
+@Injectable()
+export class CustomToastService {
+  constructor(
+    private resolver: ComponentFactoryResolver,
+    private appRef: ApplicationRef,
+    private injector: Injector
+  ) {}
+
+  showComponentToast() {
+    const factory = this.resolver.resolveComponentFactory(MyAngularComponent);
+    const componentRef = factory.create(this.injector);
+    this.appRef.attachView(componentRef.hostView);
+    
+    toastService.show({
+      variant: 'info',
+      content: componentRef.location.nativeElement,
+      onClose: () => {
+        // Clean up Angular view when notification is dismissed!
+        this.appRef.detachView(componentRef.hostView);
+        componentRef.destroy();
+      }
+    });
+  }
+}
+```
+
+#### Advanced Use Cases & Edge Cases
+
+- **Sticky Overlays:** Pass \`duration: 0\` (or \`0\` as the second parameter to helper functions like \`messageService.error(..., 0)\`) to make the overlay persistent. It will only disappear if the user clicks the close icon, or if you programmatically invoke \`.dismiss(id)\`.
+- **Handling Action Callbacks:** \`vi-toast\` allows rendering primary/secondary buttons inside the toast dynamically using the \`actions\` array property in options, which triggers the \`onAction\` callback.
+- **Handling Cleanup:** You can attach an \`onClose\` callback listener in the options. This is essential if you rendered an entire framework component tree inside the Toast/Message (like React or Angular components) so you know exactly when to run garbage collection (like \`.destroy()\` in Angular or \`.unmount()\` in React).
+- **CSS-safe IDs:** Unique DOM IDs are auto-generated via \`crypto.randomUUID()\` internally and are safely escapable across browser query selectors.
 
 ---
 
