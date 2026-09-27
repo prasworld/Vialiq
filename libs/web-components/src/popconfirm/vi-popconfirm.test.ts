@@ -1,4 +1,4 @@
-import { expect } from '@wdio/globals';
+import { expect, describe, it, beforeEach, afterEach } from 'vitest';
 import { render, html } from 'lit';
 import './vi-popconfirm.js';
 import type { ViPopconfirm } from './vi-popconfirm.js';
@@ -30,11 +30,11 @@ describe('vi-popconfirm', () => {
     expect(trigger).toBeTruthy();
   });
 
-  it('should fire vialiq-confirm when OK button clicked', async () => {
+  it('should fire vi-popconfirm-confirm when OK button clicked', async () => {
     const spy = sinon.spy();
     render(
       html`
-        <vi-popconfirm title="Are you sure?" @vialiq-confirm=${spy}>
+        <vi-popconfirm title="Are you sure?" @vi-popconfirm-confirm=${spy}>
           <button id="trigger">Action</button>
         </vi-popconfirm>
       `,
@@ -59,11 +59,11 @@ describe('vi-popconfirm', () => {
     expect(spy.calledOnce).toBe(true);
   });
 
-  it('should fire vialiq-cancel when Cancel button clicked', async () => {
+  it('should fire vi-popconfirm-cancel when Cancel button clicked', async () => {
     const spy = sinon.spy();
     render(
       html`
-        <vi-popconfirm title="Are you sure?" @vialiq-cancel=${spy}>
+        <vi-popconfirm title="Are you sure?" @vi-popconfirm-cancel=${spy}>
           <button id="trigger">Action</button>
         </vi-popconfirm>
       `,
@@ -94,10 +94,13 @@ describe('vi-popconfirm', () => {
     const comp = container.querySelector('vi-popconfirm') as ViPopconfirm;
     const trigger = comp.querySelector('#trigger') as HTMLButtonElement;
     
+    await comp.updateComplete;
+    const popover = comp.shadowRoot?.querySelector('vi-popover');
+    await popover?.updateComplete;
+    
     trigger.click();
     await new Promise(r => setTimeout(r, 0));
     
-    const popover = comp.shadowRoot?.querySelector('vi-popover');
     expect(popover?.open).toBe(false);
   });
 

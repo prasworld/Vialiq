@@ -51,8 +51,8 @@ export const Default: StoryObj = {
       cancel-text=${args.cancelText}
       ok-variant=${args.okVariant}
       placement=${args.placement}
-      @vialiq-confirm=${() => alert('Confirmed!')}
-      @vialiq-cancel=${() => console.log('Cancelled')}
+      @vi-popconfirm-confirm=${() => alert('Confirmed!')}
+      @vi-popconfirm-cancel=${() => console.log('Cancelled')}
     >
       <vi-button variant="danger">Delete Task</vi-button>
     </vi-popconfirm>

@@ -84,31 +84,69 @@ export class ViPopover extends ViElement {
     this._detachTriggerListeners();
     document.removeEventListener('click', this._handleDocumentClick);
     document.removeEventListener('keydown', this._handleKeyDown);
+    window.clearTimeout(this._showTimeout);
+    window.clearTimeout(this._hideTimeout);
   }
 
   override updated(changedProperties: Map<string | number | symbol, unknown>) {
     super.updated(changedProperties);
     
+    if (changedProperties.has('trigger')) {
+      this._detachTriggerListeners();
+      this._attachTriggerListeners();
+    }
+
     if (changedProperties.has('open')) {
+      const wasOpen = changedProperties.get('open') as boolean | undefined;
+      if (this._triggerElement) {
+        this._triggerElement.setAttribute('aria-expanded', String(this.open));
+      }
+
       if (this.open) {
         this._setupPosition();
-        this.dispatchEvent(new CustomEvent('vi-popover-show', { bubbles: true, composed: true }));
+        if (wasOpen === false || wasOpen === undefined) {
+          this.dispatchEvent(new CustomEvent('vi-popover-show', { bubbles: true, composed: true }));
+        }
       } else {
         this._cleanupPosition();
-        this.dispatchEvent(new CustomEvent('vi-popover-hide', { bubbles: true, composed: true }));
+        if (wasOpen === true) {
+          this.dispatchEvent(new CustomEvent('vi-popover-hide', { bubbles: true, composed: true }));
+        }
+      }
+    } else if (this.open && (changedProperties.has('placement') || changedProperties.has('popperOptions'))) {
+      this._setupPosition();
+    }
+  }
+
+  private _getActualTrigger(nodes: Node[]): HTMLElement | null {
+    for (const node of nodes) {
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        const el = node as HTMLElement;
+        if (el.tagName === 'SLOT') {
+          const slot = el as HTMLSlotElement;
+          const unwrapped = this._getActualTrigger(slot.assignedNodes({ flatten: true }));
+          if (unwrapped) return unwrapped;
+        } else {
+          return el;
+        }
       }
     }
+    return null;
   }
 
   private _handleSlotChange() {
     this._detachTriggerListeners();
     const nodes = this._defaultSlot?.assignedNodes({ flatten: true }) || [];
-    this._triggerElement = nodes.find(n => n.nodeType === Node.ELEMENT_NODE) as HTMLElement || null;
+    this._triggerElement = this._getActualTrigger(nodes);
     
     if (this._triggerElement) {
       this._triggerElement.setAttribute('aria-haspopup', 'dialog');
       this._triggerElement.setAttribute('aria-expanded', String(this.open));
       this._attachTriggerListeners();
+      
+      if (this.open) {
+        this._setupPosition();
+      }
     }
   }
 
@@ -124,8 +162,8 @@ export class ViPopover extends ViElement {
       this.addEventListener('mouseenter', this._handleMouseEnter);
       this.addEventListener('mouseleave', this._handleMouseLeave);
     } else if (this.trigger === 'focus') {
-      this._triggerElement.addEventListener('focus', this._handleFocus);
-      this._triggerElement.addEventListener('blur', this._handleBlur);
+      this.addEventListener('focusin', this._handleFocusIn);
+      this.addEventListener('focusout', this._handleFocusOut);
     } else if (this.trigger === 'contextmenu') {
       this._triggerElement.addEventListener('contextmenu', this._handleContextMenu);
     }
@@ -137,8 +175,8 @@ export class ViPopover extends ViElement {
     this._triggerElement.removeEventListener('keydown', this._handleTriggerKeyDown);
     this._triggerElement.removeEventListener('mouseenter', this._handleMouseEnter);
     this._triggerElement.removeEventListener('mouseleave', this._handleMouseLeave);
-    this._triggerElement.removeEventListener('focus', this._handleFocus);
-    this._triggerElement.removeEventListener('blur', this._handleBlur);
+    this.removeEventListener('focusin', this._handleFocusIn);
+    this.removeEventListener('focusout', this._handleFocusOut);
     this._triggerElement.removeEventListener('contextmenu', this._handleContextMenu);
     this.removeEventListener('mouseenter', this._handleMouseEnter);
     this.removeEventListener('mouseleave', this._handleMouseLeave);
@@ -146,9 +184,6 @@ export class ViPopover extends ViElement {
 
   private _handleTriggerClick = () => {
     this.open = !this.open;
-    if (this._triggerElement) {
-      this._triggerElement.setAttribute('aria-expanded', String(this.open));
-    }
   };
 
   private _handleTriggerKeyDown = (e: KeyboardEvent) => {
@@ -167,10 +202,6 @@ export class ViPopover extends ViElement {
     } else {
       this.open = true;
     }
-    
-    if (this._triggerElement) {
-      this._triggerElement.setAttribute('aria-expanded', String(this.open));
-    }
   };
 
   private _handleDocumentClick = (e: MouseEvent) => {
@@ -178,9 +209,6 @@ export class ViPopover extends ViElement {
     const path = e.composedPath();
     if (!path.includes(this)) {
       this.open = false;
-      if (this._triggerElement) {
-        this._triggerElement.setAttribute('aria-expanded', 'false');
-      }
     }
   };
 
@@ -188,7 +216,6 @@ export class ViPopover extends ViElement {
     if (this.open && e.key === 'Escape') {
       this.open = false;
       if (this._triggerElement) {
-        this._triggerElement.setAttribute('aria-expanded', 'false');
         this._triggerElement.focus();
       }
     }
@@ -208,12 +235,15 @@ export class ViPopover extends ViElement {
     }, 100);
   };
 
-  private _handleFocus = () => {
+  private _handleFocusIn = () => {
     this.open = true;
   };
 
-  private _handleBlur = () => {
-    this.open = false;
+  private _handleFocusOut = (e: FocusEvent) => {
+    const relatedTarget = e.relatedTarget as Node | null;
+    if (!this.contains(relatedTarget)) {
+      this.open = false;
+    }
   };
 
   private _setupPosition() {
@@ -299,24 +329,32 @@ export class ViPopover extends ViElement {
     }
   }
 
+  @property({ type: String, attribute: 'accessible-name' }) accessor accessibleName = '';
+
   private get _hasTitle() {
     return this.title !== '' || this.querySelector('[slot="title"]') !== null;
   }
 
   override render() {
+    const hasTitle = this._hasTitle;
     return html`
       <slot @slotchange=${this._handleSlotChange}></slot>
       
-      <div class="popover-panel ${this.open ? 'open' : ''}" role="dialog">
-        ${this._hasTitle ? html`
-          <div class="popover-header">
+      <div class="popover-panel ${this.open ? 'open' : ''}" role="dialog" part="popover"
+        aria-labelledby=${hasTitle ? 'popover-title' : nothing}
+        aria-label=${!hasTitle && this.accessibleName ? this.accessibleName : nothing}
+        @mouseenter=${this.trigger === 'hover' ? this._handleMouseEnter : nothing}
+        @mouseleave=${this.trigger === 'hover' ? this._handleMouseLeave : nothing}
+      >
+        ${hasTitle ? html`
+          <div class="popover-header" part="header" id="popover-title">
             <slot name="title">${this.title}</slot>
           </div>
         ` : nothing}
-        <div class="popover-body">
+        <div class="popover-body" part="body">
           <slot name="content">${this.content}</slot>
         </div>
-        <div class="popover-arrow"></div>
+        <div class="popover-arrow" part="arrow"></div>
       </div>
     `;
   }

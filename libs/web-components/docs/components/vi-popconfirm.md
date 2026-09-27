@@ -55,8 +55,8 @@ Following the TC39 Decorator pattern:
 
 | Event | Type | Bubbles | Fires when |
 |-------|------|---------|-----------|
-| `vialiq-confirm` | `CustomEvent` | ✅ | The user clicks the OK button |
-| `vialiq-cancel` | `CustomEvent` | ✅ | The user clicks the Cancel button |
+| `vi-popconfirm-confirm` | `CustomEvent` | ✅ | The user clicks the OK button |
+| `vi-popconfirm-cancel` | `CustomEvent` | ✅ | The user clicks the Cancel button |
 
 ---
 
@@ -77,7 +77,7 @@ Because `vi-popconfirm` composes `vi-popover`, we will forward parts so they rem
 - The underlying popover receives `role="dialog"`.
 - Focus is trapped within the popconfirm buttons when open.
 - The trigger button has `aria-haspopup="dialog"`.
-- Pressing `Escape` closes the popconfirm and fires `vialiq-cancel`.
+- Pressing `Escape` closes the popconfirm and fires `vi-popconfirm-cancel`.
 
 ---
 
@@ -97,7 +97,7 @@ Because `vi-popconfirm` composes `vi-popover`, we will forward parts so they rem
 ```
 
 ```javascript
-document.querySelector('vi-popconfirm').addEventListener('vialiq-confirm', () => {
+document.querySelector('vi-popconfirm').addEventListener('vi-popconfirm-confirm', () => {
   // Execute delete logic
 });
 ```

@@ -1,4 +1,4 @@
-import { expect } from '@wdio/globals';
+import { expect, describe, it, beforeEach, afterEach } from 'vitest';
 import { render, html } from 'lit';
 import './vi-popover.js';
 import type { ViPopover } from './vi-popover.js';
@@ -148,5 +148,39 @@ describe('vi-popover', () => {
     
     document.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     expect(popover.open).toBe(false);
+  });
+
+  it('should set aria-label when accessible-name is provided', async () => {
+    render(
+      html`
+        <vi-popover accessible-name="My Popover">
+          <button id="trigger">Open</button>
+        </vi-popover>
+      `,
+      container
+    );
+    const popover = container.querySelector('vi-popover') as ViPopover;
+    await popover.updateComplete;
+    await new Promise(r => setTimeout(r, 0));
+    const panel = popover.shadowRoot?.querySelector('.popover-panel');
+    expect(panel?.getAttribute('aria-label')).toBe('My Popover');
+    expect(panel?.hasAttribute('aria-labelledby')).toBe(false);
+  });
+
+  it('should set aria-labelledby when title is provided', async () => {
+    render(
+      html`
+        <vi-popover title="Popover Title">
+          <button id="trigger">Open</button>
+        </vi-popover>
+      `,
+      container
+    );
+    const popover = container.querySelector('vi-popover') as ViPopover;
+    await popover.updateComplete;
+    await new Promise(r => setTimeout(r, 0));
+    const panel = popover.shadowRoot?.querySelector('.popover-panel');
+    expect(panel?.getAttribute('aria-labelledby')).toBe('popover-title');
+    expect(panel?.hasAttribute('aria-label')).toBe(false);
   });
 });

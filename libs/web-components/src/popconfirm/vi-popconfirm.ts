@@ -6,7 +6,7 @@ import '../button/vi-button.js';
 import '../icons/vi-icon.js';
 import type { ViPopover } from '../popover/vi-popover.js';
 import popconfirmStyles from './vi-popconfirm.scss?inline';
-import { type ViVariant } from '../shared/types.js';
+import type { ButtonVariant } from '../button/vi-button.js';
 
 /**
  * vi-popconfirm
@@ -20,7 +20,7 @@ import { type ViVariant } from '../shared/types.js';
  * @attr ok-text - OK button text (default: OK)
  * @attr cancel-text - Cancel button text (default: Cancel)
  * @attr ok-variant - Variant for OK button (default: primary)
- * @attr cancel-variant - Variant for Cancel button (default: default)
+ * @attr cancel-variant - Variant for Cancel button (default: secondary)
  * @attr placement - Preferred position: top | bottom | left | right (default: top)
  * @attr disabled - Suppress the popconfirm
  *
@@ -38,37 +38,49 @@ export class ViPopconfirm extends ViElement {
   @property({ type: String }) accessor icon = 'warning';
   @property({ type: String, attribute: 'ok-text' }) accessor okText = 'OK';
   @property({ type: String, attribute: 'cancel-text' }) accessor cancelText = 'Cancel';
-  @property({ type: String, attribute: 'ok-variant' }) accessor okVariant: ViVariant = 'primary';
-  @property({ type: String, attribute: 'cancel-variant' }) accessor cancelVariant: ViVariant = 'default';
+  @property({ type: String, attribute: 'ok-variant' }) accessor okVariant: ButtonVariant = 'primary';
+  @property({ type: String, attribute: 'cancel-variant' }) accessor cancelVariant: ButtonVariant = 'secondary';
   @property({ type: String, reflect: true }) accessor placement = 'top';
   @property({ type: Boolean, reflect: true }) accessor disabled = false;
 
   @state() private accessor _open = false;
   @query('vi-popover') private accessor _popover!: ViPopover;
 
+  private _isActionHandled = false;
+
   private _onPopoverShow(e: Event) {
     if (this.disabled) {
       e.preventDefault();
+      this._isActionHandled = true;
+      if (this._popover) {
+        this._popover.open = false;
+      }
       this._open = false;
     } else {
+      this._isActionHandled = false;
       this._open = true;
     }
   }
 
   private _onPopoverHide() {
     this._open = false;
+    if (!this._isActionHandled) {
+      this.dispatchEvent(new CustomEvent('vi-popconfirm-cancel', { bubbles: true, composed: true }));
+    }
   }
 
   private _handleCancel(e: Event) {
     e.stopPropagation();
+    this._isActionHandled = true;
     this._open = false;
-    this.dispatchEvent(new CustomEvent('vialiq-cancel', { bubbles: true, composed: true }));
+    this.dispatchEvent(new CustomEvent('vi-popconfirm-cancel', { bubbles: true, composed: true }));
   }
 
   private _handleConfirm(e: Event) {
     e.stopPropagation();
+    this._isActionHandled = true;
     this._open = false;
-    this.dispatchEvent(new CustomEvent('vialiq-confirm', { bubbles: true, composed: true }));
+    this.dispatchEvent(new CustomEvent('vi-popconfirm-confirm', { bubbles: true, composed: true }));
   }
 
   private get _hasDescription() {
@@ -85,8 +97,9 @@ export class ViPopconfirm extends ViElement {
         .placement=${this.placement}
         .open=${this._open}
         trigger="click"
-        @vialiq-show=${this._onPopoverShow}
-        @vialiq-hide=${this._onPopoverHide}
+        accessible-name=${this.title || 'Confirmation dialog'}
+        @vi-popover-show=${this._onPopoverShow}
+        @vi-popover-hide=${this._onPopoverHide}
       >
         <slot></slot>
         
