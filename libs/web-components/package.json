@@ -307,6 +307,50 @@
     "./message/vi-message-service": {
       "types": "./message/vi-message-service.d.ts",
       "default": "./message/vi-message-service.js"
+    },
+    "./popover": {
+      "types": "./popover/index.d.ts",
+      "default": "./popover/index.js"
+    },
+    "./popover/vi-popover": {
+      "types": "./popover/vi-popover.d.ts",
+      "default": "./popover/vi-popover.js"
+    },
+    "./menu": {
+      "types": "./menu/index.d.ts",
+      "default": "./menu/index.js"
+    },
+    "./menu/vi-menu": {
+      "types": "./menu/vi-menu.d.ts",
+      "default": "./menu/vi-menu.js"
+    },
+    "./menu/vi-menu-item": {
+      "types": "./menu/vi-menu-item.d.ts",
+      "default": "./menu/vi-menu-item.js"
+    },
+    "./popconfirm": {
+      "types": "./popconfirm/index.d.ts",
+      "default": "./popconfirm/index.js"
+    },
+    "./popconfirm/vi-popconfirm": {
+      "types": "./popconfirm/vi-popconfirm.d.ts",
+      "default": "./popconfirm/vi-popconfirm.js"
+    },
+    "./dropdown": {
+      "types": "./dropdown/index.d.ts",
+      "default": "./dropdown/index.js"
+    },
+    "./dropdown/vi-dropdown": {
+      "types": "./dropdown/vi-dropdown.d.ts",
+      "default": "./dropdown/vi-dropdown.js"
+    },
+    "./context-menu": {
+      "types": "./context-menu/index.d.ts",
+      "default": "./context-menu/index.js"
+    },
+    "./context-menu/vi-context-menu": {
+      "types": "./context-menu/vi-context-menu.d.ts",
+      "default": "./context-menu/vi-context-menu.js"
     }
   },
   "peerDependencies": {
@@ -358,7 +402,12 @@
     "progress/",
     "sidebar/",
     "toast/",
-    "message/"
+    "message/",
+    "popover/",
+    "popconfirm/",
+    "dropdown/",
+    "context-menu/",
+    "menu/"
   ],
   "peerDependenciesMeta": {
     "flatpickr": {

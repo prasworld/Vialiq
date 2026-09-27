@@ -17,7 +17,7 @@ export const config: Options.Testrunner &
       rootDir: __dirname,
       headless: true,
       coverage: {
-        enabled: true,
+        enabled: false,
         reportsDirectory: path.join(workspaceRoot, 'coverage/web-components'),
         reporter: ['text', 'html', 'json'],
         include: ['src/**/*.ts'],

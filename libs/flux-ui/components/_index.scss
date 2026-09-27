@@ -11,7 +11,8 @@
 @forward 'alert';
 @forward 'label';
 @forward 'modal';
-
+@forward 'popover';
+@forward 'popconfirm';
 @forward 'chip';
 @forward 'tag';
 @forward 'animation';
@@ -24,3 +25,6 @@
 @forward 'tab-panel';
 @forward 'spin';
 @use './skeleton';
+@forward 'menu';
+@forward 'dropdown';
+@forward 'context-menu';

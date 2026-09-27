@@ -86,14 +86,14 @@ export class ViModalHeader extends LitElement {
   private _handleClose(e: Event) {
     e.stopPropagation();
     this.dispatchEvent(
-      new CustomEvent('vi-modal-close-request', { bubbles: true, composed: true }),
+      new CustomEvent('vi-modal-header-close', { bubbles: true, composed: true }),
     );
   }
 
   private _handleMaximize(e: Event) {
     e.stopPropagation();
     this.dispatchEvent(
-      new CustomEvent('vi-modal-maximize-request', { bubbles: true, composed: true }),
+      new CustomEvent('vi-modal-header-maximize', { bubbles: true, composed: true }),
     );
   }
 

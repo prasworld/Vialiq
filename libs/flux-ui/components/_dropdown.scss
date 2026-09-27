@@ -1,0 +1,9 @@
+@use '../styles/variables' as tokens;
+
+.vi-dropdown-popover {
+  /* Overrides for vi-popover so it becomes invisible, letting the menu's shadow and background shine */
+  --vi-popover-bg: transparent;
+  --vi-popover-border-color: transparent;
+  --vi-popover-shadow: none;
+  --vi-popover-padding: 0;
+}
