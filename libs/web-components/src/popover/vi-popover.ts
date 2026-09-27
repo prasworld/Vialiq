@@ -9,6 +9,8 @@ import {
   arrow,
   autoUpdate,
   type ComputePositionConfig,
+  type ReferenceElement,
+  type VirtualElement,
 } from '@floating-ui/dom';
 import popoverStyles from './vi-popover.scss?inline';
 
@@ -251,11 +253,11 @@ export class ViPopover extends ViElement {
 
     this._cleanupPosition();
 
-    let referenceElement: any = this._triggerElement;
+    let referenceElement: ReferenceElement = this._triggerElement;
 
     if (this.trigger === 'contextmenu' && this._contextMenuEvent) {
       const { clientX, clientY } = this._contextMenuEvent;
-      referenceElement = {
+      const virtualEl: VirtualElement = {
         contextElement: this._triggerElement,
         getBoundingClientRect() {
           return {
@@ -270,6 +272,7 @@ export class ViPopover extends ViElement {
           };
         }
       };
+      referenceElement = virtualEl;
     }
 
     this._cleanupFloating = autoUpdate(

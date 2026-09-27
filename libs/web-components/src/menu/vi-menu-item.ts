@@ -28,6 +28,7 @@ export class ViMenuItem extends ViElement {
   @property({ type: String }) accessor value = '';
   @property({ type: Boolean, reflect: true }) accessor disabled = false;
   @property({ type: Boolean, reflect: true }) accessor danger = false;
+  @property({ type: Boolean }) accessor tabbable = false;
 
   private _handleClick = (e: Event) => {
     if (this.disabled) {
@@ -69,7 +70,7 @@ export class ViMenuItem extends ViElement {
       <li
         class=${classMap(classes)}
         role="menuitem"
-        tabindex=${this.disabled ? '-1' : '0'}
+        tabindex=${this.disabled ? '-1' : (this.tabbable ? '0' : '-1')}
         aria-disabled=${this.disabled ? 'true' : 'false'}
         @click=${this._handleClick}
         @keydown=${this._handleKeyDown}

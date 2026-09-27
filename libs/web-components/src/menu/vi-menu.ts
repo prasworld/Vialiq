@@ -16,11 +16,27 @@ import menuStyles from './vi-menu.scss?inline';
 export class ViMenu extends ViElement {
   static override styles = css`${unsafeCSS(menuStyles)}`;
 
+  private _handleSlotChange = () => {
+    this._resetTabIndexes();
+  };
+
+  private _resetTabIndexes() {
+    const items = this._getItems();
+    items.forEach((item, index) => {
+      // Make only the first non-disabled item tabbable
+      (item as any).tabbable = (index === 0);
+    });
+  }
+
+  private _getItems() {
+    return Array.from(this.querySelectorAll('vi-menu-item:not([disabled])')) as HTMLElement[];
+  }
+
   private _handleKeyDown = (e: KeyboardEvent) => {
     // Basic arrow key navigation support for menu items
     if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(e.key)) return;
 
-    const items = Array.from(this.querySelectorAll('vi-menu-item:not([disabled])')) as HTMLElement[];
+    const items = this._getItems();
     if (!items.length) return;
 
     const activeItem = document.activeElement?.closest('vi-menu-item') as HTMLElement;
@@ -28,16 +44,33 @@ export class ViMenu extends ViElement {
 
     e.preventDefault();
 
+    let newlyFocused: HTMLElement | undefined;
+
     if (e.key === 'ArrowDown') {
       const nextIndex = currentIndex < items.length - 1 ? currentIndex + 1 : 0;
-      items[nextIndex]?.focus();
+      newlyFocused = items[nextIndex];
     } else if (e.key === 'ArrowUp') {
       const prevIndex = currentIndex > 0 ? currentIndex - 1 : items.length - 1;
-      items[prevIndex]?.focus();
+      newlyFocused = items[prevIndex];
     } else if (e.key === 'Home') {
-      items[0]?.focus();
+      newlyFocused = items[0];
     } else if (e.key === 'End') {
-      items[items.length - 1]?.focus();
+      newlyFocused = items[items.length - 1];
+    }
+
+    if (newlyFocused) {
+      newlyFocused.focus();
+      items.forEach(item => (item as any).tabbable = false);
+      (newlyFocused as any).tabbable = true;
+    }
+  };
+
+  private _handleFocusIn = (e: FocusEvent) => {
+    const target = e.target as HTMLElement;
+    const item = target.closest('vi-menu-item') as any;
+    if (item && !item.disabled) {
+      this._getItems().forEach(i => (i as any).tabbable = false);
+      item.tabbable = true;
     }
   };
 
@@ -48,8 +81,9 @@ export class ViMenu extends ViElement {
         role="menu"
         tabindex="-1"
         @keydown=${this._handleKeyDown}
+        @focusin=${this._handleFocusIn}
       >
-        <slot></slot>
+        <slot @slotchange=${this._handleSlotChange}></slot>
       </ul>
     `;
   }
