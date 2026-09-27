@@ -42,7 +42,7 @@ type PopoverPlacement =
   | 'bottom' | 'bottom-start' | 'bottom-end'
   | 'left' | 'right';
 
-type PopoverTrigger = 'click' | 'hover' | 'focus';
+type PopoverTrigger = 'click' | 'hover' | 'focus' | 'contextmenu';
 ```
 
 ---
