@@ -150,7 +150,7 @@ describe('vi-modal', () => {
     );
     await new Promise((r) => setTimeout(r, 350));
 
-    expect(requestCloseCount).toBe(2); // fires once from vi-modal-header bubbling up, once from vi-modal.close() itself
+    expect(requestCloseCount).toBe(1); // fires once from vi-modal.close() itself, raw header event is stopped
     expect(closeReason).toBe('button');
     expect(el.open).toBe(false);
   });

@@ -6,7 +6,7 @@ import { ViMessage, type MessageVariant } from './vi-message.js';
 
 export interface MessageOptions {
   variant?: MessageVariant;
-  content: string;
+  content: string | Node;
   duration?: number;
   icon?: string;
   className?: string;
@@ -42,7 +42,7 @@ export class ViMessageService {
   }
 
   private _ensureContainer() {
-    if (!this._container) {
+    if (!this._container || !this._container.isConnected) {
       this._container = document.createElement('vi-message-container');
       this._container.setAttribute('maxVisible', this._config.maxVisible.toString());
       document.body.appendChild(this._container);
@@ -58,7 +58,10 @@ export class ViMessageService {
     const messageId = options.id || crypto.randomUUID();
 
     // Check if maxVisible is exceeded
-    const currentMessages = Array.from(container.querySelectorAll('vi-message'));
+    const currentMessages = Array.from(container.querySelectorAll('vi-message')).filter(
+      msg => !msg.classList.contains('exiting')
+    );
+    if (this._config.maxVisible <= 0) return messageId;
     if (currentMessages.length >= this._config.maxVisible) {
       const excess = currentMessages.length - this._config.maxVisible + 1;
       for (let i = 0; i < excess; i++) {
@@ -69,7 +72,12 @@ export class ViMessageService {
     const message = document.createElement('vi-message') as ViMessage;
     message.id = messageId;
     message.variant = options.variant || 'info';
-    message.content = options.content;
+    
+    if (typeof options.content === 'string') {
+      message.content = options.content;
+    } else if (options.content instanceof Node) {
+      message.appendChild(options.content);
+    }
     
     if (options.icon) message.icon = options.icon;
     if (options.className) message.className = options.className;
@@ -78,12 +86,17 @@ export class ViMessageService {
     message.duration = options.duration !== undefined ? options.duration : this._config.defaultDuration;
 
     // Listeners
-    message.addEventListener('vialiq-close', (e: Event) => {
+    message.addEventListener('vi-message-close', (e: Event) => {
       const customEvent = e as CustomEvent<{reason: 'auto' | 'user'}>;
-      if (options.onClose) {
-        options.onClose(customEvent.detail.reason);
+      try {
+        if (options.onClose) {
+          options.onClose(customEvent.detail.reason);
+        }
+      } catch (error) {
+        console.error('Error in message onClose callback:', error);
+      } finally {
+        this.dismissElement(message);
       }
-      this.dismissElement(message);
     });
 
     // Animation entry
@@ -100,23 +113,23 @@ export class ViMessageService {
     return messageId;
   }
 
-  public info(content: string, duration?: number): string {
+  public info(content: string | Node, duration?: number): string {
     return this.show({ variant: 'info', content, duration });
   }
 
-  public success(content: string, duration?: number): string {
+  public success(content: string | Node, duration?: number): string {
     return this.show({ variant: 'success', content, duration });
   }
 
-  public error(content: string, duration?: number): string {
+  public error(content: string | Node, duration?: number): string {
     return this.show({ variant: 'error', content, duration });
   }
 
-  public warning(content: string, duration?: number): string {
+  public warning(content: string | Node, duration?: number): string {
     return this.show({ variant: 'warning', content, duration });
   }
 
-  public loading(content: string, duration = 0): string {
+  public loading(content: string | Node, duration = 0): string {
     return this.show({ variant: 'loading', content, duration });
   }
 
@@ -125,7 +138,7 @@ export class ViMessageService {
    */
   public dismiss(id: string) {
     if (!this._container) return;
-    const message = this._container.querySelector(`vi-message[id="${id}"]`) as ViMessage;
+    const message = Array.from(this._container.querySelectorAll('vi-message')).find(msg => (msg as ViMessage).id === id) as ViMessage;
     if (message) {
       this.dismissElement(message);
     }
@@ -143,6 +156,9 @@ export class ViMessageService {
   private dismissElement(message: ViMessage) {
     if (message.classList.contains('exiting')) return;
     message.classList.add('exiting');
+    
+    // Cancel the component's internal auto-dismiss timer to prevent race conditions
+    message.clearTimer();
     
     setTimeout(() => {
       if (message.parentNode) {

@@ -28,16 +28,19 @@ The component is primarily used via a JavaScript/TypeScript API rather than HTML
 
 ```typescript
 import { ViMessageService } from '@vialiq/web-components/message';
+import { container } from 'tsyringe';
+
+const messageService = container.resolve(ViMessageService);
 
 // Basic usage
-ViMessageService.info('This is a normal message');
-ViMessageService.success('Profile updated successfully');
-ViMessageService.error('Failed to load data');
-ViMessageService.warning('Your session will expire soon');
-ViMessageService.loading('Action in progress...');
+messageService.info('This is a normal message');
+messageService.success('Profile updated successfully');
+messageService.error('Failed to load data');
+messageService.warning('Your session will expire soon');
+messageService.loading('Action in progress...');
 
 // Advanced configuration
-ViMessageService.show({
+messageService.show({
   variant: 'success',
   content: 'Profile updated successfully',
   duration: 3000,

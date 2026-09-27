@@ -18,6 +18,7 @@ describe('vi-toast (Component)', () => {
 
   afterEach(() => {
     wrapper.remove();
+    sinon.restore();
   });
 
   it('should render the message and title', async () => {
@@ -48,14 +49,14 @@ describe('vi-toast (Component)', () => {
 
     const el = document.querySelector('vi-toast') as ViToast;
     const spy = sinon.spy();
-    el.addEventListener('vialiq-action', spy);
+    el.addEventListener('vi-toast-action', spy);
 
     await actionBtn.click();
     expect(spy.calledOnce).toBe(true);
     expect(spy.firstCall.args[0].detail.action).toBe('undo');
   });
 
-  it('should dispatch vialiq-close when close button is clicked', async () => {
+  it('should dispatch vi-toast-close when close button is clicked', async () => {
     render(html`<vi-toast closable></vi-toast>`, wrapper);
     
     const host = await $('vi-toast');
@@ -64,7 +65,7 @@ describe('vi-toast (Component)', () => {
 
     const el = document.querySelector('vi-toast') as ViToast;
     const spy = sinon.spy();
-    el.addEventListener('vialiq-close', spy);
+    el.addEventListener('vi-toast-close', spy);
 
     await closeBtn.click();
     expect(spy.calledOnce).toBe(true);
@@ -77,13 +78,53 @@ describe('vi-toast (Component)', () => {
     
     const el = document.querySelector('vi-toast') as ViToast;
     const spy = sinon.spy();
-    el.addEventListener('vialiq-close', spy);
+    el.addEventListener('vi-toast-close', spy);
 
     clock.tick(1001);
     expect(spy.calledOnce).toBe(true);
     expect(spy.firstCall.args[0].detail.reason).toBe('auto');
+  });
+
+  it('should pause and resume timer on paused property change', async () => {
+    const clock = sinon.useFakeTimers();
+    render(html`<vi-toast duration="1000"></vi-toast>`, wrapper);
     
-    clock.restore();
+    const el = document.querySelector('vi-toast') as ViToast;
+    const spy = sinon.spy();
+    el.addEventListener('vi-toast-close', spy);
+
+    clock.tick(500); // Wait half time
+    el.paused = true;
+    await el.updateComplete;
+    clock.tick(1000); // This shouldn't dismiss since paused
+    expect(spy.called).toBe(false);
+
+    el.paused = false;
+    await el.updateComplete;
+    clock.tick(501); // Remaining time
+    expect(spy.calledOnce).toBe(true);
+  });
+
+  it('should return correct default icon based on variant', async () => {
+    render(html`<vi-toast variant="warning"></vi-toast>`, wrapper);
+    const el = document.querySelector('vi-toast') as ViToast;
+    expect(el['defaultIcon']).toBe('triangle-warning');
+
+    el.variant = 'danger';
+    expect(el['defaultIcon']).toBe('circle-x');
+
+    el.variant = 'success';
+    expect(el['defaultIcon']).toBe('check-circle');
+  });
+
+  it('should clear timer on disconnect', async () => {
+    sinon.useFakeTimers();
+    render(html`<vi-toast duration="1000"></vi-toast>`, wrapper);
+    const el = document.querySelector('vi-toast') as ViToast;
+    
+    expect(el['_timer']).not.toBeNull();
+    el.remove(); // trigger disconnectedCallback
+    expect(el['_timer']).toBeNull();
   });
 });
 
@@ -149,5 +190,80 @@ describe('ViToastService', () => {
     toasts.forEach(toast => {
       expect(toast.classList.contains('exiting')).toBe(true);
     });
+  });
+
+  it('should ignore maxVisible when configured to 0', () => {
+    toastService.configure({ maxVisible: 0 });
+    const id = toastService.show({ message: 'Toast 1', variant: 'info' });
+    expect(id).toBeDefined();
+    const domContainer = document.querySelector('vi-toast-container')!;
+    expect(domContainer.querySelectorAll('vi-toast').length).toBe(0);
+  });
+
+  it('should dismiss element even if onClose callback throws', () => {
+    const consoleStub = sinon.stub(console, 'error');
+    const id = toastService.show({ 
+      message: 'Toast 1', 
+      variant: 'info',
+      onClose: () => { throw new Error('Test error'); }
+    });
+    
+    const domContainer = document.querySelector('vi-toast-container')!;
+    const toast = domContainer.querySelector('vi-toast') as ViToast;
+    
+    toast.dispatchEvent(new CustomEvent('vi-toast-close', { detail: { reason: 'user', id } }));
+    
+    expect(toast.classList.contains('exiting')).toBe(true);
+    consoleStub.restore();
+  });
+
+  it('should dismiss toast correctly using CSS-unsafe IDs', () => {
+    const id = 'unsafe[id="test"]';
+    toastService.show({ id, message: 'Toast 1', variant: 'info' });
+    toastService.dismiss(id);
+    
+    const domContainer = document.querySelector('vi-toast-container')!;
+    const toast = domContainer.querySelector('vi-toast') as ViToast;
+    expect(toast.classList.contains('exiting')).toBe(true);
+  });
+
+  it('should recreate container if it was disconnected from DOM', () => {
+    toastService.show({ message: 'Toast 1', variant: 'info' });
+    const domContainer1 = document.querySelector('vi-toast-container')!;
+    domContainer1.remove();
+    
+    toastService.show({ message: 'Toast 2', variant: 'info' });
+    const domContainers = document.querySelectorAll('vi-toast-container');
+    expect(domContainers.length).toBe(1);
+    expect(domContainers[0]).not.toBe(domContainer1);
+  });
+
+  it('should trigger onAction callback', () => {
+    const spy = sinon.spy();
+    const id = toastService.show({ 
+      message: 'Toast 1', 
+      variant: 'info',
+      actions: [{ label: 'Action 1', action: 'action1' }],
+      onAction: spy
+    });
+    
+    const domContainer = document.querySelector('vi-toast-container')!;
+    const toast = domContainer.querySelector('vi-toast') as ViToast;
+    
+    toast.dispatchEvent(new CustomEvent('vi-toast-action', { detail: { action: 'action1', id } }));
+    expect(spy.calledOnce).toBe(true);
+    expect(spy.firstCall.args[0]).toBe('action1');
+  });
+
+  it('should trigger onClick callback when not clicking an action button', () => {
+    const spy = sinon.spy();
+    toastService.show({ message: 'Toast 1', variant: 'info', onClick: spy });
+    
+    const domContainer = document.querySelector('vi-toast-container')!;
+    const toast = domContainer.querySelector('vi-toast') as ViToast;
+    
+    // Simulate click on toast body
+    toast.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    expect(spy.calledOnce).toBe(true);
   });
 });

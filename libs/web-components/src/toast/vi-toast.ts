@@ -77,10 +77,13 @@ export class ViToast extends ViElement {
         this.resumeTimer();
       }
     }
+    if (changedProperties.has('variant')) {
+      this.setAttribute('role', this.variant === 'warning' || this.variant === 'danger' ? 'alert' : 'status');
+    }
   }
 
   private startTimer() {
-    if (this.duration <= 0 || this._remainingTime <= 0) return;
+    if (this.duration <= 0 || this._remainingTime <= 0 || this.paused) return;
     this.clearTimer();
     this._startTime = Date.now();
     this._timer = setTimeout(() => {
@@ -102,7 +105,7 @@ export class ViToast extends ViElement {
     }
   }
 
-  private clearTimer() {
+  public clearTimer() {
     if (this._timer !== null) {
       clearTimeout(this._timer);
       this._timer = null;
@@ -111,7 +114,7 @@ export class ViToast extends ViElement {
 
   private handleDismiss(reason: 'auto' | 'user' = 'user') {
     this.dispatchEvent(
-      new CustomEvent('vialiq-close', {
+      new CustomEvent('vi-toast-close', {
         bubbles: true,
         composed: true,
         detail: { reason, id: this.id },
@@ -121,7 +124,7 @@ export class ViToast extends ViElement {
   
   private handleAction(action: string) {
     this.dispatchEvent(
-      new CustomEvent('vialiq-action', {
+      new CustomEvent('vi-toast-action', {
         bubbles: true,
         composed: true,
         detail: { action, id: this.id },

@@ -111,9 +111,12 @@ The service manages the global toast portal (a `<vi-toast-container>` mounted at
 
 ```typescript
 import { ViToastService } from '@vialiq/web-components/toast';
+import { container } from 'tsyringe';
+
+const toastService = container.resolve(ViToastService);
 
 // Basic usage
-ViToastService.show({
+toastService.show({
   variant: 'success',
   title: 'Form saved',
   message: 'Draft saved at 14:32',
@@ -121,7 +124,7 @@ ViToastService.show({
 });
 
 // With action
-ViToastService.show({
+toastService.show({
   variant: 'danger',
   title: 'Upload failed',
   message: 'The file could not be uploaded.',
@@ -132,10 +135,10 @@ ViToastService.show({
 });
 
 // Dismiss all
-ViToastService.dismissAll();
+toastService.dismissAll();
 
 // Configure defaults globally (call once at app bootstrap)
-ViToastService.configure({
+toastService.configure({
   position: 'top-right',       // 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left' | 'top-center'
   maxVisible: 5,               // max toasts visible at once
   defaultDuration: 4000,
@@ -255,7 +258,7 @@ type ToastPosition =
 
 ```typescript
 onSaveSuccess() {
-  ViToastService.show({
+  toastService.show({
     variant: 'success',
     title: 'Draft saved',
     message: `Saved at ${new Date().toLocaleTimeString()}`,
@@ -267,7 +270,7 @@ onSaveSuccess() {
 ### Sticky warning
 
 ```typescript
-ViToastService.show({
+toastService.show({
   variant: 'warning',
   title: 'Session expiring',
   message: 'You will be logged out in 5 minutes.',
@@ -281,7 +284,7 @@ ViToastService.show({
 ### Error with retry
 
 ```typescript
-ViToastService.show({
+toastService.show({
   variant: 'danger',
   title: 'Sync failed',
   message: 'Could not sync data. Check your connection.',
@@ -313,14 +316,16 @@ ViToastService.show({
 ```typescript
 @Injectable({ providedIn: 'root' })
 export class AppToastService {
+  private toast = container.resolve(ViToastService);
+
   success(message: string, title = 'Success') {
-    ViToastService.show({ variant: 'success', title, message, duration: 3000 });
+    this.toast.show({ variant: 'success', title, message, duration: 3000 });
   }
   error(message: string, title = 'Error') {
-    ViToastService.show({ variant: 'danger', title, message, duration: 0, closable: true });
+    this.toast.show({ variant: 'danger', title, message, duration: 0, closable: true });
   }
   warning(message: string) {
-    ViToastService.show({ variant: 'warning', message, duration: 5000 });
+    this.toast.show({ variant: 'warning', message, duration: 5000 });
   }
 }
 ```

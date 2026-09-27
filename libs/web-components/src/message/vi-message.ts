@@ -37,7 +37,7 @@ export class ViMessage extends ViElement {
 
   override connectedCallback() {
     super.connectedCallback();
-    this.setAttribute('role', 'status');
+    this.setAttribute('role', this.variant === 'warning' || this.variant === 'error' ? 'alert' : 'status');
     this.setAttribute('aria-live', 'polite');
     
     if (this.duration > 0 && this.variant !== 'loading') {
@@ -70,11 +70,14 @@ export class ViMessage extends ViElement {
       } else if (this.variant === 'loading') {
         this.clearTimer(); // Loading messages usually stay until resolved manually
       }
+      
+      // Update ARIA role for accessibility
+      this.setAttribute('role', this.variant === 'warning' || this.variant === 'error' ? 'alert' : 'status');
     }
   }
 
   private startTimer() {
-    if (this.duration <= 0 || this._remainingTime <= 0 || this.variant === 'loading') return;
+    if (this.duration <= 0 || this._remainingTime <= 0 || this.variant === 'loading' || this.paused) return;
     this.clearTimer();
     this._startTime = Date.now();
     this._timer = setTimeout(() => {
@@ -96,7 +99,7 @@ export class ViMessage extends ViElement {
     }
   }
 
-  private clearTimer() {
+  public clearTimer() {
     if (this._timer !== null) {
       clearTimeout(this._timer);
       this._timer = null;
@@ -105,7 +108,7 @@ export class ViMessage extends ViElement {
 
   private handleDismiss(reason: 'auto' | 'user' = 'user') {
     this.dispatchEvent(
-      new CustomEvent('vialiq-close', {
+      new CustomEvent('vi-message-close', {
         bubbles: true,
         composed: true,
         detail: { reason, id: this.id },

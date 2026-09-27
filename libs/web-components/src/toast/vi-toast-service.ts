@@ -55,7 +55,8 @@ export class ViToastService {
   }
 
   private _ensureContainer(position: ToastPosition) {
-    if (!this._containers.has(position)) {
+    const existingContainer = this._containers.get(position);
+    if (!existingContainer || !existingContainer.isConnected) {
       const container = document.createElement('vi-toast-container');
       container.setAttribute('position', position);
       container.setAttribute('maxVisible', this._config.maxVisible.toString());
@@ -74,7 +75,10 @@ export class ViToastService {
     const toastId = options.id || crypto.randomUUID();
 
     // Check if maxVisible is exceeded in this specific container
-    const currentToasts = Array.from(container.querySelectorAll('vi-toast'));
+    const currentToasts = Array.from(container.querySelectorAll('vi-toast')).filter(
+      toast => !toast.classList.contains('exiting')
+    );
+    if (this._config.maxVisible <= 0) return toastId;
     if (currentToasts.length >= this._config.maxVisible) {
       const excess = currentToasts.length - this._config.maxVisible + 1;
       for (let i = 0; i < excess; i++) {
@@ -99,15 +103,20 @@ export class ViToastService {
     if (options.actions) toast.actions = options.actions;
 
     // Listeners
-    toast.addEventListener('vialiq-close', (e: Event) => {
+    toast.addEventListener('vi-toast-close', (e: Event) => {
       const customEvent = e as CustomEvent<{reason: 'auto' | 'user'}>;
-      if (options.onClose) {
-        options.onClose(customEvent.detail.reason);
+      try {
+        if (options.onClose) {
+          options.onClose(customEvent.detail.reason);
+        }
+      } catch (error) {
+        console.error('Error in toast onClose callback:', error);
+      } finally {
+        this.dismissElement(toast);
       }
-      this.dismissElement(toast);
     });
 
-    toast.addEventListener('vialiq-action', (e: Event) => {
+    toast.addEventListener('vi-toast-action', (e: Event) => {
       const customEvent = e as CustomEvent<{action: string}>;
       if (options.onAction) {
         options.onAction(customEvent.detail.action);
@@ -143,7 +152,7 @@ export class ViToastService {
    */
   public dismiss(id: string) {
     this._containers.forEach(container => {
-      const toast = container.querySelector(`vi-toast[id="${id}"]`) as ViToast;
+      const toast = Array.from(container.querySelectorAll('vi-toast')).find(t => (t as ViToast).id === id) as ViToast;
       if (toast) {
         this.dismissElement(toast);
       }
@@ -163,6 +172,9 @@ export class ViToastService {
   private dismissElement(toast: ViToast) {
     if (toast.classList.contains('exiting')) return;
     toast.classList.add('exiting');
+    
+    // Cancel the component's internal auto-dismiss timer to prevent race conditions
+    toast.clearTimer();
     
     setTimeout(() => {
       if (toast.parentNode) {

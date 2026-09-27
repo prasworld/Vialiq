@@ -315,6 +315,7 @@
     "@vialiq/icons": ">=0.7.0",
     "flatpickr": ">=4.6.0",
     "lit": "^3.0.0",
+    "reflect-metadata": "^0.2.0",
     "tsyringe": "^4.8.0"
   },
   "keywords": [

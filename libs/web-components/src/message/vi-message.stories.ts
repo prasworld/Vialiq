@@ -119,3 +119,24 @@ export const DismissAll: Story = {
     </div>
   `,
 };
+
+export const StickyAndCustomHTML: Story = {
+  render: () => html`
+    <div style="display: flex; gap: 8px;">
+      <vi-button
+        variant="danger"
+        @click=${() => {
+          const frag = document.createDocumentFragment();
+          const span = document.createElement('span');
+          span.innerHTML = '<strong>Network connection lost!</strong> Please check your cables. <a href="#" style="color: inherit; text-decoration: underline; margin-left: 8px;">Retry</a>';
+          frag.appendChild(span);
+          
+          // 0 means sticky indefinitely
+          messageService.error(frag, 0); 
+        }}
+      >
+        Simulate Network Loss (Sticky Custom HTML)
+      </vi-button>
+    </div>
+  `,
+};

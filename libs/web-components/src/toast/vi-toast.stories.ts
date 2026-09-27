@@ -210,3 +210,30 @@ export const DismissAll: Story = {
     </div>
   `,
 };
+
+export const StickyNetworkLoss: Story = {
+  render: () => html`
+    <div style="display: flex; gap: 8px;">
+      <vi-button
+        variant="danger"
+        @click=${() => {
+          const frag = document.createDocumentFragment();
+          const span = document.createElement('span');
+          span.innerHTML = '<strong>Network Offline!</strong> Some features may not be available until you reconnect.';
+          frag.appendChild(span);
+          
+          toastService.show({
+            variant: 'danger',
+            content: frag,
+            duration: 0, // sticky indefinitely
+            closable: true,
+            actions: [{ label: 'Try again', action: 'retry', variant: 'primary' }],
+            onAction: (action) => alert(`Action triggered: ${action}`),
+          });
+        }}
+      >
+        Simulate Network Loss (Sticky Toast)
+      </vi-button>
+    </div>
+  `,
+};

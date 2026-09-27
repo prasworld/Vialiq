@@ -43,3 +43,9 @@
   overflow: hidden !important;
   transform: scale(0.9) !important;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  ::slotted(vi-message) {
+    transition: none !important;
+  }
+}
