@@ -226,14 +226,14 @@ export class ViModal extends ResizableMixin(
 
   override connectedCallback(): void {
     super.connectedCallback();
-    this.addEventListener('vi-modal-close-request', this._handleHeaderCloseRequest);
-    this.addEventListener('vi-modal-maximize-request', this._handleHeaderMaximizeRequest);
+    this.addEventListener('vi-modal-header-close', this._handleHeaderCloseRequest);
+    this.addEventListener('vi-modal-header-maximize', this._handleHeaderMaximizeRequest);
   }
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
-    this.removeEventListener('vi-modal-close-request', this._handleHeaderCloseRequest);
-    this.removeEventListener('vi-modal-maximize-request', this._handleHeaderMaximizeRequest);
+    this.removeEventListener('vi-modal-header-close', this._handleHeaderCloseRequest);
+    this.removeEventListener('vi-modal-header-maximize', this._handleHeaderMaximizeRequest);
     OverlayManager.unregister(this);
 
     this._activeAnimation?.cancel();

@@ -1,0 +1,6 @@
+@use '@vialiq/flux-ui/styles/variables' as tokens;
+@use '@vialiq/flux-ui/components/popconfirm';
+
+:host {
+  display: inline-block;
+}

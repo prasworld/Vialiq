@@ -307,6 +307,22 @@
     "./message/vi-message-service": {
       "types": "./message/vi-message-service.d.ts",
       "default": "./message/vi-message-service.js"
+    },
+    "./popover": {
+      "types": "./popover/index.d.ts",
+      "default": "./popover/index.js"
+    },
+    "./popover/vi-popover": {
+      "types": "./popover/vi-popover.d.ts",
+      "default": "./popover/vi-popover.js"
+    },
+    "./popconfirm": {
+      "types": "./popconfirm/index.d.ts",
+      "default": "./popconfirm/index.js"
+    },
+    "./popconfirm/vi-popconfirm": {
+      "types": "./popconfirm/vi-popconfirm.d.ts",
+      "default": "./popconfirm/vi-popconfirm.js"
     }
   },
   "peerDependencies": {
@@ -358,7 +374,9 @@
     "progress/",
     "sidebar/",
     "toast/",
-    "message/"
+    "message/",
+    "popover/",
+    "popconfirm/"
   ],
   "peerDependenciesMeta": {
     "flatpickr": {

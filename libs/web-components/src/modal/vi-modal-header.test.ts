@@ -59,7 +59,7 @@ describe('vi-modal-header', () => {
     expect(closeBtn).toBeTruthy();
 
     let eventFired = false;
-    el.addEventListener('vi-modal-close-request', () => {
+    el.addEventListener('vi-modal-header-close', () => {
       eventFired = true;
     });
 
@@ -76,7 +76,7 @@ describe('vi-modal-header', () => {
     expect(maxBtn).toBeTruthy();
 
     let eventFired = false;
-    el.addEventListener('vi-modal-maximize-request', () => {
+    el.addEventListener('vi-modal-header-maximize', () => {
       eventFired = true;
     });
 

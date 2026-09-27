@@ -565,7 +565,7 @@ describe('vi-modal', () => {
       await el.updateComplete;
 
       // Simulate maximize
-      el.dispatchEvent(new CustomEvent('vi-modal-maximize-request'));
+      el.dispatchEvent(new CustomEvent('vi-modal-header-maximize'));
       await el.updateComplete;
 
       const dialog = el.shadowRoot!.querySelector('dialog');

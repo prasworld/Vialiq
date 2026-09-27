@@ -93,3 +93,5 @@ export * from './skeleton/vi-skeleton.js';
 export * from './sidebar/index.js';
 export * from './message/index.js';
 export * from './toast/index.js';
+export * from './popover/index.js';
+export * from './popconfirm/index.js';
