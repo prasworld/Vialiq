@@ -241,7 +241,7 @@ export class ViPopover extends ViElement {
 
   private _handleFocusOut = (e: FocusEvent) => {
     const relatedTarget = e.relatedTarget as Node | null;
-    if (!this.contains(relatedTarget)) {
+    if (relatedTarget !== this && !this.contains(relatedTarget) && !this.shadowRoot?.contains(relatedTarget)) {
       this.open = false;
     }
   };
