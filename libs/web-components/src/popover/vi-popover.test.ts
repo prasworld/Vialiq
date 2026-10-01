@@ -23,11 +23,11 @@ describe('vi-popover', () => {
           <div slot="content">Content</div>
         </vi-popover>
       `,
-      container
+      container,
     );
     const popover = container.querySelector('vi-popover') as ViPopover;
     await popover.updateComplete;
-    await new Promise(r => setTimeout(r, 0));
+    await new Promise((r) => setTimeout(r, 0));
     const trigger = popover.querySelector('#trigger');
     expect(trigger).toBeTruthy();
     expect(trigger?.getAttribute('aria-haspopup')).toBe('dialog');
@@ -40,13 +40,13 @@ describe('vi-popover', () => {
           <button id="trigger">Open</button>
         </vi-popover>
       `,
-      container
+      container,
     );
     const popover = container.querySelector('vi-popover') as ViPopover;
     await popover.updateComplete;
-    await new Promise(r => setTimeout(r, 0));
+    await new Promise((r) => setTimeout(r, 0));
     const trigger = popover.querySelector('#trigger') as HTMLButtonElement;
-    
+
     expect(popover.open).toBe(false);
     trigger.click();
     expect(popover.open).toBe(true);
@@ -61,11 +61,11 @@ describe('vi-popover', () => {
           <button>Open</button>
         </vi-popover>
       `,
-      container
+      container,
     );
     const popover = container.querySelector('vi-popover') as ViPopover;
     await popover.updateComplete;
-    await new Promise(r => setTimeout(r, 0));
+    await new Promise((r) => setTimeout(r, 0));
     expect(popover.open).toBe(true);
     expect(popover.hasAttribute('open')).toBe(true);
   });
@@ -77,19 +77,19 @@ describe('vi-popover', () => {
           <button id="trigger">Hover Me</button>
         </vi-popover>
       `,
-      container
+      container,
     );
     const popover = container.querySelector('vi-popover') as ViPopover;
     await popover.updateComplete;
-    await new Promise(r => setTimeout(r, 0));
+    await new Promise((r) => setTimeout(r, 0));
     const trigger = popover.querySelector('#trigger') as HTMLButtonElement;
-    
+
     trigger.dispatchEvent(new MouseEvent('mouseenter'));
-    await new Promise(r => setTimeout(r, 150)); // Wait for 100ms showTimeout
+    await new Promise((r) => setTimeout(r, 150)); // Wait for 100ms showTimeout
     expect(popover.open).toBe(true);
 
     trigger.dispatchEvent(new MouseEvent('mouseleave'));
-    await new Promise(r => setTimeout(r, 150)); // Wait for 100ms hideTimeout
+    await new Promise((r) => setTimeout(r, 150)); // Wait for 100ms hideTimeout
     expect(popover.open).toBe(false);
   });
 
@@ -100,17 +100,25 @@ describe('vi-popover', () => {
           <button id="trigger">Focus Me</button>
         </vi-popover>
       `,
-      container
+      container,
     );
     const popover = container.querySelector('vi-popover') as ViPopover;
     await popover.updateComplete;
-    await new Promise(r => setTimeout(r, 0));
+    await new Promise((r) => setTimeout(r, 0));
     const trigger = popover.querySelector('#trigger') as HTMLButtonElement;
-    
-    trigger.dispatchEvent(new FocusEvent('focusin', { bubbles: true, composed: true }));
+
+    trigger.dispatchEvent(
+      new FocusEvent('focusin', { bubbles: true, composed: true }),
+    );
     expect(popover.open).toBe(true);
 
-    trigger.dispatchEvent(new FocusEvent('focusout', { bubbles: true, composed: true, relatedTarget: document.body }));
+    trigger.dispatchEvent(
+      new FocusEvent('focusout', {
+        bubbles: true,
+        composed: true,
+        relatedTarget: document.body,
+      }),
+    );
     expect(popover.open).toBe(false);
   });
 
@@ -121,13 +129,13 @@ describe('vi-popover', () => {
           <button id="trigger">Open</button>
         </vi-popover>
       `,
-      container
+      container,
     );
     const popover = container.querySelector('vi-popover') as ViPopover;
     await popover.updateComplete;
-    await new Promise(r => setTimeout(r, 0));
+    await new Promise((r) => setTimeout(r, 0));
     expect(popover.open).toBe(true);
-    
+
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
     expect(popover.open).toBe(false);
   });
@@ -139,13 +147,13 @@ describe('vi-popover', () => {
           <button id="trigger">Open</button>
         </vi-popover>
       `,
-      container
+      container,
     );
     const popover = container.querySelector('vi-popover') as ViPopover;
     await popover.updateComplete;
-    await new Promise(r => setTimeout(r, 0));
+    await new Promise((r) => setTimeout(r, 0));
     expect(popover.open).toBe(true);
-    
+
     document.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     expect(popover.open).toBe(false);
   });
@@ -157,11 +165,11 @@ describe('vi-popover', () => {
           <button id="trigger">Open</button>
         </vi-popover>
       `,
-      container
+      container,
     );
     const popover = container.querySelector('vi-popover') as ViPopover;
     await popover.updateComplete;
-    await new Promise(r => setTimeout(r, 0));
+    await new Promise((r) => setTimeout(r, 0));
     const panel = popover.shadowRoot?.querySelector('.popover-panel');
     expect(panel?.getAttribute('aria-label')).toBe('My Popover');
     expect(panel?.hasAttribute('aria-labelledby')).toBe(false);
@@ -174,11 +182,11 @@ describe('vi-popover', () => {
           <button id="trigger">Open</button>
         </vi-popover>
       `,
-      container
+      container,
     );
     const popover = container.querySelector('vi-popover') as ViPopover;
     await popover.updateComplete;
-    await new Promise(r => setTimeout(r, 0));
+    await new Promise((r) => setTimeout(r, 0));
     const panel = popover.shadowRoot?.querySelector('.popover-panel');
     expect(panel?.getAttribute('aria-labelledby')).toBe('popover-title');
     expect(panel?.hasAttribute('aria-label')).toBe(false);

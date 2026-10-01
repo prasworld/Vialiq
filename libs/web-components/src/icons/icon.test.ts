@@ -43,7 +43,10 @@ describe('vi-icon', () => {
     }, host);
 
     // Use execute() to check shadow DOM directly — avoids wdio BiDi stale-ref issue with shadow$
-    const hasSvg = await browser.execute((el: any) => !!el.shadowRoot?.querySelector('svg'), host);
+    const hasSvg = await browser.execute(
+      (el: any) => !!el.shadowRoot?.querySelector('svg'),
+      host,
+    );
     expect(hasSvg).toBe(false);
   });
 
@@ -85,7 +88,10 @@ describe('vi-icon', () => {
     });
 
     const host = await $('#icon-sized');
-    const iconSize = await browser.execute((el) => el.style.getPropertyValue('--vi-icon-size'), host);
+    const iconSize = await browser.execute(
+      (el) => el.style.getPropertyValue('--vi-icon-size'),
+      host,
+    );
     await expect(iconSize).toBe('32px');
   });
 });

@@ -3,6 +3,7 @@
 
 :host {
   display: block;
+  --vi-select-placeholder-color: #{tokens.$text-placeholder};
 }
 
 :host([hidden]) {
@@ -54,4 +55,16 @@
 
 .select-validation {
   @extend .select-validation;
+}
+
+// The flux-ui select CSS uses `.select-trigger:focus-visible` for the focus ring,
+// which only fires for KEYBOARD focus. When vi-label programmatically calls
+// `.focus()` in response to a mouse click, `:focus-visible` does not apply and
+// the ring never shows. We override here with `:focus` so the ring shows for
+// all focus methods (keyboard, mouse, or programmatic).
+.select-trigger:focus {
+  border-color: var(--vi-select-focus-ring-color, #{tokens.$focus});
+  outline: #{tokens.$border-width-base} solid
+    var(--vi-select-focus-ring-color, #{tokens.$focus});
+  box-shadow: #{tokens.$focus-ring-shadow};
 }

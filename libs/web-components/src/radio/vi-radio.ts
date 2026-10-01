@@ -1,4 +1,10 @@
-import { css, html, unsafeCSS, type PropertyValues, type TemplateResult } from 'lit';
+import {
+  css,
+  html,
+  unsafeCSS,
+  type PropertyValues,
+  type TemplateResult,
+} from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { FocusableMixin } from '../base/focusable-mixin.js';
 import { ViElement } from '../base/vi-element.js';
@@ -84,7 +90,7 @@ export class ViRadio extends FocusableMixin(ViElement) {
       new CustomEvent('vi-radio-checked', {
         bubbles: true,
         composed: true,
-      })
+      }),
     );
   }
 
@@ -92,7 +98,9 @@ export class ViRadio extends FocusableMixin(ViElement) {
     const isValDisabled = this._isEffectiveDisabled;
 
     return html`
-      <label class="radio-wrapper ${isValDisabled ? 'radio-wrapper--disabled' : ''}">
+      <label
+        class="radio-wrapper ${isValDisabled ? 'radio-wrapper--disabled' : ''}"
+      >
         <input
           type="radio"
           class="radio-input"

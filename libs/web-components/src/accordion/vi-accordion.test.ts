@@ -38,13 +38,13 @@ describe('vi-accordion & vi-accordion-item', () => {
             </vi-accordion-item>
           </vi-accordion>
         `,
-        container
+        container,
       );
 
       const accordion = document.querySelector('vi-accordion') as ViAccordion;
       const items = Array.from(document.querySelectorAll('vi-accordion-item'));
       await accordion.updateComplete;
-      await Promise.all(items.map(item => item.updateComplete));
+      await Promise.all(items.map((item) => item.updateComplete));
 
       expect(accordion).toBeTruthy();
       expect(items).toHaveLength(2);
@@ -86,11 +86,13 @@ describe('vi-accordion & vi-accordion-item', () => {
             <vi-accordion-item label="Item"></vi-accordion-item>
           </vi-accordion>
         `,
-        container
+        container,
       );
 
       const accordion = document.querySelector('vi-accordion') as ViAccordion;
-      const item = document.querySelector('vi-accordion-item') as ViAccordionItem;
+      const item = document.querySelector(
+        'vi-accordion-item',
+      ) as ViAccordionItem;
       await accordion.updateComplete;
       await item.updateComplete;
 
@@ -114,17 +116,26 @@ describe('vi-accordion & vi-accordion-item', () => {
       render(
         html`
           <vi-accordion>
-            <vi-accordion-item item-id="item-1" label="Section 1" open></vi-accordion-item>
-            <vi-accordion-item item-id="item-2" label="Section 2"></vi-accordion-item>
+            <vi-accordion-item
+              item-id="item-1"
+              label="Section 1"
+              open
+            ></vi-accordion-item>
+            <vi-accordion-item
+              item-id="item-2"
+              label="Section 2"
+            ></vi-accordion-item>
           </vi-accordion>
         `,
-        container
+        container,
       );
 
       const accordion = document.querySelector('vi-accordion') as ViAccordion;
-      const items = Array.from(document.querySelectorAll('vi-accordion-item')) as ViAccordionItem[];
+      const items = Array.from(
+        document.querySelectorAll('vi-accordion-item'),
+      ) as ViAccordionItem[];
       await accordion.updateComplete;
-      await Promise.all(items.map(i => i.updateComplete));
+      await Promise.all(items.map((i) => i.updateComplete));
 
       expect(items[0].open).toBe(true);
       expect(items[1].open).toBe(false);
@@ -132,7 +143,7 @@ describe('vi-accordion & vi-accordion-item', () => {
       // Open second item
       items[1].shadowRoot?.querySelector('button')?.click();
       await accordion.updateComplete;
-      await Promise.all(items.map(i => i.updateComplete));
+      await Promise.all(items.map((i) => i.updateComplete));
 
       // First item is collapsed, second item is open
       expect(items[0].open).toBe(false);
@@ -143,17 +154,26 @@ describe('vi-accordion & vi-accordion-item', () => {
       render(
         html`
           <vi-accordion multi>
-            <vi-accordion-item item-id="item-1" label="Section 1" open></vi-accordion-item>
-            <vi-accordion-item item-id="item-2" label="Section 2"></vi-accordion-item>
+            <vi-accordion-item
+              item-id="item-1"
+              label="Section 1"
+              open
+            ></vi-accordion-item>
+            <vi-accordion-item
+              item-id="item-2"
+              label="Section 2"
+            ></vi-accordion-item>
           </vi-accordion>
         `,
-        container
+        container,
       );
 
       const accordion = document.querySelector('vi-accordion') as ViAccordion;
-      const items = Array.from(document.querySelectorAll('vi-accordion-item')) as ViAccordionItem[];
+      const items = Array.from(
+        document.querySelectorAll('vi-accordion-item'),
+      ) as ViAccordionItem[];
       await accordion.updateComplete;
-      await Promise.all(items.map(i => i.updateComplete));
+      await Promise.all(items.map((i) => i.updateComplete));
 
       expect(items[0].open).toBe(true);
       expect(items[1].open).toBe(false);
@@ -161,7 +181,7 @@ describe('vi-accordion & vi-accordion-item', () => {
       // Open second item
       items[1].shadowRoot?.querySelector('button')?.click();
       await accordion.updateComplete;
-      await Promise.all(items.map(i => i.updateComplete));
+      await Promise.all(items.map((i) => i.updateComplete));
 
       // Both items are open
       expect(items[0].open).toBe(true);
@@ -174,10 +194,12 @@ describe('vi-accordion & vi-accordion-item', () => {
       render(
         html`
           <vi-accordion>
-            <vi-accordion-item item-id="item-1" label="Header 1">Content 1</vi-accordion-item>
+            <vi-accordion-item item-id="item-1" label="Header 1"
+              >Content 1</vi-accordion-item
+            >
           </vi-accordion>
         `,
-        container
+        container,
       );
       const accordion = container.querySelector('vi-accordion')!;
       const item = container.querySelector('vi-accordion-item')!;
@@ -219,14 +241,19 @@ describe('vi-accordion & vi-accordion-item', () => {
       render(
         html`
           <vi-accordion>
-            <vi-accordion-item item-id="item-1" label="Section 1"></vi-accordion-item>
+            <vi-accordion-item
+              item-id="item-1"
+              label="Section 1"
+            ></vi-accordion-item>
           </vi-accordion>
         `,
-        container
+        container,
       );
 
       const accordion = document.querySelector('vi-accordion') as ViAccordion;
-      const item = document.querySelector('vi-accordion-item') as ViAccordionItem;
+      const item = document.querySelector(
+        'vi-accordion-item',
+      ) as ViAccordionItem;
       await accordion.updateComplete;
       await item.updateComplete;
 
@@ -272,17 +299,26 @@ describe('vi-accordion & vi-accordion-item', () => {
       render(
         html`
           <vi-accordion .multi=${false}>
-            <vi-accordion-item item-id="item-1" label="Section 1" open></vi-accordion-item>
-            <vi-accordion-item item-id="item-2" label="Section 2"></vi-accordion-item>
+            <vi-accordion-item
+              item-id="item-1"
+              label="Section 1"
+              open
+            ></vi-accordion-item>
+            <vi-accordion-item
+              item-id="item-2"
+              label="Section 2"
+            ></vi-accordion-item>
           </vi-accordion>
         `,
-        container
+        container,
       );
 
       const accordion = document.querySelector('vi-accordion') as ViAccordion;
-      const items = Array.from(document.querySelectorAll('vi-accordion-item')) as ViAccordionItem[];
+      const items = Array.from(
+        document.querySelectorAll('vi-accordion-item'),
+      ) as ViAccordionItem[];
       await accordion.updateComplete;
-      await Promise.all(items.map(i => i.updateComplete));
+      await Promise.all(items.map((i) => i.updateComplete));
 
       expect(items[0].open).toBe(true);
       expect(items[1].open).toBe(false);
@@ -298,7 +334,7 @@ describe('vi-accordion & vi-accordion-item', () => {
       // Try opening item-2. This should fail because item-1 refuses to close!
       items[1].shadowRoot?.querySelector('button')?.click();
       await accordion.updateComplete;
-      await Promise.all(items.map(i => i.updateComplete));
+      await Promise.all(items.map((i) => i.updateComplete));
 
       expect(triggerItemId).toBe('item-2');
       expect(items[0].open).toBe(true);
@@ -309,17 +345,26 @@ describe('vi-accordion & vi-accordion-item', () => {
       render(
         html`
           <vi-accordion .multi=${true}>
-            <vi-accordion-item item-id="item-1" label="Section 1" open></vi-accordion-item>
-            <vi-accordion-item item-id="item-2" label="Section 2"></vi-accordion-item>
+            <vi-accordion-item
+              item-id="item-1"
+              label="Section 1"
+              open
+            ></vi-accordion-item>
+            <vi-accordion-item
+              item-id="item-2"
+              label="Section 2"
+            ></vi-accordion-item>
           </vi-accordion>
         `,
-        container
+        container,
       );
 
       const accordion = document.querySelector('vi-accordion') as ViAccordion;
-      const items = Array.from(document.querySelectorAll('vi-accordion-item')) as ViAccordionItem[];
+      const items = Array.from(
+        document.querySelectorAll('vi-accordion-item'),
+      ) as ViAccordionItem[];
       await accordion.updateComplete;
-      await Promise.all(items.map(i => i.updateComplete));
+      await Promise.all(items.map((i) => i.updateComplete));
 
       expect(items[0].open).toBe(true);
       expect(items[1].open).toBe(false);
@@ -332,7 +377,7 @@ describe('vi-accordion & vi-accordion-item', () => {
       // Opening item-2 in multi mode does not close item-1, so item-2 opens
       items[1].shadowRoot?.querySelector('button')?.click();
       await accordion.updateComplete;
-      await Promise.all(items.map(i => i.updateComplete));
+      await Promise.all(items.map((i) => i.updateComplete));
 
       expect(items[0].open).toBe(true);
       expect(items[1].open).toBe(true);
@@ -344,75 +389,137 @@ describe('vi-accordion & vi-accordion-item', () => {
       render(
         html`
           <vi-accordion>
-            <vi-accordion-item item-id="item-1" label="Section 1"></vi-accordion-item>
-            <vi-accordion-item item-id="item-2" label="Section 2" disabled></vi-accordion-item>
-            <vi-accordion-item item-id="item-3" label="Section 3"></vi-accordion-item>
+            <vi-accordion-item
+              item-id="item-1"
+              label="Section 1"
+            ></vi-accordion-item>
+            <vi-accordion-item
+              item-id="item-2"
+              label="Section 2"
+              disabled
+            ></vi-accordion-item>
+            <vi-accordion-item
+              item-id="item-3"
+              label="Section 3"
+            ></vi-accordion-item>
           </vi-accordion>
         `,
-        container
+        container,
       );
 
       const accordion = document.querySelector('vi-accordion') as ViAccordion;
-      const items = Array.from(document.querySelectorAll('vi-accordion-item')) as ViAccordionItem[];
+      const items = Array.from(
+        document.querySelectorAll('vi-accordion-item'),
+      ) as ViAccordionItem[];
       await accordion.updateComplete;
-      await Promise.all(items.map(i => i.updateComplete));
+      await Promise.all(items.map((i) => i.updateComplete));
 
-      const button1 = items[0].shadowRoot?.querySelector('button') as HTMLButtonElement;
-      const button3 = items[2].shadowRoot?.querySelector('button') as HTMLButtonElement;
+      const button1 = items[0].shadowRoot?.querySelector(
+        'button',
+      ) as HTMLButtonElement;
+      const button3 = items[2].shadowRoot?.querySelector(
+        'button',
+      ) as HTMLButtonElement;
 
       // Focus first item
       button1.focus();
       expect(document.activeElement).toBe(items[0]);
 
       // Arrow down should skip disabled item-2 and focus item-3
-      button1.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, composed: true }));
+      button1.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: 'ArrowDown',
+          bubbles: true,
+          composed: true,
+        }),
+      );
       expect(items[2].shadowRoot?.activeElement).toBe(button3);
 
       // Arrow down on item-3 should wrap to item-1
-      button3.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, composed: true }));
+      button3.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: 'ArrowDown',
+          bubbles: true,
+          composed: true,
+        }),
+      );
       expect(items[0].shadowRoot?.activeElement).toBe(button1);
 
       // Arrow up should wrap to item-3
-      button1.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true, composed: true }));
+      button1.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: 'ArrowUp',
+          bubbles: true,
+          composed: true,
+        }),
+      );
       expect(items[2].shadowRoot?.activeElement).toBe(button3);
 
       // Home should focus item-1
-      button3.dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', bubbles: true, composed: true }));
+      button3.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: 'Home',
+          bubbles: true,
+          composed: true,
+        }),
+      );
       expect(items[0].shadowRoot?.activeElement).toBe(button1);
 
       // End should focus item-3
-      button1.dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true, composed: true }));
+      button1.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: 'End',
+          bubbles: true,
+          composed: true,
+        }),
+      );
       expect(items[2].shadowRoot?.activeElement).toBe(button3);
     });
   });
 
   describe('Missing Branch Coverage', () => {
     it('ignores unknown keys in keyboard navigation', async () => {
-      render(html`
-        <vi-accordion>
-          <vi-accordion-item item-id="1">1</vi-accordion-item>
-        </vi-accordion>
-      `, container);
+      render(
+        html`
+          <vi-accordion>
+            <vi-accordion-item item-id="1">1</vi-accordion-item>
+          </vi-accordion>
+        `,
+        container,
+      );
       const accordion = document.querySelector('vi-accordion') as ViAccordion;
-      const item = container.querySelector('vi-accordion-item') as ViAccordionItem;
+      const item = container.querySelector(
+        'vi-accordion-item',
+      ) as ViAccordionItem;
       await accordion.updateComplete;
       await item.updateComplete;
 
       const button = item.shadowRoot!.querySelector('button')!;
       button.focus();
-      accordion.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', bubbles: true, composed: true }));
+      accordion.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: 'a',
+          bubbles: true,
+          composed: true,
+        }),
+      );
 
       expect(document.activeElement).toBe(item);
     });
 
     it('does not open when disabled', async () => {
-      render(html`
-        <vi-accordion>
-          <vi-accordion-item item-id="1" disabled>1</vi-accordion-item>
-        </vi-accordion>
-      `, container);
+      render(
+        html`
+          <vi-accordion>
+            <vi-accordion-item item-id="1" disabled>1</vi-accordion-item>
+          </vi-accordion>
+        `,
+        container,
+      );
       const accordion = document.querySelector('vi-accordion') as ViAccordion;
-      const item = container.querySelector('vi-accordion-item') as ViAccordionItem;
+      const item = container.querySelector(
+        'vi-accordion-item',
+      ) as ViAccordionItem;
       await accordion.updateComplete;
       await item.updateComplete;
 
@@ -423,17 +530,20 @@ describe('vi-accordion & vi-accordion-item', () => {
     });
 
     it('disconnects resize observer when removed and handles resize', async () => {
-      render(html`
-        <vi-accordion>
-          <vi-accordion-item id="test-item" item-id="1" open>
-            <div id="content" style="height: 100px;">Content</div>
-          </vi-accordion-item>
-        </vi-accordion>
-      `, container);
-      
+      render(
+        html`
+          <vi-accordion>
+            <vi-accordion-item id="test-item" item-id="1" open>
+              <div id="content" style="height: 100px;">Content</div>
+            </vi-accordion-item>
+          </vi-accordion>
+        `,
+        container,
+      );
+
       const item = document.getElementById('test-item') as ViAccordionItem;
       await item.updateComplete;
-      
+
       expect((item as any)._resizeObserver).toBeDefined();
 
       // Remove element to trigger disconnectedCallback
@@ -441,11 +551,14 @@ describe('vi-accordion & vi-accordion-item', () => {
     });
 
     it('ignores item open event from untracked item', async () => {
-      render(html`
-        <vi-accordion>
-          <vi-accordion-item item-id="1" open></vi-accordion-item>
-        </vi-accordion>
-      `, container);
+      render(
+        html`
+          <vi-accordion>
+            <vi-accordion-item item-id="1" open></vi-accordion-item>
+          </vi-accordion>
+        `,
+        container,
+      );
       const accordion = document.querySelector('vi-accordion') as ViAccordion;
       await accordion.updateComplete;
 
@@ -459,10 +572,10 @@ describe('vi-accordion & vi-accordion-item', () => {
 
       const event = new CustomEvent('vi-accordion-open', {
         bubbles: true,
-        composed: true
+        composed: true,
       });
       untrackedItem.dispatchEvent(event);
-      
+
       expect(changeFired).toBe(false);
     });
   });
@@ -484,13 +597,15 @@ describe('vi-accordion & vi-accordion-item', () => {
             </vi-accordion-item>
           </vi-accordion>
         `,
-        container
+        container,
       );
 
       const accordion = document.querySelector('vi-accordion') as ViAccordion;
-      const items = Array.from(document.querySelectorAll('vi-accordion-item')) as ViAccordionItem[];
+      const items = Array.from(
+        document.querySelectorAll('vi-accordion-item'),
+      ) as ViAccordionItem[];
       await accordion.updateComplete;
-      await Promise.all(items.map(i => i.updateComplete));
+      await Promise.all(items.map((i) => i.updateComplete));
 
       const results = await axe.run(container, {
         rules: {
@@ -498,9 +613,9 @@ describe('vi-accordion & vi-accordion-item', () => {
           'html-has-lang': { enabled: false },
           'page-has-heading-one': { enabled: false },
           'landmark-one-main': { enabled: false },
-          'region': { enabled: false },
-          'color-contrast': { enabled: false }
-        }
+          region: { enabled: false },
+          'color-contrast': { enabled: false },
+        },
       });
       expect(results.violations).toHaveLength(0);
     });

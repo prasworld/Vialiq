@@ -1,4 +1,11 @@
-import { css, html, nothing, unsafeCSS, type PropertyValues, type TemplateResult } from 'lit';
+import {
+  css,
+  html,
+  nothing,
+  unsafeCSS,
+  type PropertyValues,
+  type TemplateResult,
+} from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { FocusableMixin } from '../base/focusable-mixin.js';
 import { ViElement } from '../base/vi-element.js';
@@ -10,7 +17,13 @@ import buttonStyles from './vi-button.scss?inline';
  * (functional composition, not inheritance). Different components may
  * support different subsets of these values.
  */
-export type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'success' | 'info' | 'ghost';
+export type ButtonVariant =
+  | 'primary'
+  | 'secondary'
+  | 'danger'
+  | 'success'
+  | 'info'
+  | 'ghost';
 
 /**
  * Button size scale. Controls padding and font-size via CSS custom properties.
@@ -46,35 +59,46 @@ export type ButtonIconPlacement = 'start' | 'end';
  */
 @customElement('vi-button')
 export class ViButton extends FocusableMixin(ViElement) {
-  static override styles = css`${unsafeCSS(buttonStyles)}`;
+  static override styles = css`
+    ${unsafeCSS(buttonStyles)}
+  `;
 
   protected override get _focusableElement(): HTMLButtonElement | null {
     return this.shadowRoot?.querySelector('button') ?? null;
   }
 
   /** Visual variant. */
-  @property({ type: String, reflect: true }) accessor variant: ButtonVariant = 'primary';
+  @property({ type: String, reflect: true }) accessor variant: ButtonVariant =
+    'primary';
 
   /** Size scale — controls padding and font-size. */
   @property({ type: String, reflect: true }) accessor size: ButtonSize = 'md';
 
   /** Icon placement: 'start' (before label) or 'end' (after label). CSS order handles it — no DOM changes on toggle. */
-  @property({ type: String, reflect: true, attribute: 'icon-placement' }) accessor iconPlacement: ButtonIconPlacement = 'start';
+  @property({ type: String, reflect: true, attribute: 'icon-placement' })
+  accessor iconPlacement: ButtonIconPlacement = 'start';
 
   /** When true, stretches the button to fill the width of its container. */
-  @property({ type: Boolean, reflect: true, attribute: 'full-width' }) accessor fullWidth = false;
+  @property({ type: Boolean, reflect: true, attribute: 'full-width' })
+  accessor fullWidth = false;
 
   /** When true, styles the button for an icon-only layout (typically square with equal padding). */
-  @property({ type: Boolean, reflect: true, attribute: 'icon-only' }) accessor iconOnly = false;
+  @property({ type: Boolean, reflect: true, attribute: 'icon-only' })
+  accessor iconOnly = false;
 
   /** Disables the button. */
   @property({ type: Boolean, reflect: true }) accessor disabled = false;
 
   /** The button type — 'button', 'submit', or 'reset'. Forwarded to the inner native button. */
-  @property({ type: String, reflect: true }) accessor type: 'button' | 'submit' | 'reset' = 'button';
+  @property({ type: String, reflect: true }) accessor type:
+    | 'button'
+    | 'submit'
+    | 'reset' = 'button';
 
   /** Accessible label forwarded to the inner native button. */
-  @property({ attribute: 'aria-label' }) override accessor ariaLabel: string | null = null;
+  @property({ attribute: 'aria-label' }) override accessor ariaLabel:
+    | string
+    | null = null;
 
   @state() private accessor _hasIcon = false;
 
@@ -104,22 +128,25 @@ export class ViButton extends FocusableMixin(ViElement) {
       event.stopImmediatePropagation();
       return;
     }
-// Shadow DOM isolation: a <button type="reset|submit"> inside a shadow root
-// cannot natively interact with the parent form. We must do it manually.
-if (this.type === 'reset' || this.type === 'submit') {
-  const form = event
-    .composedPath()
-    .find((n): n is HTMLFormElement => n instanceof HTMLFormElement);
+    // Shadow DOM isolation: a <button type="reset|submit"> inside a shadow root
+    // cannot natively interact with the parent form. We must do it manually.
+    if (this.type === 'reset' || this.type === 'submit') {
+      const form = event
+        .composedPath()
+        .find((n): n is HTMLFormElement => n instanceof HTMLFormElement);
 
-  if (form) {
-    if (this.type === 'reset') {
-      form.reset();
-    } else {
-      const submitter = event.currentTarget instanceof HTMLButtonElement ? event.currentTarget : undefined;
-      form.requestSubmit(submitter);
+      if (form) {
+        if (this.type === 'reset') {
+          form.reset();
+        } else {
+          const submitter =
+            event.currentTarget instanceof HTMLButtonElement
+              ? event.currentTarget
+              : undefined;
+          form.requestSubmit(submitter);
+        }
+      }
     }
-  }
-}
   }
 
   override render(): TemplateResult {

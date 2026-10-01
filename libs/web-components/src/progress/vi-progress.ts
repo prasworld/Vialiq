@@ -31,7 +31,6 @@ export type ProgressGapPosition = 'top' | 'bottom' | 'left' | 'right';
  */
 @customElement('vi-progress')
 export class ViProgress extends LitElement {
-
   static styles = unsafeCSS(styles);
 
   private _gradId = `vi-grad-${Math.random().toString(36).substring(2, 9)}`;
@@ -43,52 +42,71 @@ export class ViProgress extends LitElement {
   @property({ type: Number }) accessor max = 100;
 
   /** Visual type of the progress bar */
-  @property({ type: String, reflect: true }) accessor type: ProgressType = 'line';
+  @property({ type: String, reflect: true }) accessor type: ProgressType =
+    'line';
 
   /** Semantic color variant */
-  @property({ type: String, reflect: true }) accessor variant: ProgressVariant = 'primary';
+  @property({ type: String, reflect: true }) accessor variant: ProgressVariant =
+    'primary';
 
   /** Visual size */
   @property({ type: String, reflect: true }) accessor size: ProgressSize = 'md';
 
   /** Status overrides behavior and variant (normal, active, exception, success) */
-  @property({ type: String, reflect: true })  accessor status: ProgressStatus = 'normal';
+  @property({ type: String, reflect: true }) accessor status: ProgressStatus =
+    'normal';
 
   /** Whether to show the info text/icon alongside the progress */
   @property({ type: Boolean, attribute: 'show-info' }) accessor showInfo = true;
 
   /** SVG stroke linecap for circle or border-radius handling for line */
-  @property({ type: String, attribute: 'stroke-linecap' }) accessor strokeLinecap: StrokeLinecap = 'round';
+  @property({ type: String, attribute: 'stroke-linecap' })
+  accessor strokeLinecap: StrokeLinecap = 'round';
 
   /** Number of steps for a segmented progress bar */
   @property({ type: Number }) accessor steps: number | undefined = undefined;
 
   /** Value for secondary success segment */
-  @property({ type: Number, attribute: 'success-percent' }) accessor successPercent = 0;
+  @property({ type: Number, attribute: 'success-percent' })
+  accessor successPercent = 0;
 
   /** Custom stroke color (string or gradient object) */
-  @property() accessor strokeColor: string | Record<string, string> | undefined = undefined;
+  @property() accessor strokeColor:
+    | string
+    | Record<string, string>
+    | undefined = undefined;
 
   /** Custom trail color */
-  @property({ type: String, attribute: 'trail-color' }) accessor trailColor: string | undefined = undefined;
+  @property({ type: String, attribute: 'trail-color' }) accessor trailColor:
+    | string
+    | undefined = undefined;
 
   /** Custom stroke width (in px) */
-  @property({ type: Number, attribute: 'stroke-width' }) accessor strokeWidth: number | undefined = undefined;
+  @property({ type: Number, attribute: 'stroke-width' }) accessor strokeWidth:
+    | number
+    | undefined = undefined;
 
   /** Width for circle/dashboard in px */
   @property({ type: Number }) accessor width: number | undefined = undefined;
 
   /** Gap degree for circle/dashboard (0-360) */
-  @property({ type: Number, attribute: 'gap-degree' }) accessor gapDegree: number | undefined = undefined;
+  @property({ type: Number, attribute: 'gap-degree' }) accessor gapDegree:
+    | number
+    | undefined = undefined;
 
   /** Gap position for circle/dashboard */
-  @property({ type: String, attribute: 'gap-position' }) accessor gapPosition: ProgressGapPosition | undefined = undefined;
+  @property({ type: String, attribute: 'gap-position' }) accessor gapPosition:
+    | ProgressGapPosition
+    | undefined = undefined;
 
   /** Formatter for percentage text */
-  @property({ attribute: false }) accessor format: ((percent: number) => string) | undefined = undefined;
+  @property({ attribute: false }) accessor format:
+    | ((percent: number) => string)
+    | undefined = undefined;
 
   /** Forwarded aria-label for accessibility */
-  @property({ attribute: 'aria-label' }) accessor ariaLabel: string | null = null;
+  @property({ attribute: 'aria-label' }) accessor ariaLabel: string | null =
+    null;
 
   private get baseStyles() {
     const styles: Record<string, string> = {};
@@ -106,7 +124,8 @@ export class ViProgress extends LitElement {
           })
           .join(', ');
         const direction = this.strokeColor.direction || 'to right';
-        styles['--vi-progress-indicator-bg'] = `linear-gradient(${direction}, ${stops})`;
+        styles['--vi-progress-indicator-bg'] =
+          `linear-gradient(${direction}, ${stops})`;
       }
     }
     if (this.trailColor) {
@@ -159,8 +178,10 @@ export class ViProgress extends LitElement {
           ${this.effectiveStatus === 'exception'
             ? html`<vi-icon name=${errorIcon}></vi-icon>`
             : this.effectiveStatus === 'success'
-            ? html`<vi-icon name=${successIcon}></vi-icon>`
-            : html`${this.format ? this.format(this.percentage) : this.percentage + '%'}`}
+              ? html`<vi-icon name=${successIcon}></vi-icon>`
+              : html`${this.format
+                  ? this.format(this.percentage)
+                  : this.percentage + '%'}`}
         </slot>
       </span>
     `;
@@ -175,7 +196,10 @@ export class ViProgress extends LitElement {
             class="vi-progress-indicator"
             style=${styleMap({
               width: `${this.percentage}%`,
-              borderRadius: this.strokeLinecap === 'square' || this.strokeLinecap === 'butt' ? '0' : undefined
+              borderRadius:
+                this.strokeLinecap === 'square' || this.strokeLinecap === 'butt'
+                  ? '0'
+                  : undefined,
             })}
           ></div>
           ${this.successPercent > 0
@@ -183,7 +207,11 @@ export class ViProgress extends LitElement {
                 class="vi-progress-success-indicator"
                 style=${styleMap({
                   width: `${Math.min(100, Math.max(0, this.successPercent))}%`,
-                  borderRadius: this.strokeLinecap === 'square' || this.strokeLinecap === 'butt' ? '0' : undefined
+                  borderRadius:
+                    this.strokeLinecap === 'square' ||
+                    this.strokeLinecap === 'butt'
+                      ? '0'
+                      : undefined,
                 })}
               ></div>`
             : nothing}
@@ -202,16 +230,26 @@ export class ViProgress extends LitElement {
       <div class="vi-progress-steps">
         ${Array.from({ length: stepsCount }).map((_, i) => {
           const stepStyle = {
-            backgroundColor: i < currentStep ? (typeof this.strokeColor === 'string' ? this.strokeColor : 'var(--vi-progress-indicator-bg)') : (this.trailColor || 'var(--vi-progress-track-bg)'),
-            height: this.strokeWidth ? `${this.strokeWidth}px` : 'var(--vi-progress-line-height)'
+            backgroundColor:
+              i < currentStep
+                ? typeof this.strokeColor === 'string'
+                  ? this.strokeColor
+                  : 'var(--vi-progress-indicator-bg)'
+                : this.trailColor || 'var(--vi-progress-track-bg)',
+            height: this.strokeWidth
+              ? `${this.strokeWidth}px`
+              : 'var(--vi-progress-line-height)',
           };
           return html`
-          <div class=${classMap({
-            'vi-progress-step-item': true,
-            'vi-progress-step-item--active': i < currentStep
-          })}
-          style=${styleMap(stepStyle)}></div>
-        `})}
+            <div
+              class=${classMap({
+                'vi-progress-step-item': true,
+                'vi-progress-step-item--active': i < currentStep,
+              })}
+              style=${styleMap(stepStyle)}
+            ></div>
+          `;
+        })}
       </div>
       ${this.renderInfo()}
     `;
@@ -225,23 +263,29 @@ export class ViProgress extends LitElement {
     const gapPosition = this.gapPosition ?? (isDashboard ? 'bottom' : 'top');
     const gapLength = (gapDeg / 360) * circumference;
     const drawLength = circumference - gapLength;
-    
+
     // Rotate to position the gap correctly
     let rotation = -90; // Default is gap at top (for circle)
     if (isDashboard) {
-      if (gapPosition === 'bottom') rotation = 90 + (gapDeg / 2);
-      if (gapPosition === 'top') rotation = -90 + (gapDeg / 2);
-      if (gapPosition === 'left') rotation = 180 + (gapDeg / 2);
-      if (gapPosition === 'right') rotation = 0 + (gapDeg / 2);
+      if (gapPosition === 'bottom') rotation = 90 + gapDeg / 2;
+      if (gapPosition === 'top') rotation = -90 + gapDeg / 2;
+      if (gapPosition === 'left') rotation = 180 + gapDeg / 2;
+      if (gapPosition === 'right') rotation = 0 + gapDeg / 2;
     }
 
     // Gradient parsing
     let gradientDefs: unknown = nothing;
-    let circleStrokeColor = typeof this.strokeColor === 'string' ? this.strokeColor : undefined;
+    let circleStrokeColor =
+      typeof this.strokeColor === 'string' ? this.strokeColor : undefined;
 
     if (this.strokeColor) {
-      if (typeof this.strokeColor === 'string' && this.strokeColor.includes('linear-gradient')) {
-        const match = this.strokeColor.match(/linear-gradient\(\s*(.*?)\s*,\s*(.*?)\s*,\s*(.*?)\s*\)/);
+      if (
+        typeof this.strokeColor === 'string' &&
+        this.strokeColor.includes('linear-gradient')
+      ) {
+        const match = this.strokeColor.match(
+          /linear-gradient\(\s*(.*?)\s*,\s*(.*?)\s*,\s*(.*?)\s*\)/,
+        );
         if (match) {
           gradientDefs = svg`
             <defs>
@@ -262,7 +306,7 @@ export class ViProgress extends LitElement {
             if (key === 'to') offset = '100%';
             return svg`<stop offset=${offset} stop-color=${value} />`;
           });
-          
+
         gradientDefs = svg`
           <defs>
             <linearGradient id=${this._gradId} x1="0%" y1="0%" x2="100%" y2="0%">
@@ -278,7 +322,7 @@ export class ViProgress extends LitElement {
     if (this.steps !== undefined && this.steps > 0) {
       const stepsCount = this.steps;
       const stepGap = 2; // Fixed gap size in px equivalent
-      const numGaps = isDashboard ? (stepsCount - 1) : stepsCount;
+      const numGaps = isDashboard ? stepsCount - 1 : stepsCount;
       const totalStepGapLength = numGaps * stepGap;
       const stepLength = (drawLength - totalStepGapLength) / stepsCount;
       const stepRatio = 100 / stepsCount;
@@ -288,7 +332,7 @@ export class ViProgress extends LitElement {
         const isActive = i < currentStep;
         const offsetAngle = i * (stepLength + stepGap) * (360 / circumference);
         const stepRotation = rotation + offsetAngle;
-        
+
         return svg`
           <circle
             class=${isActive ? 'vi-progress-circle-indicator' : 'vi-progress-circle-track'}
@@ -299,26 +343,43 @@ export class ViProgress extends LitElement {
               strokeDashoffset: '0',
               transform: `rotate(${stepRotation}deg)`,
               transformOrigin: '50% 50%',
-              stroke: isActive && circleStrokeColor ? circleStrokeColor : (!isActive && this.trailColor ? this.trailColor : undefined)
+              stroke:
+                isActive && circleStrokeColor
+                  ? circleStrokeColor
+                  : !isActive && this.trailColor
+                    ? this.trailColor
+                    : undefined,
             })}
           />
         `;
       };
 
       return html`
-        <svg viewBox="0 0 100 100" class="vi-progress-circle-svg" style="transform: none;">
+        <svg
+          viewBox="0 0 100 100"
+          class="vi-progress-circle-svg"
+          style="transform: none;"
+        >
           ${gradientDefs}
-          ${Array.from({ length: stepsCount }).map((_, i) => renderCircularStep(i))}
+          ${Array.from({ length: stepsCount }).map((_, i) =>
+            renderCircularStep(i),
+          )}
         </svg>
         ${this.renderInfo()}
       `;
     }
-    
-    const offset = drawLength - ((this.percentage / 100) * drawLength);
-    const successOffset = drawLength - ((Math.min(100, Math.max(0, this.successPercent)) / 100) * drawLength);
+
+    const offset = drawLength - (this.percentage / 100) * drawLength;
+    const successOffset =
+      drawLength -
+      (Math.min(100, Math.max(0, this.successPercent)) / 100) * drawLength;
 
     return html`
-      <svg viewBox="0 0 100 100" class="vi-progress-circle-svg" style="transform: rotate(${rotation}deg);">
+      <svg
+        viewBox="0 0 100 100"
+        class="vi-progress-circle-svg"
+        style="transform: rotate(${rotation}deg);"
+      >
         ${gradientDefs}
         <circle
           part="track"
@@ -329,7 +390,7 @@ export class ViProgress extends LitElement {
           stroke-linecap=${this.strokeLinecap}
           style=${styleMap({
             strokeDasharray: `${drawLength} ${circumference}`,
-            strokeDashoffset: isDashboard ? '0' : undefined
+            strokeDashoffset: isDashboard ? '0' : undefined,
           })}
         />
         <circle
@@ -342,21 +403,22 @@ export class ViProgress extends LitElement {
           style=${styleMap({
             strokeDasharray: `${drawLength} ${circumference}`,
             strokeDashoffset: `${offset}`,
-            stroke: circleStrokeColor
+            stroke: circleStrokeColor,
           })}
         ></circle>
-        ${this.successPercent > 0 ? html`
-        <circle
-          class="vi-progress-circle-success"
-          cx="50"
-          cy="50"
-          r=${radius}
-          stroke-linecap=${this.strokeLinecap}
-          style=${styleMap({
-            strokeDasharray: `${drawLength} ${circumference}`,
-            strokeDashoffset: `${successOffset}`,
-          })}
-        ></circle>` : nothing}
+        ${this.successPercent > 0
+          ? html` <circle
+              class="vi-progress-circle-success"
+              cx="50"
+              cy="50"
+              r=${radius}
+              stroke-linecap=${this.strokeLinecap}
+              style=${styleMap({
+                strokeDasharray: `${drawLength} ${circumference}`,
+                strokeDashoffset: `${successOffset}`,
+              })}
+            ></circle>`
+          : nothing}
       </svg>
       ${this.renderInfo()}
     `;
@@ -369,7 +431,7 @@ export class ViProgress extends LitElement {
       [`vi-progress--variant-${this.effectiveVariant}`]: true,
       [`vi-progress--size-${this.size}`]: true,
       [`vi-progress--status-${this.effectiveStatus}`]: true,
-      'vi-progress--steps': this.steps !== undefined
+      'vi-progress--steps': this.steps !== undefined,
     };
 
     return html`
@@ -378,14 +440,19 @@ export class ViProgress extends LitElement {
         class=${classMap(classes)}
         style=${styleMap(this.baseStyles)}
         role="progressbar"
-        aria-valuenow=${Math.max(0, Math.min(this.value, Math.max(0, this.max)))}
+        aria-valuenow=${Math.max(
+          0,
+          Math.min(this.value, Math.max(0, this.max)),
+        )}
         aria-valuemin="0"
         aria-valuemax=${Math.max(0, this.max)}
         aria-label=${this.ariaLabel || 'progress'}
       >
-        ${this.steps !== undefined && this.type === 'line' 
-          ? this.renderSteps() 
-          : (this.type === 'line' ? this.renderLine() : this.renderCircle())}
+        ${this.steps !== undefined && this.type === 'line'
+          ? this.renderSteps()
+          : this.type === 'line'
+            ? this.renderLine()
+            : this.renderCircle()}
       </div>
     `;
   }

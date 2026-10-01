@@ -57,23 +57,34 @@ describe('vi-button', () => {
     it('should dispatch a click event when the native button is clicked', async () => {
       let clickCount = 0;
       // The browser-runner allows us to mix native event listeners with WDIO commands
-      render(html`<vi-button @click=${() => (clickCount += 1)}>Click Me</vi-button>`, container);
+      render(
+        html`<vi-button @click=${() => (clickCount += 1)}>Click Me</vi-button>`,
+        container,
+      );
 
       // Ensure Lit has finished rendering and binding event listeners
       const el = document.querySelector('vi-button') as ViButton;
       await el.updateComplete;
 
       const nativeButton = await $('vi-button').shadow$('.button');
-      
+
       // Use native browser click to bypass WDIO's visual/animation safety checks
-      await browser.execute((btn) => (btn as HTMLButtonElement).click(), nativeButton);
+      await browser.execute(
+        (btn) => (btn as HTMLButtonElement).click(),
+        nativeButton,
+      );
 
       expect(clickCount).toBe(1);
     });
 
     it('should NOT dispatch a click event when disabled', async () => {
       let clickCount = 0;
-      render(html`<vi-button disabled @click=${() => (clickCount += 1)}>Click Me</vi-button>`, container);
+      render(
+        html`<vi-button disabled @click=${() => (clickCount += 1)}
+          >Click Me</vi-button
+        >`,
+        container,
+      );
 
       // A disabled <button> element does not fire click events.
       // We assert that our component correctly applies the native `disabled` attribute,
@@ -83,7 +94,10 @@ describe('vi-button', () => {
 
       // Attempting a click should not increment the counter.
       // We use `browser.execute` to bypass WDIO's safety check that would throw an error.
-      await browser.execute((btn) => (btn as HTMLButtonElement).click(), nativeButton);
+      await browser.execute(
+        (btn) => (btn as HTMLButtonElement).click(),
+        nativeButton,
+      );
 
       expect(clickCount).toBe(0);
     });
@@ -98,8 +112,13 @@ describe('vi-button', () => {
 
   describe('Step 4: Attributes and Reflection', () => {
     it('should reflect string properties to attributes', async () => {
-      render(html`<vi-button variant="danger" size="lg" icon-placement="end">Button</vi-button>`, container);
-      
+      render(
+        html`<vi-button variant="danger" size="lg" icon-placement="end"
+          >Button</vi-button
+        >`,
+        container,
+      );
+
       const host = await $('vi-button');
       await expect(host).toHaveAttribute('variant', 'danger');
       await expect(host).toHaveAttribute('size', 'lg');
@@ -107,7 +126,10 @@ describe('vi-button', () => {
     });
 
     it('should reflect boolean properties as attributes', async () => {
-      render(html`<vi-button full-width icon-only>Button</vi-button>`, container);
+      render(
+        html`<vi-button full-width icon-only>Button</vi-button>`,
+        container,
+      );
 
       const host = await $('vi-button');
       await expect(host).toHaveAttribute('full-width');
@@ -116,20 +138,25 @@ describe('vi-button', () => {
 
     it('should hide the icon slot when no icon is provided', async () => {
       render(html`<vi-button>No Icon</vi-button>`, container);
-      
+
       const host = await $('vi-button');
       const iconSlot = await host.shadow$('.icon');
       await expect(iconSlot).toHaveAttribute('hidden');
     });
 
     it('should unhide the icon slot when an icon is assigned', async () => {
-      render(html`<vi-button><span slot="icon">★</span>Label</vi-button>`, container);
-      
+      render(
+        html`<vi-button><span slot="icon">★</span>Label</vi-button>`,
+        container,
+      );
+
       const host = await $('vi-button');
       const iconSlot = await host.shadow$('.icon');
-      
+
       // slotchange is asynchronous natively, so we wait for Lit to process the DOM update
-      await browser.waitUntil(async () => (await iconSlot.getAttribute('hidden')) === null);
+      await browser.waitUntil(
+        async () => (await iconSlot.getAttribute('hidden')) === null,
+      );
     });
   });
 
@@ -137,15 +164,18 @@ describe('vi-button', () => {
     it('should set type="button" and tabindex="0" on the internal native button', async () => {
       render(html`<vi-button>Default</vi-button>`, container);
       const nativeButton = await $('vi-button').shadow$('.button');
-      
+
       await expect(nativeButton).toHaveAttribute('type', 'button');
       await expect(nativeButton).toHaveAttribute('tabindex', '0');
     });
 
     it('should expose the correct CSS parts for styling', async () => {
-      render(html`<vi-button><span slot="icon">★</span>Label</vi-button>`, container);
+      render(
+        html`<vi-button><span slot="icon">★</span>Label</vi-button>`,
+        container,
+      );
       const host = await $('vi-button');
-      
+
       const nativeButton = await host.shadow$('.button');
       await expect(nativeButton).toHaveAttribute('part', 'button');
 
@@ -159,15 +189,15 @@ describe('vi-button', () => {
     it('should safely handle focus state transitions when disabled is toggled', async () => {
       render(html`<vi-button>Lifecycle Test</vi-button>`, container);
       const el = document.querySelector('vi-button') as ViButton;
-      
+
       // The updated() lifecycle method has branches for disabling and re-enabling
       // We toggle them to ensure the FocusableMixin's _setHostFocusable executes correctly
       el.disabled = true;
       await el.updateComplete;
-      
+
       el.disabled = false;
       await el.updateComplete;
-      
+
       const nativeButton = await $('vi-button').shadow$('.button');
       await expect(nativeButton).toBeEnabled();
     });
@@ -196,11 +226,18 @@ describe('vi-button', () => {
     });
 
     it('should re-hide the icon slot if the icon is dynamically removed', async () => {
-      render(html`<vi-button><span id="test-icon" slot="icon">★</span>Label</vi-button>`, container);
+      render(
+        html`<vi-button
+          ><span id="test-icon" slot="icon">★</span>Label</vi-button
+        >`,
+        container,
+      );
       const iconSlot = await $('vi-button').shadow$('.icon');
-      
+
       // Wait for initial unhide
-      await browser.waitUntil(async () => (await iconSlot.getAttribute('hidden')) === null);
+      await browser.waitUntil(
+        async () => (await iconSlot.getAttribute('hidden')) === null,
+      );
 
       // Dynamically remove the icon
       const iconElement = document.getElementById('test-icon');
@@ -208,7 +245,9 @@ describe('vi-button', () => {
 
       // Wait for slotchange to catch the removal and hide the slot again
       // getAttribute('hidden') returns an empty string when the boolean attribute is present
-      await browser.waitUntil(async () => (await iconSlot.getAttribute('hidden')) !== null);
+      await browser.waitUntil(
+        async () => (await iconSlot.getAttribute('hidden')) !== null,
+      );
     });
 
     it('should not submit a form when clicked since it defaults to type="button"', async () => {
@@ -218,17 +257,23 @@ describe('vi-button', () => {
         submitted = true;
       };
 
-      render(html`
-        <form @submit=${onSubmit}>
-          <vi-button>Submit</vi-button>
-        </form>
-      `, container);
+      render(
+        html`
+          <form @submit=${onSubmit}>
+            <vi-button>Submit</vi-button>
+          </form>
+        `,
+        container,
+      );
 
       const el = document.querySelector('vi-button') as ViButton;
       await el.updateComplete;
 
       const nativeButton = await $('vi-button').shadow$('.button');
-      await browser.execute((btn) => (btn as HTMLButtonElement).click(), nativeButton);
+      await browser.execute(
+        (btn) => (btn as HTMLButtonElement).click(),
+        nativeButton,
+      );
 
       expect(submitted).toBe(false);
     });
@@ -250,7 +295,9 @@ describe('vi-button', () => {
 
       // Verify the internal button actually received the delegated focus
       const isInternalFocused = await browser.execute((hostEl) => {
-        return (hostEl as HTMLElement).shadowRoot?.activeElement?.classList.contains('button');
+        return (
+          hostEl as HTMLElement
+        ).shadowRoot?.activeElement?.classList.contains('button');
       }, host);
       expect(isInternalFocused).toBe(true);
 
@@ -291,7 +338,10 @@ describe('vi-button', () => {
     });
 
     it('should move focus backward to the previous element via Shift+Tab', async () => {
-      render(html`<button id="before">Before</button><vi-button>After</vi-button>`, container);
+      render(
+        html`<button id="before">Before</button><vi-button>After</vi-button>`,
+        container,
+      );
       const el = document.querySelector('vi-button') as ViButton;
       await el.updateComplete;
 
@@ -344,7 +394,12 @@ describe('vi-button', () => {
     });
 
     it('should NOT be reachable via Tab when disabled', async () => {
-      render(html`<button id="before">Before</button><vi-button disabled>Disabled</vi-button><button id="after">After</button>`, container);
+      render(
+        html`<button id="before">Before</button
+          ><vi-button disabled>Disabled</vi-button
+          ><button id="after">After</button>`,
+        container,
+      );
       const el = document.querySelector('vi-button') as ViButton;
       await el.updateComplete;
 
@@ -361,7 +416,10 @@ describe('vi-button', () => {
     });
 
     it('should apply aria-label to the host element for accessibility', async () => {
-      render(html`<vi-button icon-only aria-label="Settings"></vi-button>`, container);
+      render(
+        html`<vi-button icon-only aria-label="Settings"></vi-button>`,
+        container,
+      );
       const host = await $('vi-button');
 
       await expect(host).toHaveAttribute('aria-label', 'Settings');
@@ -370,7 +428,7 @@ describe('vi-button', () => {
     it('should update displayed text when default slot content changes dynamically', async () => {
       const initialText = 'Initial Label';
       const updatedText = 'Updated Label';
-      
+
       render(html`<vi-button>${initialText}</vi-button>`, container);
       const host = await $('vi-button');
       await expect(host).toHaveText(initialText);
@@ -400,7 +458,10 @@ describe('vi-button', () => {
   describe('Step 8: Keyboard Interactions and Attribute Sync', () => {
     it('should trigger a click event when Enter or Space is pressed', async () => {
       let clickCount = 0;
-      render(html`<vi-button @click=${() => (clickCount += 1)}>Key Test</vi-button>`, container);
+      render(
+        html`<vi-button @click=${() => (clickCount += 1)}>Key Test</vi-button>`,
+        container,
+      );
       const el = document.querySelector('vi-button') as ViButton;
       await el.updateComplete;
 
@@ -421,54 +482,68 @@ describe('vi-button', () => {
       render(html`<vi-button>Attr Sync</vi-button>`, container);
       const el = document.querySelector('vi-button') as ViButton;
       const nativeButton = await $('vi-button').shadow$('.button');
-      
+
       // Consumer uses standard DOM API instead of JS property
       el.setAttribute('disabled', '');
       await el.updateComplete;
-      
+
       // Verify Lit caught it and updated the internal DOM
       expect(el.disabled).toBe(true);
       await expect(nativeButton).toBeDisabled();
     });
 
     it('should handle multiple nodes in the icon slot without breaking', async () => {
-      render(html`<vi-button><span slot="icon">1</span><span slot="icon">2</span>Label</vi-button>`, container);
+      render(
+        html`<vi-button
+          ><span slot="icon">1</span><span slot="icon">2</span>Label</vi-button
+        >`,
+        container,
+      );
       const host = await $('vi-button');
       const iconSlot = await host.shadow$('.icon');
-      
-      await browser.waitUntil(async () => (await iconSlot.getAttribute('hidden')) === null);
+
+      await browser.waitUntil(
+        async () => (await iconSlot.getAttribute('hidden')) === null,
+      );
       await expect(iconSlot).not.toHaveAttribute('hidden');
     });
 
     it('should prevent default and stop propagation when clicked while disabled', async () => {
       render(html`<vi-button disabled>Disabled</vi-button>`, container);
       const host = await $('vi-button');
-      
-      const result = await browser.execute((el: any) => {
-        let prevented = false;
-        let stopped = false;
-        
-        const event = new MouseEvent('click', { cancelable: true, bubbles: true });
-        
-        const originalPreventDefault = event.preventDefault.bind(event);
-        const originalStopImmediatePropagation = event.stopImmediatePropagation.bind(event);
-        
-        event.preventDefault = () => {
-          prevented = true;
-          originalPreventDefault();
-        };
-        
-        event.stopImmediatePropagation = () => {
-          stopped = true;
-          originalStopImmediatePropagation();
-        };
-        
-        // Dispatch on the button inside the shadow DOM to trigger onClick properly
-        const internalBtn = el.shadowRoot.querySelector('button');
-        internalBtn.dispatchEvent(event);
-        
-        return { prevented, stopped };
-      }, await host);
+
+      const result = await browser.execute(
+        (el: any) => {
+          let prevented = false;
+          let stopped = false;
+
+          const event = new MouseEvent('click', {
+            cancelable: true,
+            bubbles: true,
+          });
+
+          const originalPreventDefault = event.preventDefault.bind(event);
+          const originalStopImmediatePropagation =
+            event.stopImmediatePropagation.bind(event);
+
+          event.preventDefault = () => {
+            prevented = true;
+            originalPreventDefault();
+          };
+
+          event.stopImmediatePropagation = () => {
+            stopped = true;
+            originalStopImmediatePropagation();
+          };
+
+          // Dispatch on the button inside the shadow DOM to trigger onClick properly
+          const internalBtn = el.shadowRoot.querySelector('button');
+          internalBtn.dispatchEvent(event);
+
+          return { prevented, stopped };
+        },
+        await host,
+      );
 
       expect(result.prevented).toBe(true);
       expect(result.stopped).toBe(true);
@@ -487,7 +562,7 @@ describe('vi-button', () => {
           <vi-button>Accessible Button</vi-button>
           <vi-button disabled>Disabled Button</vi-button>
         `,
-        container
+        container,
       );
 
       const host = document.querySelector('vi-button') as ViButton;
@@ -499,9 +574,9 @@ describe('vi-button', () => {
           'html-has-lang': { enabled: false },
           'page-has-heading-one': { enabled: false },
           'landmark-one-main': { enabled: false },
-          'region': { enabled: false },
-          'color-contrast': { enabled: false }
-        }
+          region: { enabled: false },
+          'color-contrast': { enabled: false },
+        },
       });
 
       expect(results.violations).toHaveLength(0);

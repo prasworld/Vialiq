@@ -167,12 +167,12 @@ button {
 // Optional icon overrides if hidden
 .chip-avatar[hidden],
 .chip-icon[hidden],
-::slotted([slot="trailing-icon"][hidden]) {
+::slotted([slot='trailing-icon'][hidden]) {
   display: none !important;
 }
 
 // Inner button override
-vi-button[part="remove-btn"] {
+vi-button[part='remove-btn'] {
   margin-inline-start: 4px;
   margin-inline-end: -6px;
   border-radius: 50%;

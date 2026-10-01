@@ -1,5 +1,9 @@
 import type { Plugin } from 'flatpickr/dist/types/options';
-import type { CustomLocale, key as LocaleKey, Locale } from 'flatpickr/dist/types/locale';
+import type {
+  CustomLocale,
+  key as LocaleKey,
+  Locale,
+} from 'flatpickr/dist/types/locale';
 
 export type DatePickerMode = 'date' | 'month' | 'month-year' | 'range' | 'week';
 
@@ -32,7 +36,9 @@ export interface ViDatePickerPlugin {
 }
 
 /** Shape of a flatpickr dist/l10n/*.js module's default export */
-export type L10nModule = Partial<Record<LocaleKey, CustomLocale>> & { default: Locale };
+export type L10nModule = Partial<Record<LocaleKey, CustomLocale>> & {
+  default: Locale;
+};
 
 export type DatePickerPluginInput = Plugin | ViDatePickerPlugin;
 

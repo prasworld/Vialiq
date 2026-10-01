@@ -46,17 +46,11 @@ describe('vi-checkbox', () => {
     it('should sync properties from attributes', async () => {
       render(
         html`
-          <vi-checkbox
-            name="consent"
-            value="yes"
-            checked
-            required
-            disabled
-          >
+          <vi-checkbox name="consent" value="yes" checked required disabled>
             Agree
           </vi-checkbox>
         `,
-        container
+        container,
       );
       const el = document.querySelector('vi-checkbox') as ViCheckbox;
       await el.updateComplete;
@@ -97,7 +91,9 @@ describe('vi-checkbox', () => {
         html`
           <vi-checkbox
             value="agree"
-            @vi-checkbox-change=${(e: CustomEvent<{ checked: boolean; value: string }>) => {
+            @vi-checkbox-change=${(
+              e: CustomEvent<{ checked: boolean; value: string }>,
+            ) => {
               changeFired = true;
               lastChecked = e.detail.checked;
               lastValue = e.detail.value;
@@ -106,7 +102,7 @@ describe('vi-checkbox', () => {
             Agree
           </vi-checkbox>
         `,
-        container
+        container,
       );
 
       const host = await $('vi-checkbox');
@@ -134,7 +130,7 @@ describe('vi-checkbox', () => {
             Agree
           </vi-checkbox>
         `,
-        container
+        container,
       );
 
       const host = await $('vi-checkbox');
@@ -153,7 +149,7 @@ describe('vi-checkbox', () => {
     it('should render indeterminate state correctly', async () => {
       render(
         html`<vi-checkbox indeterminate>Select All</vi-checkbox>`,
-        container
+        container,
       );
 
       const host = await $('vi-checkbox');
@@ -162,7 +158,7 @@ describe('vi-checkbox', () => {
       // Native property should be set
       const isIndeterminate = await browser.execute(
         (el) => (el as HTMLInputElement).indeterminate,
-        input
+        input,
       );
       expect(isIndeterminate).toBe(true);
 
@@ -173,7 +169,7 @@ describe('vi-checkbox', () => {
     it('should transition indeterminate state to checked/unchecked on click', async () => {
       render(
         html`<vi-checkbox indeterminate>Select All</vi-checkbox>`,
-        container
+        container,
       );
 
       const host = await $('vi-checkbox');
@@ -190,14 +186,11 @@ describe('vi-checkbox', () => {
 
   describe('Keyboard accessibility', () => {
     it('should toggle state via Space key when focused', async () => {
-      render(
-        html`<vi-checkbox value="key">Keyboard</vi-checkbox>`,
-        container
-      );
+      render(html`<vi-checkbox value="key">Keyboard</vi-checkbox>`, container);
 
       const el = document.querySelector('vi-checkbox') as ViCheckbox;
       await el.updateComplete;
-      
+
       el.focus();
       await el.updateComplete;
       await browser.pause(50);
@@ -219,7 +212,7 @@ describe('vi-checkbox', () => {
             <vi-checkbox name="terms" required>Accept terms</vi-checkbox>
           </form>
         `,
-        container
+        container,
       );
 
       const el = document.querySelector('vi-checkbox') as ViCheckbox;
@@ -244,7 +237,7 @@ describe('vi-checkbox', () => {
             <vi-checkbox name="opt" checked>Opt In</vi-checkbox>
           </form>
         `,
-        container
+        container,
       );
 
       const form = document.getElementById('form-reset') as HTMLFormElement;
@@ -280,7 +273,10 @@ describe('vi-checkbox', () => {
     });
 
     it('should change tabIndex to -1 when disabled', async () => {
-      render(html`<vi-checkbox disabled>Disabled Focus</vi-checkbox>`, container);
+      render(
+        html`<vi-checkbox disabled>Disabled Focus</vi-checkbox>`,
+        container,
+      );
       const el = document.querySelector('vi-checkbox') as ViCheckbox;
       await el.updateComplete;
 
@@ -339,11 +335,17 @@ describe('vi-checkbox', () => {
       render(
         html`
           <vi-checkbox name="check-a11y-1">Default Checkbox</vi-checkbox>
-          <vi-checkbox name="check-a11y-2" checked>Checked Checkbox</vi-checkbox>
-          <vi-checkbox name="check-a11y-3" indeterminate>Indeterminate Checkbox</vi-checkbox>
-          <vi-checkbox name="check-a11y-4" disabled>Disabled Checkbox</vi-checkbox>
+          <vi-checkbox name="check-a11y-2" checked
+            >Checked Checkbox</vi-checkbox
+          >
+          <vi-checkbox name="check-a11y-3" indeterminate
+            >Indeterminate Checkbox</vi-checkbox
+          >
+          <vi-checkbox name="check-a11y-4" disabled
+            >Disabled Checkbox</vi-checkbox
+          >
         `,
-        container
+        container,
       );
 
       const host = document.querySelector('vi-checkbox') as ViCheckbox;
@@ -355,13 +357,12 @@ describe('vi-checkbox', () => {
           'html-has-lang': { enabled: false },
           'page-has-heading-one': { enabled: false },
           'landmark-one-main': { enabled: false },
-          'region': { enabled: false },
-          'color-contrast': { enabled: false }
-        }
+          region: { enabled: false },
+          'color-contrast': { enabled: false },
+        },
       });
 
       expect(results.violations).toHaveLength(0);
     });
   });
 });
-

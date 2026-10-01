@@ -4,7 +4,6 @@ import type { Preview } from '@storybook/web-components';
 // the default-applied typography rules — without needing a build/publish step.
 import '@vialiq/flux-ui/styles/_index.scss';
 
-
 const preview: Preview = {
   parameters: {
     controls: {

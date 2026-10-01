@@ -168,7 +168,7 @@ describe('vi-tabs', () => {
         <vi-tabs active="t1" destroy-on-close>
           <vi-tab tab-id="t1">Tab 1</vi-tab>
           <vi-tab tab-id="t2" closable>Tab 2</vi-tab>
-          
+
           <vi-tab-panel for="t1">Panel 1</vi-tab-panel>
           <vi-tab-panel for="t2">Panel 2</vi-tab-panel>
         </vi-tabs>
@@ -179,7 +179,7 @@ describe('vi-tabs', () => {
 
     const t2 = await $('vi-tab[tab-id="t2"]');
     const closeBtn = await t2.shadow$('button[part="close-button"]');
-    
+
     // Initially they exist
     expect(await $('vi-tab[tab-id="t2"]').isExisting()).toBe(true);
     expect(await $('vi-tab-panel[for="t2"]').isExisting()).toBe(true);
@@ -403,7 +403,14 @@ describe('vi-tabs', () => {
     render(
       html`
         <vi-tabs active="t1">
-          <vi-tab tab-id="t1" closable @vi-tab-before-close="${() => { eventFired = true; }}">Tab 1</vi-tab>
+          <vi-tab
+            tab-id="t1"
+            closable
+            @vi-tab-before-close="${() => {
+              eventFired = true;
+            }}"
+            >Tab 1</vi-tab
+          >
         </vi-tabs>
       `,
       container,
@@ -413,7 +420,7 @@ describe('vi-tabs', () => {
     const t1 = await $('vi-tab[tab-id="t1"]');
     const closeBtn = await t1.shadow$('.vi-tab__close');
     await expect(closeBtn).toExist();
-    
+
     await browser.execute((el: any) => el.click(), closeBtn);
     expect(eventFired).toBe(true);
   });

@@ -20,42 +20,87 @@
   // Level 2: Component default
   // Level 3: Semantic token
   --progress-track-bg: var(--vi-progress-track-bg, #{tokens.$layer-03});
-  --progress-indicator-bg: var(--vi-progress-indicator-bg, #{tokens.$color-primary});
+  --progress-indicator-bg: var(
+    --vi-progress-indicator-bg,
+    #{tokens.$color-primary}
+  );
   --progress-text-color: var(--vi-progress-text-color, #{tokens.$text-primary});
-  --progress-border-radius: var(--vi-progress-border-radius, #{tokens.$border-radius-full});
+  --progress-border-radius: var(
+    --vi-progress-border-radius,
+    #{tokens.$border-radius-full}
+  );
   --progress-line-height: var(--vi-progress-line-height, #{func.to-rem(8px)});
   --progress-circle-size: var(--vi-progress-circle-size, #{func.to-rem(120px)});
   --progress-font-size: var(--vi-progress-font-size, #{tokens.$font-size-base});
 
   // Variants
   &.vi-progress--variant-primary {
-    --progress-indicator-bg: var(--vi-progress-primary-bg, #{tokens.$color-primary});
+    --progress-indicator-bg: var(
+      --vi-progress-primary-bg,
+      #{tokens.$color-primary}
+    );
   }
   &.vi-progress--variant-success {
-    --progress-indicator-bg: var(--vi-progress-success-bg, #{tokens.$color-green-500});
+    --progress-indicator-bg: var(
+      --vi-progress-success-bg,
+      #{tokens.$color-green-500}
+    );
   }
   &.vi-progress--variant-error {
-    --progress-indicator-bg: var(--vi-progress-error-bg, #{tokens.$color-red-500});
+    --progress-indicator-bg: var(
+      --vi-progress-error-bg,
+      #{tokens.$color-red-500}
+    );
   }
   &.vi-progress--variant-warning {
-    --progress-indicator-bg: var(--vi-progress-warning-bg, #{tokens.$color-yellow-500});
+    --progress-indicator-bg: var(
+      --vi-progress-warning-bg,
+      #{tokens.$color-yellow-500}
+    );
   }
 
   // Sizes
   &.vi-progress--size-sm {
-    --progress-line-height: var(--vi-progress-line-height-sm, #{func.to-rem(6px)});
-    --progress-font-size: var(--vi-progress-font-size-sm, #{tokens.$font-size-sm});
-    --progress-circle-size: var(--vi-progress-circle-size-sm, #{func.to-rem(80px)});
+    --progress-line-height: var(
+      --vi-progress-line-height-sm,
+      #{func.to-rem(6px)}
+    );
+    --progress-font-size: var(
+      --vi-progress-font-size-sm,
+      #{tokens.$font-size-sm}
+    );
+    --progress-circle-size: var(
+      --vi-progress-circle-size-sm,
+      #{func.to-rem(80px)}
+    );
   }
   &.vi-progress--size-md {
-    --progress-line-height: var(--vi-progress-line-height-md, #{func.to-rem(8px)});
-    --progress-font-size: var(--vi-progress-font-size-md, #{tokens.$font-size-base});
-    --progress-circle-size: var(--vi-progress-circle-size-md, #{func.to-rem(120px)});
+    --progress-line-height: var(
+      --vi-progress-line-height-md,
+      #{func.to-rem(8px)}
+    );
+    --progress-font-size: var(
+      --vi-progress-font-size-md,
+      #{tokens.$font-size-base}
+    );
+    --progress-circle-size: var(
+      --vi-progress-circle-size-md,
+      #{func.to-rem(120px)}
+    );
   }
   &.vi-progress--size-lg {
-    --progress-line-height: var(--vi-progress-line-height-lg, #{func.to-rem(12px)});
-    --progress-font-size: var(--vi-progress-font-size-lg, #{tokens.$font-size-lg});
-    --progress-circle-size: var(--vi-progress-circle-size-lg, #{func.to-rem(160px)});
+    --progress-line-height: var(
+      --vi-progress-line-height-lg,
+      #{func.to-rem(12px)}
+    );
+    --progress-font-size: var(
+      --vi-progress-font-size-lg,
+      #{tokens.$font-size-lg}
+    );
+    --progress-circle-size: var(
+      --vi-progress-circle-size-lg,
+      #{func.to-rem(160px)}
+    );
   }
 }
 
@@ -94,7 +139,9 @@
     position: absolute;
     left: 0;
     top: 0;
-    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease;
+    transition:
+      width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+      background-color 0.3s ease;
   }
 
   // Status: active (gleaming sweep animation)
@@ -107,7 +154,8 @@
     right: 0;
     background: var(--vi-progress-gleam-bg, #{tokens.$layer-01});
     opacity: 0;
-    animation: vi-progress-active-gleam 2s cubic-bezier(0.23, 1, 0.32, 1) infinite;
+    animation: vi-progress-active-gleam 2s cubic-bezier(0.23, 1, 0.32, 1)
+      infinite;
   }
 }
 
@@ -150,7 +198,9 @@
     fill: transparent;
     stroke: var(--progress-indicator-bg);
     stroke-width: var(--vi-progress-circle-stroke-width, 6);
-    transition: stroke-dashoffset 0.3s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.3s ease;
+    transition:
+      stroke-dashoffset 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+      stroke 0.3s ease;
   }
 
   .vi-progress-info {
@@ -178,7 +228,9 @@
   .vi-progress-step-item {
     flex: 1;
     border-radius: var(--progress-border-radius);
-    transition: background-color 0.3s ease, height 0.3s ease;
+    transition:
+      background-color 0.3s ease,
+      height 0.3s ease;
   }
 }
 
@@ -197,14 +249,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  
+
   vi-icon {
-    font-size: calc(var(--progress-font-size) * 1.15); // icons slightly larger than text
+    font-size: calc(
+      var(--progress-font-size) * 1.15
+    ); // icons slightly larger than text
   }
-  
+
   // Specific icon colors overriding text color
   .vi-progress--variant-success & vi-icon {
-    color: var(--progress-indicator-bg); 
+    color: var(--progress-indicator-bg);
   }
   .vi-progress--variant-error & vi-icon {
     color: var(--progress-indicator-bg);
@@ -248,11 +302,11 @@
   .vi-progress-indicator {
     transition: none !important;
   }
-  
+
   .vi-progress--status-active .vi-progress-indicator::before {
     animation: none !important;
   }
-  
+
   .vi-progress-circle-indicator {
     transition: none !important;
   }

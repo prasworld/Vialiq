@@ -59,7 +59,7 @@ export const Button: Story = {
   render: (args) => {
     const placement = args['icon-placement'] ?? args.iconPlacement;
     const showIcon = placement !== 'none' || args.iconOnly;
-    
+
     return html`
       <vi-button
         variant=${args.variant}
@@ -69,7 +69,9 @@ export const Button: Story = {
         ?icon-only=${args.iconOnly}
         ?full-width=${args.fullWidth}
       >
-        ${showIcon ? html`<vi-icon slot="icon" name="check"></vi-icon>` : nothing}
+        ${showIcon
+          ? html`<vi-icon slot="icon" name="check"></vi-icon>`
+          : nothing}
         ${args.label}
       </vi-button>
     `;
@@ -90,7 +92,8 @@ export const IconOnly: Story = {
     fullWidth: { table: { disable: true } },
     iconOnly: { table: { disable: true } },
     label: {
-      description: 'Provides the accessible label (aria-label) for screen readers',
+      description:
+        'Provides the accessible label (aria-label) for screen readers',
     },
   },
   render: (args) => html`
@@ -111,19 +114,27 @@ export const TabNavigation: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Demonstrates that mixed interactive components respect custom `tabindex` values explicitly applied to their host elements, navigating out of DOM order.',
+        story:
+          'Demonstrates that mixed interactive components respect custom `tabindex` values explicitly applied to their host elements, navigating out of DOM order.',
       },
     },
   },
   render: () => html`
-    <div style="display: flex; flex-direction: column; gap: 1rem; width: 320px; padding: 1.5rem; border: 1px dashed #ccc; border-radius: 4px;">
-      <p style="margin: 0; font-size: 0.875rem; color: #666; font-family: sans-serif;">
-        Press <strong>Tab</strong> to cycle focus. Order: First → Second → Third → Fourth.
+    <div
+      style="display: flex; flex-direction: column; gap: 1rem; width: 320px; padding: 1.5rem; border: 1px dashed #ccc; border-radius: 4px;"
+    >
+      <p
+        style="margin: 0; font-size: 0.875rem; color: #666; font-family: sans-serif;"
+      >
+        Press <strong>Tab</strong> to cycle focus. Order: First → Second → Third
+        → Fourth.
       </p>
       <vi-input tabindex="3" placeholder="Third (tabindex=3)"></vi-input>
       <vi-button tabindex="1">First (tabindex=1)</vi-button>
       <vi-input tabindex="4" placeholder="Fourth (tabindex=4)"></vi-input>
-      <vi-button tabindex="2" variant="secondary">Second (tabindex=2)</vi-button>
+      <vi-button tabindex="2" variant="secondary"
+        >Second (tabindex=2)</vi-button
+      >
       <vi-button disabled tabindex="5">Disabled (skipped)</vi-button>
     </div>
   `,

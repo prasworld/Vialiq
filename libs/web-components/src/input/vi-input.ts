@@ -11,23 +11,7 @@ import { ValidityMixin, type ControlStatus } from '../base/validity-mixin.js';
 import { ViElement } from '../base/vi-element.js';
 import { ifNonEmpty } from '../base/if-non-empty.js';
 import inputStyles from './vi-input.scss?inline';
-
-/**
- * Supported input types.
- * Constrained to the subset that renders as a single-line text field —
- * multi-line (textarea) and specialised pickers (date, color, file) are
- * separate components.
- */
-export type InputType =
-  | 'text'
-  | 'email'
-  | 'password'
-  | 'search'
-  | 'tel'
-  | 'url'
-  | 'number';
-
-export type InputSize = 'xs' | 'sm' | 'md' | 'lg';
+import type { InputType, InputSize, AutocompleteValue } from './types.js';
 
 /**
  * vi-input
@@ -80,8 +64,10 @@ export class ViInput extends ValidityMixin(FocusableMixin(ViElement)) {
 
   // ── ValidityMixin contract — must be declared as @property —————————————
 
-  @property({ reflect: true }) override accessor status: ControlStatus = 'default';
-  @property({ type: Boolean, reflect: true }) override accessor required = false;
+  @property({ reflect: true }) override accessor status: ControlStatus =
+    'default';
+  @property({ type: Boolean, reflect: true }) override accessor required =
+    false;
   @property() override accessor validityMessage = '';
 
   // ── Public API ─────────────────────────────────────────────────────────────
@@ -94,6 +80,13 @@ export class ViInput extends ValidityMixin(FocusableMixin(ViElement)) {
 
   /** Form field name. Submitted with the form when set. */
   @property() accessor name = '';
+
+  /** Maximum string length for the input value. */
+  @property({ type: Number }) accessor maxlength: number | undefined =
+    undefined;
+
+  /** HTML autocomplete attribute value. */
+  @property() accessor autocomplete: AutocompleteValue | '' = '';
 
   /** Current value. Synced to ElementInternals for form participation. */
   @property() override accessor value = '';
@@ -125,6 +118,9 @@ export class ViInput extends ValidityMixin(FocusableMixin(ViElement)) {
 
     const input = this._focusableElement;
     if (input) {
+      // Clean Code exception: Synchronous DOM mutation is required here to ensure
+      // validity checks on programmatically changed values don't fail due to Lit's
+      // async rendering cycle.
       if (input.value !== this.value) {
         input.value = this.value;
       }
@@ -179,7 +175,7 @@ export class ViInput extends ValidityMixin(FocusableMixin(ViElement)) {
 
   // ── Event handlers ─────────────────────────────────────────────────────────
 
-  private _onInput(e: Event): void {
+  protected _onInput(e: Event): void {
     e.stopPropagation();
     const input = e.target as HTMLInputElement;
     this.value = input.value;
@@ -192,7 +188,7 @@ export class ViInput extends ValidityMixin(FocusableMixin(ViElement)) {
     );
   }
 
-  private _onChange(e: Event): void {
+  protected _onChange(e: Event): void {
     e.stopPropagation();
     const input = e.target as HTMLInputElement;
     this.value = input.value;
@@ -232,8 +228,17 @@ export class ViInput extends ValidityMixin(FocusableMixin(ViElement)) {
   }
 
   override render(): TemplateResult {
-    const { type, placeholder, name, value, disabled, required, readonly } =
-      this;
+    const {
+      type,
+      placeholder,
+      name,
+      value,
+      disabled,
+      required,
+      readonly,
+      maxlength,
+      autocomplete,
+    } = this;
 
     return html`
       <div class="input-field" part="field">
@@ -260,6 +265,8 @@ export class ViInput extends ValidityMixin(FocusableMixin(ViElement)) {
           )}
           placeholder=${ifNonEmpty(placeholder)}
           name=${ifNonEmpty(name)}
+          maxlength=${maxlength ?? undefined}
+          autocomplete=${ifNonEmpty(autocomplete)}
           @input=${this._onInput}
           @change=${this._onChange}
         />

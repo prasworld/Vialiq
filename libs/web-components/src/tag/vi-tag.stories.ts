@@ -9,7 +9,15 @@ const meta: Meta = {
   argTypes: {
     variant: {
       control: 'select',
-      options: ['neutral', 'primary', 'success', 'warning', 'danger', 'info', 'contrast'],
+      options: [
+        'neutral',
+        'primary',
+        'success',
+        'warning',
+        'danger',
+        'info',
+        'contrast',
+      ],
       description: 'Colour variant theme',
     },
     appearance: {
@@ -89,7 +97,9 @@ export const Appearances: Story = {
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem;">
       <div>
-        <h4 style="margin-bottom: 0.5rem; font-family: sans-serif;">Subtle (Default)</h4>
+        <h4 style="margin-bottom: 0.5rem; font-family: sans-serif;">
+          Subtle (Default)
+        </h4>
         <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
           <vi-tag variant="neutral" appearance="subtle">Neutral</vi-tag>
           <vi-tag variant="primary" appearance="subtle">Primary</vi-tag>
@@ -115,7 +125,9 @@ export const Appearances: Story = {
       </div>
 
       <div>
-        <h4 style="margin-bottom: 0.5rem; font-family: sans-serif;">Solid (High Contrast)</h4>
+        <h4 style="margin-bottom: 0.5rem; font-family: sans-serif;">
+          Solid (High Contrast)
+        </h4>
         <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
           <vi-tag variant="neutral" appearance="solid">Neutral</vi-tag>
           <vi-tag variant="primary" appearance="solid">Primary</vi-tag>
@@ -134,7 +146,9 @@ export const Shapes: Story = {
   render: () => html`
     <div style="display: flex; flex-direction: column; gap: 1rem;">
       <div>
-        <h4 style="margin-bottom: 0.5rem; font-family: sans-serif;">Standard Rounded (4px)</h4>
+        <h4 style="margin-bottom: 0.5rem; font-family: sans-serif;">
+          Standard Rounded (4px)
+        </h4>
         <div style="display: flex; gap: 0.5rem;">
           <vi-tag variant="primary">Filter: Baseline</vi-tag>
           <vi-tag variant="success" removable>Site 101</vi-tag>
@@ -142,7 +156,9 @@ export const Shapes: Story = {
         </div>
       </div>
       <div>
-        <h4 style="margin-bottom: 0.5rem; font-family: sans-serif;">Pill Shape (9999px)</h4>
+        <h4 style="margin-bottom: 0.5rem; font-family: sans-serif;">
+          Pill Shape (9999px)
+        </h4>
         <div style="display: flex; gap: 0.5rem;">
           <vi-tag pill variant="primary">Filter: Baseline</vi-tag>
           <vi-tag pill variant="success" removable>Site 101</vi-tag>
@@ -194,9 +210,7 @@ export const WithIconsAndAvatars: Story = {
         <vi-icon slot="icon" name="user" size="12"></vi-icon>
         Dr. Smith (Investigator)
       </vi-tag>
-      <vi-tag variant="neutral" .count=${14} pill>
-        Open Queries
-      </vi-tag>
+      <vi-tag variant="neutral" .count=${14} pill> Open Queries </vi-tag>
       <vi-tag variant="info" removable .count=${3}>
         Protocol Amendments
       </vi-tag>
@@ -233,17 +247,27 @@ export const CustomSizingAndStyles: Story = {
     </style>
     <div style="display: flex; flex-direction: column; gap: 1.25rem;">
       <div>
-        <div style="font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 0.5rem;">
+        <div
+          style="font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 0.5rem;"
+        >
           1. Extra Large Hero Tag (--vi-tag-height: 36px)
         </div>
-        <vi-tag class="tag-hero-xl" variant="primary" dot removable .count=${42}>
+        <vi-tag
+          class="tag-hero-xl"
+          variant="primary"
+          dot
+          removable
+          .count=${42}
+        >
           <vi-icon slot="icon" name="user" size="18"></vi-icon>
           Hero XL Tag
         </vi-tag>
       </div>
 
       <div>
-        <div style="font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 0.5rem;">
+        <div
+          style="font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 0.5rem;"
+        >
           2. Ultra-Compact Grid Tag (--vi-tag-height: 16px)
         </div>
         <vi-tag class="tag-edc-compact" variant="info" dot>
@@ -252,10 +276,18 @@ export const CustomSizingAndStyles: Story = {
       </div>
 
       <div>
-        <div style="font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 0.5rem;">
+        <div
+          style="font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 0.5rem;"
+        >
           3. Custom Branded Color Theme Tag (CSS Variable Overrides)
         </div>
-        <vi-tag class="tag-custom-brand" variant="primary" removable pill .count=${7}>
+        <vi-tag
+          class="tag-custom-brand"
+          variant="primary"
+          removable
+          pill
+          .count=${7}
+        >
           Custom Sky Blue Tag
         </vi-tag>
       </div>

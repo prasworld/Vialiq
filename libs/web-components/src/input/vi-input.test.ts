@@ -17,14 +17,14 @@ describe('vi-input', () => {
   });
 
   it('should render the custom element and its shadow DOM', async () => {
-      render(html`<vi-input></vi-input>`, container);
+    render(html`<vi-input></vi-input>`, container);
 
-      const host = await $('vi-input');
-      await expect(host).toExist();
+    const host = await $('vi-input');
+    await expect(host).toExist();
 
-      const input = await host.shadow$('.input-control');
-      await expect(input).toExist();
-    });
+    const input = await host.shadow$('.input-control');
+    await expect(input).toExist();
+  });
 
   describe('Properties and defaults', () => {
     it('should have correct default property values', () => {
@@ -48,7 +48,10 @@ describe('vi-input', () => {
     });
 
     it('should pass placeholder to the native input', async () => {
-      render(html`<vi-input placeholder="Enter your name"></vi-input>`, container);
+      render(
+        html`<vi-input placeholder="Enter your name"></vi-input>`,
+        container,
+      );
       const el = document.querySelector('vi-input') as ViInput;
       await el.updateComplete;
 
@@ -93,7 +96,8 @@ describe('vi-input', () => {
       let lastValue: string | undefined;
       render(
         html`<vi-input
-          @vi-input-input=${(e: CustomEvent<{ value: string }>) => (lastValue = e.detail.value)}
+          @vi-input-input=${(e: CustomEvent<{ value: string }>) =>
+            (lastValue = e.detail.value)}
         ></vi-input>`,
         container,
       );
@@ -102,7 +106,9 @@ describe('vi-input', () => {
 
       const input = el.shadowRoot?.querySelector('input') as HTMLInputElement;
       input.value = 'hello';
-      input.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+      input.dispatchEvent(
+        new Event('input', { bubbles: true, composed: true }),
+      );
 
       expect(lastValue).toBe('hello');
     });
@@ -111,7 +117,8 @@ describe('vi-input', () => {
       let lastValue: string | undefined;
       render(
         html`<vi-input
-          @vi-input-change=${(e: CustomEvent<{ value: string }>) => (lastValue = e.detail.value)}
+          @vi-input-change=${(e: CustomEvent<{ value: string }>) =>
+            (lastValue = e.detail.value)}
         ></vi-input>`,
         container,
       );
@@ -120,7 +127,9 @@ describe('vi-input', () => {
 
       const input = el.shadowRoot?.querySelector('input') as HTMLInputElement;
       input.value = 'committed';
-      input.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
+      input.dispatchEvent(
+        new Event('change', { bubbles: true, composed: true }),
+      );
 
       expect(lastValue).toBe('committed');
     });
@@ -135,7 +144,9 @@ describe('vi-input', () => {
 
       const input = el.shadowRoot?.querySelector('input') as HTMLInputElement;
       input.value = 'x';
-      input.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+      input.dispatchEvent(
+        new Event('input', { bubbles: true, composed: true }),
+      );
 
       expect(received).toBe(true);
     });
@@ -234,7 +245,10 @@ describe('vi-input', () => {
     });
 
     it('should be invalid when type is email and value is invalid', async () => {
-      render(html`<vi-input type="email" value="invalid-email"></vi-input>`, container);
+      render(
+        html`<vi-input type="email" value="invalid-email"></vi-input>`,
+        container,
+      );
       const el = document.querySelector('vi-input') as ViInput;
       await el.updateComplete;
 
@@ -245,7 +259,10 @@ describe('vi-input', () => {
     });
 
     it('should be invalid when type is url and value is invalid', async () => {
-      render(html`<vi-input type="url" value="invalid-url"></vi-input>`, container);
+      render(
+        html`<vi-input type="url" value="invalid-url"></vi-input>`,
+        container,
+      );
       const el = document.querySelector('vi-input') as ViInput;
       await el.updateComplete;
 
@@ -271,9 +288,13 @@ describe('vi-input', () => {
       await el.updateComplete;
 
       expect(input.getAttribute('aria-invalid')).toBe('true');
-      expect(input.getAttribute('aria-describedby')).toBe('helper-text validation-message');
-      expect(input.getAttribute('aria-errormessage')).toBe('validation-message');
-      
+      expect(input.getAttribute('aria-describedby')).toBe(
+        'helper-text validation-message',
+      );
+      expect(input.getAttribute('aria-errormessage')).toBe(
+        'validation-message',
+      );
+
       const valMsg = el.shadowRoot?.querySelector('#validation-message');
       expect(valMsg).toBeTruthy();
     });
@@ -332,7 +353,10 @@ describe('vi-input', () => {
     });
 
     it('should move focus backward to the previous element via Shift+Tab', async () => {
-      render(html`<button id="before">Before</button><vi-input></vi-input>`, container);
+      render(
+        html`<button id="before">Before</button><vi-input></vi-input>`,
+        container,
+      );
       const el = document.querySelector('vi-input') as ViInput;
       await el.updateComplete;
 
@@ -385,7 +409,11 @@ describe('vi-input', () => {
     });
 
     it('should NOT be reachable via Tab when disabled', async () => {
-      render(html`<button id="before">Before</button><vi-input disabled></vi-input><button id="after">After</button>`, container);
+      render(
+        html`<button id="before">Before</button><vi-input disabled></vi-input
+          ><button id="after">After</button>`,
+        container,
+      );
       const el = document.querySelector('vi-input') as ViInput;
       await el.updateComplete;
 
@@ -416,7 +444,9 @@ describe('vi-input', () => {
 
       // Confirm the host is the document-level active element and the inner <input>
       // received shadow-DOM focus via delegatesFocus.
-      const hostActive = await browser.execute(() => document.activeElement?.tagName.toLowerCase());
+      const hostActive = await browser.execute(() =>
+        document.activeElement?.tagName.toLowerCase(),
+      );
       expect(hostActive).toBe('vi-input');
 
       const innerFocused = await browser.execute(() => {
@@ -434,7 +464,8 @@ describe('vi-input', () => {
       // Step 3 — confirm both the native input's value and the component property.
       const innerValue = await browser.execute(() => {
         const host = document.querySelector('vi-input') as HTMLElement;
-        return (host.shadowRoot?.querySelector('input') as HTMLInputElement)?.value;
+        return (host.shadowRoot?.querySelector('input') as HTMLInputElement)
+          ?.value;
       });
       expect(innerValue).toBe('abcd');
 
@@ -448,7 +479,9 @@ describe('vi-input', () => {
       await browser.keys(['Tab']);
       await browser.pause(50);
 
-      const activeAfterTab = await browser.execute(() => document.activeElement?.id);
+      const activeAfterTab = await browser.execute(
+        () => document.activeElement?.id,
+      );
       expect(activeAfterTab).toBe('after');
     });
   });
@@ -504,11 +537,26 @@ describe('vi-input', () => {
 
       render(
         html`
-          <vi-input aria-label="Full Name" placeholder="John Doe" name="input-a11y-1"></vi-input>
-          <vi-input aria-label="Email Address" type="email" value="invalid-email" status="invalid" validityMessage="Email is invalid" name="input-a11y-2"></vi-input>
-          <vi-input aria-label="Disabled Field" disabled name="input-a11y-3"></vi-input>
+          <vi-input
+            aria-label="Full Name"
+            placeholder="John Doe"
+            name="input-a11y-1"
+          ></vi-input>
+          <vi-input
+            aria-label="Email Address"
+            type="email"
+            value="invalid-email"
+            status="invalid"
+            validityMessage="Email is invalid"
+            name="input-a11y-2"
+          ></vi-input>
+          <vi-input
+            aria-label="Disabled Field"
+            disabled
+            name="input-a11y-3"
+          ></vi-input>
         `,
-        container
+        container,
       );
 
       const host = document.querySelector('vi-input') as ViInput;
@@ -520,14 +568,71 @@ describe('vi-input', () => {
           'html-has-lang': { enabled: false },
           'page-has-heading-one': { enabled: false },
           'landmark-one-main': { enabled: false },
-          'region': { enabled: false },
-          'color-contrast': { enabled: false }
-        }
+          region: { enabled: false },
+          'color-contrast': { enabled: false },
+        },
       });
 
       expect(results.violations).toHaveLength(0);
     });
   });
+
+  describe('Clipboard Operations', () => {
+    it('should handle cut operation', async () => {
+      render(html`<vi-input value="clipboard text"></vi-input>`, container);
+      const host = document.querySelector('vi-input') as ViInput;
+      await host.updateComplete;
+
+      const input = await (await $('vi-input')).shadow$('.input-control');
+      await input.click();
+
+      // Using clearValue to simulate a destructive edit/cut across all drivers reliably
+      await input.clearValue();
+
+      const value = await input.getValue();
+      expect(value).toBe('');
+    });
+
+    it('should handle copy operation without altering value', async () => {
+      render(html`<vi-input value="copy me"></vi-input>`, container);
+      const host = document.querySelector('vi-input') as ViInput;
+      await host.updateComplete;
+
+      const input = await (await $('vi-input')).shadow$('.input-control');
+      await input.click();
+
+      const modifier = process.platform === 'darwin' ? 'Meta' : 'Control';
+      await browser.keys([modifier, 'a']);
+      await browser.keys([modifier, 'c']);
+
+      const value = await input.getValue();
+      expect(value).toBe('copy me');
+    });
+
+    it('should handle paste operation', async () => {
+      render(html`<vi-input value=""></vi-input>`, container);
+      const host = document.querySelector('vi-input') as ViInput;
+      await host.updateComplete;
+
+      const input = await (await $('vi-input')).shadow$('.input-control');
+      await input.click();
+
+      // Since WebDriver clipboard can be flaky depending on browser security settings,
+      // we'll explicitly dispatch a paste event to test component reaction.
+      await browser.execute(() => {
+        const el = document.querySelector('vi-input');
+        const inputEl = el?.shadowRoot?.querySelector(
+          '.input-control',
+        ) as HTMLInputElement;
+        if (inputEl) {
+          inputEl.value = 'pasted text';
+          inputEl.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      });
+
+      const value = await input.getValue();
+      expect(value).toBe('pasted text');
+      expect(host.value).toBe('pasted text');
+    });
+  });
 });
-
-

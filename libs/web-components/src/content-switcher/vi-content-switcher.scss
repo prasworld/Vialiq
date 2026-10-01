@@ -1,0 +1,67 @@
+@use '@vialiq/flux-ui/styles/variables' as tokens;
+@use '@vialiq/flux-ui/styles/functions' as func;
+@use '@vialiq/flux-ui/components/content-switcher';
+
+// ─── vi-content-switcher ─────────────────────────────────────────────────────
+// Outer pill track. Acts as position context for the sliding indicator.
+
+:host {
+  display: inline-block;
+  outline: none;
+}
+
+:host([disabled]) {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+// ── Layout variants ───────────────────────────────────────────────────────────
+
+:host([block]) {
+  display: block;
+  width: 100%;
+}
+
+:host([block]) .track {
+  display: flex;
+  width: 100%;
+}
+
+:host([block]) ::slotted(vi-switcher-item) {
+  flex: 1 1 0;
+}
+
+// ── Track ─────────────────────────────────────────────────────────────────────
+
+.track {
+  // Extending the structural class from flux-ui
+  @extend .content-switcher-track;
+}
+
+// ── Sliding indicator ─────────────────────────────────────────────────────────
+
+.indicator {
+  // Extending the structural class from flux-ui
+  @extend .content-switcher-indicator;
+}
+
+// ── Size variants ─────────────────────────────────────────────────────────────
+// These CSS custom properties are inherited by slotted vi-switcher-item children.
+
+:host([size='sm']) {
+  --vi-content-switcher-item-padding-block: #{func.to-rem(4px)};
+  --vi-content-switcher-item-padding-inline: #{tokens.$spacing-sm};
+  --vi-content-switcher-font-size: #{tokens.$font-size-sm};
+}
+
+:host([size='md']) {
+  --vi-content-switcher-item-padding-block: #{func.to-rem(6px)};
+  --vi-content-switcher-item-padding-inline: #{tokens.$spacing-md};
+  --vi-content-switcher-font-size: #{tokens.$font-size-base};
+}
+
+:host([size='lg']) {
+  --vi-content-switcher-item-padding-block: #{func.to-rem(8px)};
+  --vi-content-switcher-item-padding-inline: #{tokens.$spacing-lg};
+  --vi-content-switcher-font-size: #{tokens.$font-size-lg};
+}

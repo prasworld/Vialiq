@@ -15,7 +15,7 @@ export function resolvePlugin(p: DatePickerPluginInput): Plugin {
  */
 export function mergePlugins(
   modePlugin: DatePickerPluginInput | null,
-  consumerPlugins: DatePickerPluginInput[] = []
+  consumerPlugins: DatePickerPluginInput[] = [],
 ): Plugin[] {
   const finalPlugins: Plugin[] = [];
   const seenIds = new Set<string>();

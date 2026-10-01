@@ -31,15 +31,20 @@ import type { ButtonVariant } from '../button/vi-button.js';
  */
 @customElement('vi-popconfirm')
 export class ViPopconfirm extends ViElement {
-  static override styles = css`${unsafeCSS(popconfirmStyles)}`;
+  static override styles = css`
+    ${unsafeCSS(popconfirmStyles)}
+  `;
 
   @property({ type: String }) accessor title = '';
   @property({ type: String }) accessor description = '';
   @property({ type: String }) accessor icon = 'warning';
   @property({ type: String, attribute: 'ok-text' }) accessor okText = 'OK';
-  @property({ type: String, attribute: 'cancel-text' }) accessor cancelText = 'Cancel';
-  @property({ type: String, attribute: 'ok-variant' }) accessor okVariant: ButtonVariant = 'primary';
-  @property({ type: String, attribute: 'cancel-variant' }) accessor cancelVariant: ButtonVariant = 'secondary';
+  @property({ type: String, attribute: 'cancel-text' }) accessor cancelText =
+    'Cancel';
+  @property({ type: String, attribute: 'ok-variant' })
+  accessor okVariant: ButtonVariant = 'primary';
+  @property({ type: String, attribute: 'cancel-variant' })
+  accessor cancelVariant: ButtonVariant = 'secondary';
   @property({ type: String, reflect: true }) accessor placement = 'top';
   @property({ type: Boolean, reflect: true }) accessor disabled = false;
 
@@ -65,7 +70,12 @@ export class ViPopconfirm extends ViElement {
   private _onPopoverHide() {
     this._open = false;
     if (!this._isActionHandled) {
-      this.dispatchEvent(new CustomEvent('vi-popconfirm-cancel', { bubbles: true, composed: true }));
+      this.dispatchEvent(
+        new CustomEvent('vi-popconfirm-cancel', {
+          bubbles: true,
+          composed: true,
+        }),
+      );
     }
   }
 
@@ -73,18 +83,31 @@ export class ViPopconfirm extends ViElement {
     e.stopPropagation();
     this._isActionHandled = true;
     this._open = false;
-    this.dispatchEvent(new CustomEvent('vi-popconfirm-cancel', { bubbles: true, composed: true }));
+    this.dispatchEvent(
+      new CustomEvent('vi-popconfirm-cancel', {
+        bubbles: true,
+        composed: true,
+      }),
+    );
   }
 
   private _handleConfirm(e: Event) {
     e.stopPropagation();
     this._isActionHandled = true;
     this._open = false;
-    this.dispatchEvent(new CustomEvent('vi-popconfirm-confirm', { bubbles: true, composed: true }));
+    this.dispatchEvent(
+      new CustomEvent('vi-popconfirm-confirm', {
+        bubbles: true,
+        composed: true,
+      }),
+    );
   }
 
   private get _hasDescription() {
-    return this.description !== '' || this.querySelector('[slot="description"]') !== null;
+    return (
+      this.description !== '' ||
+      this.querySelector('[slot="description"]') !== null
+    );
   }
 
   private get _hasTitle() {
@@ -93,7 +116,7 @@ export class ViPopconfirm extends ViElement {
 
   override render() {
     return html`
-      <vi-popover 
+      <vi-popover
         .placement=${this.placement}
         .open=${this._open}
         trigger="click"
@@ -102,35 +125,52 @@ export class ViPopconfirm extends ViElement {
         @vi-popover-hide=${this._onPopoverHide}
       >
         <slot></slot>
-        
+
         <div slot="content" class="popconfirm-content">
           <div class="popconfirm-body">
             <div class="popconfirm-icon">
               <slot name="icon">
-                <vi-icon name=${this.icon} size="20" color=${this.icon === 'warning' ? 'var(--vi-color-warning)' : 'currentColor'}></vi-icon>
+                <vi-icon
+                  name=${this.icon}
+                  size="20"
+                  color=${this.icon === 'warning'
+                    ? 'var(--vi-color-warning)'
+                    : 'currentColor'}
+                ></vi-icon>
               </slot>
             </div>
-            
+
             <div class="popconfirm-text">
-              ${this._hasTitle ? html`
-                <div class="popconfirm-title">
-                  <slot name="title">${this.title}</slot>
-                </div>
-              ` : nothing}
-              
-              ${this._hasDescription ? html`
-                <div class="popconfirm-desc">
-                  <slot name="description">${this.description}</slot>
-                </div>
-              ` : nothing}
+              ${this._hasTitle
+                ? html`
+                    <div class="popconfirm-title">
+                      <slot name="title">${this.title}</slot>
+                    </div>
+                  `
+                : nothing}
+              ${this._hasDescription
+                ? html`
+                    <div class="popconfirm-desc">
+                      <slot name="description">${this.description}</slot>
+                    </div>
+                  `
+                : nothing}
             </div>
           </div>
-          
+
           <div class="popconfirm-buttons">
-            <vi-button size="sm" variant=${this.cancelVariant} @click=${this._handleCancel}>
+            <vi-button
+              size="sm"
+              variant=${this.cancelVariant}
+              @click=${this._handleCancel}
+            >
               ${this.cancelText}
             </vi-button>
-            <vi-button size="sm" variant=${this.okVariant} @click=${this._handleConfirm}>
+            <vi-button
+              size="sm"
+              variant=${this.okVariant}
+              @click=${this._handleConfirm}
+            >
               ${this.okText}
             </vi-button>
           </div>

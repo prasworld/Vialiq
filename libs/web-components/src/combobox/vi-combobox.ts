@@ -1,4 +1,11 @@
-import { css, html, nothing, unsafeCSS, type PropertyValues, type TemplateResult } from 'lit';
+import {
+  css,
+  html,
+  nothing,
+  unsafeCSS,
+  type PropertyValues,
+  type TemplateResult,
+} from 'lit';
 import { customElement, property, state, query } from 'lit/decorators.js';
 import { FocusableMixin } from '../base/focusable-mixin.js';
 import { ValidityMixin } from '../base/validity-mixin.js';
@@ -16,7 +23,12 @@ import { ListboxKeyboardController } from '../shared/controllers/keyboard-contro
 import '@lit-labs/virtualizer';
 import comboboxStyles from './vi-combobox.scss?inline';
 
-import { checkIcon, chevronDownIcon, minusIcon, xIcon as closeIcon } from '@vialiq/icons';
+import {
+  checkIcon,
+  chevronDownIcon,
+  minusIcon,
+  xIcon as closeIcon,
+} from '@vialiq/icons';
 
 registerIcons([chevronDownIcon, checkIcon, closeIcon, minusIcon]);
 
@@ -66,10 +78,13 @@ import type {
  */
 @customElement('vi-combobox')
 export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
-  static override styles = css`${unsafeCSS(comboboxStyles)}`;
+  static override styles = css`
+    ${unsafeCSS(comboboxStyles)}
+  `;
 
   @property({ reflect: true }) accessor value: string | string[] = '';
-  @property({ type: String, reflect: true }) accessor mode: ComboboxMode = 'single';
+  @property({ type: String, reflect: true }) accessor mode: ComboboxMode =
+    'single';
   @property({ type: Boolean, reflect: true }) accessor disabled = false;
 
   protected override _testValidity(): Partial<ValidityStateFlags> {
@@ -82,11 +97,16 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
   override connectedCallback(): void {
     super.connectedCallback();
     this.addEventListener('keydown', this._handleKeyDown);
-    this.addEventListener('vi-combobox-item-select', this._handleSlottedItemSelect as EventListener);
+    this.addEventListener(
+      'vi-combobox-item-select',
+      this._handleSlottedItemSelect as EventListener,
+    );
     document.addEventListener('click', this._handleOutsideClick);
   }
 
-  private _handleSlottedItemSelect = (e: CustomEvent<{ item: ViComboboxItem }>): void => {
+  private _handleSlottedItemSelect = (
+    e: CustomEvent<{ item: ViComboboxItem }>,
+  ): void => {
     e.stopPropagation();
     const item = e.detail.item;
     this._selectOption({
@@ -102,7 +122,9 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
   @property({ type: String, reflect: true }) accessor placeholder = 'Search...';
   @property({ type: String, reflect: true }) accessor name = '';
   @property({ type: Boolean, reflect: true }) accessor loading = false;
-  @property({ type: Number, attribute: 'max-tags' }) accessor maxTags: number | undefined = undefined;
+  @property({ type: Number, attribute: 'max-tags' }) accessor maxTags:
+    | number
+    | undefined = undefined;
   @property({ type: Number }) accessor debounce = 300;
   @property({ type: Number, attribute: 'min-chars' }) accessor minChars = 1;
   @property({ type: Boolean }) accessor clearable = false;
@@ -114,28 +136,48 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
     },
   })
   accessor searchable = true;
-  @property({ type: String, attribute: 'no-options-text' }) accessor noOptionsText = 'No results found';
-  @property({ type: String, attribute: 'create-text' }) accessor createText = 'Create "{query}"';
-  @property({ type: String, attribute: 'remove-custom-item-text' }) accessor removeCustomItemText = 'Remove custom item';
+  @property({ type: String, attribute: 'no-options-text' })
+  accessor noOptionsText = 'No results found';
+  @property({ type: String, attribute: 'create-text' }) accessor createText =
+    'Create "{query}"';
+  @property({ type: String, attribute: 'remove-custom-item-text' })
+  accessor removeCustomItemText = 'Remove custom item';
   @property({ type: Boolean }) accessor virtualize = false;
-  @property({ type: String, attribute: 'group-sort' }) accessor groupSort: 'asc' | 'desc' | 'none' = 'none';
-  @property({ type: String, attribute: 'match-from' }) accessor matchFrom: 'start' | 'any' = 'any';
-  @property({ type: Boolean, attribute: 'highlight-match' }) accessor highlightMatch = true;
-  @property({ type: String }) accessor placement: DropdownPlacement = 'bottom-start';
-  @property({ type: Boolean, attribute: 'open-on-focus' }) accessor openOnFocus = false;
+  @property({ type: String, attribute: 'group-sort' }) accessor groupSort:
+    | 'asc'
+    | 'desc'
+    | 'none' = 'none';
+  @property({ type: String, attribute: 'match-from' }) accessor matchFrom:
+    | 'start'
+    | 'any' = 'any';
+  @property({ type: Boolean, attribute: 'highlight-match' })
+  accessor highlightMatch = true;
+  @property({ type: String }) accessor placement: DropdownPlacement =
+    'bottom-start';
+  @property({ type: Boolean, attribute: 'open-on-focus' })
+  accessor openOnFocus = false;
   @property({ type: Boolean, reflect: true }) accessor open = false;
   @property({ type: Boolean }) accessor hoist = false;
-  @property({ type: String, attribute: 'flip-boundary' }) accessor flipBoundary = '';
-  @property({ attribute: false }) accessor flipBoundaryElement: HTMLElement | null = null;
+  @property({ type: String, attribute: 'flip-boundary' })
+  accessor flipBoundary = '';
+  @property({ attribute: false })
+  accessor flipBoundaryElement: HTMLElement | null = null;
 
-  @property({ attribute: false }) accessor filterFn: ComboboxFilterFn | null = null;
-  @property({ attribute: false }) accessor renderOption: ((params: RenderOptionParams) => TemplateResult) | null = null;
-  @property({ attribute: false }) accessor renderCreateOption: ((query: string) => TemplateResult) | null = null;
+  @property({ attribute: false }) accessor filterFn: ComboboxFilterFn | null =
+    null;
+  @property({ attribute: false }) accessor renderOption:
+    | ((params: RenderOptionParams) => TemplateResult)
+    | null = null;
+  @property({ attribute: false }) accessor renderCreateOption:
+    | ((query: string) => TemplateResult)
+    | null = null;
 
   private _optionsList: ComboboxOption[] = [];
-  
-  @query('.combobox-sentinel-top') private accessor _sentinelTopEl!: HTMLElement | null;
-  @query('.combobox-sentinel-bottom') private accessor _sentinelBottomEl!: HTMLElement | null;
+
+  @query('.combobox-sentinel-top')
+  private accessor _sentinelTopEl!: HTMLElement | null;
+  @query('.combobox-sentinel-bottom')
+  private accessor _sentinelBottomEl!: HTMLElement | null;
 
   /**
    * Manages intersection observers for infinite scrolling.
@@ -151,50 +193,68 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
   private _filterController = new FilterController<ComboboxOptionData>(this, {
     getSlottedItems: () => this._slottedItems,
     getVisibleSlottedItems: () => this._visibleSlottedItems,
-    setSlottedActiveIndex: (index: number) => this._updateSlottedActiveState(index),
-    setLoading: (loading: boolean) => { this.loading = loading; },
-    resetActiveIndex: () => { this._activeIndex = -1; },
-    setOptionsList: (opts: ComboboxOption[]) => { this._optionsList = opts; },
+    setSlottedActiveIndex: (index: number) =>
+      this._updateSlottedActiveState(index),
+    setLoading: (loading: boolean) => {
+      this.loading = loading;
+    },
+    resetActiveIndex: () => {
+      this._activeIndex = -1;
+    },
+    setOptionsList: (opts: ComboboxOption[]) => {
+      this._optionsList = opts;
+    },
     rebuildOptionDataMap: () => this._rebuildOptionDataMap(),
-    open: () => { this.open = true; },
+    open: () => {
+      this.open = true;
+    },
     isOpen: () => this.open,
   });
 
-  private _keyboardController = new ListboxKeyboardController<ComboboxOptionData>(this, {
-    getActiveIndex: () => this._activeIndex,
-    setActiveIndex: (index: number) => { this._activeIndex = index; },
-    getFilteredOptions: () => this.filteredOptions,
-    getSlottedItems: () => this._slottedItems,
-    getVisibleSlottedItems: () => this._visibleSlottedItems,
-    getSelectedValues: () => this._getSelectedValues(),
-    updateSlottedActiveState: (index: number) => this._updateSlottedActiveState(index),
-    scrollToActiveIndex: () => this._scrollToActiveIndex(),
-    selectOption: (opt: ComboboxOption) => this._selectOption(opt),
-    handleCreate: () => this._handleCreate(),
-    removeTag: (val: string) => this._removeTag(val),
-    close: () => this.close(),
-    openDropdown: () => { this.open = true; },
-    getQuery: () => this._query,
-  });
+  private _keyboardController =
+    new ListboxKeyboardController<ComboboxOptionData>(this, {
+      getActiveIndex: () => this._activeIndex,
+      setActiveIndex: (index: number) => {
+        this._activeIndex = index;
+      },
+      getFilteredOptions: () => this.filteredOptions,
+      getSlottedItems: () => this._slottedItems,
+      getVisibleSlottedItems: () => this._visibleSlottedItems,
+      getSelectedValues: () => this._getSelectedValues(),
+      updateSlottedActiveState: (index: number) =>
+        this._updateSlottedActiveState(index),
+      scrollToActiveIndex: () => this._scrollToActiveIndex(),
+      selectOption: (opt: ComboboxOption) => this._selectOption(opt),
+      handleCreate: () => this._handleCreate(),
+      removeTag: (val: string) => this._removeTag(val),
+      close: () => this.close(),
+      openDropdown: () => {
+        this.open = true;
+      },
+      getQuery: () => this._query,
+    });
 
-  get _query() { return this._filterController.query; }
-  set _query(val: string) { 
+  get _query() {
+    return this._filterController.query;
+  }
+  set _query(val: string) {
     if (this._filterController.query !== val) {
-      this._filterController.query = val; 
+      this._filterController.query = val;
       if (this._slottedItems?.length > 0) {
         this._filterController.applySlottedFilter(val, this._slottedItems);
-        this._slottedItems.forEach(item => {
+        this._slottedItems.forEach((item) => {
           item.highlightText = this.highlightMatch ? val : '';
         });
       }
-      this.requestUpdate(); 
+      this.requestUpdate();
     }
   }
 
   private _floatingController = new FloatingController(this, {
     reference: () => this._controlEl,
     floating: () => this._listboxEl,
-    placement: () => this.placement as unknown as import('@floating-ui/dom').Placement,
+    placement: () =>
+      this.placement as unknown as import('@floating-ui/dom').Placement,
     offset: 4,
     hoist: () => this.hoist,
     boundary: () => this.flipBoundaryElement || this.flipBoundary || null,
@@ -221,13 +281,16 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
 
   // Custom data payload mapping: value -> data
   private _optionDataMap = new Map<string, unknown>();
-  
+
   // Maps option value to a unique ID for aria-activedescendant
   private _optionIdMap = new Map<string, string>();
-  
+
   private _getOptionId(value: string): string {
     if (!this._optionIdMap.has(value)) {
-      this._optionIdMap.set(value, `opt-${Math.random().toString(36).substring(2, 11)}`);
+      this._optionIdMap.set(
+        value,
+        `opt-${Math.random().toString(36).substring(2, 11)}`,
+      );
     }
     return this._optionIdMap.get(value) ?? '';
   }
@@ -236,9 +299,12 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
   @state() private accessor _slottedItems: ViComboboxItem[] = [];
 
   @query('.combobox-input') private accessor _inputEl!: HTMLInputElement | null;
-  @query('.combobox-trigger') private accessor _triggerEl!: HTMLButtonElement | null;
-  @query('.combobox-listbox') private accessor _listboxEl!: HTMLDivElement | null;
-  @query('.combobox-control') private accessor _controlEl!: HTMLDivElement | null;
+  @query('.combobox-trigger')
+  private accessor _triggerEl!: HTMLButtonElement | null;
+  @query('.combobox-listbox')
+  private accessor _listboxEl!: HTMLDivElement | null;
+  @query('.combobox-control')
+  private accessor _controlEl!: HTMLDivElement | null;
 
   private _slotMutationObserver: MutationObserver | null = null;
 
@@ -254,14 +320,16 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     this.removeEventListener('keydown', this._handleKeyDown);
-    this.removeEventListener('vi-combobox-item-select', this._handleSlottedItemSelect as EventListener);
+    this.removeEventListener(
+      'vi-combobox-item-select',
+      this._handleSlottedItemSelect as EventListener,
+    );
     document.removeEventListener('click', this._handleOutsideClick);
     if (this._slotMutationObserver) {
       this._slotMutationObserver.disconnect();
     }
     this._floatingController.stop();
   }
-
 
   private _defaultValue = '';
 
@@ -271,10 +339,10 @@ export class ViCombobox extends ValidityMixin(FocusableMixin(ViElement)) {
     this._observeSlottedItems();
   }
 
-formResetCallback(): void {
-  this.value = this._defaultValue;
-  super.formResetCallback();
-}
+  formResetCallback(): void {
+    this.value = this._defaultValue;
+    super.formResetCallback();
+  }
 
   protected override updated(changedProperties: PropertyValues): void {
     super.updated(changedProperties);
@@ -296,11 +364,15 @@ formResetCallback(): void {
         const selected = this._getSelectedValues();
         if (selected.length > 0) {
           if (this._slottedItems.length > 0) {
-            const idx = this._visibleSlottedItems.findIndex((i) => i.value === selected[0]);
+            const idx = this._visibleSlottedItems.findIndex(
+              (i) => i.value === selected[0],
+            );
             this._activeIndex = idx;
             if (idx >= 0) this._updateSlottedActiveState(idx);
           } else {
-            this._activeIndex = this.filteredOptions.findIndex((opt) => opt.value === selected[0]);
+            this._activeIndex = this.filteredOptions.findIndex(
+              (opt) => opt.value === selected[0],
+            );
           }
           this._scrollToActiveIndex();
         } else {
@@ -319,7 +391,9 @@ formResetCallback(): void {
   }
 
   private _observeSlottedItems(): void {
-    const slot = this.shadowRoot?.querySelector('slot:not([name])') as HTMLSlotElement | null;
+    const slot = this.shadowRoot?.querySelector(
+      'slot:not([name])',
+    ) as HTMLSlotElement | null;
     if (!slot) return;
 
     const updateItems = () => {
@@ -328,7 +402,10 @@ formResetCallback(): void {
       }
 
       const assigned = slot.assignedElements({ flatten: true });
-      const items = assigned.filter((el): el is ViComboboxItem => el.tagName.toLowerCase() === 'vi-combobox-item');
+      const items = assigned.filter(
+        (el): el is ViComboboxItem =>
+          el.tagName.toLowerCase() === 'vi-combobox-item',
+      );
       this._slottedItems = items;
 
       if (items.length > 0) {
@@ -347,7 +424,8 @@ formResetCallback(): void {
           value: item.value,
           label: item.label || item.value,
           // Join searchText[] to a single corpus string; undefined = fall back to label+description
-          searchText: item.searchText.length > 0 ? item.searchText.join(' ') : undefined,
+          searchText:
+            item.searchText.length > 0 ? item.searchText.join(' ') : undefined,
           group: item.group || undefined,
           disabled: item.disabled,
           icon: item.icon || undefined,
@@ -358,7 +436,10 @@ formResetCallback(): void {
         this._syncSlottedSelectedState();
         // Re-apply filter if the dropdown is open with an active query
         if (this._query && this.open) {
-          this._filterController.applySlottedFilter(this._query, this._slottedItems);
+          this._filterController.applySlottedFilter(
+            this._query,
+            this._slottedItems,
+          );
         }
         for (const item of this._slottedItems) {
           item.highlightText = this.highlightMatch ? this._query : '';
@@ -370,7 +451,15 @@ formResetCallback(): void {
           childList: true,
           subtree: true,
           attributes: true,
-          attributeFilter: ['value', 'label', 'search-text', 'group', 'disabled', 'icon', 'description'],
+          attributeFilter: [
+            'value',
+            'label',
+            'search-text',
+            'group',
+            'disabled',
+            'icon',
+            'description',
+          ],
         });
       }
     };
@@ -383,7 +472,15 @@ formResetCallback(): void {
         childList: true,
         subtree: true,
         attributes: true,
-        attributeFilter: ['value', 'label', 'search-text', 'group', 'disabled', 'icon', 'description'],
+        attributeFilter: [
+          'value',
+          'label',
+          'search-text',
+          'group',
+          'disabled',
+          'icon',
+          'description',
+        ],
       });
     }
   }
@@ -407,7 +504,12 @@ formResetCallback(): void {
   private _getSelectedValues(): string[] {
     if (Array.isArray(this.value)) return this.value;
     if (typeof this.value === 'string' && this.value) {
-      return this.mode === 'multi' || this.mode === 'tags' ? this.value.split(',').map((v) => v.trim()).filter(Boolean) : [this.value];
+      return this.mode === 'multi' || this.mode === 'tags'
+        ? this.value
+            .split(',')
+            .map((v) => v.trim())
+            .filter(Boolean)
+        : [this.value];
     }
     return [];
   }
@@ -435,7 +537,12 @@ formResetCallback(): void {
     //   – an async loader is driving results (loader handles its own filtering)
     let results: ComboboxOption[];
 
-    if (!this.isSearchable || !this._query || this._query.length < this.minChars || this._optionsLoader) {
+    if (
+      !this.isSearchable ||
+      !this._query ||
+      this._query.length < this.minChars ||
+      this._optionsLoader
+    ) {
       results = this._optionsList;
     } else if (this._slottedItems.length > 0) {
       results = this._optionsList;
@@ -448,8 +555,13 @@ formResetCallback(): void {
         results = this._optionsList.filter((opt) => {
           const corpus = opt.searchText
             ? opt.searchText.toLowerCase()
-            : [opt.label, opt.description].filter(Boolean).join(' ').toLowerCase();
-          return this.matchFrom === 'start' ? corpus.startsWith(q) : corpus.includes(q);
+            : [opt.label, opt.description]
+                .filter(Boolean)
+                .join(' ')
+                .toLowerCase();
+          return this.matchFrom === 'start'
+            ? corpus.startsWith(q)
+            : corpus.includes(q);
         });
       }
     }
@@ -491,7 +603,11 @@ formResetCallback(): void {
     let nextValue: string | string[];
 
     if (this.mode === 'multi' || this.mode === 'tags') {
-      if (this.maxTags && current.length >= this.maxTags && !current.includes(opt.value)) {
+      if (
+        this.maxTags &&
+        current.length >= this.maxTags &&
+        !current.includes(opt.value)
+      ) {
         return;
       }
       const updated = current.includes(opt.value)
@@ -506,7 +622,8 @@ formResetCallback(): void {
     this.value = nextValue;
     this._query = '';
 
-    const payloadData = opt.data !== undefined ? opt.data : this._optionDataMap.get(opt.value);
+    const payloadData =
+      opt.data !== undefined ? opt.data : this._optionDataMap.get(opt.value);
 
     this._dispatch('vi-combobox-change', {
       value: nextValue,
@@ -561,10 +678,10 @@ formResetCallback(): void {
 
   private _handleDeleteTempItem(opt: ComboboxOption, e: Event): void {
     e.stopPropagation();
-    
+
     // 1. Remove from options list
     this.removeItem(opt.value);
-    
+
     // 2. Unselect if currently selected
     const currentValues = this._getSelectedValues();
     if (currentValues.includes(opt.value)) {
@@ -584,12 +701,18 @@ formResetCallback(): void {
     if (this._activeIndex < 0) return;
 
     if (this.virtualize && this._slottedItems.length === 0) {
-      const virtualizer = this.shadowRoot?.querySelector('lit-virtualizer') as (Element & { scrollToIndex?: (index: number, position?: string) => void }) | null;
+      const virtualizer = this.shadowRoot?.querySelector('lit-virtualizer') as
+        | (Element & {
+            scrollToIndex?: (index: number, position?: string) => void;
+          })
+        | null;
       if (virtualizer && typeof virtualizer.scrollToIndex === 'function') {
         virtualizer.scrollToIndex(this._activeIndex, 'nearest');
       }
     } else {
-      const activeEl = this.shadowRoot?.querySelector('.combobox-option.is-active') as HTMLElement;
+      const activeEl = this.shadowRoot?.querySelector(
+        '.combobox-option.is-active',
+      ) as HTMLElement;
       if (activeEl) {
         activeEl.scrollIntoView({ block: 'nearest' });
       }
@@ -619,8 +742,12 @@ formResetCallback(): void {
 
   private _handleControlClick(e: MouseEvent): void {
     const path = e.composedPath();
-    const isClearBtn = path.some((el) => (el as HTMLElement).part?.contains('clear-btn'));
-    const isTag = path.some((el) => (el as HTMLElement).tagName?.toLowerCase() === 'vi-chip');
+    const isClearBtn = path.some((el) =>
+      (el as HTMLElement).part?.contains('clear-btn'),
+    );
+    const isTag = path.some(
+      (el) => (el as HTMLElement).tagName?.toLowerCase() === 'vi-chip',
+    );
     if (isClearBtn || isTag) return;
 
     if (!this.isSearchable) {
@@ -684,7 +811,9 @@ formResetCallback(): void {
 
   getSelectedOptions(): ComboboxOption[] {
     const selectedValues = this._getSelectedValues();
-    return this._optionsList.filter((opt) => selectedValues.includes(opt.value));
+    return this._optionsList.filter((opt) =>
+      selectedValues.includes(opt.value),
+    );
   }
 
   setOptions(opts: ComboboxOption[]): void {
@@ -704,7 +833,9 @@ formResetCallback(): void {
   }
 
   private _dispatch(eventName: string, detail?: unknown): void {
-    this.dispatchEvent(new CustomEvent(eventName, { detail, bubbles: true, composed: true }));
+    this.dispatchEvent(
+      new CustomEvent(eventName, { detail, bubbles: true, composed: true }),
+    );
   }
 
   // --- Render Helpers ---
@@ -722,7 +853,11 @@ formResetCallback(): void {
     return html`${before}<mark class="combobox-mark">${match}</mark>${after}`;
   }
 
-  private _renderSingleOption(opt: ComboboxOption, idx: number, selectedValues: string[]): TemplateResult {
+  private _renderSingleOption(
+    opt: ComboboxOption,
+    idx: number,
+    selectedValues: string[],
+  ): TemplateResult {
     const isSelected = selectedValues.includes(opt.value);
     const isActive = idx === this._activeIndex;
     return html`
@@ -732,40 +867,65 @@ formResetCallback(): void {
         role="option"
         aria-selected="${isSelected ? 'true' : 'false'}"
         aria-disabled="${opt.disabled ? 'true' : 'false'}"
-        class="combobox-option ${isSelected ? 'is-selected' : ''} ${isActive ? 'is-active' : ''} ${opt.disabled ? 'is-disabled' : ''}"
+        class="combobox-option ${isSelected ? 'is-selected' : ''} ${isActive
+          ? 'is-active'
+          : ''} ${opt.disabled ? 'is-disabled' : ''}"
         @click=${(e: Event) => {
           e.stopPropagation();
           this._selectOption(opt);
         }}
       >
         ${this.renderOption
-          ? this.renderOption({ option: opt, query: this._query, selected: isSelected })
+          ? this.renderOption({
+              option: opt,
+              query: this._query,
+              selected: isSelected,
+            })
           : html`
-              ${opt.icon ? html`<vi-icon part="icon" name="${opt.icon}"></vi-icon>` : ''}
+              ${opt.icon
+                ? html`<vi-icon part="icon" name="${opt.icon}"></vi-icon>`
+                : ''}
               <div part="option-content" class="combobox-option-content">
                 <span part="option-label" class="combobox-option-label">
                   ${this._renderHighlightedText(opt.label)}
                 </span>
                 ${opt.description
-                  ? html`<span part="option-description" class="combobox-option-description">${opt.description}</span>`
+                  ? html`<span
+                      part="option-description"
+                      class="combobox-option-description"
+                      >${opt.description}</span
+                    >`
                   : ''}
               </div>
-              
+
               ${opt.data?.isTemporary
                 ? html`
-                    <button type="button" class="combobox-option-action" aria-label="${this.removeCustomItemText}" title="${this.removeCustomItemText}" @click=${(e: Event) => this._handleDeleteTempItem(opt, e)}>
-                      <vi-icon name="minus" style="color: var(--vi-color-error, #ef4444);"></vi-icon>
+                    <button
+                      type="button"
+                      class="combobox-option-action"
+                      aria-label="${this.removeCustomItemText}"
+                      title="${this.removeCustomItemText}"
+                      @click=${(e: Event) => this._handleDeleteTempItem(opt, e)}
+                    >
+                      <vi-icon
+                        name="minus"
+                        style="color: var(--vi-color-error, #ef4444);"
+                      ></vi-icon>
                     </button>
                   `
                 : ''}
-
-              ${isSelected ? html`<vi-icon part="check" name="check"></vi-icon>` : ''}
+              ${isSelected
+                ? html`<vi-icon part="check" name="check"></vi-icon>`
+                : ''}
             `}
       </li>
     `;
   }
 
-  private _renderOptionsList(filtered: ComboboxOption[], selectedValues: string[]): TemplateResult {
+  private _renderOptionsList(
+    filtered: ComboboxOption[],
+    selectedValues: string[],
+  ): TemplateResult {
     const hasGroups = filtered.some((opt) => opt.group);
 
     if (this.virtualize && !hasGroups) {
@@ -776,7 +936,8 @@ formResetCallback(): void {
             class="combobox-list"
             .items=${filtered}
             .keyFunction=${(opt: ComboboxOption) => opt.value}
-            .renderItem=${(opt: ComboboxOption, idx: number) => this._renderSingleOption(opt, idx, selectedValues)}
+            .renderItem=${(opt: ComboboxOption, idx: number) =>
+              this._renderSingleOption(opt, idx, selectedValues)}
           ></lit-virtualizer>
         `;
       }
@@ -785,7 +946,9 @@ formResetCallback(): void {
     if (!hasGroups) {
       return html`
         <ul part="list" class="combobox-list">
-          ${filtered.map((opt, idx) => this._renderSingleOption(opt, idx, selectedValues))}
+          ${filtered.map((opt, idx) =>
+            this._renderSingleOption(opt, idx, selectedValues),
+          )}
         </ul>
       `;
     }
@@ -810,9 +973,19 @@ formResetCallback(): void {
         ${groupEntries.map(([groupName, opts]) => {
           const groupId = `group-${groupName.replace(/\s+/g, '-').toLowerCase()}`;
           return html`
-            <div role="group" aria-labelledby=${groupName ? groupId : undefined}>
+            <div
+              role="group"
+              aria-labelledby=${groupName ? groupId : undefined}
+            >
               ${groupName
-                ? html`<div id=${groupId} part="group-header" class="combobox-group-header" role="presentation">${groupName}</div>`
+                ? html`<div
+                    id=${groupId}
+                    part="group-header"
+                    class="combobox-group-header"
+                    role="presentation"
+                  >
+                    ${groupName}
+                  </div>`
                 : ''}
               <ul class="combobox-list">
                 ${opts.map((opt) => {
@@ -837,7 +1010,8 @@ formResetCallback(): void {
   override render(): TemplateResult {
     const selectedValues = this._getSelectedValues();
     const filtered = this.filteredOptions;
-    const showClear = this.clearable && selectedValues.length > 0 && !this.disabled;
+    const showClear =
+      this.clearable && selectedValues.length > 0 && !this.disabled;
     // True when a query is active in slotted mode but all items are hidden (empty state)
     const allSlottedHidden =
       this._slottedItems.length > 0 &&
@@ -858,12 +1032,18 @@ formResetCallback(): void {
       <div part="field" class="combobox-field">
         <div
           part="control"
-          class="combobox-control ${this.open ? 'is-open is-focused' : ''} ${this.disabled ? 'is-disabled' : ''} ${this.status !== 'default' ? `is-${this.status}` : ''}"
+          class="combobox-control ${this.open
+            ? 'is-open is-focused'
+            : ''} ${this.disabled ? 'is-disabled' : ''} ${this.status !==
+          'default'
+            ? `is-${this.status}`
+            : ''}"
           @click=${(e: MouseEvent) => this._handleControlClick(e)}
         >
           <slot name="prefix" part="prefix"></slot>
 
-          ${(this.mode === 'multi' || this.mode === 'tags') && selectedValues.length > 0
+          ${(this.mode === 'multi' || this.mode === 'tags') &&
+          selectedValues.length > 0
             ? html`
                 <div part="tags" class="combobox-tags">
                   ${selectedValues.map((val) => {
@@ -883,7 +1063,6 @@ formResetCallback(): void {
                 </div>
               `
             : ''}
-
           ${this.isSearchable
             ? html`
                 <input
@@ -893,7 +1072,11 @@ formResetCallback(): void {
                   type="text"
                   autocomplete="off"
                   .value=${this._query}
-                  placeholder=${selectedValues.length === 0 || this.mode === 'multi' || this.mode === 'tags' ? this.placeholder : this._getDisplayLabel()}
+                  placeholder=${selectedValues.length === 0 ||
+                  this.mode === 'multi' ||
+                  this.mode === 'tags'
+                    ? this.placeholder
+                    : this._getDisplayLabel()}
                   ?disabled=${this.disabled}
                   role="combobox"
                   aria-expanded="${this.open ? 'true' : 'false'}"
@@ -901,12 +1084,17 @@ formResetCallback(): void {
                   aria-haspopup="listbox"
                   aria-controls="listbox"
                   aria-activedescendant="${this._slottedItems.length > 0
-                    ? (this._activeIndex >= 0 && this._visibleSlottedItems[this._activeIndex]
-                        ? this._getOptionId(this._visibleSlottedItems[this._activeIndex].value)
-                        : '')
-                    : (this._activeIndex >= 0 && filtered[this._activeIndex]
-                        ? this._getOptionId(filtered[this._activeIndex].value)
-                        : (showCreateOption && this._activeIndex === -1 ? 'create-option' : ''))}"
+                    ? this._activeIndex >= 0 &&
+                      this._visibleSlottedItems[this._activeIndex]
+                      ? this._getOptionId(
+                          this._visibleSlottedItems[this._activeIndex].value,
+                        )
+                      : ''
+                    : this._activeIndex >= 0 && filtered[this._activeIndex]
+                      ? this._getOptionId(filtered[this._activeIndex].value)
+                      : showCreateOption && this._activeIndex === -1
+                        ? 'create-option'
+                        : ''}"
                   @input=${this._handleInput}
                   @focus=${this._handleInputFocus}
                 />
@@ -916,7 +1104,9 @@ formResetCallback(): void {
                   id="trigger"
                   part="trigger"
                   type="button"
-                  class="combobox-trigger ${selectedValues.length === 0 ? 'is-placeholder' : ''}"
+                  class="combobox-trigger ${selectedValues.length === 0
+                    ? 'is-placeholder'
+                    : ''}"
                   ?disabled=${this.disabled}
                   role="combobox"
                   aria-expanded="${this.open ? 'true' : 'false'}"
@@ -927,11 +1117,11 @@ formResetCallback(): void {
                   ${this._getDisplayLabel()}
                 </button>
               `}
-
           ${this.loading
-            ? html`<span part="loading-indicator" class="combobox-loading">...</span>`
+            ? html`<span part="loading-indicator" class="combobox-loading"
+                >...</span
+              >`
             : ''}
-
           ${showClear
             ? html`
                 <button
@@ -967,20 +1157,29 @@ formResetCallback(): void {
           class="combobox-listbox ${this.open ? 'is-open' : ''}"
           ?open=${this.open}
           role="listbox"
-          aria-multiselectable="${this.mode === 'multi' || this.mode === 'tags' ? 'true' : 'false'}"
+          aria-multiselectable="${this.mode === 'multi' || this.mode === 'tags'
+            ? 'true'
+            : 'false'}"
           aria-busy="${this.loading ? 'true' : 'false'}"
           aria-label="${this.placeholder}"
           aria-owns=${this._slottedItems.length > 0
-            ? this._visibleSlottedItems.map(i => this._getOptionId(i.value)).join(' ')
+            ? this._visibleSlottedItems
+                .map((i) => this._getOptionId(i.value))
+                .join(' ')
             : nothing}
         >
-          <div class="combobox-sentinel-top" style="height: 1px; width: 100%;"></div>
+          <div
+            class="combobox-sentinel-top"
+            style="height: 1px; width: 100%;"
+          ></div>
           <slot></slot>
           ${this._slottedItems.length === 0 && filtered.length > 0
             ? this._renderOptionsList(filtered, selectedValues)
             : ''}
           ${this._slottedItems.length === 0 && this.loading
-            ? html`<div part="loading-indicator" class="combobox-loading"><slot name="loading">Loading...</slot></div>`
+            ? html`<div part="loading-indicator" class="combobox-loading">
+                <slot name="loading">Loading...</slot>
+              </div>`
             : ''}
           ${showCreateOption
             ? html`
@@ -990,27 +1189,53 @@ formResetCallback(): void {
                   aria-selected="false"
                   aria-disabled="false"
                   part="option"
-                  class="combobox-option ${this._activeIndex === -1 ? 'is-active' : ''}"
+                  class="combobox-option ${this._activeIndex === -1
+                    ? 'is-active'
+                    : ''}"
                   @click=${this._handleCreate}
                 >
                   ${this.renderCreateOption
                     ? this.renderCreateOption(this._query)
-                    : html`<span>${this.createText.replace('{query}', this._query)}</span>`}
+                    : html`<span
+                        >${this.createText.replace(
+                          '{query}',
+                          this._query,
+                        )}</span
+                      >`}
                 </div>
               `
             : ''}
-          ${this._slottedItems.length === 0 && filtered.length === 0 && !this.loading && !((this.mode === 'creatable' || this.mode === 'tags') && this._query.trim())
-            ? html`<div part="empty" class="combobox-empty"><slot name="empty">${this.noOptionsText}</slot></div>`
+          ${this._slottedItems.length === 0 &&
+          filtered.length === 0 &&
+          !this.loading &&
+          !(
+            (this.mode === 'creatable' || this.mode === 'tags') &&
+            this._query.trim()
+          )
+            ? html`<div part="empty" class="combobox-empty">
+                <slot name="empty">${this.noOptionsText}</slot>
+              </div>`
             : ''}
           ${this._slottedItems.length > 0 && allSlottedHidden
-            ? html`<div part="empty" class="combobox-empty"><slot name="empty">${this.noOptionsText}</slot></div>`
+            ? html`<div part="empty" class="combobox-empty">
+                <slot name="empty">${this.noOptionsText}</slot>
+              </div>`
             : ''}
-          <div class="combobox-sentinel-bottom" style="height: 1px; width: 100%;"></div>
+          <div
+            class="combobox-sentinel-bottom"
+            style="height: 1px; width: 100%;"
+          ></div>
         </div>
 
         <slot name="helper" part="helper"></slot>
         ${this.validityMessage
-          ? html`<span part="validation" class="combobox-validation ${this.status !== 'default' ? `is-${this.status}` : ''}">${this.validityMessage}</span>`
+          ? html`<span
+              part="validation"
+              class="combobox-validation ${this.status !== 'default'
+                ? `is-${this.status}`
+                : ''}"
+              >${this.validityMessage}</span
+            >`
           : ''}
       </div>
     `;

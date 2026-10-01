@@ -55,7 +55,10 @@ $color-yellow-100: var(--vi-color-yellow-100, #ffeab1); // Soft pastel amber
 $color-yellow-200: var(--vi-color-yellow-200, #ffde85);
 $color-yellow-300: var(--vi-color-yellow-300, #ffd359);
 $color-yellow-400: var(--vi-color-yellow-400, #ffc72e);
-$color-yellow-500: var(--vi-color-yellow-500, #ffba00); // Vibrant amber (target)
+$color-yellow-500: var(
+  --vi-color-yellow-500,
+  #ffba00
+); // Vibrant amber (target)
 $color-yellow-600: var(--vi-color-yellow-600, #ffa900);
 $color-yellow-700: var(--vi-color-yellow-700, #ff9900); // Deep amber (target)
 $color-yellow-800: var(--vi-color-yellow-800, #e68300); // Vibrant burnt orange
@@ -67,14 +70,19 @@ $color-green-100: var(--vi-color-green-100, #e6f0eb);
 $color-green-200: var(--vi-color-green-200, #c0dbcd);
 $color-green-300: var(--vi-color-green-300, #96c4ab);
 $color-green-400: var(--vi-color-green-400, #6eab88);
-$color-green-500: var(--vi-color-green-500, #489167); // Subdued, professional forest green
+$color-green-500: var(
+  --vi-color-green-500,
+  #489167
+); // Subdued, professional forest green
 $color-green-600: var(--vi-color-green-600, #367551);
 $color-green-700: var(--vi-color-green-700, #265a3d);
 $color-green-800: var(--vi-color-green-800, #17402a);
-$color-green-900: var(--vi-color-green-900, #0a2618); // Solid, deeply dark, non-muddy
+$color-green-900: var(
+  --vi-color-green-900,
+  #0a2618
+); // Solid, deeply dark, non-muddy
 
 // -- Palette: Blue  (Vibrant Azure) ------------------------------------------
-
 
 $color-blue-100: var(--vi-color-blue-100, #ebf5ff); // Clear, pale azure
 $color-blue-200: var(--vi-color-blue-200, #cee6ff);
@@ -101,144 +109,210 @@ $color-purple-900: var(--vi-color-purple-900, #3400b4); // Deep violet/navy
 // -- Semantic colors (brand + status) ----------------------------------------
 // These map named design intents onto palette values.
 
-$color-primary:   var(--vi-color-primary,   #3676d0);   // blue-700
+$color-primary: var(--vi-color-primary, #3676d0); // blue-700
 $color-secondary: var(--vi-color-secondary, #f0f4f8);
-$color-success:   var(--vi-color-success,   #489167);   // green-500
-$color-warning:   var(--vi-color-warning,   #ffba00);   // yellow-500
-$color-error:     var(--vi-color-error,     #ef4444);   // red-500
-$color-info:      var(--vi-color-info,      #3676d0);   // blue-700
+$color-success: var(--vi-color-success, #489167); // green-500
+$color-warning: var(--vi-color-warning, #ffba00); // yellow-500
+$color-error: var(--vi-color-error, #ef4444); // red-500
+$color-info: var(--vi-color-info, #3676d0); // blue-700
 
 // -- Typeahead / search highlight tokens -------------------------------------
 // Used for <mark class="highlight"> inside vi-select-option and vi-combobox-item.
 // Fallbacks use direct hex so nested var() resolution issues in shadow DOM are avoided.
-$typeahead-highlight-bg:     var(--vi-typeahead-highlight-bg,    #ebf5ff); // blue-100
-$typeahead-highlight-color:  var(--vi-typeahead-highlight-color, #3676d0); // primary / blue-700
+$typeahead-highlight-bg: var(--vi-typeahead-highlight-bg, #ebf5ff); // blue-100
+$typeahead-highlight-color: var(
+  --vi-typeahead-highlight-color,
+  #3676d0
+); // primary / blue-700
 
 // -- Semantic SASS Tokens -------------------------------------------------------
 
 $color-background: var(--vi-color-background, #ffffff);
-$color-foreground: var(--vi-color-foreground, #111827);  // grey-900
-$color-border:     var(--vi-color-border,     #e5e7eb);  // grey-200
+$color-foreground: var(--vi-color-foreground, #111827); // grey-900
+$color-border: var(--vi-color-border, #e5e7eb); // grey-200
 
 // -- Layers (Backgrounds & Surfaces) -----------------------------------------
 
-$layer-01:            var(--vi-layer-01,            #ffffff); // Pure white base
-$layer-02:            var(--vi-layer-02,            #f3f4f6); // grey-100
-$layer-03:            var(--vi-layer-03,            #e5e7eb); // grey-200
-$layer-04:            var(--vi-layer-04,            #d1d5db); // grey-300
-$layer-dimmed:        var(--vi-layer-dimmed,        rgba(0, 0, 0, 0.02)); // Faint tint for visual anchors
-$layer-overlay:       var(--vi-layer-overlay,       rgba(0, 0, 0, 0.40)); // Scrim/backdrop for modals, drawers, sidebars
+$layer-01: var(--vi-layer-01, #ffffff); // Pure white base
+$layer-02: var(--vi-layer-02, #f3f4f6); // grey-100
+$layer-03: var(--vi-layer-03, #e5e7eb); // grey-200
+$layer-04: var(--vi-layer-04, #d1d5db); // grey-300
+$layer-selected: var(
+  --vi-layer-selected,
+  $color-primary
+); // Primary selection background
+$layer-dimmed: var(
+  --vi-layer-dimmed,
+  rgba(0, 0, 0, 0.02)
+); // Faint tint for visual anchors
+$layer-overlay: var(
+  --vi-layer-overlay,
+  rgba(0, 0, 0, 0.4)
+); // Scrim/backdrop for modals, drawers, sidebars
 
+$layer-hover-01: var(--vi-layer-hover-01, #f3f4f6); // grey-100
+$layer-hover-02: var(--vi-layer-hover-02, #e5e7eb); // grey-200
+$layer-hover-03: var(--vi-layer-hover-03, #d1d5db); // grey-300
+$layer-hover-04: var(--vi-layer-hover-04, #9ca3af); // grey-400
 
-$layer-hover-01:      var(--vi-layer-hover-01,      #f3f4f6); // grey-100
-$layer-hover-02:      var(--vi-layer-hover-02,      #e5e7eb); // grey-200
-$layer-hover-03:      var(--vi-layer-hover-03,      #d1d5db); // grey-300
-$layer-hover-04:      var(--vi-layer-hover-04,      #9ca3af); // grey-400
-
-$layer-disabled:      var(--vi-layer-disabled,      #f3f4f6); // grey-100
-$layer-inverse:       var(--vi-layer-inverse,       #111827); // grey-900
+$layer-disabled: var(--vi-layer-disabled, #f3f4f6); // grey-100
+$layer-inverse: var(--vi-layer-inverse, #111827); // grey-900
 $layer-inverse-hover: var(--vi-layer-inverse-hover, #1f2937); // grey-800
 
-$text-primary:           var(--vi-text-primary,           #111827); // grey-900
-$text-secondary:         var(--vi-text-secondary,         #4b5563); // grey-600
-$text-primary-inverse:   var(--vi-text-primary-inverse,   #ffffff); // white
+$text-primary: var(--vi-text-primary, #111827); // grey-900
+$text-secondary: var(--vi-text-secondary, #4b5563); // grey-600
+$text-primary-inverse: var(--vi-text-primary-inverse, #ffffff); // white
 $text-secondary-inverse: var(--vi-text-secondary-inverse, #d1d5db); // grey-300
-$text-inverse:        var(--vi-text-inverse,        #ffffff);
-$text-disabled:       var(--vi-text-disabled,       #9e9e9e); // grey-500
-$text-helper:         var(--vi-text-helper,         #9e9e9e); // grey-500
+$text-inverse: var(--vi-text-inverse, #ffffff);
+$text-disabled: var(--vi-text-disabled, #9e9e9e); // grey-500
+$text-helper: var(--vi-text-helper, #9e9e9e); // grey-500
+$text-placeholder: var(--vi-text-placeholder, #9e9e9e); // grey-500
 
 // -- Semantic status text colors
-$text-success:        var(--vi-text-success,        #265a3d); // green-700
-$text-warning:        var(--vi-text-warning,        #e68300); // yellow-800
-$text-error:          var(--vi-text-error,          #db231b); // red-700
-$text-info:           var(--vi-text-info,           #3676d0); // blue-700
+$text-success: var(--vi-text-success, #265a3d); // green-700
+$text-warning: var(--vi-text-warning, #e68300); // yellow-800
+$text-error: var(--vi-text-error, #db231b); // red-700
+$text-info: var(--vi-text-info, #3676d0); // blue-700
 
 // -- Semantic status background colors
-$bg-success:          var(--vi-bg-success,          #e6f9f0);
-$bg-warning:          var(--vi-bg-warning,          #fff8e1);
-$bg-error:            var(--vi-bg-error,            #ffebee);
-$bg-info:             var(--vi-bg-info,             #e3f2fd);
+$bg-success: var(--vi-bg-success, #e6f9f0);
+$bg-warning: var(--vi-bg-warning, #fff8e1);
+$bg-error: var(--vi-bg-error, #ffebee);
+$bg-info: var(--vi-bg-info, #e3f2fd);
 
-$focus:               var(--vi-focus,               #3676d0); // blue-700
-$outline:             var(--vi-outline,             #e5e7eb); // grey-200
+$focus: var(--vi-focus, #3676d0); // blue-700
+$outline: var(--vi-outline, #e5e7eb); // grey-200
 
 // -- Borders -----------------------------------------------------------------
 
-$border-01:           var(--vi-border-01,           #f5f5f5); // grey-100
-$border-02:           var(--vi-border-02,           #eeeeee); // grey-200
-$border-03:           var(--vi-border-03,           #e0e0e0); // grey-300
-$border-04:           var(--vi-border-04,           #bdbdbd); // grey-400
+$border-01: var(--vi-border-01, #f5f5f5); // grey-100
+$border-02: var(--vi-border-02, #eeeeee); // grey-200
+$border-03: var(--vi-border-03, #e0e0e0); // grey-300
+$border-04: var(--vi-border-04, #bdbdbd); // grey-400
 
-$border-inverse-01:   var(--vi-border-inverse-01,   #424242); // grey-800
-$border-inverse-02:   var(--vi-border-inverse-02,   #616161); // grey-700
-$border-inverse-03:   var(--vi-border-inverse-03,   #757575); // grey-600
-$border-inverse-04:   var(--vi-border-inverse-04,   #9e9e9e); // grey-500
+$border-inverse-01: var(--vi-border-inverse-01, #424242); // grey-800
+$border-inverse-02: var(--vi-border-inverse-02, #616161); // grey-700
+$border-inverse-03: var(--vi-border-inverse-03, #757575); // grey-600
+$border-inverse-04: var(--vi-border-inverse-04, #9e9e9e); // grey-500
 
-$focus-ring-error-glow: var(--vi-color-red-100, #ffccce); // alias for $color-red-100
-$focus-ring-success-glow: var(--vi-color-green-100, #e6f0eb); // alias for $color-green-100
+$focus-ring-error-glow: var(
+  --vi-color-red-100,
+  #ffccce
+); // alias for $color-red-100
+$focus-ring-success-glow: var(
+  --vi-color-green-100,
+  #e6f0eb
+); // alias for $color-green-100
 // -- Primitive: Spacing ------------------------------------------------------
 
 $spacing-unit: var(--vi-spacing-unit, to-rem(4px));
-$spacing-xs:   var(--vi-spacing-xs,   to-rem(8px));
-$spacing-sm:   var(--vi-spacing-sm,   to-rem(12px));
-$spacing-md:   var(--vi-spacing-md,   to-rem(16px));
-$spacing-lg:   var(--vi-spacing-lg,   to-rem(24px));
-$spacing-xl:   var(--vi-spacing-xl,   to-rem(32px));
-$spacing-2xl:  var(--vi-spacing-2xl,  to-rem(48px));
-$spacing-3xl:  var(--vi-spacing-3xl,  to-rem(64px));
+$spacing-xs: var(--vi-spacing-xs, to-rem(8px));
+$spacing-sm: var(--vi-spacing-sm, to-rem(12px));
+$spacing-md: var(--vi-spacing-md, to-rem(16px));
+$spacing-lg: var(--vi-spacing-lg, to-rem(24px));
+$spacing-xl: var(--vi-spacing-xl, to-rem(32px));
+$spacing-2xl: var(--vi-spacing-2xl, to-rem(48px));
+$spacing-3xl: var(--vi-spacing-3xl, to-rem(64px));
 
 // -- Primitive: Typography ---------------------------------------------------
 
-$font-family-base: var(--vi-font-family-base, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
-$font-family-mono: var(--vi-font-family-mono, 'Menlo', 'Monaco', 'Courier New', monospace);
+$font-family-base: var(
+  --vi-font-family-base,
+  -apple-system,
+  BlinkMacSystemFont,
+  'Segoe UI',
+  Roboto,
+  sans-serif
+);
+$font-family-mono: var(
+  --vi-font-family-mono,
+  'Menlo',
+  'Monaco',
+  'Courier New',
+  monospace
+);
 
 // Typography scale: xs=12, sm=13, base=14, lg=16, xl=20
-$font-size-xs:   var(--vi-font-size-xs,   to-rem(12px)); // Compact labels, captions
-$font-size-sm:   var(--vi-font-size-sm,   to-rem(13px)); // Sub-labels, secondary text
+$font-size-xs: var(--vi-font-size-xs, to-rem(12px)); // Compact labels, captions
+$font-size-sm: var(
+  --vi-font-size-sm,
+  to-rem(13px)
+); // Sub-labels, secondary text
 $font-size-base: var(--vi-font-size-base, to-rem(14px)); // Standard body text
-$font-size-lg:   var(--vi-font-size-lg,   to-rem(16px)); // Large text, subheadings
-$font-size-xl:   var(--vi-font-size-xl,   to-rem(20px)); // Display, section headings
-$font-size-2xl:  var(--vi-font-size-2xl,  to-rem(24px));
-$font-size-3xl:  var(--vi-font-size-3xl,  to-rem(30px));
+$font-size-lg: var(--vi-font-size-lg, to-rem(16px)); // Large text, subheadings
+$font-size-xl: var(
+  --vi-font-size-xl,
+  to-rem(20px)
+); // Display, section headings
+$font-size-2xl: var(--vi-font-size-2xl, to-rem(24px));
+$font-size-3xl: var(--vi-font-size-3xl, to-rem(30px));
 
-$font-weight-light:    var(--vi-font-weight-light,    300);
-$font-weight-normal:   var(--vi-font-weight-normal,   400);
-$font-weight-medium:   var(--vi-font-weight-medium,   500);
+$font-weight-light: var(--vi-font-weight-light, 300);
+$font-weight-normal: var(--vi-font-weight-normal, 400);
+$font-weight-medium: var(--vi-font-weight-medium, 500);
 $font-weight-semibold: var(--vi-font-weight-semibold, 600);
-$font-weight-bold:     var(--vi-font-weight-bold,     700);
+$font-weight-bold: var(--vi-font-weight-bold, 700);
 
-$line-height-tight:   var(--vi-line-height-tight,   1.2);
-$line-height-normal:  var(--vi-line-height-normal,  1.5715);
+$line-height-tight: var(--vi-line-height-tight, 1.2);
+$line-height-normal: var(--vi-line-height-normal, 1.5715);
 $line-height-relaxed: var(--vi-line-height-relaxed, 1.75);
 
 // -- Primitive: Letter Spacing -----------------------------------------------
 // Values follow the em-based convention used by M3/Carbon.
 // tight = dense data; normal = body text; wide = caps/labels; widest = overlines
 
-$letter-spacing-tight:   var(--vi-letter-spacing-tight,   -0.01em);
-$letter-spacing-normal:  var(--vi-letter-spacing-normal,   0em);
-$letter-spacing-wide:    var(--vi-letter-spacing-wide,     0.025em);
-$letter-spacing-wider:   var(--vi-letter-spacing-wider,    0.05em);
-$letter-spacing-widest:  var(--vi-letter-spacing-widest,   0.1em);
+$letter-spacing-tight: var(--vi-letter-spacing-tight, -0.01em);
+$letter-spacing-normal: var(--vi-letter-spacing-normal, 0em);
+$letter-spacing-wide: var(--vi-letter-spacing-wide, 0.025em);
+$letter-spacing-wider: var(--vi-letter-spacing-wider, 0.05em);
+$letter-spacing-widest: var(--vi-letter-spacing-widest, 0.1em);
 
 // -- Primitive: Shadows ------------------------------------------------------
 
 // Premium multi-layered diffuse shadows
 $shadow-sm: var(--vi-shadow-sm, 0 1px 2px 0 rgba(0, 0, 0, 0.03));
-$shadow-md: var(--vi-shadow-md, 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 10px 15px -3px rgba(0, 0, 0, 0.1));
-$shadow-lg: var(--vi-shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 20px 25px -5px rgba(0, 0, 0, 0.1));
-$shadow-xl: var(--vi-shadow-xl, 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 25px 50px -12px rgba(0, 0, 0, 0.15));
+$shadow-md: var(
+  --vi-shadow-md,
+  0 4px 6px -1px rgba(0, 0, 0, 0.05),
+  0 10px 15px -3px rgba(0, 0, 0, 0.1)
+);
+$shadow-lg: var(
+  --vi-shadow-lg,
+  0 10px 15px -3px rgba(0, 0, 0, 0.05),
+  0 20px 25px -5px rgba(0, 0, 0, 0.1)
+);
+$shadow-xl: var(
+  --vi-shadow-xl,
+  0 20px 25px -5px rgba(0, 0, 0, 0.05),
+  0 25px 50px -12px rgba(0, 0, 0, 0.15)
+);
 
 // Premium 3D edge highlights
-$shadow-inner-light: var(--vi-shadow-inner-light, inset 0 1px 0 rgba(255, 255, 255, 0.3));
-$shadow-inner-dark:  var(--vi-shadow-inner-dark, inset 0 1px 0 rgba(0, 0, 0, 0.05));
-$shadow-inner-deep:  var(--vi-shadow-inner-deep, inset 0 1px 3px rgba(0, 0, 0, 0.07), inset 0 1px 2px rgba(0, 0, 0, 0.04));
+$shadow-inner-light: var(
+  --vi-shadow-inner-light,
+  inset 0 1px 0 rgba(255, 255, 255, 0.3)
+);
+$shadow-inner-dark: var(
+  --vi-shadow-inner-dark,
+  inset 0 1px 0 rgba(0, 0, 0, 0.05)
+);
+$shadow-inner-deep: var(
+  --vi-shadow-inner-deep,
+  inset 0 1px 3px rgba(0, 0, 0, 0.07),
+  inset 0 1px 2px rgba(0, 0, 0, 0.04)
+);
 
 // Focus Rings
-$focus-ring-color:  var(--vi-focus-ring-color, $color-blue-200);
+$focus-ring-color: var(--vi-focus-ring-color, $color-blue-200);
 $focus-ring-shadow: var(--vi-focus-ring-shadow, 0 0 0 3px $focus-ring-color);
-$focus-ring-error-shadow: var(--vi-focus-ring-error-shadow, 0 0 0 3px $color-red-200);
-$focus-ring-success-shadow: var(--vi-focus-ring-success-shadow, 0 0 0 3px $color-green-200);
+$focus-ring-error-shadow: var(
+  --vi-focus-ring-error-shadow,
+  0 0 0 3px $color-red-200
+);
+$focus-ring-success-shadow: var(
+  --vi-focus-ring-success-shadow,
+  0 0 0 3px $color-green-200
+);
 
 // -- Primitive: Border radius ------------------------------------------------
 
@@ -250,8 +324,8 @@ $border-radius-full: var(--vi-border-radius-full, 9999px);
 
 // -- Primitive: Border widths ------------------------------------------------
 
-$border-width-thin:  var(--vi-border-width-thin,  1px);
-$border-width-base:  var(--vi-border-width-base,  2px);
+$border-width-thin: var(--vi-border-width-thin, 1px);
+$border-width-base: var(--vi-border-width-base, 2px);
 $border-width-thick: var(--vi-border-width-thick, 3px);
 // End of Semantic SASS Tokens
 
@@ -336,31 +410,31 @@ $color-purple-map: (
 // Palette registry — loop over this in utilities to generate all shade classes
 // e.g. .text-grey-500, .bg-red-100, .text-purple-900
 $palette-maps: (
-  'grey':   $color-grey-map,
-  'red':    $color-red-map,
+  'grey': $color-grey-map,
+  'red': $color-red-map,
   'yellow': $color-yellow-map,
-  'green':  $color-green-map,
-  'blue':   $color-blue-map,
+  'green': $color-green-map,
+  'blue': $color-blue-map,
   'purple': $color-purple-map,
 );
 
 // Semantic map — used for .text-primary, .bg-success, etc.
 $color-map: (
-  'primary':   $color-primary,
+  'primary': $color-primary,
   'secondary': $color-secondary,
-  'success':   $color-success,
-  'warning':   $color-warning,
-  'error':     $color-error,
-  'info':      $color-info,
+  'success': $color-success,
+  'warning': $color-warning,
+  'error': $color-error,
+  'info': $color-info,
 );
 
 $spacing-map: (
   'unit': $spacing-unit,
-  'xs':  $spacing-xs,
-  'sm':  $spacing-sm,
-  'md':  $spacing-md,
-  'lg':  $spacing-lg,
-  'xl':  $spacing-xl,
+  'xs': $spacing-xs,
+  'sm': $spacing-sm,
+  'md': $spacing-md,
+  'lg': $spacing-lg,
+  'xl': $spacing-xl,
   '2xl': $spacing-2xl,
   '3xl': $spacing-3xl,
 );
@@ -373,75 +447,80 @@ $shadow-map: (
 );
 
 // Raw values — CSS custom properties are not valid in @media queries
-$breakpoint-xs:  0;
-$breakpoint-sm:  640px;
-$breakpoint-md:  768px;
-$breakpoint-lg:  1024px;
-$breakpoint-xl:  1280px;
+$breakpoint-xs: 0;
+$breakpoint-sm: 640px;
+$breakpoint-md: 768px;
+$breakpoint-lg: 1024px;
+$breakpoint-xl: 1280px;
 $breakpoint-2xl: 1536px;
 
 $breakpoint-map: (
-  'xs':  $breakpoint-xs,
-  'sm':  $breakpoint-sm,
-  'md':  $breakpoint-md,
-  'lg':  $breakpoint-lg,
-  'xl':  $breakpoint-xl,
+  'xs': $breakpoint-xs,
+  'sm': $breakpoint-sm,
+  'md': $breakpoint-md,
+  'lg': $breakpoint-lg,
+  'xl': $breakpoint-xl,
   '2xl': $breakpoint-2xl,
 );
 
 // Raw integers — used as z-index values (integer arithmetic context)
-$z-index-hide:     -1;
-$z-index-auto:     auto;
-$z-index-base:     0;
+$z-index-hide: -1;
+$z-index-auto: auto;
+$z-index-base: 0;
 $z-index-dropdown: 1000;
-$z-index-sticky:   1020;
-$z-index-fixed:    1030;
+$z-index-sticky: 1020;
+$z-index-fixed: 1030;
 $z-index-backdrop: 1040;
-$z-index-modal:    1050;
-$z-index-popover:  1060;
-$z-index-tooltip:  1070;
+$z-index-modal: 1050;
+$z-index-popover: 1060;
+$z-index-tooltip: 1070;
 
 $z-index-map: (
-  'hide':     $z-index-hide,
-  'auto':     $z-index-auto,
-  'base':     $z-index-base,
+  'hide': $z-index-hide,
+  'auto': $z-index-auto,
+  'base': $z-index-base,
   'dropdown': $z-index-dropdown,
-  'sticky':   $z-index-sticky,
-  'fixed':    $z-index-fixed,
+  'sticky': $z-index-sticky,
+  'fixed': $z-index-fixed,
   'backdrop': $z-index-backdrop,
-  'modal':    $z-index-modal,
-  'popover':  $z-index-popover,
-  'tooltip':  $z-index-tooltip,
+  'modal': $z-index-modal,
+  'popover': $z-index-popover,
+  'tooltip': $z-index-tooltip,
 );
 
 // -- Component: Modal --------------------------------------------------------
 
-$modal-bg:                     var(--vi-modal-bg,                     $color-background);
-$modal-border-radius:          var(--vi-modal-border-radius,          $border-radius-lg);
-$modal-shadow:                 var(--vi-modal-shadow,                 $shadow-xl);
-$modal-header-padding:         var(--vi-modal-header-padding,         #{$spacing-md} #{$spacing-lg});
-$modal-body-padding:           var(--vi-modal-body-padding,           #{$spacing-lg});
-$modal-footer-padding:         var(--vi-modal-footer-padding,         #{$spacing-xs} #{$spacing-md});
-$modal-footer-bg:              var(--vi-modal-footer-bg,              $layer-02);
-$modal-footer-border-color:    var(--vi-modal-footer-border-color,    $border-02);
-$modal-backdrop-bg:            var(--vi-modal-backdrop-bg,            rgba(0, 0, 0, 0.5));
-$modal-drawer-width:           var(--vi-modal-drawer-width,           480px);
-$modal-z-index:                var(--vi-modal-z-index,                $z-index-modal);
-$tooltip-z-index:              var(--vi-tooltip-z-index,              $z-index-tooltip);
-$alert-floating-z-index:       var(--vi-alert-floating-z-index,       1080);
-$modal-animation-duration:     var(--vi-modal-animation-duration,     200ms);
+$modal-bg: var(--vi-modal-bg, $color-background);
+$modal-border-radius: var(--vi-modal-border-radius, $border-radius-lg);
+$modal-shadow: var(--vi-modal-shadow, $shadow-xl);
+$modal-header-padding: var(
+  --vi-modal-header-padding,
+  #{$spacing-md} #{$spacing-lg}
+);
+$modal-body-padding: var(--vi-modal-body-padding, #{$spacing-lg});
+$modal-footer-padding: var(
+  --vi-modal-footer-padding,
+  #{$spacing-xs} #{$spacing-md}
+);
+$modal-footer-bg: var(--vi-modal-footer-bg, $layer-02);
+$modal-footer-border-color: var(--vi-modal-footer-border-color, $border-02);
+$modal-backdrop-bg: var(--vi-modal-backdrop-bg, rgba(0, 0, 0, 0.5));
+$modal-drawer-width: var(--vi-modal-drawer-width, 480px);
+$modal-z-index: var(--vi-modal-z-index, $z-index-modal);
+$tooltip-z-index: var(--vi-tooltip-z-index, $z-index-tooltip);
+$alert-floating-z-index: var(--vi-alert-floating-z-index, 1080);
+$modal-animation-duration: var(--vi-modal-animation-duration, 200ms);
 
-$modal-max-width-xs:           var(--vi-modal-max-width-xs,           320px);
-$modal-max-width-sm:           var(--vi-modal-max-width-sm,           480px);
-$modal-max-width-md:           var(--vi-modal-max-width-md,           520px);
-$modal-max-width-lg:           var(--vi-modal-max-width-lg,           800px);
-$modal-max-width-xl:           var(--vi-modal-max-width-xl,           960px);
+$modal-max-width-xs: var(--vi-modal-max-width-xs, 320px);
+$modal-max-width-sm: var(--vi-modal-max-width-sm, 480px);
+$modal-max-width-md: var(--vi-modal-max-width-md, 520px);
+$modal-max-width-lg: var(--vi-modal-max-width-lg, 800px);
+$modal-max-width-xl: var(--vi-modal-max-width-xl, 960px);
 
-
-$link-color:          var(--vi-link-color,          $color-primary);
-$link-color-hover:    var(--vi-link-color-hover,    $color-blue-800);
-$link-color-active:   var(--vi-link-color-active,   $color-blue-900);
-$link-color-visited:  var(--vi-link-color-visited,  $color-purple-600);
+$link-color: var(--vi-link-color, $color-primary);
+$link-color-hover: var(--vi-link-color-hover, $color-blue-800);
+$link-color-active: var(--vi-link-color-active, $color-blue-900);
+$link-color-visited: var(--vi-link-color-visited, $color-purple-600);
 $link-color-disabled: var(--vi-link-color-disabled, $color-grey-400);
-$link-color-secondary:var(--vi-link-color-secondary,$color-grey-700);
-$link-color-muted:    var(--vi-link-color-muted,    $color-grey-500);
+$link-color-secondary: var(--vi-link-color-secondary, $color-grey-700);
+$link-color-muted: var(--vi-link-color-muted, $color-grey-500);

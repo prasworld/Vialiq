@@ -22,19 +22,31 @@
 // track-width must maintain an oval aspect ratio relative to track-height.
 // All three sizes use deliberate design values validated against Ant Design.
 :host([size='sm']) {
-  --vi-switch-track-width: #{func.to-rem(28px)};  // oval ratio 1.75:1
+  --vi-switch-track-width: #{func.to-rem(28px)}; // oval ratio 1.75:1
   --vi-switch-track-height: #{tokens.$spacing-md};
   --vi-switch-thumb-size: #{tokens.$spacing-sm};
 }
 
 :host([size='md']) {
-  --vi-switch-track-width: #{func.to-rem(44px)};  // oval ratio ~1.83:1 (Ant default)
+  --vi-switch-track-width: #{func.to-rem(44px)}; // oval ratio ~1.83:1 (Ant default)
   --vi-switch-track-height: #{tokens.$spacing-lg};
   --vi-switch-thumb-size: #{tokens.$spacing-md};
 }
 
 :host([size='lg']) {
-  --vi-switch-track-width: #{func.to-rem(52px)};  // oval ratio ~1.63:1
+  --vi-switch-track-width: #{func.to-rem(52px)}; // oval ratio ~1.63:1
   --vi-switch-track-height: #{tokens.$spacing-xl};
   --vi-switch-thumb-size: #{tokens.$spacing-lg};
+}
+
+// The flux-ui switch CSS uses `.switch-input:focus-visible ~ .switch-track` for the
+// focus ring, which only fires for KEYBOARD focus. When vi-label programmatically
+// calls `.focus()` after a mouse click, `:focus-visible` does not apply, so the
+// ring never shows. We override here with `:focus` so the ring shows for all
+// focus methods (keyboard, mouse, or programmatic).
+.switch-input:focus ~ .switch-track {
+  outline: #{tokens.$border-width-base} solid
+    var(--vi-switch-focus-ring-color, #{tokens.$focus});
+  outline-offset: 2px;
+  box-shadow: #{tokens.$focus-ring-shadow};
 }

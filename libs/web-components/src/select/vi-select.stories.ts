@@ -30,7 +30,8 @@ const meta: Meta<SelectArgs> = {
     status: {
       control: 'select',
       options: ['default', 'valid', 'invalid'],
-      description: "Visual state: 'default' (neutral), 'valid' (green), 'invalid' (red)",
+      description:
+        "Visual state: 'default' (neutral), 'valid' (green), 'invalid' (red)",
     },
     validityMessage: {
       control: 'text',
@@ -57,7 +58,16 @@ interface SelectArgs {
   name: string;
 }
 
-const renderSelect = ({ placeholder, value, disabled, required, clearable, status, validityMessage, name }: SelectArgs) => html`
+const renderSelect = ({
+  placeholder,
+  value,
+  disabled,
+  required,
+  clearable,
+  status,
+  validityMessage,
+  name,
+}: SelectArgs) => html`
   <vi-select
     placeholder=${placeholder}
     .value=${value}
@@ -71,7 +81,10 @@ const renderSelect = ({ placeholder, value, disabled, required, clearable, statu
     <vi-select-option value="M" label="Male"></vi-select-option>
     <vi-select-option value="F" label="Female"></vi-select-option>
     <vi-select-option value="I" label="Intersex"></vi-select-option>
-    <vi-select-option value="UNK" label="Unknown / Not reported"></vi-select-option>
+    <vi-select-option
+      value="UNK"
+      label="Unknown / Not reported"
+    ></vi-select-option>
   </vi-select>
 `;
 
@@ -97,7 +110,15 @@ export const Grouped: Story = {
     placeholder: 'Select grade...',
     name: 'aeGrade',
   },
-  render: ({ placeholder, disabled, required, clearable, status, validityMessage, name }: SelectArgs) => html`
+  render: ({
+    placeholder,
+    disabled,
+    required,
+    clearable,
+    status,
+    validityMessage,
+    name,
+  }: SelectArgs) => html`
     <vi-select
       placeholder=${placeholder}
       ?disabled=${disabled}
@@ -107,11 +128,31 @@ export const Grouped: Story = {
       .validityMessage=${validityMessage}
       name=${name}
     >
-      <vi-select-option value="1" label="Grade 1 — Mild" group="Non-serious"></vi-select-option>
-      <vi-select-option value="2" label="Grade 2 — Moderate" group="Non-serious"></vi-select-option>
-      <vi-select-option value="3" label="Grade 3 — Severe" group="Serious"></vi-select-option>
-      <vi-select-option value="4" label="Grade 4 — Life-Threatening" group="Serious"></vi-select-option>
-      <vi-select-option value="5" label="Grade 5 — Fatal" group="Serious"></vi-select-option>
+      <vi-select-option
+        value="1"
+        label="Grade 1 — Mild"
+        group="Non-serious"
+      ></vi-select-option>
+      <vi-select-option
+        value="2"
+        label="Grade 2 — Moderate"
+        group="Non-serious"
+      ></vi-select-option>
+      <vi-select-option
+        value="3"
+        label="Grade 3 — Severe"
+        group="Serious"
+      ></vi-select-option>
+      <vi-select-option
+        value="4"
+        label="Grade 4 — Life-Threatening"
+        group="Serious"
+      ></vi-select-option>
+      <vi-select-option
+        value="5"
+        label="Grade 5 — Fatal"
+        group="Serious"
+      ></vi-select-option>
     </vi-select>
   `,
 };
@@ -163,7 +204,16 @@ export const WithHelper: Story = {
   args: {
     ...Default.args,
   },
-  render: ({ placeholder, value, disabled, required, clearable, status, validityMessage, name }: SelectArgs) => html`
+  render: ({
+    placeholder,
+    value,
+    disabled,
+    required,
+    clearable,
+    status,
+    validityMessage,
+    name,
+  }: SelectArgs) => html`
     <vi-select
       placeholder=${placeholder}
       .value=${value}
@@ -193,10 +243,21 @@ export const WrappedText: Story = {
     // @ts-expect-error - wrapText is added dynamically to the argTypes
     wrapText: {
       control: 'boolean',
-      description: 'Allows long text to wrap instead of truncating with an ellipsis',
+      description:
+        'Allows long text to wrap instead of truncating with an ellipsis',
     },
   },
-  render: ({ placeholder, value, disabled, required, clearable, status, validityMessage, name, wrapText }: SelectArgs & { wrapText?: boolean }) => html`
+  render: ({
+    placeholder,
+    value,
+    disabled,
+    required,
+    clearable,
+    status,
+    validityMessage,
+    name,
+    wrapText,
+  }: SelectArgs & { wrapText?: boolean }) => html`
     <div style="width: 250px;">
       <vi-select
         placeholder=${placeholder}
@@ -209,9 +270,18 @@ export const WrappedText: Story = {
         name=${name}
         ?wrap-text=${wrapText}
       >
-        <vi-select-option value="1" label="A very short option"></vi-select-option>
-        <vi-select-option value="2" label="This is an extremely long option that will definitely overflow the container and should wrap gracefully onto the next line if the wrap-text property is working properly."></vi-select-option>
-        <vi-select-option value="3" label="Another normal option"></vi-select-option>
+        <vi-select-option
+          value="1"
+          label="A very short option"
+        ></vi-select-option>
+        <vi-select-option
+          value="2"
+          label="This is an extremely long option that will definitely overflow the container and should wrap gracefully onto the next line if the wrap-text property is working properly."
+        ></vi-select-option>
+        <vi-select-option
+          value="3"
+          label="Another normal option"
+        ></vi-select-option>
       </vi-select>
     </div>
   `,
@@ -223,7 +293,16 @@ export const CustomTemplates: Story = {
     ...Default.args,
     placeholder: 'Select a user...',
   },
-  render: ({ placeholder, value, disabled, required, clearable, status, validityMessage, name }: SelectArgs) => html`
+  render: ({
+    placeholder,
+    value,
+    disabled,
+    required,
+    clearable,
+    status,
+    validityMessage,
+    name,
+  }: SelectArgs) => html`
     <style>
       .custom-option {
         display: flex;
@@ -273,7 +352,7 @@ export const CustomTemplates: Story = {
           </div>
         </div>
       </vi-select-option>
-      
+
       <vi-select-option value="user2" label="John Smith">
         <div class="custom-option">
           <div class="custom-avatar">JS</div>
@@ -303,7 +382,16 @@ export const TypeAhead: Story = {
     ...Default.args,
     placeholder: 'Type to search states...',
   },
-  render: ({ placeholder, value, disabled, required, clearable, status, validityMessage, name }: SelectArgs) => html`
+  render: ({
+    placeholder,
+    value,
+    disabled,
+    required,
+    clearable,
+    status,
+    validityMessage,
+    name,
+  }: SelectArgs) => html`
     <div style="width: 250px;">
       <vi-select
         placeholder=${placeholder}
@@ -351,7 +439,16 @@ export const OptionGroups: Story = {
     ...Default.args,
     placeholder: 'Select a fruit...',
   },
-  render: ({ placeholder, value, disabled, required, clearable, status, validityMessage, name }: SelectArgs) => html`
+  render: ({
+    placeholder,
+    value,
+    disabled,
+    required,
+    clearable,
+    status,
+    validityMessage,
+    name,
+  }: SelectArgs) => html`
     <div style="width: 250px;">
       <vi-select
         placeholder=${placeholder}
@@ -369,9 +466,18 @@ export const OptionGroups: Story = {
           <vi-select-option value="lime" label="Lime"></vi-select-option>
         </vi-select-group>
         <vi-select-group label="Berries">
-          <vi-select-option value="strawberry" label="Strawberry"></vi-select-option>
-          <vi-select-option value="blueberry" label="Blueberry"></vi-select-option>
-          <vi-select-option value="raspberry" label="Raspberry"></vi-select-option>
+          <vi-select-option
+            value="strawberry"
+            label="Strawberry"
+          ></vi-select-option>
+          <vi-select-option
+            value="blueberry"
+            label="Blueberry"
+          ></vi-select-option>
+          <vi-select-option
+            value="raspberry"
+            label="Raspberry"
+          ></vi-select-option>
         </vi-select-group>
         <vi-select-group label="Other">
           <vi-select-option value="apple" label="Apple"></vi-select-option>
@@ -389,9 +495,20 @@ export const PlacementAndWidth: Story = {
     ...Default.args,
     placeholder: 'Select a user...',
     matchWidth: false,
-    placement: 'top-start'
+    placement: 'top-start',
   },
-  render: ({ placeholder, value, disabled, required, clearable, status, validityMessage, name, matchWidth, placement }: SelectArgs & { matchWidth?: boolean, placement?: string }) => html`
+  render: ({
+    placeholder,
+    value,
+    disabled,
+    required,
+    clearable,
+    status,
+    validityMessage,
+    name,
+    matchWidth,
+    placement,
+  }: SelectArgs & { matchWidth?: boolean; placement?: string }) => html`
     <div style="width: 150px; margin-top: 150px;">
       <vi-select
         placeholder=${placeholder}
@@ -406,20 +523,36 @@ export const PlacementAndWidth: Story = {
         placement=${placement}
       >
         <vi-select-option value="user1" label="Jane Doe">
-          <div style="display: flex; gap: 8px; align-items: center; white-space: nowrap;">
-            <div style="width: 24px; height: 24px; border-radius: 50%; background: #e5e7eb; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold;">JD</div>
+          <div
+            style="display: flex; gap: 8px; align-items: center; white-space: nowrap;"
+          >
+            <div
+              style="width: 24px; height: 24px; border-radius: 50%; background: #e5e7eb; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold;"
+            >
+              JD
+            </div>
             <div>
               <div style="font-weight: 500;">Jane Doe</div>
-              <div style="font-size: 12px; color: #6b7280;">jane.doe@example.com - Senior Software Engineer</div>
+              <div style="font-size: 12px; color: #6b7280;">
+                jane.doe@example.com - Senior Software Engineer
+              </div>
             </div>
           </div>
         </vi-select-option>
         <vi-select-option value="user2" label="John Smith">
-          <div style="display: flex; gap: 8px; align-items: center; white-space: nowrap;">
-            <div style="width: 24px; height: 24px; border-radius: 50%; background: #e5e7eb; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold;">JS</div>
+          <div
+            style="display: flex; gap: 8px; align-items: center; white-space: nowrap;"
+          >
+            <div
+              style="width: 24px; height: 24px; border-radius: 50%; background: #e5e7eb; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold;"
+            >
+              JS
+            </div>
             <div>
               <div style="font-weight: 500;">John Smith</div>
-              <div style="font-size: 12px; color: #6b7280;">john.smith@example.com - Product Manager</div>
+              <div style="font-size: 12px; color: #6b7280;">
+                john.smith@example.com - Product Manager
+              </div>
             </div>
           </div>
         </vi-select-option>
@@ -435,9 +568,22 @@ export const FormReset: Story = {
     placeholder: 'Select an option...',
     value: 'option1',
   },
-  render: ({ placeholder, disabled, required, clearable, status, validityMessage, name }: SelectArgs) => html`
-    <form @reset=${(_e: Event) => console.log('Form reset fired!')} @submit=${(_e: Event) => e.preventDefault()}>
-      <div style="width: 250px; display: flex; flex-direction: column; gap: 16px;">
+  render: ({
+    placeholder,
+    disabled,
+    required,
+    clearable,
+    status,
+    validityMessage,
+    name,
+  }: SelectArgs) => html`
+    <form
+      @reset=${(_e: Event) => console.log('Form reset fired!')}
+      @submit=${(_e: Event) => e.preventDefault()}
+    >
+      <div
+        style="width: 250px; display: flex; flex-direction: column; gap: 16px;"
+      >
         <vi-select
           placeholder=${placeholder}
           value="option1"
@@ -456,7 +602,10 @@ export const FormReset: Story = {
           <vi-button type="reset" variant="neutral">Reset Form</vi-button>
           <vi-button type="submit" variant="primary">Submit</vi-button>
         </div>
-        <p style="font-size: 14px; color: #6b7280;">Change the select value and click Reset Form. It will revert to "Option 1".</p>
+        <p style="font-size: 14px; color: #6b7280;">
+          Change the select value and click Reset Form. It will revert to
+          "Option 1".
+        </p>
       </div>
     </form>
   `,

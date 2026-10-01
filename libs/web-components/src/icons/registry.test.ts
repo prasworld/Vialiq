@@ -15,13 +15,19 @@ describe('Icon Registry', () => {
 
   it('throws an error if SVG contains a <script> tag', () => {
     expect(() => {
-      registerIcons({ name: 'xss-script', data: '<svg><script>alert("xss")</script></svg>' });
+      registerIcons({
+        name: 'xss-script',
+        data: '<svg><script>alert("xss")</script></svg>',
+      });
     }).toThrow(/must not contain <script> elements/);
   });
 
   it('throws an error if SVG contains inline event handlers', () => {
     expect(() => {
-      registerIcons({ name: 'xss-event', data: '<svg onload="alert(1)"></svg>' });
+      registerIcons({
+        name: 'xss-event',
+        data: '<svg onload="alert(1)"></svg>',
+      });
     }).toThrow(/must not contain inline event handlers/);
   });
 });

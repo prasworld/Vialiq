@@ -56,25 +56,29 @@ class OverlayManagerService {
     element: HTMLElement,
     type: OverlayType = 'dropdown',
     scrollStrategy?: ScrollStrategy,
-    options?: { noBackdrop?: boolean }
+    options?: { noBackdrop?: boolean },
   ): number {
     this.unregister(element); // Ensure no duplicates
 
     let highestZIndex = this.getBaseZIndex(element);
     if (this.overlays.length > 0) {
-      highestZIndex = Math.max(...this.overlays.map((o) => o.zIndex), highestZIndex);
+      highestZIndex = Math.max(
+        ...this.overlays.map((o) => o.zIndex),
+        highestZIndex,
+      );
     }
 
     // Increment by 10 to allow room for backdrops (which typically sit at z-index - 1)
     const newZIndex = highestZIndex + 10;
-    const finalStrategy = scrollStrategy ?? (type === 'modal' ? 'block' : 'noop');
+    const finalStrategy =
+      scrollStrategy ?? (type === 'modal' ? 'block' : 'noop');
 
-    this.overlays.push({ 
-      element, 
-      type, 
-      zIndex: newZIndex, 
+    this.overlays.push({
+      element,
+      type,
+      zIndex: newZIndex,
       scrollStrategy: finalStrategy,
-      noBackdrop: options?.noBackdrop
+      noBackdrop: options?.noBackdrop,
     });
     this._updateBodyScroll();
     this._syncInertState();
@@ -128,12 +132,17 @@ class OverlayManagerService {
     if (typeof document === 'undefined') return;
 
     // Find the topmost modal that requires a backdrop
-    const blockingOverlays = this.overlays.filter((o) => o.type === 'modal' && !o.noBackdrop);
-    const topBlocking = blockingOverlays.length > 0 ? blockingOverlays[blockingOverlays.length - 1] : null;
+    const blockingOverlays = this.overlays.filter(
+      (o) => o.type === 'modal' && !o.noBackdrop,
+    );
+    const topBlocking =
+      blockingOverlays.length > 0
+        ? blockingOverlays[blockingOverlays.length - 1]
+        : null;
 
     if (!topBlocking) {
       // If no blocking overlays, clear all inert state
-      this._inertedElements.forEach(el => {
+      this._inertedElements.forEach((el) => {
         el.inert = false;
       });
       this._inertedElements = [];
@@ -155,7 +164,7 @@ class OverlayManagerService {
       if (activeOverlayElements.has(el)) {
         if (this._inertedElements.includes(el)) {
           el.inert = false;
-          this._inertedElements = this._inertedElements.filter(e => e !== el);
+          this._inertedElements = this._inertedElements.filter((e) => e !== el);
         }
         return;
       }
@@ -170,7 +179,7 @@ class OverlayManagerService {
 
   /**
    * Locks or unlocks the document.body scroll based on the active overlays.
-   * Modals (and other overlays with scrollStrategy='block') require the body 
+   * Modals (and other overlays with scrollStrategy='block') require the body
    * to be unscrollable. It applies a utility class `vi-scroll-locked` to the body.
    */
   private _updateBodyScroll(): void {
@@ -179,24 +188,33 @@ class OverlayManagerService {
       // Prevent double-setting if already locked
       if (!document.body.classList.contains('vi-scroll-locked')) {
         // Calculate scrollbar width before removing overflow
-        const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+        const scrollbarWidth =
+          window.innerWidth - document.documentElement.clientWidth;
 
         document.body.classList.add('vi-scroll-locked');
-        this._previousOverflow = document.body.style.getPropertyValue('overflow') || null;
-        this._previousPaddingRight = document.body.style.getPropertyValue('padding-right') || null;
-        
+        this._previousOverflow =
+          document.body.style.getPropertyValue('overflow') || null;
+        this._previousPaddingRight =
+          document.body.style.getPropertyValue('padding-right') || null;
+
         document.body.style.setProperty('overflow', 'hidden', 'important');
 
         // Apply compensation padding to prevent layout shift
         if (scrollbarWidth > 0) {
-          const currentPadding = parseFloat(window.getComputedStyle(document.body).paddingRight || '0');
-          document.body.style.setProperty('padding-right', `${currentPadding + scrollbarWidth}px`, 'important');
+          const currentPadding = parseFloat(
+            window.getComputedStyle(document.body).paddingRight || '0',
+          );
+          document.body.style.setProperty(
+            'padding-right',
+            `${currentPadding + scrollbarWidth}px`,
+            'important',
+          );
         }
       }
     } else {
       if (document.body.classList.contains('vi-scroll-locked')) {
         document.body.classList.remove('vi-scroll-locked');
-        
+
         if (this._previousOverflow !== null) {
           document.body.style.setProperty('overflow', this._previousOverflow);
         } else {
@@ -204,7 +222,10 @@ class OverlayManagerService {
         }
 
         if (this._previousPaddingRight !== null) {
-          document.body.style.setProperty('padding-right', this._previousPaddingRight);
+          document.body.style.setProperty(
+            'padding-right',
+            this._previousPaddingRight,
+          );
         } else {
           document.body.style.removeProperty('padding-right');
         }

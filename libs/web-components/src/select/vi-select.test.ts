@@ -17,11 +17,14 @@ describe('vi-select', () => {
   });
 
   it('renders with placeholder initially', async () => {
-    render(html`
-      <vi-select placeholder="Choose an option">
-        <vi-select-option value="1" label="One"></vi-select-option>
-      </vi-select>
-    `, container);
+    render(
+      html`
+        <vi-select placeholder="Choose an option">
+          <vi-select-option value="1" label="One"></vi-select-option>
+        </vi-select>
+      `,
+      container,
+    );
 
     const el = document.querySelector('vi-select') as ViSelect;
     await el.updateComplete;
@@ -31,12 +34,15 @@ describe('vi-select', () => {
   });
 
   it('reflects selected option label based on value property', async () => {
-    render(html`
-      <vi-select value="2">
-        <vi-select-option value="1" label="One"></vi-select-option>
-        <vi-select-option value="2" label="Two"></vi-select-option>
-      </vi-select>
-    `, container);
+    render(
+      html`
+        <vi-select value="2">
+          <vi-select-option value="1" label="One"></vi-select-option>
+          <vi-select-option value="2" label="Two"></vi-select-option>
+        </vi-select>
+      `,
+      container,
+    );
 
     const el = document.querySelector('vi-select') as ViSelect;
     await el.updateComplete;
@@ -49,19 +55,24 @@ describe('vi-select', () => {
   });
 
   it('updates value and label when option is clicked', async () => {
-    render(html`
-      <vi-select>
-        <vi-select-option value="1" label="One"></vi-select-option>
-        <vi-select-option value="2" label="Two"></vi-select-option>
-      </vi-select>
-    `, container);
+    render(
+      html`
+        <vi-select>
+          <vi-select-option value="1" label="One"></vi-select-option>
+          <vi-select-option value="2" label="Two"></vi-select-option>
+        </vi-select>
+      `,
+      container,
+    );
 
     const el = document.querySelector('vi-select') as ViSelect;
     await el.updateComplete;
     await browser.pause(50);
 
-    const optionTwo = document.querySelector('vi-select-option[value="2"]') as HTMLElement;
-    
+    const optionTwo = document.querySelector(
+      'vi-select-option[value="2"]',
+    ) as HTMLElement;
+
     // Simulate user selecting "Two"
     optionTwo.click();
 
@@ -76,18 +87,28 @@ describe('vi-select', () => {
   it('fires vi-select-change event on selection', async () => {
     let detail: any = null;
     let eventFired = false;
-    
-    render(html`
-      <vi-select @vi-select-change=${(e: CustomEvent) => { eventFired = true; detail = e.detail; }}>
-        <vi-select-option value="1" label="One"></vi-select-option>
-      </vi-select>
-    `, container);
+
+    render(
+      html`
+        <vi-select
+          @vi-select-change=${(e: CustomEvent) => {
+            eventFired = true;
+            detail = e.detail;
+          }}
+        >
+          <vi-select-option value="1" label="One"></vi-select-option>
+        </vi-select>
+      `,
+      container,
+    );
 
     const el = document.querySelector('vi-select') as ViSelect;
     await el.updateComplete;
     await browser.pause(50);
 
-    const optionOne = document.querySelector('vi-select-option[value="1"]') as HTMLElement;
+    const optionOne = document.querySelector(
+      'vi-select-option[value="1"]',
+    ) as HTMLElement;
     optionOne.click();
 
     expect(eventFired).toBe(true);
@@ -98,12 +119,21 @@ describe('vi-select', () => {
   it('clears selection when clear button is clicked', async () => {
     let clearFired = false;
     let changeValue = '1';
-    
-    render(html`
-      <vi-select clearable value="1" @vi-select-clear=${() => clearFired = true} @vi-select-change=${(e: CustomEvent) => changeValue = e.detail.value}>
-        <vi-select-option value="1" label="One"></vi-select-option>
-      </vi-select>
-    `, container);
+
+    render(
+      html`
+        <vi-select
+          clearable
+          value="1"
+          @vi-select-clear=${() => (clearFired = true)}
+          @vi-select-change=${(e: CustomEvent) =>
+            (changeValue = e.detail.value)}
+        >
+          <vi-select-option value="1" label="One"></vi-select-option>
+        </vi-select>
+      `,
+      container,
+    );
 
     const el = document.querySelector('vi-select') as ViSelect;
     await el.updateComplete;
@@ -111,7 +141,9 @@ describe('vi-select', () => {
 
     expect(el.value).toBe('1');
 
-    const clearBtn = el.shadowRoot?.querySelector('.select-clear-btn') as HTMLButtonElement;
+    const clearBtn = el.shadowRoot?.querySelector(
+      '.select-clear-btn',
+    ) as HTMLButtonElement;
     clearBtn.click();
 
     await el.updateComplete;
@@ -122,11 +154,14 @@ describe('vi-select', () => {
   });
 
   it('handles validity correctly', async () => {
-    render(html`
-      <vi-select required>
-        <vi-select-option value="1" label="One"></vi-select-option>
-      </vi-select>
-    `, container);
+    render(
+      html`
+        <vi-select required>
+          <vi-select-option value="1" label="One"></vi-select-option>
+        </vi-select>
+      `,
+      container,
+    );
 
     const el = document.querySelector('vi-select') as ViSelect;
     await el.updateComplete;
@@ -134,10 +169,10 @@ describe('vi-select', () => {
     const isValid = el.reportValidity();
     expect(isValid).toBe(false);
     expect(el.status).toBe('invalid');
-    
+
     el.value = '1';
     await el.updateComplete;
-    
+
     expect(el.reportValidity()).toBe(true);
   });
 });

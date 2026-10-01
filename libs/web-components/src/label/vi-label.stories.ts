@@ -184,7 +184,9 @@ export const SemanticTypes: Story = {
         <vi-input id="type-primary"></vi-input>
       </div>
       <div>
-        <vi-label type="secondary" for="type-secondary">Secondary Label</vi-label>
+        <vi-label type="secondary" for="type-secondary"
+          >Secondary Label</vi-label
+        >
         <vi-input id="type-secondary"></vi-input>
       </div>
     </div>
@@ -203,7 +205,12 @@ export const WithTooltip: Story = {
       type=${ifDefined(args.type)}
     >
       Label with Tooltip
-      <span slot="tooltip" style="cursor: help; margin-left: 4px;" title="Helpful information about this field">ℹ️</span>
+      <span
+        slot="tooltip"
+        style="cursor: help; margin-left: 4px;"
+        title="Helpful information about this field"
+        >ℹ️</span
+      >
     </vi-label>
     <vi-input id="tooltip-input" ?disabled=${args.disabled}></vi-input>
   `,

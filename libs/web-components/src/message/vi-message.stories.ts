@@ -15,7 +15,8 @@ const meta: Meta = {
   parameters: {
     docs: {
       description: {
-        component: 'A lightweight, ephemeral global feedback message used to indicate the result of a user action without interrupting their workflow. Triggered programmatically via `messageService`.',
+        component:
+          'A lightweight, ephemeral global feedback message used to indicate the result of a user action without interrupting their workflow. Triggered programmatically via `messageService`.',
       },
     },
   },
@@ -35,7 +36,7 @@ export const ProgrammaticUsage: Story = {
       >
         Info Message
       </vi-button>
-      
+
       <vi-button
         variant="primary"
         @click=${() => {
@@ -110,10 +111,7 @@ export const DismissAll: Story = {
         Spawn Multiple
       </vi-button>
 
-      <vi-button
-        variant="danger"
-        @click=${() => messageService.dismissAll()}
-      >
+      <vi-button variant="danger" @click=${() => messageService.dismissAll()}>
         Dismiss All
       </vi-button>
     </div>
@@ -128,11 +126,12 @@ export const StickyAndCustomHTML: Story = {
         @click=${() => {
           const frag = document.createDocumentFragment();
           const span = document.createElement('span');
-          span.innerHTML = '<strong>Network connection lost!</strong> Please check your cables. <a href="#" style="color: inherit; text-decoration: underline; margin-left: 8px;">Retry</a>';
+          span.innerHTML =
+            '<strong>Network connection lost!</strong> Please check your cables. <a href="#" style="color: inherit; text-decoration: underline; margin-left: 8px;">Retry</a>';
           frag.appendChild(span);
-          
+
           // 0 means sticky indefinitely
-          messageService.error(frag, 0); 
+          messageService.error(frag, 0);
         }}
       >
         Simulate Network Loss (Sticky Custom HTML)

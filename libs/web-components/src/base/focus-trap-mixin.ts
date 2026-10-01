@@ -5,9 +5,15 @@ import { FOCUSABLE_SELECTOR } from './focusable-selector.js';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Constructor<T = object> = new (...args: any[]) => T;
 
-function getDeepActiveElement(doc: Document | ShadowRoot = document): Element | null {
+function getDeepActiveElement(
+  doc: Document | ShadowRoot = document,
+): Element | null {
   let activeElement = doc.activeElement;
-  while (activeElement && activeElement.shadowRoot && activeElement.shadowRoot.activeElement) {
+  while (
+    activeElement &&
+    activeElement.shadowRoot &&
+    activeElement.shadowRoot.activeElement
+  ) {
     activeElement = activeElement.shadowRoot.activeElement;
   }
   return activeElement;
@@ -248,8 +254,8 @@ export function FocusTrapMixin<T extends Constructor<LitElement>>(
       ];
 
       // Browsers order: tabIndex > 0 (ascending), then tabIndex <= 0 (DOM order).
-      const positiveTabIndex = allFocusable.filter(el => el.tabIndex > 0);
-      const defaultTabIndex = allFocusable.filter(el => el.tabIndex <= 0);
+      const positiveTabIndex = allFocusable.filter((el) => el.tabIndex > 0);
+      const defaultTabIndex = allFocusable.filter((el) => el.tabIndex <= 0);
 
       positiveTabIndex.sort((a, b) => a.tabIndex - b.tabIndex);
 
@@ -272,11 +278,11 @@ export function FocusTrapMixin<T extends Constructor<LitElement>>(
       if (shadowActive && shadowActive.tagName !== 'SLOT') {
         return shadowActive;
       }
-      
+
       // Focus is on slotted content — document.activeElement has the host element.
       let active = document.activeElement;
-      
-      // If the active element is a container (like vi-modal-header), we must pierce 
+
+      // If the active element is a container (like vi-modal-header), we must pierce
       // its shadow root to find the actual element from our focusable list.
       const focusable = this._focusableElementsCache || [];
       while (active && active.shadowRoot && active.shadowRoot.activeElement) {
@@ -287,7 +293,7 @@ export function FocusTrapMixin<T extends Constructor<LitElement>>(
         }
         active = active.shadowRoot.activeElement;
       }
-      
+
       return active;
     }
 
@@ -338,7 +344,9 @@ export function FocusTrapMixin<T extends Constructor<LitElement>>(
       // Snapshot focus BEFORE we move it — this is what we restore on deactivate.
       // Use getDeepActiveElement() to capture the exact element even inside nested shadow roots.
       if (document.activeElement) {
-        this._preTrapFocus = new WeakRef(getDeepActiveElement() || document.activeElement);
+        this._preTrapFocus = new WeakRef(
+          getDeepActiveElement() || document.activeElement,
+        );
       }
 
       // Attach keydown to the host element (`this`), not `shadowRoot`.
@@ -347,12 +355,24 @@ export function FocusTrapMixin<T extends Constructor<LitElement>>(
       // Attaching to the host (rather than a global document listener) means the
       // handler is automatically inactive when focus leaves the component entirely.
       this.addEventListener('keydown', this._boundHandleKeydown);
-      
+
       this._clearFocusableCache();
-      this._trapMutationObserver = new MutationObserver(this._clearFocusableCache);
-      this._trapMutationObserver.observe(this, { childList: true, subtree: true, attributes: true, attributeFilter: ['tabindex', 'disabled', 'hidden', 'inert'] });
+      this._trapMutationObserver = new MutationObserver(
+        this._clearFocusableCache,
+      );
+      this._trapMutationObserver.observe(this, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['tabindex', 'disabled', 'hidden', 'inert'],
+      });
       if (this.shadowRoot) {
-        this._trapMutationObserver.observe(this.shadowRoot, { childList: true, subtree: true, attributes: true, attributeFilter: ['tabindex', 'disabled', 'hidden', 'inert'] });
+        this._trapMutationObserver.observe(this.shadowRoot, {
+          childList: true,
+          subtree: true,
+          attributes: true,
+          attributeFilter: ['tabindex', 'disabled', 'hidden', 'inert'],
+        });
       }
 
       // Focus the initial element after the current call stack clears.
@@ -367,11 +387,8 @@ export function FocusTrapMixin<T extends Constructor<LitElement>>(
     }
 
     protected _deactivateFocusTrap(returnFocus?: HTMLElement | null): void {
-      this.removeEventListener(
-        'keydown',
-        this._boundHandleKeydown,
-      );
-      
+      this.removeEventListener('keydown', this._boundHandleKeydown);
+
       if (this._trapMutationObserver) {
         this._trapMutationObserver.disconnect();
         this._trapMutationObserver = null;

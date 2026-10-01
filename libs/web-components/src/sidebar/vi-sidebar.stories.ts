@@ -5,7 +5,13 @@ import './index.js';
 import '../button/vi-button.js';
 import '../icons/vi-icon.js';
 import { registerIcons } from '../icons/registry.js';
-import { homeIcon, usersIcon, documentIcon, edit1Icon, chevronRightIcon } from '@vialiq/icons';
+import {
+  homeIcon,
+  usersIcon,
+  documentIcon,
+  edit1Icon,
+  chevronRightIcon,
+} from '@vialiq/icons';
 
 registerIcons([homeIcon, usersIcon, documentIcon, edit1Icon, chevronRightIcon]);
 const meta: Meta = {
@@ -91,22 +97,60 @@ const renderSidebarTemplate = (args: Record<string, unknown>) => html`
         ?resizable=${args.resizable}
         style="--vi-sidebar-bg: #ffffff; border-right: 1px solid #e3e3e3; z-index: 9999;"
       >
-        <div style="padding: 24px; display: flex; flex-direction: column; height: 100%; box-sizing: border-box;">
-          <h3 style="margin-top: 0; margin-bottom: 32px; font-family: Inter, sans-serif; font-weight: 600; color: #111827; display: flex; align-items: center; gap: 8px;">
+        <div
+          style="padding: 24px; display: flex; flex-direction: column; height: 100%; box-sizing: border-box;"
+        >
+          <h3
+            style="margin-top: 0; margin-bottom: 32px; font-family: Inter, sans-serif; font-weight: 600; color: #111827; display: flex; align-items: center; gap: 8px;"
+          >
             <vi-icon name="document" style="color: #4f46e5;"></vi-icon>
             Menu
           </h3>
-          <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; flex: 1;">
-            <li><vi-button variant="text" style="width: 100%; justify-content: flex-start; color: #4b5563;"><vi-icon name="home" slot="prefix"></vi-icon> Dashboard</vi-button></li>
-            <li><vi-button variant="text" style="width: 100%; justify-content: flex-start; color: #4b5563;"><vi-icon name="users" slot="prefix"></vi-icon> Team</vi-button></li>
-            <li><vi-button variant="text" style="width: 100%; justify-content: flex-start; color: #4b5563;"><vi-icon name="document" slot="prefix"></vi-icon> Projects</vi-button></li>
-            <li><vi-button variant="text" style="width: 100%; justify-content: flex-start; color: #4b5563;"><vi-icon name="edit-1" slot="prefix"></vi-icon> Settings</vi-button></li>
+          <ul
+            style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; flex: 1;"
+          >
+            <li>
+              <vi-button
+                variant="text"
+                style="width: 100%; justify-content: flex-start; color: #4b5563;"
+                ><vi-icon name="home" slot="prefix"></vi-icon>
+                Dashboard</vi-button
+              >
+            </li>
+            <li>
+              <vi-button
+                variant="text"
+                style="width: 100%; justify-content: flex-start; color: #4b5563;"
+                ><vi-icon name="users" slot="prefix"></vi-icon> Team</vi-button
+              >
+            </li>
+            <li>
+              <vi-button
+                variant="text"
+                style="width: 100%; justify-content: flex-start; color: #4b5563;"
+                ><vi-icon name="document" slot="prefix"></vi-icon>
+                Projects</vi-button
+              >
+            </li>
+            <li>
+              <vi-button
+                variant="text"
+                style="width: 100%; justify-content: flex-start; color: #4b5563;"
+                ><vi-icon name="edit-1" slot="prefix"></vi-icon>
+                Settings</vi-button
+              >
+            </li>
           </ul>
-          <div style="margin-top: auto; padding-top: 24px; border-top: 1px solid #f3f4f6;">
-            <vi-button 
-              variant="outline" 
+          <div
+            style="margin-top: auto; padding-top: 24px; border-top: 1px solid #f3f4f6;"
+          >
+            <vi-button
+              variant="outline"
               style="width: 100%; border-color: #e5e7eb; color: #374151;"
-              @click=${() => document.querySelector('#demo-sidebar')?.removeAttribute('opened')}
+              @click=${() =>
+                document
+                  .querySelector('#demo-sidebar')
+                  ?.removeAttribute('opened')}
             >
               Close Sidebar
             </vi-button>
@@ -114,20 +158,32 @@ const renderSidebarTemplate = (args: Record<string, unknown>) => html`
         </div>
       </vi-sidebar>
 
-      <div slot="content" style="padding: 48px; height: 100%; box-sizing: border-box; background: #f9fafb; font-family: Inter, sans-serif;">
+      <div
+        slot="content"
+        style="padding: 48px; height: 100%; box-sizing: border-box; background: #f9fafb; font-family: Inter, sans-serif;"
+      >
         <div style="max-width: 800px; margin: 0 auto;">
-          <h1 style="color: #111827; font-weight: 700; margin-top: 0; font-size: 2.25rem;">Main Dashboard</h1>
-          <p style="color: #4b5563; font-size: 1.125rem; line-height: 1.75; margin-bottom: 32px;">
-            This is the main page content. The layout responds fluidly to the sidebar modes: Push, Slide, and Over.
+          <h1
+            style="color: #111827; font-weight: 700; margin-top: 0; font-size: 2.25rem;"
+          >
+            Main Dashboard
+          </h1>
+          <p
+            style="color: #4b5563; font-size: 1.125rem; line-height: 1.75; margin-bottom: 32px;"
+          >
+            This is the main page content. The layout responds fluidly to the
+            sidebar modes: Push, Slide, and Over.
           </p>
-          
+
           <div style="display: flex; gap: 16px; margin-bottom: 48px;">
-            <vi-button 
-              variant="primary" 
+            <vi-button
+              variant="primary"
               style="background-color: #4f46e5; border-color: #4f46e5; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);"
               @click=${(e: Event) => {
                 e.stopPropagation();
-                document.querySelector('#demo-sidebar')?.setAttribute('opened', 'true');
+                document
+                  .querySelector('#demo-sidebar')
+                  ?.setAttribute('opened', 'true');
               }}
             >
               <vi-icon name="chevron-right" slot="prefix"></vi-icon>
@@ -135,10 +191,12 @@ const renderSidebarTemplate = (args: Record<string, unknown>) => html`
             </vi-button>
           </div>
 
-          <div style="background: #ffffff; padding: 32px; border-radius: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.02); border: 1px solid #f3f4f6;">
+          <div
+            style="background: #ffffff; padding: 32px; border-radius: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.02); border: 1px solid #f3f4f6;"
+          >
             <h3 style="margin-top: 0; color: #111827;">System Status</h3>
             <p style="color: #6b7280; line-height: 1.6; margin-bottom: 0;">
-              <strong>Current Mode:</strong> ${args.mode} <br/>
+              <strong>Current Mode:</strong> ${args.mode} <br />
               <strong>Current Position:</strong> ${args.position}
             </p>
           </div>

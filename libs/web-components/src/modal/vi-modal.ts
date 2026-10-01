@@ -226,14 +226,26 @@ export class ViModal extends ResizableMixin(
 
   override connectedCallback(): void {
     super.connectedCallback();
-    this.addEventListener('vi-modal-header-close', this._handleHeaderCloseRequest);
-    this.addEventListener('vi-modal-header-maximize', this._handleHeaderMaximizeRequest);
+    this.addEventListener(
+      'vi-modal-header-close',
+      this._handleHeaderCloseRequest,
+    );
+    this.addEventListener(
+      'vi-modal-header-maximize',
+      this._handleHeaderMaximizeRequest,
+    );
   }
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
-    this.removeEventListener('vi-modal-header-close', this._handleHeaderCloseRequest);
-    this.removeEventListener('vi-modal-header-maximize', this._handleHeaderMaximizeRequest);
+    this.removeEventListener(
+      'vi-modal-header-close',
+      this._handleHeaderCloseRequest,
+    );
+    this.removeEventListener(
+      'vi-modal-header-maximize',
+      this._handleHeaderMaximizeRequest,
+    );
     OverlayManager.unregister(this);
 
     this._activeAnimation?.cancel();
@@ -243,10 +255,10 @@ export class ViModal extends ResizableMixin(
   private _handleHeaderCloseRequest = (e: Event) => {
     // Ignore events dispatched by this element itself (e.g., from _requestClose)
     if (e.target === this) return;
-    
+
     // Stop the header's raw event from bubbling out to consumers
     e.stopPropagation();
-    
+
     // Trigger the modal's close flow which fires the properly constructed public event
     this.close('button');
   };
@@ -267,8 +279,6 @@ export class ViModal extends ResizableMixin(
     }
   }
 
-
-
   override updated(
     changedProperties: Map<string | number | symbol, unknown>,
   ): void {
@@ -278,10 +288,10 @@ export class ViModal extends ResizableMixin(
       if (this.open) {
         // Resolve append-to target
         // Blocking modals (with backdrop) MUST teleport to document.body.
-        // Otherwise, the OverlayManager's 'inert' application to body children 
+        // Otherwise, the OverlayManager's 'inert' application to body children
         // will make the custom container (and therefore the modal) completely inert.
         let teleportTarget: HTMLElement = document.body;
-        
+
         if (this.noBackdrop) {
           if (this.appendTo instanceof HTMLElement) {
             teleportTarget = this.appendTo;
@@ -308,7 +318,7 @@ export class ViModal extends ResizableMixin(
           this,
           this.variant === 'drawer' ? 'modal' : 'modal',
           this.noBackdrop ? 'noop' : 'block',
-          { noBackdrop: this.noBackdrop }
+          { noBackdrop: this.noBackdrop },
         );
 
         // Apply inert to background content (must happen after teleport)
@@ -408,8 +418,6 @@ export class ViModal extends ResizableMixin(
 
   private _closeReason: 'escape' | 'backdrop' | 'button' | 'programmatic' =
     'programmatic';
-
-
 
   // ─── Animation Helpers ───────────────────────────────────────────────────
 
@@ -672,8 +680,6 @@ export class ViModal extends ResizableMixin(
       </dialog>
     `;
   }
-
-
 }
 
 declare global {

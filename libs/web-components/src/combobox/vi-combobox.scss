@@ -4,13 +4,14 @@
 
 :host {
   display: block;
+  --vi-combobox-placeholder-color: #{tokens.$text-placeholder};
 }
 
 :host([hidden]) {
   display: none !important;
 }
 
-:host([searchable="false"]) .combobox-control {
+:host([searchable='false']) .combobox-control {
   cursor: pointer;
 }
 

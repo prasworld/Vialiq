@@ -22,7 +22,7 @@ describe('vi-animation', () => {
           <div class="target">Animated Content</div>
         </vi-animation>
       `,
-      container
+      container,
     );
     const wrapper = await $('vi-animation');
     await expect(wrapper).toExist();
@@ -38,26 +38,39 @@ describe('vi-animation', () => {
           <div>Content</div>
         </vi-animation>
       `,
-      container
+      container,
     );
     const wrapper = await $('#test-anim-1');
     const anim = (await wrapper) as unknown as ViAnimation;
 
-    expect(await browser.execute((el: ViAnimation) => el.name, anim)).toBe('fade-in');
-    expect(await browser.execute((el: ViAnimation) => el.duration, anim)).toBe(300);
+    expect(await browser.execute((el: ViAnimation) => el.name, anim)).toBe(
+      'fade-in',
+    );
+    expect(await browser.execute((el: ViAnimation) => el.duration, anim)).toBe(
+      300,
+    );
     expect(await browser.execute((el: ViAnimation) => el.delay, anim)).toBe(0);
-    expect(await browser.execute((el: ViAnimation) => el.open, anim)).toBe(true);
-    expect(await browser.execute((el: ViAnimation) => el.cascade, anim)).toBe(false);
+    expect(await browser.execute((el: ViAnimation) => el.open, anim)).toBe(
+      true,
+    );
+    expect(await browser.execute((el: ViAnimation) => el.cascade, anim)).toBe(
+      false,
+    );
   });
 
   it('dispatches vi-animation-start and vi-animation-end custom events on play()', async () => {
     render(
       html`
-        <vi-animation id="test-anim-2" name="fade-in" .duration=${50} .autoPlay=${false}>
+        <vi-animation
+          id="test-anim-2"
+          name="fade-in"
+          .duration=${50}
+          .autoPlay=${false}
+        >
           <div>Event Target</div>
         </vi-animation>
       `,
-      container
+      container,
     );
     const wrapper = await $('#test-anim-2');
     const anim = (await wrapper) as unknown as ViAnimation;
@@ -92,11 +105,16 @@ describe('vi-animation', () => {
   it('handles show() and hide() imperative calls and toggles hidden state', async () => {
     render(
       html`
-        <vi-animation id="test-anim-3" name="fade-in" .duration=${50} .autoPlay=${false}>
+        <vi-animation
+          id="test-anim-3"
+          name="fade-in"
+          .duration=${50}
+          .autoPlay=${false}
+        >
           <div>Target</div>
         </vi-animation>
       `,
-      container
+      container,
     );
     const wrapper = await $('#test-anim-3');
     const anim = (await wrapper) as unknown as ViAnimation;
@@ -105,27 +123,42 @@ describe('vi-animation', () => {
       await el.hide();
     }, anim);
 
-    expect(await browser.execute((el: ViAnimation) => el.open, anim)).toBe(false);
-    expect(await browser.execute((el: ViAnimation) => el.hidden, anim)).toBe(true);
+    expect(await browser.execute((el: ViAnimation) => el.open, anim)).toBe(
+      false,
+    );
+    expect(await browser.execute((el: ViAnimation) => el.hidden, anim)).toBe(
+      true,
+    );
 
     await browser.execute(async (el: ViAnimation) => {
       await el.show();
     }, anim);
 
-    expect(await browser.execute((el: ViAnimation) => el.open, anim)).toBe(true);
-    expect(await browser.execute((el: ViAnimation) => el.hidden, anim)).toBe(false);
+    expect(await browser.execute((el: ViAnimation) => el.open, anim)).toBe(
+      true,
+    );
+    expect(await browser.execute((el: ViAnimation) => el.hidden, anim)).toBe(
+      false,
+    );
   });
 
   it('supports cascading staggering across child elements', async () => {
     render(
       html`
-        <vi-animation id="test-stagger" name="fade-in-up" cascade .stagger=${30} .duration=${50} .autoPlay=${false}>
+        <vi-animation
+          id="test-stagger"
+          name="fade-in-up"
+          cascade
+          .stagger=${30}
+          .duration=${50}
+          .autoPlay=${false}
+        >
           <div class="item">Item 1</div>
           <div class="item">Item 2</div>
           <div class="item">Item 3</div>
         </vi-animation>
       `,
-      container
+      container,
     );
     const wrapper = await $('#test-stagger');
     const anim = (await wrapper) as unknown as ViAnimation;
@@ -146,11 +179,17 @@ describe('vi-animation', () => {
   it('respects reducedMotion="fade-only" mode', async () => {
     render(
       html`
-        <vi-animation id="test-reduced" name="bounce-in" reduced-motion="fade-only" .duration=${50} .autoPlay=${false}>
+        <vi-animation
+          id="test-reduced"
+          name="bounce-in"
+          reduced-motion="fade-only"
+          .duration=${50}
+          .autoPlay=${false}
+        >
           <div>Target</div>
         </vi-animation>
       `,
-      container
+      container,
     );
     const wrapper = await $('#test-reduced');
     const anim = (await wrapper) as unknown as ViAnimation;
@@ -181,26 +220,36 @@ describe('vi-animation', () => {
           <div>Sliding Side Panel</div>
         </vi-animation>
       `,
-      container
+      container,
     );
     const wrapper = await $('#test-slide-panel');
     const anim = (await wrapper) as unknown as ViAnimation;
 
-    expect(await browser.execute((el: ViAnimation) => el.hidden, anim)).toBe(true);
+    expect(await browser.execute((el: ViAnimation) => el.hidden, anim)).toBe(
+      true,
+    );
 
     await browser.execute(async (el: ViAnimation) => {
       await el.show();
     }, anim);
 
-    expect(await browser.execute((el: ViAnimation) => el.open, anim)).toBe(true);
-    expect(await browser.execute((el: ViAnimation) => el.hidden, anim)).toBe(false);
+    expect(await browser.execute((el: ViAnimation) => el.open, anim)).toBe(
+      true,
+    );
+    expect(await browser.execute((el: ViAnimation) => el.hidden, anim)).toBe(
+      false,
+    );
 
     await browser.execute(async (el: ViAnimation) => {
       await el.hide();
     }, anim);
 
-    expect(await browser.execute((el: ViAnimation) => el.open, anim)).toBe(false);
-    expect(await browser.execute((el: ViAnimation) => el.hidden, anim)).toBe(true);
+    expect(await browser.execute((el: ViAnimation) => el.open, anim)).toBe(
+      false,
+    );
+    expect(await browser.execute((el: ViAnimation) => el.hidden, anim)).toBe(
+      true,
+    );
   });
 
   it('reverts declarative open=true when vi-animation-before-show is canceled', async () => {
@@ -210,13 +259,17 @@ describe('vi-animation', () => {
           <div>Target</div>
         </vi-animation>
       `,
-      container
+      container,
     );
     const wrapper = await $('#test-cancel-show');
     const anim = (await wrapper) as unknown as ViAnimation;
 
     const result = await browser.execute(async (el: ViAnimation) => {
-      el.addEventListener('vi-animation-before-show', (e: Event) => e.preventDefault(), { once: true });
+      el.addEventListener(
+        'vi-animation-before-show',
+        (e: Event) => e.preventDefault(),
+        { once: true },
+      );
       el.open = true;
       await el.updateComplete;
       await el.updateComplete;
@@ -234,13 +287,17 @@ describe('vi-animation', () => {
           <div>Target</div>
         </vi-animation>
       `,
-      container
+      container,
     );
     const wrapper = await $('#test-cancel-hide');
     const anim = (await wrapper) as unknown as ViAnimation;
 
     const result = await browser.execute(async (el: ViAnimation) => {
-      el.addEventListener('vi-animation-before-hide', (e: Event) => e.preventDefault(), { once: true });
+      el.addEventListener(
+        'vi-animation-before-hide',
+        (e: Event) => e.preventDefault(),
+        { once: true },
+      );
       el.open = false;
       await el.updateComplete;
       await el.updateComplete;
@@ -254,11 +311,15 @@ describe('vi-animation', () => {
   it('allows custom keyframes to take precedence over reduced motion fallback', async () => {
     render(
       html`
-        <vi-animation id="test-custom-kf" reduced-motion="fade-only" .autoPlay=${false}>
+        <vi-animation
+          id="test-custom-kf"
+          reduced-motion="fade-only"
+          .autoPlay=${false}
+        >
           <div>Target</div>
         </vi-animation>
       `,
-      container
+      container,
     );
     const wrapper = await $('#test-custom-kf');
     const anim = (await wrapper) as unknown as ViAnimation;
@@ -274,7 +335,7 @@ describe('vi-animation', () => {
       return Boolean(
         computedKf &&
           computedKf.length === 2 &&
-          (computedKf[0].opacity === 0.1 || computedKf[0].opacity === '0.1')
+          (computedKf[0].opacity === 0.1 || computedKf[0].opacity === '0.1'),
       );
     }, anim);
 
@@ -284,13 +345,19 @@ describe('vi-animation', () => {
   it('supports stagger-direction "reverse", "center", and "random"', async () => {
     render(
       html`
-        <vi-animation id="test-stagger-directions" cascade .duration=${50} .stagger=${10} .autoPlay=${false}>
+        <vi-animation
+          id="test-stagger-directions"
+          cascade
+          .duration=${50}
+          .stagger=${10}
+          .autoPlay=${false}
+        >
           <div class="item">Item 1</div>
           <div class="item">Item 2</div>
           <div class="item">Item 3</div>
         </vi-animation>
       `,
-      container
+      container,
     );
     const wrapper = await $('#test-stagger-directions');
     const anim = (await wrapper) as unknown as ViAnimation;
@@ -298,10 +365,10 @@ describe('vi-animation', () => {
     await browser.execute(async (el: ViAnimation) => {
       el.staggerDirection = 'reverse';
       await el.play();
-      
+
       el.staggerDirection = 'center';
       await el.play();
-      
+
       el.staggerDirection = 'random';
       await el.play();
     }, anim);
@@ -314,13 +381,18 @@ describe('vi-animation', () => {
           <div style="width: 100px; height: 100px;">Content</div>
         </vi-animation>
       `,
-      container
+      container,
     );
     const wrapper = await $('#test-structural');
     const anim = (await wrapper) as unknown as ViAnimation;
 
     await browser.execute(async (el: ViAnimation) => {
-      const names = ['expand-vertical', 'collapse-vertical', 'expand-horizontal', 'collapse-horizontal'];
+      const names = [
+        'expand-vertical',
+        'collapse-vertical',
+        'expand-horizontal',
+        'collapse-horizontal',
+      ];
       for (const name of names) {
         el.name = name;
         await el.play();
@@ -331,11 +403,16 @@ describe('vi-animation', () => {
   it('supports playback control methods (pause, resume, reverse, cancel, finish)', async () => {
     render(
       html`
-        <vi-animation id="test-playback" name="fade-in" .duration=${500} .autoPlay=${false}>
+        <vi-animation
+          id="test-playback"
+          name="fade-in"
+          .duration=${500}
+          .autoPlay=${false}
+        >
           <div>Target</div>
         </vi-animation>
       `,
-      container
+      container,
     );
     const wrapper = await $('#test-playback');
     const anim = (await wrapper) as unknown as ViAnimation;
@@ -344,12 +421,12 @@ describe('vi-animation', () => {
       let cancelFired = false;
       let finishFired = false;
 
-      el.addEventListener('vi-animation-cancel', () => cancelFired = true);
-      el.addEventListener('vi-animation-finish', () => finishFired = true);
+      el.addEventListener('vi-animation-cancel', () => (cancelFired = true));
+      el.addEventListener('vi-animation-finish', () => (finishFired = true));
 
       // Start animation
       const playPromise = el.play();
-      
+
       el.pause();
       el.resume();
       el.reverse();

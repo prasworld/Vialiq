@@ -19,7 +19,7 @@
 }
 
 // Validation overrides - colors propagate to base styles
-:host([status="invalid"]) {
+:host([status='invalid']) {
   --vi-checkbox-border-color: #{tokens.$color-error};
   --vi-checkbox-border-color-hover: #{tokens.$color-error};
   --vi-checkbox-border-color-checked: #{tokens.$color-error};
@@ -30,7 +30,7 @@
   --vi-checkbox-label-color: #{tokens.$color-error};
 }
 
-:host([status="valid"]) {
+:host([status='valid']) {
   --vi-checkbox-border-color: #{tokens.$color-success};
   --vi-checkbox-border-color-hover: #{tokens.$color-success};
   --vi-checkbox-border-color-checked: #{tokens.$color-success};
@@ -64,4 +64,3 @@
   --vi-checkbox-label-gap: #{func.to-rem(10px)};
   --vi-checkbox-label-font-size: #{tokens.$font-size-lg};
 }
-

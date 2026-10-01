@@ -122,7 +122,8 @@ const render = ({
       locale=${locale || ''}
       min=${min || ''}
       max=${max || ''}
-      @vi-date-picker-change=${(e: CustomEvent) => onViDatePickerChange?.(e.detail)}
+      @vi-date-picker-change=${(e: CustomEvent) =>
+        onViDatePickerChange?.(e.detail)}
     >
       ${mode === 'range'
         ? html`
@@ -215,7 +216,8 @@ export const MonthMode: Story = {
         locale=${args.locale || ''}
         min=${args.min || ''}
         max=${args.max || ''}
-        @vi-date-picker-change=${(e: CustomEvent) => args.onViDatePickerChange?.(e.detail)}
+        @vi-date-picker-change=${(e: CustomEvent) =>
+          args.onViDatePickerChange?.(e.detail)}
       >
         <vi-date-picker-input
           label="Select a Month"
@@ -328,7 +330,8 @@ export const ProgrammaticRange: Story = {
           ?disabled=${args.disabled}
           ?required=${args.required}
           name=${args.name}
-          @vi-date-picker-change=${(e: CustomEvent) => args.onViDatePickerChange?.(e.detail)}
+          @vi-date-picker-change=${(e: CustomEvent) =>
+            args.onViDatePickerChange?.(e.detail)}
         >
           <vi-date-picker-input
             kind="from"
@@ -469,7 +472,8 @@ export const ProgrammaticValueUpdate: Story = {
         mode=${args.mode}
         value=${args.value || ''}
         locale=${args.locale || 'en'}
-        @vi-date-picker-change=${(e: CustomEvent) => args.onViDatePickerChange?.(e.detail)}
+        @vi-date-picker-change=${(e: CustomEvent) =>
+          args.onViDatePickerChange?.(e.detail)}
       >
         <vi-date-picker-input
           label="Select a Date"

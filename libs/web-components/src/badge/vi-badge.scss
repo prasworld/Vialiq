@@ -8,7 +8,7 @@
 }
 
 :host([hidden]),
-:host([count="0"]:not([show-zero])) {
+:host([count='0']:not([show-zero])) {
   display: none !important;
 }
 
@@ -33,7 +33,10 @@
 
 :host([size='lg']) .badge {
   font-size: var(--vi-badge-font-size, #{tokens.$font-size-base});
-  padding: var(--vi-badge-padding, #{tokens.$spacing-unit} #{tokens.$spacing-sm});
+  padding: var(
+    --vi-badge-padding,
+    #{tokens.$spacing-unit} #{tokens.$spacing-sm}
+  );
   gap: var(--vi-badge-gap, #{tokens.$spacing-xs});
 }
 

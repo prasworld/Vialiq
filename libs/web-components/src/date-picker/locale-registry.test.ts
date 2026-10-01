@@ -32,7 +32,7 @@ describe('locale-registry', () => {
   it('caches the loaded locale (second call is fast, no new import)', async () => {
     const locale1 = await loadLocale('it');
     const locale2 = await loadLocale('it');
-    
+
     expect(locale1).toBe(locale2);
   });
 });

@@ -448,7 +448,9 @@ export class ViDatePicker extends ValidityMixin(FlatpickrMixin(ViElement)) {
       ignoredFocusElements: [
         this,
         ...this._inputs,
-        ...this._inputs.map((i) => i.shadowRoot as unknown as HTMLElement).filter(Boolean),
+        ...this._inputs
+          .map((i) => i.shadowRoot as unknown as HTMLElement)
+          .filter(Boolean),
       ],
       ...(this.flat && this._inlineContainer
         ? { appendTo: this._inlineContainer }

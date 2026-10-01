@@ -41,7 +41,10 @@ export const Default: StoryObj = {
       ?open=${args.open}
     >
       <vi-button>Click Me</vi-button>
-      <div slot="content" style="display: flex; flex-direction: column; gap: 8px;">
+      <div
+        slot="content"
+        style="display: flex; flex-direction: column; gap: 8px;"
+      >
         <vi-switch label="Enable notifications"></vi-switch>
         <vi-switch label="Dark mode"></vi-switch>
       </div>

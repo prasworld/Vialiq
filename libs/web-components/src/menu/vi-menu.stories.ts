@@ -2,7 +2,13 @@ import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
 import './index.js';
 import '../icons/registry.js';
-import { userIcon, homeIcon, hospitalIcon, trashIcon, xIcon } from '@vialiq/icons';
+import {
+  userIcon,
+  homeIcon,
+  hospitalIcon,
+  trashIcon,
+  xIcon,
+} from '@vialiq/icons';
 import { registerIcons } from '../icons/registry.js';
 
 registerIcons([userIcon, homeIcon, hospitalIcon, trashIcon, xIcon]);
@@ -33,9 +39,9 @@ export const Default: StoryObj = {
         <vi-icon name="hospital" slot=""></vi-icon>
         Medical Records
       </vi-menu-item>
-      
+
       <div class="vi-menu-divider"></div>
-      
+
       <div class="vi-menu-group-title">Danger Zone</div>
       <vi-menu-item value="delete" disabled>
         <vi-icon name="trash" slot=""></vi-icon>

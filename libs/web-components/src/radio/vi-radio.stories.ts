@@ -62,7 +62,8 @@ const meta: Meta = {
   render: (args) => {
     // Storybook sets arguments using the custom name key if provided (kebab-case)
     const validityMessage = args['validity-message'] ?? args.validityMessage;
-    const allowDblclickClear = args['allow-dblclick-clear'] ?? args.allowDblclickClear;
+    const allowDblclickClear =
+      args['allow-dblclick-clear'] ?? args.allowDblclickClear;
 
     return html`
       <vi-radio-group
@@ -77,7 +78,8 @@ const meta: Meta = {
         size=${args.size}
       >
         <span slot="label">${args.label ?? 'Was there an adverse event?'}</span>
-        ${args.content ?? html`
+        ${args.content ??
+        html`
           <vi-radio value="yes">Yes</vi-radio>
           <vi-radio value="no">No</vi-radio>
           <vi-radio value="unknown">Unknown</vi-radio>
@@ -173,7 +175,7 @@ export const Sizes: Story = {
         <vi-radio value="1">Yes</vi-radio>
         <vi-radio value="2">No</vi-radio>
       </vi-radio-group>
-      
+
       <vi-radio-group name="size-sm" size="sm">
         <span slot="label">Small (sm)</span>
         <vi-radio value="1">Yes</vi-radio>
@@ -194,4 +196,3 @@ export const Sizes: Story = {
     </div>
   `,
 };
-

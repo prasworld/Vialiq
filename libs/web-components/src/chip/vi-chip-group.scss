@@ -6,7 +6,7 @@
   display: none !important;
 }
 
-[part="group"] {
+[part='group'] {
   display: flex;
   align-items: center;
   // gap and flex-wrap are applied dynamically via inline styles in the component based on props

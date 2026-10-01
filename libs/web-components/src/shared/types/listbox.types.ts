@@ -7,15 +7,20 @@ export interface ListboxOption<TData = unknown> {
    * (e.g. data-driven options with abbreviations, codes, emails).
    */
   searchText?: string;
-  group?: string;          // optgroup label
+  group?: string; // optgroup label
   disabled?: boolean;
-  icon?: string;           // icon name from design system registry
-  description?: string;    // secondary text below label; auto-included in corpus
-  data?: TData;            // arbitrary payload; emitted on vi-change
+  icon?: string; // icon name from design system registry
+  description?: string; // secondary text below label; auto-included in corpus
+  data?: TData; // arbitrary payload; emitted on vi-change
 }
 
-export type ListboxFilterFn<TData = unknown> = (option: ListboxOption<TData>, query: string) => boolean;
-export type ListboxOptionsLoader<TData = unknown> = (query: string) => Promise<ListboxOption<TData>[]>;
+export type ListboxFilterFn<TData = unknown> = (
+  option: ListboxOption<TData>,
+  query: string,
+) => boolean;
+export type ListboxOptionsLoader<TData = unknown> = (
+  query: string,
+) => Promise<ListboxOption<TData>[]>;
 
 export interface RenderListboxOptionParams<TData = unknown> {
   option: ListboxOption<TData>;

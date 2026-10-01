@@ -122,6 +122,7 @@ Used for depth / elevation hierarchy of background surfaces.
 | `--vi-layer-02` | `#f3f4f6` | Card / panel background |
 | `--vi-layer-03` | `#e5e7eb` | Nested section background |
 | `--vi-layer-04` | `#d1d5db` | Deeply nested background |
+| `--vi-layer-selected` | `#3676d0` | Primary selection background |
 | `--vi-layer-hover-01` | `#f3f4f6` | Hover state on layer-01 |
 | `--vi-layer-hover-02` | `#e5e7eb` | Hover state on layer-02 |
 | `--vi-layer-disabled` | `#f3f4f6` | Disabled surface background |

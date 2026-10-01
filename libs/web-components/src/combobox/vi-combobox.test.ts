@@ -117,11 +117,15 @@ describe('vi-combobox', function () {
   it('supports declarative slotted <vi-combobox-item> with data payload', async () => {
     render(
       html`
-        <vi-combobox-item value="site-1" label="Site 1" .data="${JSON.stringify({ code: 'S1' })}">
+        <vi-combobox-item
+          value="site-1"
+          label="Site 1"
+          .data="${JSON.stringify({ code: 'S1' })}"
+        >
           <div class="custom-template"><strong>Site 1</strong></div>
         </vi-combobox-item>
       `,
-      element
+      element,
     );
     await element.updateComplete;
 
@@ -224,10 +228,13 @@ describe('vi-combobox — slotted item filtering', () => {
 
     render(
       html`
-        <vi-combobox-item value="usr-1" label="Alice Johnson"></vi-combobox-item>
+        <vi-combobox-item
+          value="usr-1"
+          label="Alice Johnson"
+        ></vi-combobox-item>
         <vi-combobox-item value="usr-2" label="Bob Smith"></vi-combobox-item>
       `,
-      element
+      element,
     );
 
     const alice = element.querySelector<ViComboboxItem>('[value="usr-1"]')!;
@@ -337,9 +344,12 @@ describe('vi-combobox — slotted item filtering', () => {
 
     render(
       html`
-        <vi-combobox-item value="usr-1" label="Alice Johnson"></vi-combobox-item>
+        <vi-combobox-item
+          value="usr-1"
+          label="Alice Johnson"
+        ></vi-combobox-item>
       `,
-      element
+      element,
     );
     const alice = element.querySelector<ViComboboxItem>('[value="usr-1"]')!;
     alice.searchText = [
@@ -538,7 +548,7 @@ describe('vi-combobox — minChars filtering', () => {
         <vi-combobox-item value="a" label="Apple"></vi-combobox-item>
         <vi-combobox-item value="b" label="Banana"></vi-combobox-item>
       `,
-      element
+      element,
     );
     await element.updateComplete;
     // Give Slot mutation observer a frame
@@ -611,7 +621,7 @@ describe('vi-combobox — minChars filtering', () => {
           <vi-combobox-item value="1" label="One"></vi-combobox-item>
           <vi-combobox-item value="2" label="Two" disabled></vi-combobox-item>
         `,
-        element
+        element,
       );
       await element.updateComplete;
       await new Promise((r) => setTimeout(r, 50));

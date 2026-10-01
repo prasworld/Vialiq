@@ -27,7 +27,7 @@ describe('vi-radio & vi-radio-group', () => {
             <vi-radio value="b">Option B</vi-radio>
           </vi-radio-group>
         `,
-        container
+        container,
       );
 
       const group = await $('vi-radio-group');
@@ -54,7 +54,7 @@ describe('vi-radio & vi-radio-group', () => {
             <vi-radio value="a">A</vi-radio>
           </vi-radio-group>
         `,
-        container
+        container,
       );
       const group = document.querySelector('vi-radio-group') as ViRadioGroup;
       const radio = document.querySelector('vi-radio') as ViRadio;
@@ -79,7 +79,7 @@ describe('vi-radio & vi-radio-group', () => {
             <vi-radio value="2">2</vi-radio>
           </vi-radio-group>
         `,
-        container
+        container,
       );
 
       const radio1 = document.querySelector('vi-radio[value="1"]') as ViRadio;
@@ -103,7 +103,7 @@ describe('vi-radio & vi-radio-group', () => {
             <vi-radio value="2">2</vi-radio>
           </vi-radio-group>
         `,
-        container
+        container,
       );
 
       const group = document.querySelector('vi-radio-group') as ViRadioGroup;
@@ -121,7 +121,9 @@ describe('vi-radio & vi-radio-group', () => {
       // Dynamically disable the first radio
       radio1.disabled = true;
       // Wait for updates to propagate and MutationObserver to fire
-      await browser.waitUntil(() => radio1.tabIndex === -1 && radio2.tabIndex === 0);
+      await browser.waitUntil(
+        () => radio1.tabIndex === -1 && radio2.tabIndex === 0,
+      );
       await group.updateComplete;
 
       // The second radio should now have tabIndex 0 (first enabled)
@@ -132,10 +134,8 @@ describe('vi-radio & vi-radio-group', () => {
 
     it('should correctly handle focusability when used as a standalone radio element', async () => {
       render(
-        html`
-          <vi-radio value="standalone">Standalone Radio</vi-radio>
-        `,
-        container
+        html` <vi-radio value="standalone">Standalone Radio</vi-radio> `,
+        container,
       );
 
       const radio = document.querySelector('vi-radio') as ViRadio;
@@ -175,12 +175,12 @@ describe('vi-radio & vi-radio-group', () => {
             <vi-radio value="no">No</vi-radio>
           </vi-radio-group>
         `,
-        container
+        container,
       );
 
       const radioNo = await $('vi-radio[value="no"]');
       const wrapperNo = await radioNo.shadow$('.radio-wrapper');
-      
+
       // Perform simulated user click on radio option
       await browser.execute((el) => (el as HTMLElement).click(), wrapperNo);
 
@@ -198,12 +198,15 @@ describe('vi-radio & vi-radio-group', () => {
       let changeFired = false;
       render(
         html`
-          <vi-radio-group name="test" @vi-radio-group-change=${() => (changeFired = true)}>
+          <vi-radio-group
+            name="test"
+            @vi-radio-group-change=${() => (changeFired = true)}
+          >
             <vi-radio value="a">A</vi-radio>
             <vi-radio value="b" disabled>B</vi-radio>
           </vi-radio-group>
         `,
-        container
+        container,
       );
 
       const radioB = await $('vi-radio[value="b"]');
@@ -226,7 +229,7 @@ describe('vi-radio & vi-radio-group', () => {
             <vi-radio value="c">Option C</vi-radio>
           </vi-radio-group>
         `,
-        container
+        container,
       );
 
       const radioA = await $('vi-radio[value="a"]');
@@ -267,7 +270,7 @@ describe('vi-radio & vi-radio-group', () => {
             <vi-radio value="3">Three</vi-radio>
           </vi-radio-group>
         `,
-        container
+        container,
       );
 
       const r1 = document.querySelector('vi-radio[value="1"]') as ViRadio;
@@ -284,7 +287,7 @@ describe('vi-radio & vi-radio-group', () => {
           key: 'ArrowDown',
           bubbles: true,
           composed: true,
-        })
+        }),
       );
       await group.updateComplete;
 
@@ -298,7 +301,7 @@ describe('vi-radio & vi-radio-group', () => {
           key: 'ArrowRight',
           bubbles: true,
           composed: true,
-        })
+        }),
       );
       await group.updateComplete;
 
@@ -311,7 +314,7 @@ describe('vi-radio & vi-radio-group', () => {
           key: 'ArrowDown',
           bubbles: true,
           composed: true,
-        })
+        }),
       );
       await group.updateComplete;
 
@@ -324,7 +327,7 @@ describe('vi-radio & vi-radio-group', () => {
           key: 'ArrowUp',
           bubbles: true,
           composed: true,
-        })
+        }),
       );
       await group.updateComplete;
 
@@ -340,12 +343,12 @@ describe('vi-radio & vi-radio-group', () => {
             <vi-radio value="2">Two</vi-radio>
           </vi-radio-group>
         `,
-        container
+        container,
       );
 
       const r1 = document.querySelector('vi-radio[value="1"]') as ViRadio;
       const group = document.querySelector('vi-radio-group') as ViRadioGroup;
-      
+
       r1.focus();
       await r1.updateComplete;
 
@@ -355,7 +358,7 @@ describe('vi-radio & vi-radio-group', () => {
           key: ' ',
           bubbles: true,
           composed: true,
-        })
+        }),
       );
       await group.updateComplete;
 
@@ -372,7 +375,7 @@ describe('vi-radio & vi-radio-group', () => {
             <vi-radio value="3">Three</vi-radio>
           </vi-radio-group>
         `,
-        container
+        container,
       );
 
       const r1 = document.querySelector('vi-radio[value="1"]') as ViRadio;
@@ -389,7 +392,7 @@ describe('vi-radio & vi-radio-group', () => {
           key: 'ArrowDown',
           bubbles: true,
           composed: true,
-        })
+        }),
       );
       await group.updateComplete;
 
@@ -408,11 +411,11 @@ describe('vi-radio & vi-radio-group', () => {
             <vi-radio value="2" disabled>Two (disabled)</vi-radio>
           </vi-radio-group>
         `,
-        container
+        container,
       );
 
       const r2 = document.querySelector('vi-radio[value="2"]') as ViRadio;
-      
+
       // Attempt programmatic focus
       r2.focus();
       await r2.updateComplete;
@@ -425,22 +428,30 @@ describe('vi-radio & vi-radio-group', () => {
     it('should clear selection when double-clicked and allowDblclickClear is true', async () => {
       render(
         html`
-          <vi-radio-group name="clearable-group" value="yes" allow-dblclick-clear>
+          <vi-radio-group
+            name="clearable-group"
+            value="yes"
+            allow-dblclick-clear
+          >
             <vi-radio value="yes">Yes</vi-radio>
             <vi-radio value="no">No</vi-radio>
           </vi-radio-group>
         `,
-        container
+        container,
       );
 
       const group = document.querySelector('vi-radio-group') as ViRadioGroup;
-      const radioYes = document.querySelector('vi-radio[value="yes"]') as ViRadio;
+      const radioYes = document.querySelector(
+        'vi-radio[value="yes"]',
+      ) as ViRadio;
       const radioNo = document.querySelector('vi-radio[value="no"]') as ViRadio;
 
       expect(group.value).toBe('yes');
       expect(radioYes.checked).toBe(true);
 
-      radioYes.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, composed: true }));
+      radioYes.dispatchEvent(
+        new MouseEvent('dblclick', { bubbles: true, composed: true }),
+      );
       await group.updateComplete;
 
       expect(group.value).toBe('');
@@ -456,16 +467,20 @@ describe('vi-radio & vi-radio-group', () => {
             <vi-radio value="no">No</vi-radio>
           </vi-radio-group>
         `,
-        container
+        container,
       );
 
       const group = document.querySelector('vi-radio-group') as ViRadioGroup;
-      const radioYes = document.querySelector('vi-radio[value="yes"]') as ViRadio;
+      const radioYes = document.querySelector(
+        'vi-radio[value="yes"]',
+      ) as ViRadio;
 
       expect(group.value).toBe('yes');
       expect(radioYes.checked).toBe(true);
 
-      radioYes.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, composed: true }));
+      radioYes.dispatchEvent(
+        new MouseEvent('dblclick', { bubbles: true, composed: true }),
+      );
       await group.updateComplete;
 
       expect(group.value).toBe('yes');
@@ -484,11 +499,11 @@ describe('vi-radio & vi-radio-group', () => {
             </vi-radio-group>
           </form>
         `,
-        container
+        container,
       );
 
       const group = document.querySelector('vi-radio-group') as ViRadioGroup;
-      
+
       // Empty selection is invalid
       expect(group.reportValidity()).toBe(false);
       expect(group.status).toBe('invalid');
@@ -512,7 +527,7 @@ describe('vi-radio & vi-radio-group', () => {
             </vi-radio-group>
           </form>
         `,
-        container
+        container,
       );
 
       const form = document.getElementById('form-reset') as HTMLFormElement;
@@ -542,7 +557,7 @@ describe('vi-radio & vi-radio-group', () => {
             <vi-radio value="1">One</vi-radio>
           </vi-radio-group>
         `,
-        container
+        container,
       );
       const group = document.querySelector('vi-radio-group') as ViRadioGroup;
       const radio = document.querySelector('vi-radio') as ViRadio;
@@ -559,7 +574,7 @@ describe('vi-radio & vi-radio-group', () => {
             <vi-radio value="1">One</vi-radio>
           </vi-radio-group>
         `,
-        container
+        container,
       );
       const group = document.querySelector('vi-radio-group') as ViRadioGroup;
       const radio = document.querySelector('vi-radio') as ViRadio;
@@ -580,47 +595,61 @@ describe('vi-radio & vi-radio-group', () => {
 
   describe('Missing Branch Coverage Tier 2', () => {
     it('vi-radio-group _onKeydown default branch', async () => {
-      render(html`
-        <vi-radio-group>
-          <vi-radio value="1">1</vi-radio>
-        </vi-radio-group>
-      `, container);
-      
+      render(
+        html`
+          <vi-radio-group>
+            <vi-radio value="1">1</vi-radio>
+          </vi-radio-group>
+        `,
+        container,
+      );
+
       const group = await $('vi-radio-group');
-      const result = await browser.execute((g: any) => {
-        const radio = g.querySelector('vi-radio');
-        radio.focus();
-        g.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', bubbles: true }));
-        return true;
-      }, await group);
+      const result = await browser.execute(
+        (g: any) => {
+          const radio = g.querySelector('vi-radio');
+          radio.focus();
+          g.dispatchEvent(
+            new KeyboardEvent('keydown', { key: 'a', bubbles: true }),
+          );
+          return true;
+        },
+        await group,
+      );
       expect(result).toBe(true);
     });
-    
+
     it('vi-radio-group firstInput validationMessage branch', async () => {
-      render(html`
-        <vi-radio-group required>
-          <vi-radio value="1">1</vi-radio>
-        </vi-radio-group>
-      `, container);
-      
+      render(
+        html`
+          <vi-radio-group required>
+            <vi-radio value="1">1</vi-radio>
+          </vi-radio-group>
+        `,
+        container,
+      );
+
       const group = document.querySelector('vi-radio-group') as any;
       await group.updateComplete;
-      
+
       const isValid = group.checkValidity();
       expect(isValid).toBe(false);
       expect(typeof group.validityMessage).toBe('string');
     });
-    
+
     it('vi-radio _setHostFocusable in group branch', async () => {
-      render(html`
-        <vi-radio-group>
-          <vi-radio id="radio1" value="1">1</vi-radio>
-        </vi-radio-group>
-      `, container);
-      
+      render(
+        html`
+          <vi-radio-group>
+            <vi-radio id="radio1" value="1">1</vi-radio>
+          </vi-radio-group>
+        `,
+        container,
+      );
+
       const radio = document.getElementById('radio1') as any;
       await radio.updateComplete;
-      
+
       radio._setHostFocusable(true);
       expect(radio.tabIndex).toBe(0);
     });
@@ -642,7 +671,7 @@ describe('vi-radio & vi-radio-group', () => {
             <vi-radio value="c" disabled>Option C (Disabled)</vi-radio>
           </vi-radio-group>
         `,
-        container
+        container,
       );
 
       const group = document.querySelector('vi-radio-group') as ViRadioGroup;
@@ -656,13 +685,12 @@ describe('vi-radio & vi-radio-group', () => {
           'html-has-lang': { enabled: false },
           'page-has-heading-one': { enabled: false },
           'landmark-one-main': { enabled: false },
-          'region': { enabled: false },
-          'color-contrast': { enabled: false }
-        }
+          region: { enabled: false },
+          'color-contrast': { enabled: false },
+        },
       });
 
       expect(results.violations).toHaveLength(0);
     });
   });
 });
-

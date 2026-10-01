@@ -22,10 +22,11 @@ describe('vi-message (Component)', () => {
   });
 
   it('should render the message content', async () => {
-    render(html`
-      <vi-message content="Test Message Content"></vi-message>
-    `, wrapper);
-    
+    render(
+      html` <vi-message content="Test Message Content"></vi-message> `,
+      wrapper,
+    );
+
     const host = await $('vi-message');
     await expect(host).toExist();
 
@@ -36,7 +37,7 @@ describe('vi-message (Component)', () => {
   it('should auto-dismiss after duration', async () => {
     const clock = sinon.useFakeTimers();
     render(html`<vi-message duration="1000"></vi-message>`, wrapper);
-    
+
     const el = document.querySelector('vi-message') as ViMessage;
     const spy = sinon.spy();
     el.addEventListener('vi-message-close', spy);
@@ -49,7 +50,7 @@ describe('vi-message (Component)', () => {
   it('should pause and resume timer on paused property change', async () => {
     const clock = sinon.useFakeTimers();
     render(html`<vi-message duration="1000"></vi-message>`, wrapper);
-    
+
     const el = document.querySelector('vi-message') as ViMessage;
     const spy = sinon.spy();
     el.addEventListener('vi-message-close', spy);
@@ -68,8 +69,11 @@ describe('vi-message (Component)', () => {
 
   it('should not auto-dismiss loading variant', async () => {
     const clock = sinon.useFakeTimers();
-    render(html`<vi-message variant="loading" duration="1000"></vi-message>`, wrapper);
-    
+    render(
+      html`<vi-message variant="loading" duration="1000"></vi-message>`,
+      wrapper,
+    );
+
     const el = document.querySelector('vi-message') as ViMessage;
     const spy = sinon.spy();
     el.addEventListener('vi-message-close', spy);
@@ -103,7 +107,7 @@ describe('vi-message (Component)', () => {
     sinon.useFakeTimers();
     render(html`<vi-message duration="1000"></vi-message>`, wrapper);
     const el = document.querySelector('vi-message') as ViMessage;
-    
+
     expect(el['_timer']).not.toBeNull();
     el.remove();
     expect(el['_timer']).toBeNull();
@@ -117,14 +121,16 @@ describe('ViMessageService', () => {
     container.clearInstances();
     messageService = container.resolve(ViMessageService);
     // Cleanup DOM between tests
-    document.querySelectorAll('vi-message-container').forEach(c => c.remove());
+    document
+      .querySelectorAll('vi-message-container')
+      .forEach((c) => c.remove());
   });
 
   it('should show a message', () => {
     messageService.show({ content: 'Hello Service', variant: 'success' });
     const host = document.querySelector('vi-message-container');
     expect(host).not.toBeNull();
-    
+
     const message = host!.querySelector('vi-message') as ViMessage;
     expect(message).not.toBeNull();
     expect(message.content).toBe('Hello Service');
@@ -134,7 +140,7 @@ describe('ViMessageService', () => {
   it('should provide helper methods', () => {
     messageService.info('Info message');
     messageService.success('Success message');
-    
+
     const host = document.querySelector('vi-message-container');
     const messages = host!.querySelectorAll('vi-message');
     expect(messages.length).toBe(2);
@@ -144,16 +150,16 @@ describe('ViMessageService', () => {
 
   it('should enforce maxVisible limit', () => {
     messageService.configure({ maxVisible: 2 });
-    
+
     messageService.show({ content: 'Message 1' });
     messageService.show({ content: 'Message 2' });
-    messageService.show({ content: 'Message 3' }); 
-    
+    messageService.show({ content: 'Message 3' });
+
     const domContainer = document.querySelector('vi-message-container')!;
     const messages = domContainer.querySelectorAll('vi-message');
-    
-    expect(messages.length).toBe(3); 
-    expect(messages[0].classList.contains('exiting')).toBe(true); 
+
+    expect(messages.length).toBe(3);
+    expect(messages[0].classList.contains('exiting')).toBe(true);
     expect(messages[1].classList.contains('exiting')).toBe(false);
     expect(messages[2].classList.contains('exiting')).toBe(false);
   });
@@ -161,13 +167,13 @@ describe('ViMessageService', () => {
   it('should handle dismissAll', () => {
     messageService.show({ content: 'Message 1' });
     messageService.show({ content: 'Message 2' });
-    
+
     messageService.dismissAll();
-    
+
     const domContainer = document.querySelector('vi-message-container')!;
     const messages = domContainer.querySelectorAll('vi-message');
-    
-    messages.forEach(message => {
+
+    messages.forEach((message) => {
       expect(message.classList.contains('exiting')).toBe(true);
     });
   });
@@ -182,16 +188,20 @@ describe('ViMessageService', () => {
 
   it('should dismiss element even if onClose callback throws', () => {
     const consoleStub = sinon.stub(console, 'error');
-    const id = messageService.show({ 
+    const id = messageService.show({
       content: 'Message 1',
-      onClose: () => { throw new Error('Test error'); }
+      onClose: () => {
+        throw new Error('Test error');
+      },
     });
-    
+
     const domContainer = document.querySelector('vi-message-container')!;
     const message = domContainer.querySelector('vi-message') as ViMessage;
-    
-    message.dispatchEvent(new CustomEvent('vi-message-close', { detail: { reason: 'user', id } }));
-    
+
+    message.dispatchEvent(
+      new CustomEvent('vi-message-close', { detail: { reason: 'user', id } }),
+    );
+
     expect(message.classList.contains('exiting')).toBe(true);
     consoleStub.restore();
   });
@@ -200,7 +210,7 @@ describe('ViMessageService', () => {
     const id = 'unsafe[id="test"]';
     messageService.show({ id, content: 'Message 1' });
     messageService.dismiss(id);
-    
+
     const domContainer = document.querySelector('vi-message-container')!;
     const message = domContainer.querySelector('vi-message') as ViMessage;
     expect(message.classList.contains('exiting')).toBe(true);
@@ -210,7 +220,7 @@ describe('ViMessageService', () => {
     messageService.show({ content: 'Message 1' });
     const domContainer1 = document.querySelector('vi-message-container')!;
     domContainer1.remove();
-    
+
     messageService.show({ content: 'Message 2' });
     const domContainers = document.querySelectorAll('vi-message-container');
     expect(domContainers.length).toBe(1);
@@ -235,10 +245,10 @@ describe('ViMessageService', () => {
     const el = document.createElement('div');
     el.textContent = 'Custom node content';
     const id = messageService.show({ content: el });
-    
+
     const domContainer = document.querySelector('vi-message-container')!;
     const message = domContainer.querySelector('vi-message') as ViMessage;
-    
+
     expect(message.textContent).toContain('Custom node content');
     messageService.dismiss(id);
   });

@@ -5,6 +5,7 @@
 :host {
   display: block;
   outline: none;
+  --vi-input-placeholder-color: #{tokens.$text-placeholder};
 }
 
 :host([disabled]) {
@@ -15,7 +16,7 @@
 // Invalid state — colour overrides propagate into the shared input layer
 // ============================================================================
 
-:host([status="invalid"]) {
+:host([status='invalid']) {
   --vi-input-border-color: #{tokens.$color-error};
   --vi-input-border-color-hover: #{tokens.$color-error};
   --vi-input-focus-ring-color: #{tokens.$color-error};
@@ -27,16 +28,22 @@
 // Valid/success state — colour overrides propagate into the shared input layer
 // ============================================================================
 
-:host([status="valid"]) {
+:host([status='valid']) {
   --vi-input-border-color: #{tokens.$color-success};
   --vi-input-border-color-hover: #{tokens.$color-success};
   --vi-input-focus-ring-color: #{tokens.$color-success};
   --vi-input-focus-ring-glow: #{tokens.$focus-ring-success-glow};
 }
 
-:host([resize="none"])     { --vi-textarea-resize: none; }
-:host([resize="both"])     { --vi-textarea-resize: both; }
-:host([resize="vertical"]) { --vi-textarea-resize: vertical; }
+:host([resize='none']) {
+  --vi-textarea-resize: none;
+}
+:host([resize='both']) {
+  --vi-textarea-resize: both;
+}
+:host([resize='vertical']) {
+  --vi-textarea-resize: vertical;
+}
 
 .input-control {
   border-radius: var(--vi-border-radius-md, func.to-rem(6px));
@@ -88,7 +95,10 @@
   color: var(--vi-textarea-char-counter-color, #{tokens.$text-helper});
 
   &.char-counter--warning {
-    color: var(--vi-textarea-char-counter-warning-color, #{tokens.$color-warning});
+    color: var(
+      --vi-textarea-char-counter-warning-color,
+      #{tokens.$color-warning}
+    );
   }
 
   &.char-counter--error {

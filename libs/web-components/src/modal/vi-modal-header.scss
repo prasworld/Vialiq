@@ -52,19 +52,19 @@
   font-size: var(--vi-icon-size-md, func.to-rem(24px));
 }
 
-:host([alert-variant="danger"]) .modal-alert-icon {
+:host([alert-variant='danger']) .modal-alert-icon {
   color: tokens.$color-error;
 }
 
-:host([alert-variant="warning"]) .modal-alert-icon {
+:host([alert-variant='warning']) .modal-alert-icon {
   color: tokens.$color-warning;
 }
 
-:host([alert-variant="success"]) .modal-alert-icon {
+:host([alert-variant='success']) .modal-alert-icon {
   color: tokens.$color-success;
 }
 
-:host([alert-variant="info"]) .modal-alert-icon,
+:host([alert-variant='info']) .modal-alert-icon,
 :host(:not([alert-variant])) .modal-alert-icon {
   color: tokens.$color-info;
 }

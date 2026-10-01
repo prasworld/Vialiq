@@ -4,11 +4,28 @@ import { ViElement } from '../base/vi-element.js';
 import messageStyles from './vi-message.scss?inline';
 import '../icons/vi-icon.js';
 import { registerIcons } from '../icons/registry.js';
-import { checkCircleIcon, triangleWarningIcon, infoIcon, circleXIcon, pendingIcon } from '@vialiq/icons';
+import {
+  checkCircleIcon,
+  triangleWarningIcon,
+  infoIcon,
+  circleXIcon,
+  pendingIcon,
+} from '@vialiq/icons';
 
-registerIcons([checkCircleIcon, triangleWarningIcon, infoIcon, circleXIcon, pendingIcon]);
+registerIcons([
+  checkCircleIcon,
+  triangleWarningIcon,
+  infoIcon,
+  circleXIcon,
+  pendingIcon,
+]);
 
-export type MessageVariant = 'info' | 'success' | 'warning' | 'error' | 'loading';
+export type MessageVariant =
+  | 'info'
+  | 'success'
+  | 'warning'
+  | 'error'
+  | 'loading';
 
 /**
  * vi-message
@@ -25,7 +42,8 @@ export class ViMessage extends ViElement {
     ${unsafeCSS(messageStyles)}
   `;
 
-  @property({ type: String, reflect: true }) accessor variant: MessageVariant = 'info';
+  @property({ type: String, reflect: true }) accessor variant: MessageVariant =
+    'info';
   @property({ type: String }) accessor content = '';
   @property({ type: Number }) accessor duration = 3000;
   @property({ type: Boolean, reflect: true }) accessor paused = false;
@@ -37,9 +55,14 @@ export class ViMessage extends ViElement {
 
   override connectedCallback() {
     super.connectedCallback();
-    this.setAttribute('role', this.variant === 'warning' || this.variant === 'error' ? 'alert' : 'status');
+    this.setAttribute(
+      'role',
+      this.variant === 'warning' || this.variant === 'error'
+        ? 'alert'
+        : 'status',
+    );
     this.setAttribute('aria-live', 'polite');
-    
+
     if (this.duration > 0 && this.variant !== 'loading') {
       this._remainingTime = this.duration;
       this.startTimer();
@@ -50,7 +73,7 @@ export class ViMessage extends ViElement {
     super.disconnectedCallback();
     this.clearTimer();
   }
-  
+
   override updated(changedProperties: Map<string | number | symbol, unknown>) {
     super.updated(changedProperties);
     if (changedProperties.has('paused')) {
@@ -70,14 +93,25 @@ export class ViMessage extends ViElement {
       } else if (this.variant === 'loading') {
         this.clearTimer(); // Loading messages usually stay until resolved manually
       }
-      
+
       // Update ARIA role for accessibility
-      this.setAttribute('role', this.variant === 'warning' || this.variant === 'error' ? 'alert' : 'status');
+      this.setAttribute(
+        'role',
+        this.variant === 'warning' || this.variant === 'error'
+          ? 'alert'
+          : 'status',
+      );
     }
   }
 
   private startTimer() {
-    if (this.duration <= 0 || this._remainingTime <= 0 || this.variant === 'loading' || this.paused) return;
+    if (
+      this.duration <= 0 ||
+      this._remainingTime <= 0 ||
+      this.variant === 'loading' ||
+      this.paused
+    )
+      return;
     this.clearTimer();
     this._startTime = Date.now();
     this._timer = setTimeout(() => {
@@ -92,7 +126,7 @@ export class ViMessage extends ViElement {
       this._remainingTime -= Date.now() - this._startTime;
     }
   }
-  
+
   private resumeTimer() {
     if (this._remainingTime > 0) {
       this.startTimer();
@@ -112,19 +146,24 @@ export class ViMessage extends ViElement {
         bubbles: true,
         composed: true,
         detail: { reason, id: this.id },
-      })
+      }),
     );
   }
 
   private get defaultIcon(): string {
     if (this.icon) return this.icon;
     switch (this.variant) {
-      case 'success': return 'check-circle';
-      case 'warning': return 'triangle-warning';
-      case 'error': return 'circle-x';
-      case 'loading': return 'pending';
+      case 'success':
+        return 'check-circle';
+      case 'warning':
+        return 'triangle-warning';
+      case 'error':
+        return 'circle-x';
+      case 'loading':
+        return 'pending';
       case 'info':
-      default: return 'info';
+      default:
+        return 'info';
     }
   }
 

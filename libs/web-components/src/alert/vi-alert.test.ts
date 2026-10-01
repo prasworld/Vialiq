@@ -37,7 +37,10 @@ describe('vi-alert', () => {
   });
 
   it('renders with custom variant and role', async () => {
-    render(html`<vi-alert variant="warning">Warning message</vi-alert>`, container);
+    render(
+      html`<vi-alert variant="warning">Warning message</vi-alert>`,
+      container,
+    );
     const el = getAlert();
     await el.updateComplete;
 
@@ -49,7 +52,10 @@ describe('vi-alert', () => {
   });
 
   it('removes role when variant is neutral', async () => {
-    render(html`<vi-alert variant="neutral">Neutral message</vi-alert>`, container);
+    render(
+      html`<vi-alert variant="neutral">Neutral message</vi-alert>`,
+      container,
+    );
     const el = getAlert();
     await el.updateComplete;
 
@@ -58,11 +64,16 @@ describe('vi-alert', () => {
   });
 
   it('renders title', async () => {
-    render(html`<vi-alert title="Alert Title">Alert message</vi-alert>`, container);
+    render(
+      html`<vi-alert title="Alert Title">Alert message</vi-alert>`,
+      container,
+    );
     const el = getAlert();
     await el.updateComplete;
 
-    const titleSlot = el.shadowRoot!.querySelector('slot[name="title"]') as HTMLSlotElement;
+    const titleSlot = el.shadowRoot!.querySelector(
+      'slot[name="title"]',
+    ) as HTMLSlotElement;
     expect(titleSlot).toBeTruthy();
 
     // Check innerText of the slot fallback or assigned content logic
@@ -79,7 +90,10 @@ describe('vi-alert', () => {
   });
 
   it('allows custom icon via attribute', async () => {
-    render(html`<vi-alert icon="settings">Custom icon message</vi-alert>`, container);
+    render(
+      html`<vi-alert icon="settings">Custom icon message</vi-alert>`,
+      container,
+    );
     const el = getAlert();
     await el.updateComplete;
 
@@ -88,11 +102,18 @@ describe('vi-alert', () => {
   });
 
   it('fires vi-alert-close and sets hidden on dismiss button click', async () => {
-    render(html`<vi-alert id="test-alert-1" dismissible>Dismissible message</vi-alert>`, container);
+    render(
+      html`<vi-alert id="test-alert-1" dismissible
+        >Dismissible message</vi-alert
+      >`,
+      container,
+    );
     const el = getAlert();
     await el.updateComplete;
 
-    const closeBtn = el.shadowRoot!.querySelector('vi-button[part="close-btn"]') as HTMLElement;
+    const closeBtn = el.shadowRoot!.querySelector(
+      'vi-button[part="close-btn"]',
+    ) as HTMLElement;
     expect(closeBtn).toBeTruthy();
 
     let eventFired = false;
@@ -104,15 +125,15 @@ describe('vi-alert', () => {
 
     const originalAnimate = Element.prototype.animate;
     try {
-      Element.prototype.animate = function() {
+      Element.prototype.animate = function () {
         return {
-          finished: Promise.resolve()
+          finished: Promise.resolve(),
         } as any;
       };
 
       closeBtn.click();
 
-      await new Promise(r => setTimeout(r, 0));
+      await new Promise((r) => setTimeout(r, 0));
 
       expect(eventFired).toBe(true);
       expect(eventDetail).toEqual({ id: 'test-alert-1' });
@@ -123,11 +144,18 @@ describe('vi-alert', () => {
   });
 
   it('handles dismiss gracefully when Element.prototype.animate is missing or rejected', async () => {
-    render(html`<vi-alert id="test-alert-2" dismissible>Dismissible fallback message</vi-alert>`, container);
+    render(
+      html`<vi-alert id="test-alert-2" dismissible
+        >Dismissible fallback message</vi-alert
+      >`,
+      container,
+    );
     const el = getAlert();
     await el.updateComplete;
 
-    const closeBtn = el.shadowRoot!.querySelector('vi-button[part="close-btn"]') as HTMLElement;
+    const closeBtn = el.shadowRoot!.querySelector(
+      'vi-button[part="close-btn"]',
+    ) as HTMLElement;
     let eventFired = false;
     let eventDetail: any = null;
     el.addEventListener('vi-alert-close', (e: Event) => {
@@ -138,14 +166,14 @@ describe('vi-alert', () => {
     const originalAnimate = Element.prototype.animate;
     try {
       // Test when animate returns a rejected promise
-      Element.prototype.animate = function() {
+      Element.prototype.animate = function () {
         return {
-          finished: Promise.reject(new Error('Animation cancelled'))
+          finished: Promise.reject(new Error('Animation cancelled')),
         } as any;
       };
 
       closeBtn.click();
-      await new Promise(r => setTimeout(r, 0));
+      await new Promise((r) => setTimeout(r, 0));
 
       expect(eventFired).toBe(true);
       expect(eventDetail).toEqual({ id: 'test-alert-2' });
@@ -156,7 +184,12 @@ describe('vi-alert', () => {
   });
 
   it('allows opening and closing declaratively via open property', async () => {
-    render(html`<vi-alert id="test-alert-3" .open=${false}>Initially closed message</vi-alert>`, container);
+    render(
+      html`<vi-alert id="test-alert-3" .open=${false}
+        >Initially closed message</vi-alert
+      >`,
+      container,
+    );
     const el = getAlert();
     await el.updateComplete;
 
@@ -179,7 +212,10 @@ describe('vi-alert', () => {
   });
 
   it('supports imperative show() and hide() methods', async () => {
-    render(html`<vi-alert id="test-alert-4">Imperative alert message</vi-alert>`, container);
+    render(
+      html`<vi-alert id="test-alert-4">Imperative alert message</vi-alert>`,
+      container,
+    );
     const el = getAlert();
     await el.updateComplete;
 
@@ -211,7 +247,10 @@ describe('vi-alert', () => {
   });
 
   it('reflects floating attribute and property', async () => {
-    render(html`<vi-alert floating>Floating alert message</vi-alert>`, container);
+    render(
+      html`<vi-alert floating>Floating alert message</vi-alert>`,
+      container,
+    );
     const el = getAlert();
     await el.updateComplete;
 
@@ -220,7 +259,12 @@ describe('vi-alert', () => {
   });
 
   it('automatically hides alert when auto-hide is enabled', async () => {
-    render(html`<vi-alert auto-hide auto-hide-duration="50">Auto hide message</vi-alert>`, container);
+    render(
+      html`<vi-alert auto-hide auto-hide-duration="50"
+        >Auto hide message</vi-alert
+      >`,
+      container,
+    );
     const el = getAlert();
     await el.updateComplete;
 
@@ -228,7 +272,7 @@ describe('vi-alert', () => {
     expect(el.hidden).toBe(false);
 
     // Wait for auto-hide timer (50ms) + exit animation (200ms) to finish
-    await new Promise(r => setTimeout(r, 350));
+    await new Promise((r) => setTimeout(r, 350));
 
     expect(el.open).toBe(false);
     expect(el.hidden).toBe(true);

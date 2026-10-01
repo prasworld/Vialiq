@@ -32,7 +32,7 @@ describe('vi-badge', () => {
     // using ?pill=${false} will omit the attribute, so we need to test hasAttribute
     render(
       html`<vi-badge variant="success" size="lg" outline></vi-badge>`,
-      container
+      container,
     );
     const badge = container.querySelector('vi-badge') as ViBadge;
     badge.pill = false;
@@ -55,7 +55,9 @@ describe('vi-badge', () => {
     expect(dotPart).toBeTruthy();
 
     // Default slot is still rendered
-    const slot = innerSpan?.querySelector('slot:not([name])') as HTMLSlotElement;
+    const slot = innerSpan?.querySelector(
+      'slot:not([name])',
+    ) as HTMLSlotElement;
     expect(slot).toBeTruthy();
     expect(badge.textContent).toContain('Label');
   });
@@ -79,15 +81,24 @@ describe('vi-badge', () => {
   });
 
   it('renders an icon in the icon slot', async () => {
-    render(html`<vi-badge><span slot="icon" class="my-icon"></span>Icon Badge</vi-badge>`, container);
+    render(
+      html`<vi-badge
+        ><span slot="icon" class="my-icon"></span>Icon Badge</vi-badge
+      >`,
+      container,
+    );
     const badge = container.querySelector('vi-badge') as ViBadge;
     await badge.updateComplete;
 
-    const iconSlot = badge.shadowRoot?.querySelector('slot[name="icon"]') as HTMLSlotElement;
+    const iconSlot = badge.shadowRoot?.querySelector(
+      'slot[name="icon"]',
+    ) as HTMLSlotElement;
     const assignedNodes = iconSlot.assignedNodes({ flatten: true });
 
     // find element node
-    const iconSpan = assignedNodes.find(node => node.nodeType === Node.ELEMENT_NODE) as HTMLElement;
+    const iconSpan = assignedNodes.find(
+      (node) => node.nodeType === Node.ELEMENT_NODE,
+    ) as HTMLElement;
     expect(iconSpan).toBeTruthy();
     expect(iconSpan.classList.contains('my-icon')).toBe(true);
   });
@@ -100,7 +111,7 @@ describe('vi-badge', () => {
     expect(badge.hasAttribute('count')).toBe(true);
     expect(badge.getAttribute('count')).toBe('0');
     expect(badge.showZero).toBe(false);
-    
+
     const displayStyle = window.getComputedStyle(badge).display;
     expect(displayStyle).toBe('none');
   });

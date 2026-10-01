@@ -1,4 +1,10 @@
-import { css, html, unsafeCSS, type PropertyValues, type TemplateResult } from 'lit';
+import {
+  css,
+  html,
+  unsafeCSS,
+  type PropertyValues,
+  type TemplateResult,
+} from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { ValidityMixin, type ControlStatus } from '../base/validity-mixin.js';
 import { ViElement } from '../base/vi-element.js';
@@ -55,7 +61,8 @@ export class ViRadioGroup extends ValidityMixin(ViElement) {
   @property({ type: Boolean, reflect: true }) accessor disabled = false;
 
   /** Layout direction of the radio group. */
-  @property({ reflect: true }) accessor orientation: RadioGroupOrientation = 'vertical';
+  @property({ reflect: true }) accessor orientation: RadioGroupOrientation =
+    'vertical';
 
   /** Size scale — controls spacing and propagates to child radios. */
   @property({ type: String, reflect: true }) accessor size: RadioSize = 'md';
@@ -71,7 +78,7 @@ export class ViRadioGroup extends ValidityMixin(ViElement) {
   override connectedCallback(): void {
     super.connectedCallback();
     this._initialValue = this.getAttribute('value') ?? '';
-    
+
     // Set up MutationObserver to react to child vi-radio nodes added/removed dynamically
     this._observer = new MutationObserver(() => {
       this._updateRadios();
@@ -100,11 +107,11 @@ export class ViRadioGroup extends ValidityMixin(ViElement) {
 
   override updated(changed: PropertyValues): void {
     super.updated(changed);
-    
+
     if (changed.has('value')) {
       this._internals.setFormValue(this.value);
     }
-    
+
     if (
       changed.has('value') ||
       changed.has('name') ||
@@ -165,20 +172,20 @@ export class ViRadioGroup extends ValidityMixin(ViElement) {
     const radios = this._getRadios();
 
     // 1. Propagate name, checked, and size attributes to children
-    radios.forEach(radio => {
+    radios.forEach((radio) => {
       if (this.name && radio.name !== this.name) {
         radio.name = this.name;
       }
-      
+
       if (this.size && radio.size !== this.size) {
         radio.size = this.size;
       }
-      
+
       const shouldBeChecked = this.value !== '' && radio.value === this.value;
       if (radio.checked !== shouldBeChecked) {
         radio.checked = shouldBeChecked;
       }
-      
+
       // Let children recalculate their disabled states
       radio.requestUpdate();
     });
@@ -187,17 +194,20 @@ export class ViRadioGroup extends ValidityMixin(ViElement) {
     // - The checked radio (if enabled)
     // - The first enabled radio
     // - Fallback to the first radio
-    let activeRadio = radios.find(r => r.checked && !r.disabled && !this.disabled);
+    let activeRadio = radios.find(
+      (r) => r.checked && !r.disabled && !this.disabled,
+    );
     if (!activeRadio) {
-      activeRadio = radios.find(r => !r.disabled && !this.disabled);
+      activeRadio = radios.find((r) => !r.disabled && !this.disabled);
     }
     if (!activeRadio && radios.length > 0) {
       activeRadio = radios[0];
     }
 
-    radios.forEach(radio => {
+    radios.forEach((radio) => {
       const isRadioActive = radio === activeRadio;
-      radio.tabIndex = isRadioActive && !this.disabled && !radio.disabled ? 0 : -1;
+      radio.tabIndex =
+        isRadioActive && !this.disabled && !radio.disabled ? 0 : -1;
     });
   }
 
@@ -217,7 +227,7 @@ export class ViRadioGroup extends ValidityMixin(ViElement) {
           detail: { value: this.value },
           bubbles: true,
           composed: true,
-        })
+        }),
       );
     }
   }
@@ -225,13 +235,13 @@ export class ViRadioGroup extends ValidityMixin(ViElement) {
   private _onKeydown(e: KeyboardEvent): void {
     if (this.disabled) return;
 
-    const radios = this._getRadios().filter(r => !r.disabled);
+    const radios = this._getRadios().filter((r) => !r.disabled);
     if (radios.length === 0) return;
 
     const eventTarget = e.target as HTMLElement;
     // Find index of the child radio that received the keydown event
     const currentIndex = radios.findIndex(
-      r => r === eventTarget || r.contains(eventTarget)
+      (r) => r === eventTarget || r.contains(eventTarget),
     );
     if (currentIndex === -1) return;
 
@@ -274,7 +284,7 @@ export class ViRadioGroup extends ValidityMixin(ViElement) {
             detail: { value: this.value },
             bubbles: true,
             composed: true,
-          })
+          }),
         );
       }
     }
@@ -297,7 +307,7 @@ export class ViRadioGroup extends ValidityMixin(ViElement) {
             detail: { value: this.value },
             bubbles: true,
             composed: true,
-          })
+          }),
         );
       }
     }
@@ -335,19 +345,19 @@ export class ViRadioGroup extends ValidityMixin(ViElement) {
         role="radiogroup"
         aria-required=${required ? 'true' : 'false'}
         aria-invalid=${status === 'invalid' ? 'true' : 'false'}
-        aria-describedby=${this.validityMessage ? 'validation-message' : undefined}
-        aria-errormessage=${status === 'invalid' && this.validityMessage ? 'validation-message' : undefined}
+        aria-describedby=${this.validityMessage
+          ? 'validation-message'
+          : undefined}
+        aria-errormessage=${status === 'invalid' && this.validityMessage
+          ? 'validation-message'
+          : undefined}
         @vi-radio-checked=${this._handleRadioChecked}
         @keydown=${this._onKeydown}
       >
         <legend class="radio-group-legend" part="legend">
           <slot name="label"></slot>
         </legend>
-        <div
-          class="radio-group-items"
-          part="items"
-          orientation=${orientation}
-        >
+        <div class="radio-group-items" part="items" orientation=${orientation}>
           <slot></slot>
         </div>
         <div class="radio-group-helper" part="helper">

@@ -23,7 +23,7 @@ describe('vi-popconfirm', () => {
           <button id="trigger">Action</button>
         </vi-popconfirm>
       `,
-      container
+      container,
     );
     const comp = container.querySelector('vi-popconfirm') as ViPopconfirm;
     const trigger = comp.querySelector('#trigger');
@@ -38,10 +38,10 @@ describe('vi-popconfirm', () => {
           <button id="trigger">Action</button>
         </vi-popconfirm>
       `,
-      container
+      container,
     );
     const comp = container.querySelector('vi-popconfirm') as ViPopconfirm;
-    
+
     // Internal shadow dom elements
     // First we would normally click the trigger, but we can just invoke the inner method or dispatch click on the button
     // It's cleaner to test via the public component if possible.
@@ -49,12 +49,12 @@ describe('vi-popconfirm', () => {
     trigger.click(); // opens popover
 
     // Wait a tick for lit to render popover
-    await new Promise(r => setTimeout(r, 0));
+    await new Promise((r) => setTimeout(r, 0));
 
     // OK button is in the shadow DOM of vi-popconfirm (actually in the popover content slot)
     const buttons = comp.shadowRoot?.querySelectorAll('vi-button');
     const okBtn = buttons?.[1]; // Cancel is first, OK is second
-    
+
     okBtn?.click();
     expect(spy.calledOnce).toBe(true);
   });
@@ -67,17 +67,17 @@ describe('vi-popconfirm', () => {
           <button id="trigger">Action</button>
         </vi-popconfirm>
       `,
-      container
+      container,
     );
     const comp = container.querySelector('vi-popconfirm') as ViPopconfirm;
     const trigger = comp.querySelector('#trigger') as HTMLButtonElement;
     trigger.click();
 
-    await new Promise(r => setTimeout(r, 0));
+    await new Promise((r) => setTimeout(r, 0));
 
     const buttons = comp.shadowRoot?.querySelectorAll('vi-button');
     const cancelBtn = buttons?.[0];
-    
+
     cancelBtn?.click();
     expect(spy.calledOnce).toBe(true);
   });
@@ -89,18 +89,18 @@ describe('vi-popconfirm', () => {
           <button id="trigger">Action</button>
         </vi-popconfirm>
       `,
-      container
+      container,
     );
     const comp = container.querySelector('vi-popconfirm') as ViPopconfirm;
     const trigger = comp.querySelector('#trigger') as HTMLButtonElement;
-    
+
     await comp.updateComplete;
     const popover = comp.shadowRoot?.querySelector('vi-popover');
     await popover?.updateComplete;
-    
+
     trigger.click();
-    await new Promise(r => setTimeout(r, 0));
-    
+    await new Promise((r) => setTimeout(r, 0));
+
     expect(popover?.open).toBe(false);
   });
 
@@ -113,7 +113,7 @@ describe('vi-popconfirm', () => {
           <div slot="description" class="custom-desc">Custom Desc</div>
         </vi-popconfirm>
       `,
-      container
+      container,
     );
     const comp = container.querySelector('vi-popconfirm') as ViPopconfirm;
     const title = comp.querySelector('.custom-title');

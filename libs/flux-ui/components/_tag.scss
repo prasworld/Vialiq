@@ -11,11 +11,20 @@
     padding-inline: var(--vi-tag-padding-x, #{func.to-rem(7px)});
     border-radius: var(--vi-tag-border-radius, #{func.to-rem(4px)});
     font-family: #{tokens.$font-family-base};
-    font-size: var(--vi-tag-font-size, var(--vi-font-size-xs, #{tokens.$font-size-xs}));
-    font-weight: var(--vi-tag-font-weight, var(--vi-font-weight-medium, #{tokens.$font-weight-medium}));
+    font-size: var(
+      --vi-tag-font-size,
+      var(--vi-font-size-xs, #{tokens.$font-size-xs})
+    );
+    font-weight: var(
+      --vi-tag-font-weight,
+      var(--vi-font-weight-medium, #{tokens.$font-weight-medium})
+    );
     line-height: 1;
     gap: var(--vi-tag-gap, #{func.to-rem(6px)});
-    transition: var(--vi-tag-transition, all 150ms cubic-bezier(0.4, 0, 0.2, 1));
+    transition: var(
+      --vi-tag-transition,
+      all 150ms cubic-bezier(0.4, 0, 0.2, 1)
+    );
     user-select: none;
     border: #{tokens.$border-width-thin} solid transparent;
     cursor: default;
@@ -29,7 +38,9 @@
     }
 
     &.tag--removable {
-      padding-inline-end: calc(var(--vi-tag-padding-x, #{func.to-rem(7px)}) - 4px);
+      padding-inline-end: calc(
+        var(--vi-tag-padding-x, #{func.to-rem(7px)}) - 4px
+      );
     }
 
     // ── Content wrapper & optical vertical alignment ─────────────────────────
@@ -67,8 +78,14 @@
     }
 
     .tag-avatar ::slotted(*) {
-      width: var(--vi-tag-avatar-size, calc(var(--vi-tag-height, #{func.to-rem(22px)}) - 10px));
-      height: var(--vi-tag-avatar-size, calc(var(--vi-tag-height, #{func.to-rem(22px)}) - 10px));
+      width: var(
+        --vi-tag-avatar-size,
+        calc(var(--vi-tag-height, #{func.to-rem(22px)}) - 10px)
+      );
+      height: var(
+        --vi-tag-avatar-size,
+        calc(var(--vi-tag-height, #{func.to-rem(22px)}) - 10px)
+      );
       border-radius: 50%;
       object-fit: cover;
       display: block;
@@ -126,11 +143,20 @@
 
         &.tag-clickable:hover {
           background-color: var(--vi-tag-neutral-hover-bg, #{tokens.$layer-03});
-          border-color: var(--vi-tag-neutral-hover-border, #{tokens.$border-04});
+          border-color: var(
+            --vi-tag-neutral-hover-border,
+            #{tokens.$border-04}
+          );
         }
         &.tag-selected {
-          background-color: var(--vi-tag-neutral-selected-bg, #{tokens.$layer-03});
-          border-color: var(--vi-tag-neutral-selected-border, #{tokens.$color-primary});
+          background-color: var(
+            --vi-tag-neutral-selected-bg,
+            #{tokens.$layer-03}
+          );
+          border-color: var(
+            --vi-tag-neutral-selected-border,
+            #{tokens.$color-primary}
+          );
           color: var(--vi-tag-neutral-selected-color, #{tokens.$color-primary});
         }
       }
@@ -141,13 +167,28 @@
         border-color: var(--vi-tag-primary-border, #{tokens.$color-blue-300});
 
         &.tag-clickable:hover {
-          background-color: var(--vi-tag-primary-hover-bg, #{tokens.$color-blue-100});
-          border-color: var(--vi-tag-primary-hover-border, #{tokens.$color-blue-400});
+          background-color: var(
+            --vi-tag-primary-hover-bg,
+            #{tokens.$color-blue-100}
+          );
+          border-color: var(
+            --vi-tag-primary-hover-border,
+            #{tokens.$color-blue-400}
+          );
         }
         &.tag-selected {
-          background-color: var(--vi-tag-primary-selected-bg, #{tokens.$color-blue-100});
-          border-color: var(--vi-tag-primary-selected-border, #{tokens.$color-primary});
-          color: var(--vi-tag-primary-selected-color, #{tokens.$color-blue-800});
+          background-color: var(
+            --vi-tag-primary-selected-bg,
+            #{tokens.$color-blue-100}
+          );
+          border-color: var(
+            --vi-tag-primary-selected-border,
+            #{tokens.$color-primary}
+          );
+          color: var(
+            --vi-tag-primary-selected-color,
+            #{tokens.$color-blue-800}
+          );
         }
       }
 
@@ -157,13 +198,28 @@
         border-color: var(--vi-tag-success-border, #{tokens.$color-green-300});
 
         &.tag-clickable:hover {
-          background-color: var(--vi-tag-success-hover-bg, #{tokens.$color-green-100});
-          border-color: var(--vi-tag-success-hover-border, #{tokens.$color-green-400});
+          background-color: var(
+            --vi-tag-success-hover-bg,
+            #{tokens.$color-green-100}
+          );
+          border-color: var(
+            --vi-tag-success-hover-border,
+            #{tokens.$color-green-400}
+          );
         }
         &.tag-selected {
-          background-color: var(--vi-tag-success-selected-bg, #{tokens.$color-green-100});
-          border-color: var(--vi-tag-success-selected-border, #{tokens.$color-success});
-          color: var(--vi-tag-success-selected-color, #{tokens.$color-green-800});
+          background-color: var(
+            --vi-tag-success-selected-bg,
+            #{tokens.$color-green-100}
+          );
+          border-color: var(
+            --vi-tag-success-selected-border,
+            #{tokens.$color-success}
+          );
+          color: var(
+            --vi-tag-success-selected-color,
+            #{tokens.$color-green-800}
+          );
         }
       }
 
@@ -173,13 +229,28 @@
         border-color: var(--vi-tag-warning-border, #{tokens.$color-yellow-300});
 
         &.tag-clickable:hover {
-          background-color: var(--vi-tag-warning-hover-bg, #{tokens.$color-yellow-100});
-          border-color: var(--vi-tag-warning-hover-border, #{tokens.$color-yellow-400});
+          background-color: var(
+            --vi-tag-warning-hover-bg,
+            #{tokens.$color-yellow-100}
+          );
+          border-color: var(
+            --vi-tag-warning-hover-border,
+            #{tokens.$color-yellow-400}
+          );
         }
         &.tag-selected {
-          background-color: var(--vi-tag-warning-selected-bg, #{tokens.$color-yellow-100});
-          border-color: var(--vi-tag-warning-selected-border, #{tokens.$color-warning});
-          color: var(--vi-tag-warning-selected-color, #{tokens.$color-yellow-800});
+          background-color: var(
+            --vi-tag-warning-selected-bg,
+            #{tokens.$color-yellow-100}
+          );
+          border-color: var(
+            --vi-tag-warning-selected-border,
+            #{tokens.$color-warning}
+          );
+          color: var(
+            --vi-tag-warning-selected-color,
+            #{tokens.$color-yellow-800}
+          );
         }
       }
 
@@ -189,12 +260,24 @@
         border-color: var(--vi-tag-danger-border, #{tokens.$color-red-300});
 
         &.tag-clickable:hover {
-          background-color: var(--vi-tag-danger-hover-bg, #{tokens.$color-red-100});
-          border-color: var(--vi-tag-danger-hover-border, #{tokens.$color-red-400});
+          background-color: var(
+            --vi-tag-danger-hover-bg,
+            #{tokens.$color-red-100}
+          );
+          border-color: var(
+            --vi-tag-danger-hover-border,
+            #{tokens.$color-red-400}
+          );
         }
         &.tag-selected {
-          background-color: var(--vi-tag-danger-selected-bg, #{tokens.$color-red-100});
-          border-color: var(--vi-tag-danger-selected-border, #{tokens.$color-error});
+          background-color: var(
+            --vi-tag-danger-selected-bg,
+            #{tokens.$color-red-100}
+          );
+          border-color: var(
+            --vi-tag-danger-selected-border,
+            #{tokens.$color-error}
+          );
           color: var(--vi-tag-danger-selected-color, #{tokens.$color-red-800});
         }
       }
@@ -205,12 +288,24 @@
         border-color: var(--vi-tag-info-border, #{tokens.$color-blue-300});
 
         &.tag-clickable:hover {
-          background-color: var(--vi-tag-info-hover-bg, #{tokens.$color-blue-200});
-          border-color: var(--vi-tag-info-hover-border, #{tokens.$color-blue-500});
+          background-color: var(
+            --vi-tag-info-hover-bg,
+            #{tokens.$color-blue-200}
+          );
+          border-color: var(
+            --vi-tag-info-hover-border,
+            #{tokens.$color-blue-500}
+          );
         }
         &.tag-selected {
-          background-color: var(--vi-tag-info-selected-bg, #{tokens.$color-blue-200});
-          border-color: var(--vi-tag-info-selected-border, #{tokens.$color-blue-700});
+          background-color: var(
+            --vi-tag-info-selected-bg,
+            #{tokens.$color-blue-200}
+          );
+          border-color: var(
+            --vi-tag-info-selected-border,
+            #{tokens.$color-blue-700}
+          );
           color: var(--vi-tag-info-selected-color, #{tokens.$color-blue-900});
         }
       }
@@ -234,57 +329,106 @@
 
       &.variant-neutral {
         color: var(--vi-tag-outline-neutral-color, #{tokens.$text-primary});
-        border-color: var(--vi-tag-outline-neutral-border, #{tokens.$border-04});
-        &.tag-clickable:hover, &.tag-selected {
-          background-color: var(--vi-tag-outline-neutral-hover-bg, #{tokens.$layer-02});
+        border-color: var(
+          --vi-tag-outline-neutral-border,
+          #{tokens.$border-04}
+        );
+        &.tag-clickable:hover,
+        &.tag-selected {
+          background-color: var(
+            --vi-tag-outline-neutral-hover-bg,
+            #{tokens.$layer-02}
+          );
         }
       }
 
       &.variant-primary {
         color: var(--vi-tag-outline-primary-color, #{tokens.$color-primary});
-        border-color: var(--vi-tag-outline-primary-border, #{tokens.$color-primary});
-        &.tag-clickable:hover, &.tag-selected {
-          background-color: var(--vi-tag-outline-primary-hover-bg, #{tokens.$bg-info});
+        border-color: var(
+          --vi-tag-outline-primary-border,
+          #{tokens.$color-primary}
+        );
+        &.tag-clickable:hover,
+        &.tag-selected {
+          background-color: var(
+            --vi-tag-outline-primary-hover-bg,
+            #{tokens.$bg-info}
+          );
         }
       }
 
       &.variant-success {
         color: var(--vi-tag-outline-success-color, #{tokens.$color-success});
-        border-color: var(--vi-tag-outline-success-border, #{tokens.$color-success});
-        &.tag-clickable:hover, &.tag-selected {
-          background-color: var(--vi-tag-outline-success-hover-bg, #{tokens.$bg-success});
+        border-color: var(
+          --vi-tag-outline-success-border,
+          #{tokens.$color-success}
+        );
+        &.tag-clickable:hover,
+        &.tag-selected {
+          background-color: var(
+            --vi-tag-outline-success-hover-bg,
+            #{tokens.$bg-success}
+          );
         }
       }
 
       &.variant-warning {
         color: var(--vi-tag-outline-warning-color, #{tokens.$color-warning});
-        border-color: var(--vi-tag-outline-warning-border, #{tokens.$color-warning});
-        &.tag-clickable:hover, &.tag-selected {
-          background-color: var(--vi-tag-outline-warning-hover-bg, #{tokens.$bg-warning});
+        border-color: var(
+          --vi-tag-outline-warning-border,
+          #{tokens.$color-warning}
+        );
+        &.tag-clickable:hover,
+        &.tag-selected {
+          background-color: var(
+            --vi-tag-outline-warning-hover-bg,
+            #{tokens.$bg-warning}
+          );
         }
       }
 
       &.variant-danger {
         color: var(--vi-tag-outline-danger-color, #{tokens.$color-error});
-        border-color: var(--vi-tag-outline-danger-border, #{tokens.$color-error});
-        &.tag-clickable:hover, &.tag-selected {
-          background-color: var(--vi-tag-outline-danger-hover-bg, #{tokens.$bg-error});
+        border-color: var(
+          --vi-tag-outline-danger-border,
+          #{tokens.$color-error}
+        );
+        &.tag-clickable:hover,
+        &.tag-selected {
+          background-color: var(
+            --vi-tag-outline-danger-hover-bg,
+            #{tokens.$bg-error}
+          );
         }
       }
 
       &.variant-info {
         color: var(--vi-tag-outline-info-color, #{tokens.$color-blue-700});
-        border-color: var(--vi-tag-outline-info-border, #{tokens.$color-blue-500});
-        &.tag-clickable:hover, &.tag-selected {
-          background-color: var(--vi-tag-outline-info-hover-bg, #{tokens.$color-blue-100});
+        border-color: var(
+          --vi-tag-outline-info-border,
+          #{tokens.$color-blue-500}
+        );
+        &.tag-clickable:hover,
+        &.tag-selected {
+          background-color: var(
+            --vi-tag-outline-info-hover-bg,
+            #{tokens.$color-blue-100}
+          );
         }
       }
 
       &.variant-contrast {
         color: var(--vi-tag-outline-contrast-color, #{tokens.$text-primary});
-        border-color: var(--vi-tag-outline-contrast-border, #{tokens.$text-primary});
-        &.tag-clickable:hover, &.tag-selected {
-          background-color: var(--vi-tag-outline-contrast-hover-bg, #{tokens.$layer-02});
+        border-color: var(
+          --vi-tag-outline-contrast-border,
+          #{tokens.$text-primary}
+        );
+        &.tag-clickable:hover,
+        &.tag-selected {
+          background-color: var(
+            --vi-tag-outline-contrast-hover-bg,
+            #{tokens.$layer-02}
+          );
         }
       }
     }
@@ -297,56 +441,116 @@
       box-shadow: #{tokens.$shadow-sm};
 
       &.variant-neutral {
-        background-color: var(--vi-tag-solid-neutral-bg, #{tokens.$border-inverse-03});
-        color: var(--vi-tag-solid-neutral-color, #{tokens.$text-primary-inverse});
-        &.tag-clickable:hover, &.tag-selected {
-          background-color: var(--vi-tag-solid-neutral-hover-bg, #{tokens.$text-primary});
+        background-color: var(
+          --vi-tag-solid-neutral-bg,
+          #{tokens.$border-inverse-03}
+        );
+        color: var(
+          --vi-tag-solid-neutral-color,
+          #{tokens.$text-primary-inverse}
+        );
+        &.tag-clickable:hover,
+        &.tag-selected {
+          background-color: var(
+            --vi-tag-solid-neutral-hover-bg,
+            #{tokens.$text-primary}
+          );
         }
       }
 
       &.variant-primary {
-        background-color: var(--vi-tag-solid-primary-bg, #{tokens.$color-primary});
-        color: var(--vi-tag-solid-primary-color, #{tokens.$text-primary-inverse});
-        &.tag-clickable:hover, &.tag-selected {
-          background-color: var(--vi-tag-solid-primary-hover-bg, #{tokens.$color-blue-800});
+        background-color: var(
+          --vi-tag-solid-primary-bg,
+          #{tokens.$color-primary}
+        );
+        color: var(
+          --vi-tag-solid-primary-color,
+          #{tokens.$text-primary-inverse}
+        );
+        &.tag-clickable:hover,
+        &.tag-selected {
+          background-color: var(
+            --vi-tag-solid-primary-hover-bg,
+            #{tokens.$color-blue-800}
+          );
         }
       }
 
       &.variant-success {
-        background-color: var(--vi-tag-solid-success-bg, #{tokens.$color-success});
-        color: var(--vi-tag-solid-success-color, #{tokens.$text-primary-inverse});
-        &.tag-clickable:hover, &.tag-selected {
-          background-color: var(--vi-tag-solid-success-hover-bg, #{tokens.$color-green-700});
+        background-color: var(
+          --vi-tag-solid-success-bg,
+          #{tokens.$color-success}
+        );
+        color: var(
+          --vi-tag-solid-success-color,
+          #{tokens.$text-primary-inverse}
+        );
+        &.tag-clickable:hover,
+        &.tag-selected {
+          background-color: var(
+            --vi-tag-solid-success-hover-bg,
+            #{tokens.$color-green-700}
+          );
         }
       }
 
       &.variant-warning {
-        background-color: var(--vi-tag-solid-warning-bg, #{tokens.$color-warning});
-        color: var(--vi-tag-solid-warning-color, #{tokens.$text-primary-inverse});
-        &.tag-clickable:hover, &.tag-selected {
-          background-color: var(--vi-tag-solid-warning-hover-bg, #{tokens.$color-yellow-700});
+        background-color: var(
+          --vi-tag-solid-warning-bg,
+          #{tokens.$color-warning}
+        );
+        color: var(
+          --vi-tag-solid-warning-color,
+          #{tokens.$text-primary-inverse}
+        );
+        &.tag-clickable:hover,
+        &.tag-selected {
+          background-color: var(
+            --vi-tag-solid-warning-hover-bg,
+            #{tokens.$color-yellow-700}
+          );
         }
       }
 
       &.variant-danger {
         background-color: var(--vi-tag-solid-danger-bg, #{tokens.$color-error});
-        color: var(--vi-tag-solid-danger-color, #{tokens.$text-primary-inverse});
-        &.tag-clickable:hover, &.tag-selected {
-          background-color: var(--vi-tag-solid-danger-hover-bg, #{tokens.$color-red-700});
+        color: var(
+          --vi-tag-solid-danger-color,
+          #{tokens.$text-primary-inverse}
+        );
+        &.tag-clickable:hover,
+        &.tag-selected {
+          background-color: var(
+            --vi-tag-solid-danger-hover-bg,
+            #{tokens.$color-red-700}
+          );
         }
       }
 
       &.variant-info {
-        background-color: var(--vi-tag-solid-info-bg, #{tokens.$color-blue-600});
+        background-color: var(
+          --vi-tag-solid-info-bg,
+          #{tokens.$color-blue-600}
+        );
         color: var(--vi-tag-solid-info-color, #{tokens.$text-primary-inverse});
-        &.tag-clickable:hover, &.tag-selected {
-          background-color: var(--vi-tag-solid-info-hover-bg, #{tokens.$color-blue-800});
+        &.tag-clickable:hover,
+        &.tag-selected {
+          background-color: var(
+            --vi-tag-solid-info-hover-bg,
+            #{tokens.$color-blue-800}
+          );
         }
       }
 
       &.variant-contrast {
-        background-color: var(--vi-tag-solid-contrast-bg, #{tokens.$text-primary});
-        color: var(--vi-tag-solid-contrast-color, #{tokens.$text-primary-inverse});
+        background-color: var(
+          --vi-tag-solid-contrast-bg,
+          #{tokens.$text-primary}
+        );
+        color: var(
+          --vi-tag-solid-contrast-color,
+          #{tokens.$text-primary-inverse}
+        );
       }
 
       .tag-count {
@@ -416,7 +620,10 @@
     background: transparent;
     border: none;
     color: inherit;
-    transition: var(--vi-tag-transition, all 150ms cubic-bezier(0.4, 0, 0.2, 1));
+    transition: var(
+      --vi-tag-transition,
+      all 150ms cubic-bezier(0.4, 0, 0.2, 1)
+    );
     flex-shrink: 0;
     line-height: 1;
 

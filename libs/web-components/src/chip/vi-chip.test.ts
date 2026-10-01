@@ -40,7 +40,12 @@ describe('vi-chip', () => {
   });
 
   it('allows overriding remove-aria-label', async () => {
-    render(html`<vi-chip removable remove-aria-label="Delete chip">Removable</vi-chip>`, container);
+    render(
+      html`<vi-chip removable remove-aria-label="Delete chip"
+        >Removable</vi-chip
+      >`,
+      container,
+    );
     const chip = await $('vi-chip');
     const removeBtn = await chip.shadow$('vi-button[part="remove-btn"]');
     await expect(removeBtn).toExist();
@@ -56,13 +61,21 @@ describe('vi-chip', () => {
       selectDetail = e.detail;
     };
 
-    render(html`<vi-chip value="val1" @vi-chip-select=${onSelect}>Click me</vi-chip>`, container);
+    render(
+      html`<vi-chip value="val1" @vi-chip-select=${onSelect}
+        >Click me</vi-chip
+      >`,
+      container,
+    );
     const chip = await $('vi-chip');
 
     // Trigger keyboard/mouse events on host itself as wdio shadow click can be flaky
-    await browser.execute((elem: any) => {
+    await browser.execute(
+      (elem: any) => {
         (elem.shadowRoot!.querySelector('button') as HTMLButtonElement).click();
-    }, await chip);
+      },
+      await chip,
+    );
 
     expect(selectFired).toBe(true);
     expect(selectDetail.value).toBe('val1');
@@ -76,13 +89,25 @@ describe('vi-chip', () => {
       removeFired = true;
     };
 
-    render(html`<vi-chip value="val1" removable @vi-chip-remove=${onRemove}>Remove me</vi-chip>`, container);
+    render(
+      html`<vi-chip value="val1" removable @vi-chip-remove=${onRemove}
+        >Remove me</vi-chip
+      >`,
+      container,
+    );
     const chip = await $('vi-chip');
 
     // Trigger keyboard event on the host as defined
-    await browser.execute((elem: any) => {
-        (elem.shadowRoot!.querySelector('vi-button[part="remove-btn"]') as HTMLElement).click();
-    }, await chip);
+    await browser.execute(
+      (elem: any) => {
+        (
+          elem.shadowRoot!.querySelector(
+            'vi-button[part="remove-btn"]',
+          ) as HTMLElement
+        ).click();
+      },
+      await chip,
+    );
 
     expect(removeFired).toBe(true);
   });
@@ -95,14 +120,19 @@ describe('vi-chip', () => {
         <span slot="trailing-icon" class="test-trailing">TR</span>
         Label
       </vi-chip>`,
-      container
+      container,
     );
     const chip = await $('vi-chip');
 
-    const avatarSlotHidden = await browser.execute((elem: HTMLElement) => {
-      const slot = elem.shadowRoot?.querySelector('slot[name="avatar"]') as HTMLSlotElement;
-      return slot?.hasAttribute('hidden');
-    }, await chip);
+    const avatarSlotHidden = await browser.execute(
+      (elem: HTMLElement) => {
+        const slot = elem.shadowRoot?.querySelector(
+          'slot[name="avatar"]',
+        ) as HTMLSlotElement;
+        return slot?.hasAttribute('hidden');
+      },
+      await chip,
+    );
 
     expect(avatarSlotHidden).toBe(false);
   });
@@ -110,25 +140,30 @@ describe('vi-chip', () => {
   it('does not emit vi-chip-select or vi-chip-remove when disabled', async () => {
     render(html`<vi-chip disabled removable>Disabled</vi-chip>`, container);
     const chip = await $('vi-chip');
-    
-    const result = await browser.execute((elem: any) => {
-      let selectFired = false;
-      let removeFired = false;
-      elem.addEventListener('vi-chip-select', () => selectFired = true);
-      elem.addEventListener('vi-chip-remove', () => removeFired = true);
-      
-      const button = elem.shadowRoot.querySelector('button');
-      button.click();
-      
-      const removeBtn = elem.shadowRoot.querySelector('vi-button[part="remove-btn"]');
-      if (removeBtn) removeBtn.click();
-      
-      // also verify disabled short-circuits keyboard
-      button.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
-      
-      return { selectFired, removeFired };
-    }, await chip);
-    
+
+    const result = await browser.execute(
+      (elem: any) => {
+        let selectFired = false;
+        let removeFired = false;
+        elem.addEventListener('vi-chip-select', () => (selectFired = true));
+        elem.addEventListener('vi-chip-remove', () => (removeFired = true));
+
+        const button = elem.shadowRoot.querySelector('button');
+        button.click();
+
+        const removeBtn = elem.shadowRoot.querySelector(
+          'vi-button[part="remove-btn"]',
+        );
+        if (removeBtn) removeBtn.click();
+
+        // also verify disabled short-circuits keyboard
+        button.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+
+        return { selectFired, removeFired };
+      },
+      await chip,
+    );
+
     expect(result.selectFired).toBe(false);
     expect(result.removeFired).toBe(false);
   });
@@ -136,26 +171,31 @@ describe('vi-chip', () => {
   it('handles keyboard selection (Enter/Space) and removal (Backspace/Delete)', async () => {
     render(html`<vi-chip removable>Keyboard</vi-chip>`, container);
     const chip = await $('vi-chip');
-    
-    const result = await browser.execute((elem: any) => {
-      let selectFired = 0;
-      let removeFired = 0;
-      elem.addEventListener('vi-chip-select', () => selectFired++);
-      elem.addEventListener('vi-chip-remove', () => removeFired++);
-      
-      const button = elem.shadowRoot.querySelector('button');
-      
-      button.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
-      button.dispatchEvent(new KeyboardEvent('keydown', { key: ' ' }));
-      
-      button.dispatchEvent(new KeyboardEvent('keydown', { key: 'Backspace' }));
-      button.dispatchEvent(new KeyboardEvent('keydown', { key: 'Delete' }));
-      
-      button.dispatchEvent(new KeyboardEvent('keydown', { key: 'A' }));
-      
-      return { selectFired, removeFired };
-    }, await chip);
-    
+
+    const result = await browser.execute(
+      (elem: any) => {
+        let selectFired = 0;
+        let removeFired = 0;
+        elem.addEventListener('vi-chip-select', () => selectFired++);
+        elem.addEventListener('vi-chip-remove', () => removeFired++);
+
+        const button = elem.shadowRoot.querySelector('button');
+
+        button.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+        button.dispatchEvent(new KeyboardEvent('keydown', { key: ' ' }));
+
+        button.dispatchEvent(
+          new KeyboardEvent('keydown', { key: 'Backspace' }),
+        );
+        button.dispatchEvent(new KeyboardEvent('keydown', { key: 'Delete' }));
+
+        button.dispatchEvent(new KeyboardEvent('keydown', { key: 'A' }));
+
+        return { selectFired, removeFired };
+      },
+      await chip,
+    );
+
     expect(result.selectFired).toBe(2);
     expect(result.removeFired).toBe(2);
   });

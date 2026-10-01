@@ -31,13 +31,19 @@ const registry = new Map<string, SvgIconDef>();
 function assertSafeSvg(name: string, data: string): void {
   const trimmed = data.trim();
   if (!trimmed.startsWith('<svg')) {
-    throw new Error(`[vi-icon] Icon "${name}": SVG data must begin with an <svg> element.`);
+    throw new Error(
+      `[vi-icon] Icon "${name}": SVG data must begin with an <svg> element.`,
+    );
   }
   if (/<script[\s>]/i.test(trimmed)) {
-    throw new Error(`[vi-icon] Icon "${name}": SVG data must not contain <script> elements.`);
+    throw new Error(
+      `[vi-icon] Icon "${name}": SVG data must not contain <script> elements.`,
+    );
   }
   if (/\bon\w+\s*=/i.test(trimmed)) {
-    throw new Error(`[vi-icon] Icon "${name}": SVG data must not contain inline event handlers (on*=).`);
+    throw new Error(
+      `[vi-icon] Icon "${name}": SVG data must not contain inline event handlers (on*=).`,
+    );
   }
 }
 

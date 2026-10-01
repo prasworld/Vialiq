@@ -45,7 +45,8 @@ export class ViLink extends FocusableMixin(ViElement) {
     return Array.from(rels).join(' ');
   }
 
-  @property({ attribute: 'aria-label' }) accessor ariaLabel: string | null = null;
+  @property({ attribute: 'aria-label' }) accessor ariaLabel: string | null =
+    null;
 
   override render() {
     const effectiveTarget = this._effectiveTarget;

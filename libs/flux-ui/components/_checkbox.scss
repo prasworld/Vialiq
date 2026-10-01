@@ -44,10 +44,17 @@
     justify-content: center;
     width: var(--vi-checkbox-size, #{tokens.$spacing-md});
     height: var(--vi-checkbox-size, #{tokens.$spacing-md});
-    border: #{tokens.$border-width-base} solid var(--vi-checkbox-border-color, #{tokens.$outline});
+    border: #{tokens.$border-width-base} solid
+      var(--vi-checkbox-border-color, #{tokens.$outline});
     border-radius: var(--vi-checkbox-border-radius, #{func.to-rem(4px)});
-    background-color: var(--vi-checkbox-background-color, #{tokens.$color-background});
-    transition: border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease;
+    background-color: var(
+      --vi-checkbox-background-color,
+      #{tokens.$color-background}
+    );
+    transition:
+      border-color 150ms ease,
+      background-color 150ms ease,
+      box-shadow 150ms ease;
     flex-shrink: 0;
   }
 
@@ -66,13 +73,21 @@
     opacity: 0;
     transform: scale(0);
     transform-origin: center;
-    transition: transform 150ms cubic-bezier(0.4, 0, 0.2, 1), opacity 150ms ease;
+    transition:
+      transform 150ms cubic-bezier(0.4, 0, 0.2, 1),
+      opacity 150ms ease;
   }
 
   // Checked state (not indeterminate)
   .checkbox-input:checked:not(:indeterminate) ~ .checkbox-box {
-    border-color: var(--vi-checkbox-border-color-checked, #{tokens.$color-primary});
-    background-color: var(--vi-checkbox-background-checked, #{tokens.$color-primary});
+    border-color: var(
+      --vi-checkbox-border-color-checked,
+      #{tokens.$color-primary}
+    );
+    background-color: var(
+      --vi-checkbox-background-checked,
+      #{tokens.$color-primary}
+    );
 
     .check-mark {
       opacity: 1;
@@ -83,8 +98,14 @@
   // Indeterminate state (using CSS :indeterminate pseudo-class or backup class)
   .checkbox-input:indeterminate ~ .checkbox-box,
   .checkbox-input.checkbox-input--indeterminate ~ .checkbox-box {
-    border-color: var(--vi-checkbox-border-color-checked, #{tokens.$color-primary});
-    background-color: var(--vi-checkbox-background-checked, #{tokens.$color-primary});
+    border-color: var(
+      --vi-checkbox-border-color-checked,
+      #{tokens.$color-primary}
+    );
+    background-color: var(
+      --vi-checkbox-background-checked,
+      #{tokens.$color-primary}
+    );
 
     .check-dash {
       opacity: 1;
@@ -94,7 +115,8 @@
 
   // Focus ring
   .checkbox-input:focus-visible ~ .checkbox-box {
-    outline: #{tokens.$border-width-base} solid var(--vi-checkbox-focus-ring-color, #{tokens.$focus});
+    outline: #{tokens.$border-width-base} solid
+      var(--vi-checkbox-focus-ring-color, #{tokens.$focus});
     outline-offset: 2px;
     box-shadow: #{tokens.$focus-ring-shadow};
   }
@@ -102,16 +124,25 @@
   // Hover state (only on non-disabled)
   .checkbox-wrapper:hover:not(.checkbox-wrapper--disabled) {
     .checkbox-box {
-      border-color: var(--vi-checkbox-border-color-hover, #{tokens.$border-inverse-03});
+      border-color: var(
+        --vi-checkbox-border-color-hover,
+        #{tokens.$border-inverse-03}
+      );
     }
 
     .checkbox-input:checked:not(:indeterminate) ~ .checkbox-box {
-      border-color: var(--vi-checkbox-border-color-checked-hover, #{tokens.$color-primary});
+      border-color: var(
+        --vi-checkbox-border-color-checked-hover,
+        #{tokens.$color-primary}
+      );
     }
 
     .checkbox-input:indeterminate ~ .checkbox-box,
     .checkbox-input.checkbox-input--indeterminate ~ .checkbox-box {
-      border-color: var(--vi-checkbox-border-color-checked-hover, #{tokens.$color-primary});
+      border-color: var(
+        --vi-checkbox-border-color-checked-hover,
+        #{tokens.$color-primary}
+      );
     }
   }
 
@@ -137,7 +168,6 @@
       border-color: #{tokens.$text-disabled};
     }
   }
-
 
   @media (prefers-reduced-motion: reduce) {
     .checkbox-box,

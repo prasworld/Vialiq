@@ -17,7 +17,16 @@ const meta: Meta = {
   argTypes: {
     placement: {
       control: 'select',
-      options: ['top', 'top-start', 'top-end', 'bottom', 'bottom-start', 'bottom-end', 'left', 'right'],
+      options: [
+        'top',
+        'top-start',
+        'top-end',
+        'bottom',
+        'bottom-start',
+        'bottom-end',
+        'left',
+        'right',
+      ],
     },
     trigger: {
       control: 'select',
@@ -36,7 +45,7 @@ export const Default: StoryObj = {
   render: (args) => html`
     <vi-dropdown placement=${args.placement} trigger=${args.trigger}>
       <vi-button>Click Me</vi-button>
-      
+
       <vi-menu slot="content" style="width: 200px;">
         <vi-menu-item value="profile">
           <vi-icon name="user" slot=""></vi-icon>
@@ -55,4 +64,3 @@ export const Default: StoryObj = {
     </vi-dropdown>
   `,
 };
-

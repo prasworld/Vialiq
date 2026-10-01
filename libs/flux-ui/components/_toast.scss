@@ -18,17 +18,22 @@
     border: 1px solid var(--vi-toast-border-color, #{tokens.$border-02});
     border-radius: var(--vi-toast-border-radius, #{tokens.$border-radius-md});
     box-shadow: var(--vi-toast-shadow, #{tokens.$shadow-lg});
-    padding: var(--vi-toast-padding, #{tokens.$spacing-sm} #{tokens.$spacing-md});
-    padding-left: calc(var(--vi-toast-padding-left-base, #{tokens.$spacing-md}) + 4px);
+    padding: var(
+      --vi-toast-padding,
+      #{tokens.$spacing-sm} #{tokens.$spacing-md}
+    );
+    padding-left: calc(
+      var(--vi-toast-padding-left-base, #{tokens.$spacing-md}) + 4px
+    );
     gap: var(--vi-toast-gap, #{tokens.$spacing-sm});
-    
+
     font-family: var(--vi-toast-font-family, #{tokens.$font-family-base});
     font-size: #{tokens.$font-size-sm};
     line-height: #{tokens.$line-height-normal};
-    
+
     position: relative;
     overflow: hidden; // For progress bar
-    
+
     pointer-events: auto;
   }
 
@@ -53,7 +58,7 @@
     display: block;
     color: #{tokens.$text-primary};
   }
-  
+
   .toast-message {
     color: #{tokens.$text-secondary};
   }

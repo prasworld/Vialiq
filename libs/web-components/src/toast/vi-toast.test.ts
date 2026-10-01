@@ -22,10 +22,11 @@ describe('vi-toast (Component)', () => {
   });
 
   it('should render the message and title', async () => {
-    render(html`
-      <vi-toast title="Test Title" message="Test Message"></vi-toast>
-    `, wrapper);
-    
+    render(
+      html` <vi-toast title="Test Title" message="Test Message"></vi-toast> `,
+      wrapper,
+    );
+
     const host = await $('vi-toast');
     await expect(host).toExist();
 
@@ -38,10 +39,13 @@ describe('vi-toast (Component)', () => {
   });
 
   it('should render actions and emit event on click', async () => {
-    render(html`
-      <vi-toast .actions=${[{ label: 'Undo', action: 'undo' }]}></vi-toast>
-    `, wrapper);
-    
+    render(
+      html`
+        <vi-toast .actions=${[{ label: 'Undo', action: 'undo' }]}></vi-toast>
+      `,
+      wrapper,
+    );
+
     const host = await $('vi-toast');
     const actionBtn = await host.shadow$('vi-button');
     await expect(actionBtn).toExist();
@@ -58,7 +62,7 @@ describe('vi-toast (Component)', () => {
 
   it('should dispatch vi-toast-close when close button is clicked', async () => {
     render(html`<vi-toast closable></vi-toast>`, wrapper);
-    
+
     const host = await $('vi-toast');
     const closeBtn = await host.shadow$('vi-button[part="close-btn"]');
     await expect(closeBtn).toExist();
@@ -75,7 +79,7 @@ describe('vi-toast (Component)', () => {
   it('should auto-dismiss after duration', async () => {
     const clock = sinon.useFakeTimers();
     render(html`<vi-toast duration="1000"></vi-toast>`, wrapper);
-    
+
     const el = document.querySelector('vi-toast') as ViToast;
     const spy = sinon.spy();
     el.addEventListener('vi-toast-close', spy);
@@ -88,7 +92,7 @@ describe('vi-toast (Component)', () => {
   it('should pause and resume timer on paused property change', async () => {
     const clock = sinon.useFakeTimers();
     render(html`<vi-toast duration="1000"></vi-toast>`, wrapper);
-    
+
     const el = document.querySelector('vi-toast') as ViToast;
     const spy = sinon.spy();
     el.addEventListener('vi-toast-close', spy);
@@ -121,7 +125,7 @@ describe('vi-toast (Component)', () => {
     sinon.useFakeTimers();
     render(html`<vi-toast duration="1000"></vi-toast>`, wrapper);
     const el = document.querySelector('vi-toast') as ViToast;
-    
+
     expect(el['_timer']).not.toBeNull();
     el.remove(); // trigger disconnectedCallback
     expect(el['_timer']).toBeNull();
@@ -135,14 +139,16 @@ describe('ViToastService', () => {
     container.clearInstances();
     toastService = container.resolve(ViToastService);
     // Cleanup DOM between tests
-    document.querySelectorAll('vi-toast-container').forEach(c => c.remove());
+    document.querySelectorAll('vi-toast-container').forEach((c) => c.remove());
   });
 
   it('should show a toast in the default container', () => {
     toastService.show({ message: 'Hello Service', variant: 'success' });
-    const host = document.querySelector('vi-toast-container[position="top-right"]');
+    const host = document.querySelector(
+      'vi-toast-container[position="top-right"]',
+    );
     expect(host).not.toBeNull();
-    
+
     const toast = host!.querySelector('vi-toast') as ViToast;
     expect(toast).not.toBeNull();
     expect(toast.message).toBe('Hello Service');
@@ -150,12 +156,24 @@ describe('ViToastService', () => {
   });
 
   it('should place toasts in different positional containers', () => {
-    toastService.show({ message: 'Top Left', variant: 'info', position: 'top-left' });
-    toastService.show({ message: 'Bottom Right', variant: 'info', position: 'bottom-right' });
-    
-    const topLeftContainer = document.querySelector('vi-toast-container[position="top-left"]');
-    const bottomRightContainer = document.querySelector('vi-toast-container[position="bottom-right"]');
-    
+    toastService.show({
+      message: 'Top Left',
+      variant: 'info',
+      position: 'top-left',
+    });
+    toastService.show({
+      message: 'Bottom Right',
+      variant: 'info',
+      position: 'bottom-right',
+    });
+
+    const topLeftContainer = document.querySelector(
+      'vi-toast-container[position="top-left"]',
+    );
+    const bottomRightContainer = document.querySelector(
+      'vi-toast-container[position="bottom-right"]',
+    );
+
     expect(topLeftContainer).not.toBeNull();
     expect(bottomRightContainer).not.toBeNull();
     expect(topLeftContainer!.querySelector('vi-toast')).not.toBeNull();
@@ -164,16 +182,16 @@ describe('ViToastService', () => {
 
   it('should enforce maxVisible limit per container', () => {
     toastService.configure({ maxVisible: 2 });
-    
+
     toastService.show({ message: 'Toast 1', variant: 'info' });
     toastService.show({ message: 'Toast 2', variant: 'info' });
-    toastService.show({ message: 'Toast 3', variant: 'info' }); 
-    
+    toastService.show({ message: 'Toast 3', variant: 'info' });
+
     const domContainer = document.querySelector('vi-toast-container')!;
     const toasts = domContainer.querySelectorAll('vi-toast');
-    
-    expect(toasts.length).toBe(3); 
-    expect(toasts[0].classList.contains('exiting')).toBe(true); 
+
+    expect(toasts.length).toBe(3);
+    expect(toasts[0].classList.contains('exiting')).toBe(true);
     expect(toasts[1].classList.contains('exiting')).toBe(false);
     expect(toasts[2].classList.contains('exiting')).toBe(false);
   });
@@ -181,13 +199,13 @@ describe('ViToastService', () => {
   it('should handle dismissAll', () => {
     toastService.show({ message: 'Toast 1', variant: 'info' });
     toastService.show({ message: 'Toast 2', variant: 'info' });
-    
+
     toastService.dismissAll();
-    
+
     const domContainer = document.querySelector('vi-toast-container')!;
     const toasts = domContainer.querySelectorAll('vi-toast');
-    
-    toasts.forEach(toast => {
+
+    toasts.forEach((toast) => {
       expect(toast.classList.contains('exiting')).toBe(true);
     });
   });
@@ -202,17 +220,21 @@ describe('ViToastService', () => {
 
   it('should dismiss element even if onClose callback throws', () => {
     const consoleStub = sinon.stub(console, 'error');
-    const id = toastService.show({ 
-      message: 'Toast 1', 
+    const id = toastService.show({
+      message: 'Toast 1',
       variant: 'info',
-      onClose: () => { throw new Error('Test error'); }
+      onClose: () => {
+        throw new Error('Test error');
+      },
     });
-    
+
     const domContainer = document.querySelector('vi-toast-container')!;
     const toast = domContainer.querySelector('vi-toast') as ViToast;
-    
-    toast.dispatchEvent(new CustomEvent('vi-toast-close', { detail: { reason: 'user', id } }));
-    
+
+    toast.dispatchEvent(
+      new CustomEvent('vi-toast-close', { detail: { reason: 'user', id } }),
+    );
+
     expect(toast.classList.contains('exiting')).toBe(true);
     consoleStub.restore();
   });
@@ -221,7 +243,7 @@ describe('ViToastService', () => {
     const id = 'unsafe[id="test"]';
     toastService.show({ id, message: 'Toast 1', variant: 'info' });
     toastService.dismiss(id);
-    
+
     const domContainer = document.querySelector('vi-toast-container')!;
     const toast = domContainer.querySelector('vi-toast') as ViToast;
     expect(toast.classList.contains('exiting')).toBe(true);
@@ -231,7 +253,7 @@ describe('ViToastService', () => {
     toastService.show({ message: 'Toast 1', variant: 'info' });
     const domContainer1 = document.querySelector('vi-toast-container')!;
     domContainer1.remove();
-    
+
     toastService.show({ message: 'Toast 2', variant: 'info' });
     const domContainers = document.querySelectorAll('vi-toast-container');
     expect(domContainers.length).toBe(1);
@@ -240,17 +262,19 @@ describe('ViToastService', () => {
 
   it('should trigger onAction callback', () => {
     const spy = sinon.spy();
-    const id = toastService.show({ 
-      message: 'Toast 1', 
+    const id = toastService.show({
+      message: 'Toast 1',
       variant: 'info',
       actions: [{ label: 'Action 1', action: 'action1' }],
-      onAction: spy
+      onAction: spy,
     });
-    
+
     const domContainer = document.querySelector('vi-toast-container')!;
     const toast = domContainer.querySelector('vi-toast') as ViToast;
-    
-    toast.dispatchEvent(new CustomEvent('vi-toast-action', { detail: { action: 'action1', id } }));
+
+    toast.dispatchEvent(
+      new CustomEvent('vi-toast-action', { detail: { action: 'action1', id } }),
+    );
     expect(spy.calledOnce).toBe(true);
     expect(spy.firstCall.args[0]).toBe('action1');
   });
@@ -258,10 +282,10 @@ describe('ViToastService', () => {
   it('should trigger onClick callback when not clicking an action button', () => {
     const spy = sinon.spy();
     toastService.show({ message: 'Toast 1', variant: 'info', onClick: spy });
-    
+
     const domContainer = document.querySelector('vi-toast-container')!;
     const toast = domContainer.querySelector('vi-toast') as ViToast;
-    
+
     // Simulate click on toast body
     toast.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     expect(spy.calledOnce).toBe(true);

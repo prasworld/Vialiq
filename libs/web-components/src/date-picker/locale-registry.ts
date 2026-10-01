@@ -4,10 +4,12 @@ import type { CustomLocale } from 'flatpickr/dist/types/locale';
 type LocaleLoader = () => Promise<CustomLocale | null>;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function loadL10n(importer: () => Promise<any>): Promise<CustomLocale | null> {
+async function loadL10n(
+  importer: () => Promise<any>,
+): Promise<CustomLocale | null> {
   const mod = await importer();
-  
-  const isLocale = (v: unknown): v is CustomLocale => 
+
+  const isLocale = (v: unknown): v is CustomLocale =>
     !!v && typeof v === 'object' && 'weekdays' in v && 'months' in v;
 
   // 1. Check if the module exports a named locale directly (e.g. exports.French)
@@ -44,21 +46,21 @@ async function loadL10n(importer: () => Promise<any>): Promise<CustomLocale | nu
 
 // Map of BCP 47 locale tags to flatpickr l10n imports.
 const LOCALE_MAP: Record<string, LocaleLoader> = {
-  ar:      () => loadL10n(() => import('flatpickr/dist/l10n/ar.js')),
-  de:      () => loadL10n(() => import('flatpickr/dist/l10n/de.js')),
+  ar: () => loadL10n(() => import('flatpickr/dist/l10n/ar.js')),
+  de: () => loadL10n(() => import('flatpickr/dist/l10n/de.js')),
   'de-DE': () => loadL10n(() => import('flatpickr/dist/l10n/de.js')),
-  es:      () => loadL10n(() => import('flatpickr/dist/l10n/es.js')),
+  es: () => loadL10n(() => import('flatpickr/dist/l10n/es.js')),
   'es-ES': () => loadL10n(() => import('flatpickr/dist/l10n/es.js')),
-  fr:      () => loadL10n(() => import('flatpickr/dist/l10n/fr.js')),
+  fr: () => loadL10n(() => import('flatpickr/dist/l10n/fr.js')),
   'fr-FR': () => loadL10n(() => import('flatpickr/dist/l10n/fr.js')),
-  it:      () => loadL10n(() => import('flatpickr/dist/l10n/it.js')),
-  ja:      () => loadL10n(() => import('flatpickr/dist/l10n/ja.js')),
-  ko:      () => loadL10n(() => import('flatpickr/dist/l10n/ko.js')),
-  nl:      () => loadL10n(() => import('flatpickr/dist/l10n/nl.js')),
+  it: () => loadL10n(() => import('flatpickr/dist/l10n/it.js')),
+  ja: () => loadL10n(() => import('flatpickr/dist/l10n/ja.js')),
+  ko: () => loadL10n(() => import('flatpickr/dist/l10n/ko.js')),
+  nl: () => loadL10n(() => import('flatpickr/dist/l10n/nl.js')),
   'pt-BR': () => loadL10n(() => import('flatpickr/dist/l10n/pt.js')),
-  pt:      () => loadL10n(() => import('flatpickr/dist/l10n/pt.js')),
+  pt: () => loadL10n(() => import('flatpickr/dist/l10n/pt.js')),
   'zh-CN': () => loadL10n(() => import('flatpickr/dist/l10n/zh.js')),
-  zh:      () => loadL10n(() => import('flatpickr/dist/l10n/zh.js')),
+  zh: () => loadL10n(() => import('flatpickr/dist/l10n/zh.js')),
 };
 
 const localeCache = new Map<string, CustomLocale | null>();

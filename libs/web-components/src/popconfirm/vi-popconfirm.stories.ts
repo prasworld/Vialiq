@@ -4,10 +4,12 @@ import './vi-popconfirm.js';
 import '../button/vi-button.js';
 import { registerIcons } from '../icons/registry.js';
 
-registerIcons([{
-  name: 'warning',
-  data: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>'
-}]);
+registerIcons([
+  {
+    name: 'warning',
+    data: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>',
+  },
+]);
 
 const meta: Meta = {
   title: 'Feedback/Popconfirm',

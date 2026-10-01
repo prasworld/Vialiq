@@ -36,7 +36,7 @@ describe('FocusTrapMixin', () => {
   beforeEach(() => {
     container = document.createElement('div');
     document.body.appendChild(container);
-    
+
     outsideBtn = document.createElement('button');
     outsideBtn.textContent = 'Outside';
     document.body.appendChild(outsideBtn);
@@ -66,8 +66,8 @@ describe('FocusTrapMixin', () => {
     expect(document.activeElement).toBe(outsideBtn);
 
     el.testActivate();
-    await new Promise(r => requestAnimationFrame(r));
-    
+    await new Promise((r) => requestAnimationFrame(r));
+
     // Focus should move to the first button inside the shadow DOM
     expect(el.shadowRoot?.activeElement).toBe(el.firstBtn);
   });
@@ -79,7 +79,7 @@ describe('FocusTrapMixin', () => {
 
     outsideBtn.focus();
     el.testActivate();
-    await new Promise(r => requestAnimationFrame(r));
+    await new Promise((r) => requestAnimationFrame(r));
     expect(el.shadowRoot?.activeElement).toBe(el.firstBtn);
 
     el.testDeactivate();
@@ -96,11 +96,11 @@ describe('FocusTrapMixin', () => {
 
     outsideBtn.focus();
     el.testActivate();
-    await new Promise(r => requestAnimationFrame(r));
-    
+    await new Promise((r) => requestAnimationFrame(r));
+
     el.testDeactivate(anotherBtn);
     expect(document.activeElement).toBe(anotherBtn);
-    
+
     anotherBtn.remove();
   });
 
@@ -110,12 +110,16 @@ describe('FocusTrapMixin', () => {
     await el.updateComplete;
 
     el.testActivate();
-    await new Promise(r => requestAnimationFrame(r));
+    await new Promise((r) => requestAnimationFrame(r));
     el.lastBtn.focus();
     expect(el.shadowRoot?.activeElement).toBe(el.lastBtn);
 
     // Simulate Tab on the last element
-    const tabEvent = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, composed: true });
+    const tabEvent = new KeyboardEvent('keydown', {
+      key: 'Tab',
+      bubbles: true,
+      composed: true,
+    });
     el.dispatchEvent(tabEvent);
 
     expect(el.shadowRoot?.activeElement).toBe(el.firstBtn);
@@ -127,11 +131,16 @@ describe('FocusTrapMixin', () => {
     await el.updateComplete;
 
     el.testActivate();
-    await new Promise(r => requestAnimationFrame(r));
+    await new Promise((r) => requestAnimationFrame(r));
     expect(el.shadowRoot?.activeElement).toBe(el.firstBtn);
 
     // Simulate Shift+Tab on the first element
-    const shiftTabEvent = new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true, composed: true });
+    const shiftTabEvent = new KeyboardEvent('keydown', {
+      key: 'Tab',
+      shiftKey: true,
+      bubbles: true,
+      composed: true,
+    });
     el.dispatchEvent(shiftTabEvent);
 
     expect(el.shadowRoot?.activeElement).toBe(el.lastBtn);
@@ -143,8 +152,8 @@ describe('FocusTrapMixin', () => {
     await el.updateComplete;
 
     el.testActivate();
-    await new Promise(r => requestAnimationFrame(r));
-    
+    await new Promise((r) => requestAnimationFrame(r));
+
     // Add a new button at the end
     const newBtn = document.createElement('button');
     newBtn.className = 'new-last';
@@ -152,11 +161,16 @@ describe('FocusTrapMixin', () => {
     el.container.appendChild(newBtn);
 
     // Wait for mutation observer
-    await new Promise(r => setTimeout(r, 100));
+    await new Promise((r) => setTimeout(r, 100));
 
     // Now shift-tab from first should go to new-last
     el.firstBtn.focus();
-    const shiftTabEvent = new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true, composed: true });
+    const shiftTabEvent = new KeyboardEvent('keydown', {
+      key: 'Tab',
+      shiftKey: true,
+      bubbles: true,
+      composed: true,
+    });
     el.dispatchEvent(shiftTabEvent);
 
     expect(el.shadowRoot?.activeElement).toBe(newBtn);
