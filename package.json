@@ -119,5 +119,11 @@
   },
   "nx": {
     "includedScripts": []
+  },
+  "overrides": {
+    "@vialiq/web-components": {
+      "@vialiq/icons": "$@vialiq/icons",
+      "@vialiq/flux-ui": "$@vialiq/flux-ui"
+    }
   }
 }
