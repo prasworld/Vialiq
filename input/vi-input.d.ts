@@ -1,14 +1,7 @@
 import { PropertyValues, TemplateResult } from 'lit';
 import { ControlStatus } from '../base/validity-mixin.js';
 import { ViElement } from '../base/vi-element.js';
-/**
- * Supported input types.
- * Constrained to the subset that renders as a single-line text field —
- * multi-line (textarea) and specialised pickers (date, color, file) are
- * separate components.
- */
-export type InputType = 'text' | 'email' | 'password' | 'search' | 'tel' | 'url' | 'number';
-export type InputSize = 'xs' | 'sm' | 'md' | 'lg';
+import { InputType, InputSize, AutocompleteValue } from './types.js';
 declare const ViInput_base: typeof ViElement & (new (...args: any[]) => import('../base/focusable-mixin.js').FocusableInterface) & (new (...args: any[]) => import('../base/validity-mixin.js').ValidityInterface<unknown>);
 /**
  * vi-input
@@ -61,6 +54,10 @@ export declare class ViInput extends ViInput_base {
     accessor placeholder: string;
     /** Form field name. Submitted with the form when set. */
     accessor name: string;
+    /** Maximum string length for the input value. */
+    accessor maxlength: number | undefined;
+    /** HTML autocomplete attribute value. */
+    accessor autocomplete: AutocompleteValue | '';
     /** Current value. Synced to ElementInternals for form participation. */
     accessor value: string;
     /** When true, disables the input and removes it from the tab order. */
@@ -79,8 +76,8 @@ export declare class ViInput extends ViInput_base {
     formResetCallback(): void;
     /** Keeps disabled in sync when a containing fieldset or form is disabled. */
     formDisabledCallback(disabled: boolean): void;
-    private _onInput;
-    private _onChange;
+    protected _onInput(e: Event): void;
+    protected _onChange(e: Event): void;
     private get _helperContent();
     private get _validationMessage();
     render(): TemplateResult;

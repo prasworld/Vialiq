@@ -44,7 +44,7 @@ export declare class ViTooltip extends ViElement {
      * Custom options passed directly to Floating UI's computePosition.
      * Note: the `popper-options` attribute only supports JSON-serializable values;
      * middleware functions must be set via the `popperOptions` property.
-    */
+     */
     accessor popperOptions: Partial<ComputePositionConfig>;
     private accessor _open;
     private accessor _isInteractive;
