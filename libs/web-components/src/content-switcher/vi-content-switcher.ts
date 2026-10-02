@@ -95,7 +95,7 @@ export class ViContentSwitcher extends ViElement {
 
   override connectedCallback(): void {
     super.connectedCallback();
-    this.setAttribute('role', 'tablist');
+    this.setAttribute('role', 'radiogroup');
     this.addEventListener('keydown', this._onKeyDown);
     if (!this.hasAttribute('tabindex')) {
       // Form associated elements should be able to receive focus natively if needed,
@@ -115,6 +115,11 @@ export class ViContentSwitcher extends ViElement {
     if (changedProperties.has('value')) {
       this._internals.setFormValue(this.value);
     }
+    
+    // Ensure active state and tabindex are updated on programmatic changes
+    if (changedProperties.has('value') || changedProperties.has('disabled')) {
+      this._syncItems();
+    }
   }
 
   // ── Form integration ───────────────────────────────────────────────────────
@@ -122,6 +127,10 @@ export class ViContentSwitcher extends ViElement {
   formResetCallback(): void {
     this.value = this._defaultValue;
     this._syncItems();
+  }
+
+  formDisabledCallback(disabled: boolean): void {
+    this.disabled = disabled;
   }
 
   // ── Event handling ─────────────────────────────────────────────────────────
@@ -237,11 +246,11 @@ export class ViContentSwitcher extends ViElement {
       if (item.active) hasActive = true;
       // preserve item-level disabled (no-op removed)
       // Use internal method to set tabindex so it isn't completely controlled by the item itself
-      item.tabIndex = item.disabled ? -1 : item.active ? 0 : -1;
+      item.tabIndex = (item.disabled || this.disabled) ? -1 : item.active ? 0 : -1;
     }
 
     // If no item is active, make the first non-disabled item focusable
-    if (!hasActive) {
+    if (!hasActive && !this.disabled) {
       const firstEnabled = this._items.find((i) => !i.disabled);
       if (firstEnabled) firstEnabled.tabIndex = 0;
     }
@@ -326,13 +335,13 @@ export class ViSwitcherItem extends ViElement {
 
   override connectedCallback(): void {
     super.connectedCallback();
-    this.setAttribute('role', 'tab');
+    this.setAttribute('role', 'radio');
   }
 
   override updated(): void {
-    this.setAttribute('aria-selected', String(this.active));
+    this.setAttribute('aria-checked', String(this.active));
     this.setAttribute('aria-disabled', String(this.disabled));
-    // Focus management is handled by the parent switcher for correct tablist behavior
+    // Focus management is handled by the parent switcher for correct radiogroup behavior
   }
 
   override render(): TemplateResult {

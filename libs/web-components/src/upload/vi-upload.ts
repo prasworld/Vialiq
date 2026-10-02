@@ -126,10 +126,12 @@ export class ViUpload extends ViElement {
 
   /** Updates the visual progress and status of a specific file */
   updateFileStatus(
-    fileId: string,
+    fileIdOrFile: string | File,
     updates: Partial<Pick<ViUploadFile, 'status' | 'progress' | 'error'>>,
   ): void {
-    const index = this._files.findIndex((f) => f.id === fileId);
+    const index = this._files.findIndex(
+      (f) => f.id === fileIdOrFile || f.file === fileIdOrFile,
+    );
     if (index === -1) return;
 
     this._files[index] = { ...this._files[index], ...updates };
@@ -149,6 +151,10 @@ export class ViUpload extends ViElement {
     this._files = [];
     if (this._inputEl) this._inputEl.value = '';
     this._updateFormValue();
+  }
+
+  formDisabledCallback(disabled: boolean): void {
+    this.disabled = disabled;
   }
 
   private _updateFormValue(): void {
@@ -257,14 +263,6 @@ export class ViUpload extends ViElement {
 
     this._files = [...this._files, ...processedFiles];
     this._updateFormValue();
-
-    this.dispatchEvent(
-      new CustomEvent('vi-upload-change', {
-        detail: this._files.map((f) => f.file),
-        bubbles: true,
-        composed: true,
-      }),
-    );
   }
 
   private _removeFile(index: number): void {

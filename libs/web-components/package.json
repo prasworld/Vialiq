@@ -352,7 +352,10 @@
       "types": "./context-menu/vi-context-menu.d.ts",
       "default": "./context-menu/vi-context-menu.js"
     },
-    "./*": "./*"
+    "./*": {
+      "types": "./*.d.ts",
+      "default": "./*.js"
+    }
   },
   "peerDependencies": {
     "@floating-ui/dom": ">=1.0.0",
@@ -409,7 +412,9 @@
     "popconfirm/",
     "dropdown/",
     "context-menu/",
-    "menu/"
+    "menu/",
+    "upload/",
+    "content-switcher/"
   ],
   "peerDependenciesMeta": {
     "flatpickr": {

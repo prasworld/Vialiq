@@ -35,7 +35,7 @@ export class ViMaskedInput extends ViInput {
    * The unmasked, raw underlying value.
    * @attr rawValue
    */
-  @property({ type: String, reflect: true }) accessor rawValue = '';
+  @property({ type: String, attribute: 'raw-value', reflect: true }) accessor rawValue = '';
 
   private _maskInstance: any = null;
 
@@ -63,12 +63,24 @@ export class ViMaskedInput extends ViInput {
   override updated(changedProperties: Map<string, any>) {
     super.updated(changedProperties);
 
-    // If mask pattern or options change dynamically, update IMask
-    if (
-      (changedProperties.has('mask') || changedProperties.has('maskOptions')) &&
-      this._maskInstance
-    ) {
-      this._maskInstance.updateOptions(this.maskOptions || { mask: this.mask });
+    // If mask pattern or options change dynamically, update, init, or destroy IMask
+    if (changedProperties.has('mask') || changedProperties.has('maskOptions')) {
+      const hasMask = !!(this.mask || this.maskOptions);
+
+      if (hasMask) {
+        if (this._maskInstance) {
+          this._maskInstance.updateOptions(this.maskOptions || { mask: this.mask });
+        } else {
+          import('imask').then(({ default: IMask }) => {
+            if ((this.mask || this.maskOptions) && !this._maskInstance) {
+              this._initMask(IMask);
+            }
+          });
+        }
+      } else if (this._maskInstance) {
+        this._maskInstance.destroy();
+        this._maskInstance = null;
+      }
     }
 
     // If consumer programmatically sets value, sync it to mask instance

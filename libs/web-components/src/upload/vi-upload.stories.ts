@@ -165,13 +165,7 @@ export const ControlledUpload: Story = {
 
       // Simulate an async upload for each file
       files.forEach((file) => {
-        // Find the internal ID (in a real app you might just get it from the event detail if we exported it)
-        // Since we didn't export the ID array in the event, we can just grab the internal files
-        const internalFile = uploadEl._files.find((f: any) => f.file === file);
-        if (!internalFile || internalFile.status !== 'pending') return;
-
-        const fileId = internalFile.id;
-        uploadEl.updateFileStatus(fileId, { status: 'uploading', progress: 0 });
+        uploadEl.updateFileStatus(file, { status: 'uploading', progress: 0 });
 
         let progress = 0;
         const interval = setInterval(() => {
@@ -181,13 +175,13 @@ export const ControlledUpload: Story = {
             clearInterval(interval);
             // Simulate random error chance
             const hasError = Math.random() > 0.8;
-            uploadEl.updateFileStatus(fileId, {
+            uploadEl.updateFileStatus(file, {
               status: hasError ? 'error' : 'success',
               progress: 100,
               error: hasError ? 'Network failed' : undefined,
             });
           } else {
-            uploadEl.updateFileStatus(fileId, { progress });
+            uploadEl.updateFileStatus(file, { progress });
           }
         }, 300);
       });

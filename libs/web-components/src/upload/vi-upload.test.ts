@@ -129,4 +129,31 @@ describe('vi-upload', () => {
     const thumbnail = el.shadowRoot!.querySelector('.file-thumbnail');
     expect(thumbnail).toBeNull();
   });
+
+  it('inherits disabled state from parent fieldset', async () => {
+    render(
+      html`
+        <fieldset id="test-fieldset" disabled>
+          <vi-upload></vi-upload>
+        </fieldset>
+      `,
+      container,
+    );
+
+    const fieldset = document.getElementById('test-fieldset') as HTMLFieldSetElement;
+    const el = container.querySelector('vi-upload') as ViUpload;
+    await el.updateComplete;
+
+    expect(el.disabled).toBe(true);
+    const dropzone = el.shadowRoot!.querySelector('.dropzone') as HTMLElement;
+    expect(dropzone.getAttribute('tabindex')).toBe('-1');
+    expect(dropzone.getAttribute('aria-disabled')).toBe('true');
+
+    fieldset.disabled = false;
+    await el.updateComplete;
+
+    expect(el.disabled).toBe(false);
+    expect(dropzone.getAttribute('tabindex')).toBe('0');
+    expect(dropzone.getAttribute('aria-disabled')).toBe('false');
+  });
 });

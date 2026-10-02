@@ -42,4 +42,4 @@ export const AUTOCOMPLETE_VALUES = [
   'url',
 ] as const;
 
-export type AutocompleteValue = (typeof AUTOCOMPLETE_VALUES)[number];
+export type AutocompleteValue = (typeof AUTOCOMPLETE_VALUES)[number] | (string & {});

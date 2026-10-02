@@ -236,6 +236,31 @@ describe('vi-content-switcher', () => {
       await browser.keys(['ArrowRight']);
       expect(host.value).toBe('first');
     });
+
+    it('should update active item and indicator when value is set programmatically', async () => {
+      render(
+        html`
+          <vi-content-switcher value="first">
+            <vi-switcher-item id="first" value="first">First</vi-switcher-item>
+            <vi-switcher-item id="second" value="second">Second</vi-switcher-item>
+          </vi-content-switcher>
+        `,
+        container,
+      );
+
+      const host = document.querySelector('vi-content-switcher') as ViContentSwitcher;
+      await host.updateComplete;
+
+      host.value = 'second';
+      await host.updateComplete;
+
+      const firstItem = document.getElementById('first') as ViSwitcherItem;
+      const secondItem = document.getElementById('second') as ViSwitcherItem;
+
+      expect(firstItem.active).toBe(false);
+      expect(secondItem.active).toBe(true);
+      expect(secondItem.tabIndex).toBe(0);
+    });
   });
 
   describe('Form Integration', () => {
@@ -295,6 +320,34 @@ describe('vi-content-switcher', () => {
       form.reset();
       await host.updateComplete;
       expect(host.value).toBe('first');
+    });
+
+    it('should inherit disabled state from parent fieldset', async () => {
+      render(
+        html`
+          <fieldset id="test-fieldset" disabled>
+            <vi-content-switcher value="first">
+              <vi-switcher-item id="first" value="first">First</vi-switcher-item>
+              <vi-switcher-item id="second" value="second">Second</vi-switcher-item>
+            </vi-content-switcher>
+          </fieldset>
+        `,
+        container,
+      );
+
+      const fieldset = document.getElementById('test-fieldset') as HTMLFieldSetElement;
+      const host = document.querySelector('vi-content-switcher') as ViContentSwitcher;
+      await host.updateComplete;
+
+      expect(host.disabled).toBe(true);
+      const firstItem = document.getElementById('first') as ViSwitcherItem;
+      expect(firstItem.tabIndex).toBe(-1);
+
+      fieldset.disabled = false;
+      await host.updateComplete;
+
+      expect(host.disabled).toBe(false);
+      expect(firstItem.tabIndex).toBe(0);
     });
   });
 

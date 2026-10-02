@@ -59,6 +59,40 @@ describe('vi-input', () => {
       expect(input?.placeholder).toBe('Enter your name');
     });
 
+    it('should pass maxlength to the native input and handle clearing', async () => {
+      render(html`<vi-input maxlength="10"></vi-input>`, container);
+      const el = document.querySelector('vi-input') as ViInput;
+      await el.updateComplete;
+
+      const input = el.shadowRoot?.querySelector('input');
+      expect(input?.getAttribute('maxlength')).toBe('10');
+
+      el.maxlength = 5;
+      await el.updateComplete;
+      expect(input?.getAttribute('maxlength')).toBe('5');
+
+      el.maxlength = undefined;
+      await el.updateComplete;
+      expect(input?.hasAttribute('maxlength')).toBe(false);
+    });
+
+    it('should pass autocomplete to the native input and handle clearing', async () => {
+      render(html`<vi-input autocomplete="off"></vi-input>`, container);
+      const el = document.querySelector('vi-input') as ViInput;
+      await el.updateComplete;
+
+      const input = el.shadowRoot?.querySelector('input');
+      expect(input?.getAttribute('autocomplete')).toBe('off');
+
+      el.autocomplete = 'on';
+      await el.updateComplete;
+      expect(input?.getAttribute('autocomplete')).toBe('on');
+
+      el.autocomplete = '';
+      await el.updateComplete;
+      expect(input?.hasAttribute('autocomplete')).toBe(false);
+    });
+
     it('should disable the native input when disabled is set', async () => {
       render(html`<vi-input disabled></vi-input>`, container);
       const input = await $('vi-input').shadow$('.input-control');

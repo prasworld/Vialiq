@@ -94,6 +94,9 @@ export class ViLabel extends ViElement {
       e.preventDefault();
       requestAnimationFrame(() => {
         target.focus();
+        if ('click' in target && typeof target.click === 'function') {
+          target.click();
+        }
       });
     }
   }
