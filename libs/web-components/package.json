@@ -412,9 +412,10 @@
     "popconfirm/",
     "dropdown/",
     "context-menu/",
-    "menu/",
-    "upload/",
-    "content-switcher/"
+"menu/",
+"upload/",
+"content-switcher/",
+"masked-input/"
   ],
   "peerDependenciesMeta": {
     "flatpickr": {
