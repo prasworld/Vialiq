@@ -92,12 +92,10 @@ export class ViLabel extends ViElement {
     const target = rootNode.getElementById(this.for);
     if (target) {
       e.preventDefault();
-      requestAnimationFrame(() => {
-        target.focus();
-        if ('click' in target && typeof target.click === 'function') {
-          target.click();
-        }
-      });
+if ('click' in target && typeof target.click === 'function') {
+  target.click();
+}
+requestAnimationFrame(() => target.focus());
     }
   }
 
