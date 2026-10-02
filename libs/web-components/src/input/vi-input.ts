@@ -265,7 +265,9 @@ export class ViInput extends ValidityMixin(FocusableMixin(ViElement)) {
           )}
           placeholder=${ifNonEmpty(placeholder)}
           name=${ifNonEmpty(name)}
-          maxlength=${maxlength ?? undefined}
+maxlength=${ifNonEmpty(
+  maxlength !== undefined && maxlength >= 0 ? String(maxlength) : '',
+)}
           autocomplete=${ifNonEmpty(autocomplete)}
           @input=${this._onInput}
           @change=${this._onChange}
