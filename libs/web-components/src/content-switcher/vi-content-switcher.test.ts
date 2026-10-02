@@ -242,13 +242,17 @@ describe('vi-content-switcher', () => {
         html`
           <vi-content-switcher value="first">
             <vi-switcher-item id="first" value="first">First</vi-switcher-item>
-            <vi-switcher-item id="second" value="second">Second</vi-switcher-item>
+            <vi-switcher-item id="second" value="second"
+              >Second</vi-switcher-item
+            >
           </vi-content-switcher>
         `,
         container,
       );
 
-      const host = document.querySelector('vi-content-switcher') as ViContentSwitcher;
+      const host = document.querySelector(
+        'vi-content-switcher',
+      ) as ViContentSwitcher;
       await host.updateComplete;
 
       host.value = 'second';
@@ -327,16 +331,24 @@ describe('vi-content-switcher', () => {
         html`
           <fieldset id="test-fieldset" disabled>
             <vi-content-switcher value="first">
-              <vi-switcher-item id="first" value="first">First</vi-switcher-item>
-              <vi-switcher-item id="second" value="second">Second</vi-switcher-item>
+              <vi-switcher-item id="first" value="first"
+                >First</vi-switcher-item
+              >
+              <vi-switcher-item id="second" value="second"
+                >Second</vi-switcher-item
+              >
             </vi-content-switcher>
           </fieldset>
         `,
         container,
       );
 
-      const fieldset = document.getElementById('test-fieldset') as HTMLFieldSetElement;
-      const host = document.querySelector('vi-content-switcher') as ViContentSwitcher;
+      const fieldset = document.getElementById(
+        'test-fieldset',
+      ) as HTMLFieldSetElement;
+      const host = document.querySelector(
+        'vi-content-switcher',
+      ) as ViContentSwitcher;
       await host.updateComplete;
 
       expect(host.disabled).toBe(true);

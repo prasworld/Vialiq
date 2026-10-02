@@ -140,7 +140,9 @@ describe('vi-upload', () => {
       container,
     );
 
-    const fieldset = document.getElementById('test-fieldset') as HTMLFieldSetElement;
+    const fieldset = document.getElementById(
+      'test-fieldset',
+    ) as HTMLFieldSetElement;
     const el = container.querySelector('vi-upload') as ViUpload;
     await el.updateComplete;
 

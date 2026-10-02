@@ -93,6 +93,8 @@ export class ViContentSwitcher extends ViElement {
 
   private _defaultValue = '';
 
+  private _resizeObserver?: ResizeObserver;
+
   override connectedCallback(): void {
     super.connectedCallback();
     this.setAttribute('role', 'radiogroup');
@@ -103,11 +105,20 @@ export class ViContentSwitcher extends ViElement {
     }
     // Capture initial value for form resets
     this._defaultValue = this.getAttribute('value') || '';
+
+    this._resizeObserver = new ResizeObserver(() => {
+      this._updateIndicator();
+    });
+    this._resizeObserver.observe(this);
   }
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     this.removeEventListener('keydown', this._onKeyDown);
+    if (this._resizeObserver) {
+      this._resizeObserver.disconnect();
+      this._resizeObserver = undefined;
+    }
   }
 
   override updated(changedProperties: Map<string, unknown>): void {
