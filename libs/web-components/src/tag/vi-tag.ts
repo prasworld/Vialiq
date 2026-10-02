@@ -62,10 +62,12 @@ export class ViTag extends ViElement {
   `;
 
   /** Colour variant */
-  @property({ type: String, reflect: true }) accessor variant: TagVariant = 'neutral';
+  @property({ type: String, reflect: true }) accessor variant: TagVariant =
+    'neutral';
 
   /** Visual appearance mode */
-  @property({ type: String, reflect: true }) accessor appearance: TagAppearance = 'subtle';
+  @property({ type: String, reflect: true })
+  accessor appearance: TagAppearance = 'subtle';
 
   /** Size scale */
   @property({ type: String, reflect: true }) accessor size: TagSize = 'md';
@@ -113,7 +115,7 @@ export class ViTag extends ViElement {
         bubbles: true,
         composed: true,
         detail: { selected: this.selected },
-      })
+      }),
     );
   }
 
@@ -144,7 +146,7 @@ export class ViTag extends ViElement {
       new CustomEvent('vi-tag-remove', {
         bubbles: true,
         composed: true,
-      })
+      }),
     );
   }
 
@@ -156,7 +158,7 @@ export class ViTag extends ViElement {
     const isTabbable = (this.selectable || this.removable) && !this.disabled;
 
     const classes = {
-      'tag': true,
+      tag: true,
       [`variant-${this.variant}`]: true,
       [`appearance-${this.appearance}`]: true,
       [`size-${this.size}`]: true,
@@ -176,13 +178,19 @@ export class ViTag extends ViElement {
         <span
           class="tag-content-wrapper"
           role=${this.selectable ? 'button' : nothing}
-          tabindex=${this.disabled ? '-1' : (isTabbable ? 0 : nothing)}
+          tabindex=${this.disabled ? '-1' : isTabbable ? 0 : nothing}
           aria-disabled=${this.disabled ? 'true' : 'false'}
-          aria-pressed=${this.selectable ? (this.selected ? 'true' : 'false') : nothing}
+          aria-pressed=${this.selectable
+            ? this.selected
+              ? 'true'
+              : 'false'
+            : nothing}
           @click=${this.selectable ? this._handleTagClick : nothing}
           @keydown=${this._handleKeyDown}
         >
-          ${this.dot ? html`<span part="dot" class="tag-dot" aria-hidden="true"></span>` : ''}
+          ${this.dot
+            ? html`<span part="dot" class="tag-dot" aria-hidden="true"></span>`
+            : ''}
           ${this.selectable && this.selected
             ? html`
                 <span part="checkmark" class="tag-checkmark" aria-hidden="true">
@@ -216,7 +224,12 @@ export class ViTag extends ViElement {
                 ?disabled=${this.disabled}
                 @click=${this._handleRemoveClick}
               >
-                <vi-icon slot="icon" name="x" size="12" aria-hidden="true"></vi-icon>
+                <vi-icon
+                  slot="icon"
+                  name="x"
+                  size="12"
+                  aria-hidden="true"
+                ></vi-icon>
                 <span class="sr-only">${this._removeLabel}</span>
               </vi-button>
             `

@@ -17,52 +17,61 @@ describe('vi-menu', () => {
   });
 
   it('should render menu and items correctly', async () => {
-    render(html`
-      <vi-menu>
-        <vi-menu-item value="1">Item 1</vi-menu-item>
-        <vi-menu-item value="2">Item 2</vi-menu-item>
-      </vi-menu>
-    `, container);
+    render(
+      html`
+        <vi-menu>
+          <vi-menu-item value="1">Item 1</vi-menu-item>
+          <vi-menu-item value="2">Item 2</vi-menu-item>
+        </vi-menu>
+      `,
+      container,
+    );
 
     const el = container.querySelector('vi-menu') as ViMenu;
     await el.updateComplete;
     expect(el).toBeTruthy();
-    
+
     const items = el.querySelectorAll('vi-menu-item');
     expect(items.length).toBe(2);
   });
 
   it('should dispatch click event with value', async () => {
     let clickedValue = '';
-    
+
     const handleEvent = (e: CustomEvent) => {
       clickedValue = e.detail.value;
     };
 
-    render(html`
-      <vi-menu @vi-menu-item-click=${handleEvent}>
-        <vi-menu-item value="test-value">Test</vi-menu-item>
-      </vi-menu>
-    `, container);
+    render(
+      html`
+        <vi-menu @vi-menu-item-click=${handleEvent}>
+          <vi-menu-item value="test-value">Test</vi-menu-item>
+        </vi-menu>
+      `,
+      container,
+    );
 
     const el = container.querySelector('vi-menu') as ViMenu;
     await el.updateComplete;
 
     const item = el.querySelector('vi-menu-item') as ViMenuItem;
     const innerLi = item.shadowRoot!.querySelector('li') as HTMLElement;
-    
+
     innerLi.click();
 
     expect(clickedValue).toBe('test-value');
   });
 
   it('should handle keyboard navigation', async () => {
-    render(html`
-      <vi-menu>
-        <vi-menu-item value="1" id="item1">1</vi-menu-item>
-        <vi-menu-item value="2" id="item2">2</vi-menu-item>
-      </vi-menu>
-    `, container);
+    render(
+      html`
+        <vi-menu>
+          <vi-menu-item value="1" id="item1">1</vi-menu-item>
+          <vi-menu-item value="2" id="item2">2</vi-menu-item>
+        </vi-menu>
+      `,
+      container,
+    );
 
     const el = container.querySelector('vi-menu') as ViMenu;
     await el.updateComplete;
@@ -74,10 +83,16 @@ describe('vi-menu', () => {
     item1Li.focus();
     expect(document.activeElement).toBe(item1);
 
-    item1.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, composed: true }));
+    item1.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key: 'ArrowDown',
+        bubbles: true,
+        composed: true,
+      }),
+    );
 
     await el.updateComplete;
-    await new Promise(r => setTimeout(r, 50));
+    await new Promise((r) => setTimeout(r, 50));
     expect(document.activeElement).toBe(item2);
   });
 });

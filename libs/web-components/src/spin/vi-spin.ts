@@ -10,7 +10,7 @@ export type SpinVariant = 'arc' | 'dots';
 /**
  * A loading spinner component that mimics Ant Design's Spin.
  * It can be used standalone or as a wrapper to overlay and dim content.
- * 
+ *
  * @slot - Default slot for wrapping content. If content is provided, the spinner acts as an overlay.
  */
 @customElement('vi-spin')
@@ -79,7 +79,7 @@ export class ViSpin extends LitElement {
     return Array.from(this.childNodes).some(
       (node) =>
         node.nodeType === Node.ELEMENT_NODE ||
-        (node.nodeType === Node.TEXT_NODE && node.textContent?.trim() !== '')
+        (node.nodeType === Node.TEXT_NODE && node.textContent?.trim() !== ''),
     );
   }
 
@@ -89,7 +89,7 @@ export class ViSpin extends LitElement {
 
     const spinWrapperClasses = {
       'spin-wrapper': true,
-      'spinning': isSpinning,
+      spinning: isSpinning,
       [`spin-${this.size}`]: true,
       'spin-fullscreen': this.fullscreen,
     };
@@ -110,24 +110,46 @@ export class ViSpin extends LitElement {
           </span>
         `;
       }
-      
-      const arcPercent = this.percent !== undefined ? Math.max(0, Math.min(100, this.percent)) : undefined;
+
+      const arcPercent =
+        this.percent !== undefined
+          ? Math.max(0, Math.min(100, this.percent))
+          : undefined;
       const isDeterminate = arcPercent !== undefined;
       const circumference = 62.83; // 2 * pi * r (10)
-      const dashOffset = isDeterminate ? circumference - (arcPercent / 100) * circumference : 0;
-      
-      const circleStyle = isDeterminate 
-        ? { strokeDasharray: `${circumference}`, strokeDashoffset: `${dashOffset}`, transition: 'stroke-dashoffset 0.3s ease 0s' }
+      const dashOffset = isDeterminate
+        ? circumference - (arcPercent / 100) * circumference
+        : 0;
+
+      const circleStyle = isDeterminate
+        ? {
+            strokeDasharray: `${circumference}`,
+            strokeDashoffset: `${dashOffset}`,
+            transition: 'stroke-dashoffset 0.3s ease 0s',
+          }
         : { strokeDasharray: '20 42', strokeDashoffset: '0' };
-        
+
       const svgClasses = {
         'spin-circle': true,
         'spin-circle-determinate': isDeterminate,
       };
-      
+
       return html`
-        <svg viewBox="0 0 24 24" class=${classMap(svgClasses)} xmlns="http://www.w3.org/2000/svg">
-          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" style=${styleMap(circleStyle)}></circle>
+        <svg
+          viewBox="0 0 24 24"
+          class=${classMap(svgClasses)}
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <circle
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            stroke-width="2"
+            fill="none"
+            stroke-linecap="round"
+            style=${styleMap(circleStyle)}
+          ></circle>
         </svg>
       `;
     };
@@ -135,10 +157,10 @@ export class ViSpin extends LitElement {
     const spinElement = isSpinning
       ? html`
           <div class=${classMap(spinWrapperClasses)} part="wrapper">
-            <slot name="indicator">
-              ${renderIndicator()}
-            </slot>
-            ${this.tip ? html`<div class="spin-text" part="tip">${this.tip}</div>` : ''}
+            <slot name="indicator"> ${renderIndicator()} </slot>
+            ${this.tip
+              ? html`<div class="spin-text" part="tip">${this.tip}</div>`
+              : ''}
           </div>
         `
       : '';

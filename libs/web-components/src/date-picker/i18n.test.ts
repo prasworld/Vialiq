@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { resolveLocale, resolveSegmentOrder, formatDisplay, resolveTimeZone } from './i18n.js';
+import {
+  resolveLocale,
+  resolveSegmentOrder,
+  formatDisplay,
+  resolveTimeZone,
+} from './i18n.js';
 
 describe('i18n utilities', () => {
   afterEach(() => {
@@ -48,7 +53,7 @@ describe('i18n utilities', () => {
       expect(resolveSegmentOrder('en-GB', 'YYYY-MM-DD')).toBe('YMD');
       expect(resolveSegmentOrder('en-US', 'DD/MM/YYYY')).toBe('DMY');
     });
-    
+
     it('falls back to locale if format string is missing components', () => {
       expect(resolveSegmentOrder('en-US', 'DD/MM')).toBe('MDY');
     });
@@ -66,8 +71,6 @@ describe('i18n utilities', () => {
     });
   });
 
-
-  
   describe('resolveTimeZone', () => {
     it('returns a string', () => {
       expect(typeof resolveTimeZone()).toBe('string');

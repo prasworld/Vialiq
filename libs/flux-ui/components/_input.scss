@@ -30,20 +30,35 @@
     width: 100%;
     box-sizing: border-box;
     min-height: var(--vi-input-sizing-min-height, 40px);
-    border: #{tokens.$border-width-thin} solid var(--vi-input-border-color, #{tokens.$outline});
-    border-radius: var(--vi-input-shape-border-radius, #{tokens.$border-radius-lg});
+    border: #{tokens.$border-width-thin} solid
+      var(--vi-input-border-color, #{tokens.$outline});
+    border-radius: var(
+      --vi-input-shape-border-radius,
+      #{tokens.$border-radius-lg}
+    );
     padding: var(--vi-input-spacing-padding-block, #{tokens.$spacing-xs})
-             var(--vi-input-spacing-padding-inline, #{tokens.$spacing-sm});
+      var(--vi-input-spacing-padding-inline, #{tokens.$spacing-sm});
     font-family: #{tokens.$font-family-base};
     font-size: var(--vi-input-typography-font-size, #{tokens.$font-size-base});
     font-weight: #{tokens.$font-weight-normal};
-    line-height: var(--vi-input-typography-line-height, #{tokens.$line-height-normal});
+    line-height: var(
+      --vi-input-typography-line-height,
+      #{tokens.$line-height-normal}
+    );
     color: var(--vi-input-text-color, #{tokens.$text-primary});
-    background-color: var(--vi-input-background-color, #{tokens.$color-background});
-    transition: border-color 150ms ease, box-shadow 150ms ease;
+    background-color: var(
+      --vi-input-background-color,
+      #{tokens.$color-background}
+    );
+    transition:
+      border-color 150ms ease,
+      box-shadow 150ms ease;
 
     &:hover:not(:focus-visible) {
-      border-color: var(--vi-input-border-color-hover, #{tokens.$text-secondary});
+      border-color: var(
+        --vi-input-border-color-hover,
+        #{tokens.$text-secondary}
+      );
     }
 
     // Focus ring — outline + subtle shadow for depth.
@@ -52,13 +67,15 @@
     // For <input> elements, showing the ring on all focus (keyboard + mouse) is correct.
     &:focus-visible,
     &:focus {
-      outline: #{tokens.$border-width-base} solid var(--vi-input-focus-ring-color, #{tokens.$focus});
+      outline: #{tokens.$border-width-base} solid
+        var(--vi-input-focus-ring-color, #{tokens.$focus});
       outline-offset: 0;
       box-shadow: #{tokens.$focus-ring-shadow};
     }
 
     &::placeholder {
-      color: var(--vi-input-placeholder-color, #{tokens.$text-secondary});
+      color: var(--vi-input-placeholder-color, #{tokens.$text-disabled});
+      opacity: 1;
     }
 
     &:disabled {

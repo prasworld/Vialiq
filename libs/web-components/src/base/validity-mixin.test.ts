@@ -4,21 +4,23 @@ import { customElement, property } from 'lit/decorators.js';
 import { ValidityMixin } from './validity-mixin.js';
 
 @customElement('vi-validity-test')
-class ViValidityTest extends ValidityMixin<string, typeof LitElement>(LitElement) {
+class ViValidityTest extends ValidityMixin<string, typeof LitElement>(
+  LitElement,
+) {
   @property({ type: String }) accessor value = '';
   @property({ type: Boolean }) accessor disabled = false;
-  
+
   protected _testValidity() {
     if (this.required && !this.value) {
       return { valueMissing: true };
     }
     return {};
   }
-  
+
   protected _getValidationAnchor() {
     return this.shadowRoot?.querySelector('div') || undefined;
   }
-  
+
   render() {
     return html`<div>Test</div>`;
   }
@@ -26,7 +28,7 @@ class ViValidityTest extends ValidityMixin<string, typeof LitElement>(LitElement
 
 describe('ValidityMixin', () => {
   let element: ViValidityTest;
-  
+
   beforeEach(async () => {
     element = document.createElement('vi-validity-test') as ViValidityTest;
     document.body.appendChild(element);
@@ -53,11 +55,11 @@ describe('ValidityMixin', () => {
   it('checkValidity() returns boolean and does not change visual status', async () => {
     element.required = true;
     await element.updateComplete;
-    
+
     // Invalid state
     expect(element.checkValidity()).toBe(false);
     expect(element.status).toBe('default'); // Status untouched by checkValidity
-    
+
     // Valid state
     element.value = 'abc';
     await element.updateComplete;
@@ -67,11 +69,11 @@ describe('ValidityMixin', () => {
   it('reportValidity() updates visual status and returns boolean', async () => {
     element.required = true;
     await element.updateComplete;
-    
+
     // Invalid
     expect(element.reportValidity()).toBe(false);
     expect(element.status).toBe('invalid');
-    
+
     // Valid
     element.value = 'abc';
     await element.updateComplete;
@@ -83,7 +85,7 @@ describe('ValidityMixin', () => {
     element.setCustomValidity('Custom error');
     expect(element.validity.customError).toBe(true);
     expect(element.validationMessage).toBe('Custom error');
-    
+
     // Clear
     element.setCustomValidity('');
     expect(element.validity.customError).toBe(false);
@@ -93,7 +95,7 @@ describe('ValidityMixin', () => {
     element.status = 'invalid';
     element.validityMessage = 'error';
     element.formResetCallback();
-    
+
     expect(element.status).toBe('default');
     expect(element.validityMessage).toBe('');
     expect(element.validity.valid).toBe(true);
@@ -108,7 +110,7 @@ describe('ValidityMixin', () => {
     element.formStateRestoreCallback('restored', 'restore');
     expect(element.value).toBe('restored');
   });
-  
+
   it('formStateRestoreCallback ignores non-string state (default implementation)', async () => {
     element.value = 'original';
     element.formStateRestoreCallback(null, 'restore');

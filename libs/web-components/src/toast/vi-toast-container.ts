@@ -17,13 +17,14 @@ export class ViToastContainer extends ViElement {
     ${unsafeCSS(containerStyles)}
   `;
 
-  @property({ type: String, reflect: true }) accessor position: ToastPosition = 'top-right';
+  @property({ type: String, reflect: true }) accessor position: ToastPosition =
+    'top-right';
   @property({ type: Number }) accessor maxVisible = 5;
 
   private _handleMouseEnter = () => {
     // Pause all toasts
     const toasts = this.querySelectorAll('vi-toast');
-    toasts.forEach(toast => {
+    toasts.forEach((toast) => {
       toast.paused = true;
     });
   };
@@ -31,7 +32,7 @@ export class ViToastContainer extends ViElement {
   private _handleMouseLeave = () => {
     // Resume all toasts
     const toasts = this.querySelectorAll('vi-toast');
-    toasts.forEach(toast => {
+    toasts.forEach((toast) => {
       toast.paused = false;
     });
   };

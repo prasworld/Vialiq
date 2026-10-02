@@ -1,6 +1,6 @@
 {
   "name": "@vialiq/web-components",
-  "version": "0.28.0",
+  "version": "0.33.0",
   "private": false,
   "publishConfig": {
     "access": "public"
@@ -351,13 +351,18 @@
     "./context-menu/vi-context-menu": {
       "types": "./context-menu/vi-context-menu.d.ts",
       "default": "./context-menu/vi-context-menu.js"
+    },
+    "./*": {
+      "types": "./*.d.ts",
+      "default": "./*.js"
     }
   },
   "peerDependencies": {
     "@floating-ui/dom": ">=1.0.0",
-    "@vialiq/flux-ui": ">=0.22.0",
-    "@vialiq/icons": ">=0.7.0",
+    "@vialiq/flux-ui": ">=0.25.0",
+    "@vialiq/icons": ">=0.10.0",
     "flatpickr": ">=4.6.0",
+    "imask": ">=7.6.0",
     "lit": "^3.0.0",
     "reflect-metadata": "^0.2.0",
     "tsyringe": "^4.8.0"
@@ -407,7 +412,10 @@
     "popconfirm/",
     "dropdown/",
     "context-menu/",
-    "menu/"
+"menu/",
+"upload/",
+"content-switcher/",
+"masked-input/"
   ],
   "peerDependenciesMeta": {
     "flatpickr": {

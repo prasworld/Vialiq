@@ -44,7 +44,8 @@ export class ViAccordionItem extends ViElement {
 
   /** Unique ID for the item. */
   @property({ reflect: true, attribute: 'item-id' })
-  accessor itemId = `vi-accordion-item-${Math.random().toString(36).substring(2, 9)}`;
+  accessor itemId =
+    `vi-accordion-item-${Math.random().toString(36).substring(2, 9)}`;
 
   /** Expanded state. */
   @property({ type: Boolean, reflect: true }) accessor open = false;
@@ -67,7 +68,7 @@ export class ViAccordionItem extends ViElement {
     super.firstUpdated(changedProperties);
     const inner = this.shadowRoot?.querySelector('.accordion-panel-inner');
     if (inner) {
-      this._resizeObserver = new ResizeObserver(entries => {
+      this._resizeObserver = new ResizeObserver((entries) => {
         const entry = entries[0];
         if (entry) {
           const height = entry.contentRect.height;
@@ -115,7 +116,7 @@ export class ViAccordionItem extends ViElement {
         detail: { itemId: this.itemId },
         bubbles: true,
         composed: true,
-      })
+      }),
     );
   }
 

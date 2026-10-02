@@ -4,7 +4,11 @@
   display: block;
   position: absolute;
   z-index: var(--vi-sidebar-z-index, 9999);
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), width 0.4s cubic-bezier(0.16, 1, 0.3, 1), height 0.4s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.4s;
+  transition:
+    transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+    width 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+    height 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+    visibility 0.4s;
   background-color: var(--vi-sidebar-bg, #{tokens.$layer-01});
   box-shadow: var(--vi-sidebar-shadow, #{tokens.$shadow-lg});
   will-change: transform, width, height;
@@ -53,36 +57,40 @@
     transition: background-color 0s ease 0.15s;
   }
 
-  &:hover::after, &:active::after {
-    background-color: var(--vi-sidebar-resizer-hover-color, #{tokens.$color-primary});
+  &:hover::after,
+  &:active::after {
+    background-color: var(
+      --vi-sidebar-resizer-hover-color,
+      #{tokens.$color-primary}
+    );
     transition-delay: 0s;
   }
 }
 
 /* Left/start sidebar: hit area (12px) at right edge, line at rightmost pixel.
  * NO transform — no overflow — no dock animation clipping bugs. */
-:host([position="left"]) .vi-sidebar__resizer,
-:host([position="start"]) .vi-sidebar__resizer,
+:host([position='left']) .vi-sidebar__resizer,
+:host([position='start']) .vi-sidebar__resizer,
 :host(:not([position])) .vi-sidebar__resizer {
   right: 0;
   justify-content: flex-end; /* push visible 3px line to the right edge */
 }
 
-:host([position="right"]) .vi-sidebar__resizer,
-:host([position="end"]) .vi-sidebar__resizer {
+:host([position='right']) .vi-sidebar__resizer,
+:host([position='end']) .vi-sidebar__resizer {
   left: 0;
   justify-content: flex-start; /* push visible 3px line to the left edge */
 }
 
-:host([position="top"]) .vi-sidebar__resizer,
-:host([position="bottom"]) .vi-sidebar__resizer {
+:host([position='top']) .vi-sidebar__resizer,
+:host([position='bottom']) .vi-sidebar__resizer {
   width: 100%;
   height: 12px;
   cursor: row-resize;
   flex-direction: column;
 }
 
-:host([position="top"]) .vi-sidebar__resizer {
+:host([position='top']) .vi-sidebar__resizer {
   bottom: 0;
   top: auto;
   align-items: stretch;
@@ -94,7 +102,7 @@
   }
 }
 
-:host([position="bottom"]) .vi-sidebar__resizer {
+:host([position='bottom']) .vi-sidebar__resizer {
   top: 0;
   bottom: auto;
   align-items: stretch;
@@ -112,8 +120,8 @@
 }
 
 :host(:not([position])),
-:host([position="left"]),
-:host([position="start"]) {
+:host([position='left']),
+:host([position='start']) {
   top: 0;
   bottom: 0;
   left: 0;
@@ -121,7 +129,8 @@
   transform: translateX(-100%);
 }
 
-:host([position="right"]), :host([position="end"]) {
+:host([position='right']),
+:host([position='end']) {
   top: 0;
   bottom: 0;
   right: 0;
@@ -129,7 +138,7 @@
   transform: translateX(100%);
 }
 
-:host([position="top"]) {
+:host([position='top']) {
   top: 0;
   left: 0;
   right: 0;
@@ -137,7 +146,7 @@
   transform: translateY(-100%);
 }
 
-:host([position="bottom"]) {
+:host([position='bottom']) {
   bottom: 0;
   left: 0;
   right: 0;
@@ -149,21 +158,21 @@
  * This has specificity 0,2,0 which beats the base rule's 0,1,0, preventing
  * the base translateX(-100%) from flashing on during open/close transitions. */
 :host([dock]:not([position])),
-:host([dock][position="left"]),
-:host([dock][position="start"]) {
+:host([dock][position='left']),
+:host([dock][position='start']) {
   transform: translateX(0);
 }
 
-:host([dock][position="right"]),
-:host([dock][position="end"]) {
+:host([dock][position='right']),
+:host([dock][position='end']) {
   transform: translateX(0);
 }
 
-:host([dock][position="top"]) {
+:host([dock][position='top']) {
   transform: translateY(0);
 }
 
-:host([dock][position="bottom"]) {
+:host([dock][position='bottom']) {
   transform: translateY(0);
 }
 
@@ -172,39 +181,42 @@
  * overflow:hidden is scoped here (not on :host globally) so it does NOT
  * clip the resizer's translateX(50%) when the sidebar is open. */
 :host([dock]:not([opened]):not([position])),
-:host([dock]:not([opened])[position="left"]),
-:host([dock]:not([opened])[position="start"]) {
+:host([dock]:not([opened])[position='left']),
+:host([dock]:not([opened])[position='start']) {
   width: var(--vi-sidebar-docked-size, 0px);
   overflow: hidden;
 }
 
-:host([dock]:not([opened])[position="right"]),
-:host([dock]:not([opened])[position="end"]) {
+:host([dock]:not([opened])[position='right']),
+:host([dock]:not([opened])[position='end']) {
   width: var(--vi-sidebar-docked-size, 0px);
   overflow: hidden;
 }
 
-:host([dock]:not([opened])[position="top"]) {
+:host([dock]:not([opened])[position='top']) {
   height: var(--vi-sidebar-docked-size, 0px);
   overflow: hidden;
 }
 
-:host([dock]:not([opened])[position="bottom"]) {
+:host([dock]:not([opened])[position='bottom']) {
   height: var(--vi-sidebar-docked-size, 0px);
   overflow: hidden;
 }
 
 /* Opened state */
-:host([opened]:not([position])), :host([opened][position="left"]), :host([opened][position="start"]) {
+:host([opened]:not([position])),
+:host([opened][position='left']),
+:host([opened][position='start']) {
   transform: translateX(0);
 }
-:host([opened][position="right"]), :host([opened][position="end"]) {
+:host([opened][position='right']),
+:host([opened][position='end']) {
   transform: translateX(0);
 }
-:host([opened][position="top"]) {
+:host([opened][position='top']) {
   transform: translateY(0);
 }
-:host([opened][position="bottom"]) {
+:host([opened][position='bottom']) {
   transform: translateY(0);
 }
 

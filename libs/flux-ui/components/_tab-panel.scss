@@ -2,19 +2,17 @@
 @use '../styles/functions' as func;
 
 @layer components {
-
-
-// Hide inactive panels; keep them in DOM for lazy content preservation
+  // Hide inactive panels; keep them in DOM for lazy content preservation
 
   [part='panel'] {
     padding: var(--vi-tab-panel-padding, 16px 0);
     outline: none;
 
     &:focus-visible {
-      outline: 2px solid var(--vi-tabs-indicator-color, #{tokens.$color-primary});
+      outline: 2px solid
+        var(--vi-tabs-indicator-color, #{tokens.$color-primary});
       outline-offset: 2px;
       border-radius: #{func.to-rem(2px)};
     }
   }
-
 }

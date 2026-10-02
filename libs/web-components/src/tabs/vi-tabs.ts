@@ -543,11 +543,16 @@ export class ViTabs extends ViElement {
 
     // Move active to a neighbour if we're closing the active tab
     if (this.active === tabId) {
-      const enabledBefore = tabs.slice(0, closingIdx).filter((t) => !t.disabled);
-      const enabledAfter = tabs.slice(closingIdx + 1).filter((t) => !t.disabled);
-      
+      const enabledBefore = tabs
+        .slice(0, closingIdx)
+        .filter((t) => !t.disabled);
+      const enabledAfter = tabs
+        .slice(closingIdx + 1)
+        .filter((t) => !t.disabled);
+
       // Prefer tab just before; fall back to tab just after; else nothing
-      const prevTab = enabledBefore[enabledBefore.length - 1] ?? enabledAfter[0] ?? null;
+      const prevTab =
+        enabledBefore[enabledBefore.length - 1] ?? enabledAfter[0] ?? null;
       if (prevTab) {
         this._activateTab(prevTab.tabId);
         prevTab.focus();

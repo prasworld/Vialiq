@@ -14,7 +14,7 @@ export class ViMessageContainer extends ViElement {
   private _handleMouseEnter = () => {
     // Pause all messages
     const messages = this.querySelectorAll('vi-message');
-    messages.forEach(msg => {
+    messages.forEach((msg) => {
       msg.paused = true;
     });
   };
@@ -22,7 +22,7 @@ export class ViMessageContainer extends ViElement {
   private _handleMouseLeave = () => {
     // Resume all messages
     const messages = this.querySelectorAll('vi-message');
-    messages.forEach(msg => {
+    messages.forEach((msg) => {
       msg.paused = false;
     });
   };

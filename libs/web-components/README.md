@@ -1529,6 +1529,192 @@ For more detailed documentation, including slots, CSS parts, and custom properti
 
 ---
 
+---
+
+### Content Switcher ([vi-content-switcher](./src/content-switcher/vi-content-switcher.ts))
+
+The [ViContentSwitcher](./src/content-switcher/vi-content-switcher.ts) provides a styled sliding-pill toggle control. It is functionally similar to a radio group but is designed for high-visibility UI switches (e.g., toggling between Code/Preview modes). It manages state via its `active` property and uses GPU-accelerated CSS custom properties for smooth indicator sliding.
+
+#### Properties & Attributes
+
+| Attribute  | Property   | Type                     | Default | Description                                 |
+| :--------- | :--------- | :----------------------- | :------ | :------------------------------------------ |
+| `value`    | `value`    | `string`                 | `''`    | The currently active item value.            |
+| `size`     | `size`     | `'sm'\|'md'\|'lg'`       | `'md'`  | Visual size of the switcher.                |
+| `disabled` | `disabled` | `boolean`                | `false` | Disables all interactions in the switcher.  |
+
+#### Child Components (`<vi-switcher-item>`)
+
+Each option within the switcher is a `<vi-switcher-item>`:
+- **`value`**: The value to emit when selected. Must match the switcher's `value` to become active.
+- **`disabled`**: Disables only this specific item.
+- **Default Slot**: The text label for the item.
+
+#### Events
+
+- `vi-content-switcher-change`: Fires when the active item changes. Detail: `{ value: string, previousValue: string }`.
+
+#### CSS Parts
+
+- `track`: The outer pill container housing the items and indicator.
+- `indicator`: The absolutely positioned sliding background highlight.
+
+#### Snippets
+
+**Basic Usage:**
+
+```html
+<vi-content-switcher value="design">
+  <vi-switcher-item value="design">Design</vi-switcher-item>
+  <vi-switcher-item value="json">JSON</vi-switcher-item>
+  <vi-switcher-item value="preview">Preview</vi-switcher-item>
+</vi-content-switcher>
+```
+
+**Sizes & Disabled:**
+
+```html
+<vi-content-switcher value="monthly" size="sm">
+  <vi-switcher-item value="monthly">Monthly</vi-switcher-item>
+  <vi-switcher-item value="annually" disabled>Annually</vi-switcher-item>
+</vi-content-switcher>
+```
+
+---
+
+### Masked Input ([vi-masked-input](./src/masked-input/vi-masked-input.ts))
+
+The [ViMaskedInput](./src/masked-input/vi-masked-input.ts) is an advanced text input component extending `ViInput` that automatically formats user entry based on a predefined string pattern. It dynamically imports `imask` under the hood to ensure precise cursor management during pastes and rapid typing while keeping the initial bundle size small.
+
+#### Properties & Attributes
+
+*Inherits all properties from [ViInput](#input-vi-inputsrcinputvi-inputts) (e.g., `label`, `disabled`, `status`), plus:*
+
+| Attribute  | Property   | Type     | Default | Description                                                     |
+| :--------- | :--------- | :------- | :------ | :-------------------------------------------------------------- |
+| `mask`        | `mask`        | `string` | `''`    | The fixed pattern format string (e.g. `(000) 000-0000`).        |
+| `maskOptions` | `maskOptions` | `any`    | `null`  | Advanced IMask object for dynamic/regex masks (takes precedence). |
+| `rawValue`    | `rawValue`    | `string` | `''`    | The unformatted value consisting of only valid mask characters. |
+
+#### Events
+
+*Note: Native generic input events are suppressed while masking is active to prevent duplication.*
+
+- `vi-masked-input-change`: Fires when the value is committed on blur. Detail: `{ value: string, rawValue: string }`.
+- `vi-masked-input-input`: Fires on every keystroke after formatting. Detail: `{ value: string, rawValue: string }`.
+
+#### Snippets
+
+**Phone Number Masking:**
+
+```html
+<vi-masked-input 
+  name="phone" 
+  label="Phone Number" 
+  mask="(000) 000-0000" 
+  placeholder="(555) 555-5555">
+</vi-masked-input>
+```
+
+**Social Security Number (SSN):**
+
+```html
+<vi-masked-input 
+  name="ssn" 
+  label="SSN" 
+  mask="000-00-0000" 
+  placeholder="___-__-____">
+</vi-masked-input>
+```
+
+**Pre-filling with Raw Data:**
+
+```html
+<!-- Component will automatically format the input to "(123) 456-7890" -->
+<vi-masked-input 
+  mask="(000) 000-0000" 
+  raw-value="1234567890">
+</vi-masked-input>
+```
+
+**Alphanumeric Formatting (Letters & Numbers):**
+
+In the mask syntax: `0` restricts to numbers, `a` restricts to letters, and `*` allows any alphanumeric character.
+
+```html
+<!-- License Key (Allows both letters and numbers) -->
+<vi-masked-input 
+  name="license" 
+  label="License Key" 
+  mask="****-****-****" 
+  placeholder="ABCD-1234-EFGH">
+</vi-masked-input>
+
+<!-- Canadian Postal Code (Strict Letter-Number-Letter format) -->
+<vi-masked-input 
+  name="postal" 
+  label="Postal Code" 
+  mask="a0a 0a0" 
+  placeholder="K1A 0B1">
+</vi-masked-input>
+```
+
+**Advanced Masks (Regex & Dynamic Arrays):**
+
+For highly complex rules (like matching a specific Regex or handling Credit Card numbers of variable lengths), you can pass a configuration object directly via the `maskOptions` property (e.g. using Lit's `.maskOptions=${...}` or React's `maskOptions={...}`). This object is passed directly to IMask.
+
+```html
+<!-- Lit / JavaScript example -->
+
+<!-- 1. Strict RegExp (e.g., numbers starting with '5') -->
+<vi-masked-input 
+  label="Custom RegExp" 
+  .maskOptions=${{ mask: /^5\d+$/ }}>
+</vi-masked-input>
+
+<!-- 2. Dynamic Credit Card (Auto-detects AMEX vs Visa format) -->
+<vi-masked-input 
+  label="Credit Card"
+  .maskOptions=${{
+    mask: [
+      {
+        // American Express (15 digits)
+        mask: '0000 000000 00000',
+        regex: '^3[47]\\d{0,13}'
+      },
+      {
+        // Visa/Mastercard (16 digits)
+        mask: '0000 0000 0000 0000',
+        regex: '^(?:4\\d{0,15}|5[1-5]\\d{0,14})'
+      }
+    ]
+  }}>
+</vi-masked-input>
+
+<!-- 3. Fixed Length Mixed Mask (e.g., 3 digits + 1 alphabetical character) -->
+<!-- '0' denotes any digit, 'a' denotes any letter -->
+<vi-masked-input 
+  label="Custom Fixed Mixed Format"
+  mask="000a">
+</vi-masked-input>
+
+<!-- 4. Restricting character types and auto-capitalizing (Custom Blocks) -->
+<vi-masked-input 
+  label="Uppercase Custom Block"
+  .maskOptions=${{
+    mask: '000C',
+    blocks: {
+      C: {
+        mask: /^[A-Z]$/,
+        prepareChar: (char) => char.toUpperCase()
+      }
+    }
+  }}>
+</vi-masked-input>
+```
+
+---
+
 ## Storybook
 
 The project uses **Storybook 10** with the `@storybook/web-components-vite` framework.

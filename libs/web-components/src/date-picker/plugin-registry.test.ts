@@ -23,6 +23,4 @@ describe('plugin-registry', () => {
     expect(plugin?.id).toBe('vi-week-select');
     expect(typeof plugin?.factory).toBe('function');
   });
-  
-
 });

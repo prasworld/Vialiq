@@ -64,7 +64,7 @@ describe('vi-tag', () => {
             Tag Value
           </vi-tag>
         `,
-        container
+        container,
       );
       const el = document.querySelector('vi-tag') as ViTag;
       await el.updateComplete;
@@ -114,13 +114,16 @@ describe('vi-tag', () => {
             Filter
           </vi-tag>
         `,
-        container
+        container,
       );
 
       const host = await $('vi-tag');
       const contentWrapper = await host.shadow$('.tag-content-wrapper');
 
-      await browser.execute((el) => (el as HTMLElement).click(), contentWrapper);
+      await browser.execute(
+        (el) => (el as HTMLElement).click(),
+        contentWrapper,
+      );
 
       const el = document.querySelector('vi-tag') as ViTag;
       expect(el.selected).toBe(true);
@@ -142,13 +145,16 @@ describe('vi-tag', () => {
             Static Selected Tag
           </vi-tag>
         `,
-        container
+        container,
       );
 
       const host = await $('vi-tag');
       const contentWrapper = await host.shadow$('.tag-content-wrapper');
 
-      await browser.execute((el) => (el as HTMLElement).click(), contentWrapper);
+      await browser.execute(
+        (el) => (el as HTMLElement).click(),
+        contentWrapper,
+      );
 
       const el = document.querySelector('vi-tag') as ViTag;
       expect(el.selected).toBe(true);
@@ -169,7 +175,7 @@ describe('vi-tag', () => {
             Removable Tag
           </vi-tag>
         `,
-        container
+        container,
       );
 
       const host = await $('vi-tag');
@@ -194,16 +200,20 @@ describe('vi-tag', () => {
             Removable Tag
           </vi-tag>
         `,
-        container
+        container,
       );
 
       const el = document.querySelector('vi-tag') as ViTag;
       await el.updateComplete;
 
-      const contentWrapper = el.shadowRoot?.querySelector('.tag-content-wrapper') as HTMLElement;
+      const contentWrapper = el.shadowRoot?.querySelector(
+        '.tag-content-wrapper',
+      ) as HTMLElement;
       expect(contentWrapper.getAttribute('tabindex')).toBe('0');
 
-      contentWrapper.dispatchEvent(new KeyboardEvent('keydown', { key: 'Delete', bubbles: true }));
+      contentWrapper.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Delete', bubbles: true }),
+      );
 
       expect(removeFired).toBe(true);
     });
@@ -224,13 +234,16 @@ describe('vi-tag', () => {
             Disabled Tag
           </vi-tag>
         `,
-        container
+        container,
       );
 
       const host = await $('vi-tag');
       const contentWrapper = await host.shadow$('.tag-content-wrapper');
 
-      await browser.execute((el) => (el as HTMLElement).click(), contentWrapper);
+      await browser.execute(
+        (el) => (el as HTMLElement).click(),
+        contentWrapper,
+      );
 
       const el = document.querySelector('vi-tag') as ViTag;
       expect(el.selected).toBe(false);
@@ -246,7 +259,9 @@ describe('vi-tag', () => {
       const srOnly = el.shadowRoot!.querySelector('.tag-remove-btn .sr-only');
       expect(srOnly?.textContent?.trim()).toBe('Remove Filter Site');
 
-      const contentWrapper = el.shadowRoot!.querySelector('.tag-content-wrapper');
+      const contentWrapper = el.shadowRoot!.querySelector(
+        '.tag-content-wrapper',
+      );
       expect(contentWrapper?.getAttribute('aria-disabled')).toBe('true');
     });
 
@@ -259,7 +274,9 @@ describe('vi-tag', () => {
       expect(srOnly?.textContent?.trim()).toBe('Remove Initial Label');
 
       el.textContent = 'Updated Label';
-      const slot = el.shadowRoot!.querySelector('slot:not([name])') as HTMLSlotElement;
+      const slot = el.shadowRoot!.querySelector(
+        'slot:not([name])',
+      ) as HTMLSlotElement;
       slot.dispatchEvent(new Event('slotchange'));
       await el.updateComplete;
 
@@ -283,7 +300,7 @@ describe('vi-tag', () => {
             <vi-tag variant="danger" disabled>Disabled</vi-tag>
           </div>
         `,
-        container
+        container,
       );
 
       const host = document.querySelector('vi-tag') as ViTag;
@@ -295,7 +312,7 @@ describe('vi-tag', () => {
           'html-has-lang': { enabled: false },
           'page-has-heading-one': { enabled: false },
           'landmark-one-main': { enabled: false },
-          'region': { enabled: false },
+          region: { enabled: false },
           'color-contrast': { enabled: false },
         },
       });

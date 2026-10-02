@@ -15,9 +15,14 @@ import {
 import popoverStyles from './vi-popover.scss?inline';
 
 export type PopoverPlacement =
-  | 'top' | 'top-start' | 'top-end'
-  | 'bottom' | 'bottom-start' | 'bottom-end'
-  | 'left' | 'right';
+  | 'top'
+  | 'top-start'
+  | 'top-end'
+  | 'bottom'
+  | 'bottom-start'
+  | 'bottom-end'
+  | 'left'
+  | 'right';
 
 export type PopoverTrigger = 'click' | 'hover' | 'focus' | 'contextmenu';
 
@@ -40,9 +45,12 @@ export type PopoverTrigger = 'click' | 'hover' | 'focus' | 'contextmenu';
  */
 @customElement('vi-popover')
 export class ViPopover extends ViElement {
-  static override styles = css`${unsafeCSS(popoverStyles)}`;
+  static override styles = css`
+    ${unsafeCSS(popoverStyles)}
+  `;
 
-  @property({ type: String, reflect: true }) accessor placement: PopoverPlacement = 'bottom';
+  @property({ type: String, reflect: true })
+  accessor placement: PopoverPlacement = 'bottom';
   @property({ type: String }) accessor trigger: PopoverTrigger = 'click';
   @property({ type: String }) accessor title = '';
   @property({ type: String }) accessor content = '';
@@ -66,7 +74,8 @@ export class ViPopover extends ViElement {
 
   @query('.popover-panel') private accessor _panel!: HTMLDivElement | null;
   @query('.popover-arrow') private accessor _arrowEl!: HTMLDivElement | null;
-  @query('slot:not([name])') private accessor _defaultSlot!: HTMLSlotElement | null;
+  @query('slot:not([name])')
+  private accessor _defaultSlot!: HTMLSlotElement | null;
 
   private _cleanupFloating?: () => void;
   private _triggerElement: HTMLElement | null = null;
@@ -92,7 +101,7 @@ export class ViPopover extends ViElement {
 
   override updated(changedProperties: Map<string | number | symbol, unknown>) {
     super.updated(changedProperties);
-    
+
     if (changedProperties.has('trigger')) {
       this._detachTriggerListeners();
       this._attachTriggerListeners();
@@ -107,15 +116,29 @@ export class ViPopover extends ViElement {
       if (this.open) {
         this._setupPosition();
         if (wasOpen === false || wasOpen === undefined) {
-          this.dispatchEvent(new CustomEvent('vi-popover-show', { bubbles: true, composed: true }));
+          this.dispatchEvent(
+            new CustomEvent('vi-popover-show', {
+              bubbles: true,
+              composed: true,
+            }),
+          );
         }
       } else {
         this._cleanupPosition();
         if (wasOpen === true) {
-          this.dispatchEvent(new CustomEvent('vi-popover-hide', { bubbles: true, composed: true }));
+          this.dispatchEvent(
+            new CustomEvent('vi-popover-hide', {
+              bubbles: true,
+              composed: true,
+            }),
+          );
         }
       }
-    } else if (this.open && (changedProperties.has('placement') || changedProperties.has('popperOptions'))) {
+    } else if (
+      this.open &&
+      (changedProperties.has('placement') ||
+        changedProperties.has('popperOptions'))
+    ) {
       this._setupPosition();
     }
   }
@@ -126,7 +149,9 @@ export class ViPopover extends ViElement {
         const el = node as HTMLElement;
         if (el.tagName === 'SLOT') {
           const slot = el as HTMLSlotElement;
-          const unwrapped = this._getActualTrigger(slot.assignedNodes({ flatten: true }));
+          const unwrapped = this._getActualTrigger(
+            slot.assignedNodes({ flatten: true }),
+          );
           if (unwrapped) return unwrapped;
         } else {
           return el;
@@ -140,12 +165,12 @@ export class ViPopover extends ViElement {
     this._detachTriggerListeners();
     const nodes = this._defaultSlot?.assignedNodes({ flatten: true }) || [];
     this._triggerElement = this._getActualTrigger(nodes);
-    
+
     if (this._triggerElement) {
       this._triggerElement.setAttribute('aria-haspopup', 'dialog');
       this._triggerElement.setAttribute('aria-expanded', String(this.open));
       this._attachTriggerListeners();
-      
+
       if (this.open) {
         this._setupPosition();
       }
@@ -154,32 +179,56 @@ export class ViPopover extends ViElement {
 
   private _attachTriggerListeners() {
     if (!this._triggerElement) return;
-    
+
     if (this.trigger === 'click') {
       this._triggerElement.addEventListener('click', this._handleTriggerClick);
-      this._triggerElement.addEventListener('keydown', this._handleTriggerKeyDown);
+      this._triggerElement.addEventListener(
+        'keydown',
+        this._handleTriggerKeyDown,
+      );
     } else if (this.trigger === 'hover') {
-      this._triggerElement.addEventListener('mouseenter', this._handleMouseEnter);
-      this._triggerElement.addEventListener('mouseleave', this._handleMouseLeave);
+      this._triggerElement.addEventListener(
+        'mouseenter',
+        this._handleMouseEnter,
+      );
+      this._triggerElement.addEventListener(
+        'mouseleave',
+        this._handleMouseLeave,
+      );
       this.addEventListener('mouseenter', this._handleMouseEnter);
       this.addEventListener('mouseleave', this._handleMouseLeave);
     } else if (this.trigger === 'focus') {
       this.addEventListener('focusin', this._handleFocusIn);
       this.addEventListener('focusout', this._handleFocusOut);
     } else if (this.trigger === 'contextmenu') {
-      this._triggerElement.addEventListener('contextmenu', this._handleContextMenu);
+      this._triggerElement.addEventListener(
+        'contextmenu',
+        this._handleContextMenu,
+      );
     }
   }
 
   private _detachTriggerListeners() {
     if (!this._triggerElement) return;
     this._triggerElement.removeEventListener('click', this._handleTriggerClick);
-    this._triggerElement.removeEventListener('keydown', this._handleTriggerKeyDown);
-    this._triggerElement.removeEventListener('mouseenter', this._handleMouseEnter);
-    this._triggerElement.removeEventListener('mouseleave', this._handleMouseLeave);
+    this._triggerElement.removeEventListener(
+      'keydown',
+      this._handleTriggerKeyDown,
+    );
+    this._triggerElement.removeEventListener(
+      'mouseenter',
+      this._handleMouseEnter,
+    );
+    this._triggerElement.removeEventListener(
+      'mouseleave',
+      this._handleMouseLeave,
+    );
     this.removeEventListener('focusin', this._handleFocusIn);
     this.removeEventListener('focusout', this._handleFocusOut);
-    this._triggerElement.removeEventListener('contextmenu', this._handleContextMenu);
+    this._triggerElement.removeEventListener(
+      'contextmenu',
+      this._handleContextMenu,
+    );
     this.removeEventListener('mouseenter', this._handleMouseEnter);
     this.removeEventListener('mouseleave', this._handleMouseLeave);
   }
@@ -198,7 +247,7 @@ export class ViPopover extends ViElement {
   private _handleContextMenu = (e: MouseEvent) => {
     e.preventDefault();
     this._contextMenuEvent = e;
-    
+
     if (this.open) {
       this._setupPosition();
     } else {
@@ -243,7 +292,11 @@ export class ViPopover extends ViElement {
 
   private _handleFocusOut = (e: FocusEvent) => {
     const relatedTarget = e.relatedTarget as Node | null;
-    if (relatedTarget !== this && !this.contains(relatedTarget) && !this.shadowRoot?.contains(relatedTarget)) {
+    if (
+      relatedTarget !== this &&
+      !this.contains(relatedTarget) &&
+      !this.shadowRoot?.contains(relatedTarget)
+    ) {
       this.open = false;
     }
   };
@@ -270,59 +323,65 @@ export class ViPopover extends ViElement {
             right: clientX,
             bottom: clientY,
           };
-        }
+        },
       };
       referenceElement = virtualEl;
     }
 
-    this._cleanupFloating = autoUpdate(
-      referenceElement,
-      this._panel,
-      () => {
-        if (!this._triggerElement || !this._panel) return;
-        
-        computePosition(referenceElement, this._panel, {
-          placement: this.placement,
-          middleware: [
-            offset(8),
-            flip(),
-            shift({ padding: 8 }),
-            ...(this._arrowEl ? [arrow({ element: this._arrowEl })] : [])
-          ],
-          ...this.popperOptions
-        }).then(({ x, y, placement, middlewareData }) => {
-          if (!this._panel) return;
-          Object.assign(this._panel.style, {
-            left: `${x}px`,
-            top: `${y}px`,
-          });
+    this._cleanupFloating = autoUpdate(referenceElement, this._panel, () => {
+      if (!this._triggerElement || !this._panel) return;
 
-          if (middlewareData.arrow && this._arrowEl) {
-            const { x: arrowX, y: arrowY } = middlewareData.arrow;
-            const staticSide = ({
+      computePosition(referenceElement, this._panel, {
+        placement: this.placement,
+        middleware: [
+          offset(8),
+          flip(),
+          shift({ padding: 8 }),
+          ...(this._arrowEl ? [arrow({ element: this._arrowEl })] : []),
+        ],
+        ...this.popperOptions,
+      }).then(({ x, y, placement, middlewareData }) => {
+        if (!this._panel) return;
+        Object.assign(this._panel.style, {
+          left: `${x}px`,
+          top: `${y}px`,
+        });
+
+        if (middlewareData.arrow && this._arrowEl) {
+          const { x: arrowX, y: arrowY } = middlewareData.arrow;
+          const staticSide = (
+            {
               top: 'bottom',
               right: 'left',
               bottom: 'top',
               left: 'right',
-            } as Record<string, string>)[placement.split('-')[0]];
+            } as Record<string, string>
+          )[placement.split('-')[0]];
 
-            Object.assign(this._arrowEl.style, {
-              left: arrowX != null ? `${arrowX}px` : '',
-              top: arrowY != null ? `${arrowY}px` : '',
-              right: '',
-              bottom: '',
-              [staticSide]: '-4px',
-            });
-            
-            // Hide the "inner" borders of the rotated square so it blends perfectly with the panel
-            this._arrowEl.style.borderTopColor = (staticSide === 'bottom' || staticSide === 'left') ? 'transparent' : '';
-            this._arrowEl.style.borderRightColor = (staticSide === 'top' || staticSide === 'left') ? 'transparent' : '';
-            this._arrowEl.style.borderBottomColor = (staticSide === 'top' || staticSide === 'right') ? 'transparent' : '';
-            this._arrowEl.style.borderLeftColor = (staticSide === 'bottom' || staticSide === 'right') ? 'transparent' : '';
-          }
-        });
-      }
-    );
+          Object.assign(this._arrowEl.style, {
+            left: arrowX != null ? `${arrowX}px` : '',
+            top: arrowY != null ? `${arrowY}px` : '',
+            right: '',
+            bottom: '',
+            [staticSide]: '-4px',
+          });
+
+          // Hide the "inner" borders of the rotated square so it blends perfectly with the panel
+          this._arrowEl.style.borderTopColor =
+            staticSide === 'bottom' || staticSide === 'left'
+              ? 'transparent'
+              : '';
+          this._arrowEl.style.borderRightColor =
+            staticSide === 'top' || staticSide === 'left' ? 'transparent' : '';
+          this._arrowEl.style.borderBottomColor =
+            staticSide === 'top' || staticSide === 'right' ? 'transparent' : '';
+          this._arrowEl.style.borderLeftColor =
+            staticSide === 'bottom' || staticSide === 'right'
+              ? 'transparent'
+              : '';
+        }
+      });
+    });
   }
 
   private _cleanupPosition() {
@@ -332,7 +391,8 @@ export class ViPopover extends ViElement {
     }
   }
 
-  @property({ type: String, attribute: 'accessible-name' }) accessor accessibleName = '';
+  @property({ type: String, attribute: 'accessible-name' })
+  accessor accessibleName = '';
 
   private get _hasTitle() {
     return this.title !== '' || this.querySelector('[slot="title"]') !== null;
@@ -342,18 +402,29 @@ export class ViPopover extends ViElement {
     const hasTitle = this._hasTitle;
     return html`
       <slot @slotchange=${this._handleSlotChange}></slot>
-      
-      <div class="popover-panel ${this.open ? 'open' : ''}" role="dialog" part="popover"
+
+      <div
+        class="popover-panel ${this.open ? 'open' : ''}"
+        role="dialog"
+        part="popover"
         aria-labelledby=${hasTitle ? 'popover-title' : nothing}
-        aria-label=${!hasTitle && this.accessibleName ? this.accessibleName : nothing}
-        @mouseenter=${this.trigger === 'hover' ? this._handleMouseEnter : nothing}
-        @mouseleave=${this.trigger === 'hover' ? this._handleMouseLeave : nothing}
+        aria-label=${!hasTitle && this.accessibleName
+          ? this.accessibleName
+          : nothing}
+        @mouseenter=${this.trigger === 'hover'
+          ? this._handleMouseEnter
+          : nothing}
+        @mouseleave=${this.trigger === 'hover'
+          ? this._handleMouseLeave
+          : nothing}
       >
-        ${hasTitle ? html`
-          <div class="popover-header" part="header" id="popover-title">
-            <slot name="title">${this.title}</slot>
-          </div>
-        ` : nothing}
+        ${hasTitle
+          ? html`
+              <div class="popover-header" part="header" id="popover-title">
+                <slot name="title">${this.title}</slot>
+              </div>
+            `
+          : nothing}
         <div class="popover-body" part="body">
           <slot name="content">${this.content}</slot>
         </div>

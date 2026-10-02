@@ -51,10 +51,12 @@ export class ViLabel extends ViElement {
   @property({ type: String }) accessor size: LabelSize = 'md';
 
   /** Layout spacing behavior */
-  @property({ type: String, reflect: true }) accessor layout: LabelLayout = 'stacked';
+  @property({ type: String, reflect: true }) accessor layout: LabelLayout =
+    'stacked';
 
   /** Semantic text color */
-  @property({ type: String, reflect: true }) accessor type: LabelType = 'default';
+  @property({ type: String, reflect: true }) accessor type: LabelType =
+    'default';
 
   private _hasTooltip = false;
 
@@ -78,21 +80,28 @@ export class ViLabel extends ViElement {
     if (!this.for) {
       return; // Do not prevent default if it's wrapping an input normally
     }
-    
+
     // Custom elements are not natively 'labelable' by the browser, so we must
-    // manually route the focus/click.
+    // manually route the focus. We defer via requestAnimationFrame because when
+    // the settings panel first opens (e.g. after a drag), no element inside it
+    // has received focus yet. A synchronous focus() call inside a click handler
+    // gets cancelled by the browser's own focus-reset at the end of the event
+    // cycle. rAF schedules the call for the next paint, after the native event
+    // has fully completed, so the focus sticks reliably on the first click.
     const rootNode = this.getRootNode() as Document | ShadowRoot;
     const target = rootNode.getElementById(this.for);
     if (target) {
       e.preventDefault();
-      target.focus();
-      if ('click' in target && typeof (target as HTMLElement).click === 'function') {
-        (target as HTMLElement).click();
-      }
+if ('click' in target && typeof target.click === 'function') {
+  target.click();
+}
+requestAnimationFrame(() => target.focus());
     }
   }
 
-  override updated(changedProperties: Map<string | number | symbol, unknown>): void {
+  override updated(
+    changedProperties: Map<string | number | symbol, unknown>,
+  ): void {
     super.updated(changedProperties);
 
     // Cross shadow boundary workaround for screen readers
@@ -100,12 +109,12 @@ export class ViLabel extends ViElement {
     if (changedProperties.has('for') && this.for) {
       const rootNode = this.getRootNode() as Document | ShadowRoot;
       const target = rootNode.getElementById(this.for);
-      
+
       if (target) {
         if (!this.id) {
           this.id = `vi-label-${Math.random().toString(36).substring(2, 9)}`;
         }
-        
+
         const currentAria = target.getAttribute('aria-labelledby') || '';
         if (!currentAria.includes(this.id)) {
           const newAria = currentAria ? `${currentAria} ${this.id}` : this.id;
@@ -123,22 +132,36 @@ export class ViLabel extends ViElement {
     };
 
     return html`
-      <label part="label" class=${classMap(classes)} for=${this.for || nothing} @click=${this._handleClick}>
+      <label
+        part="label"
+        class=${classMap(classes)}
+        for=${this.for || nothing}
+        @click=${this._handleClick}
+      >
         <slot></slot>
 
         ${this.required
           ? html`
-              <span part="required-indicator" class="vi-label-required" aria-hidden="true">*</span>
+              <span
+                part="required-indicator"
+                class="vi-label-required"
+                aria-hidden="true"
+                >*</span
+              >
             `
           : nothing}
-
         ${this.optional && !this.required
           ? html`
-              <span part="optional-indicator" class="vi-label-optional">(optional)</span>
+              <span part="optional-indicator" class="vi-label-optional"
+                >(optional)</span
+              >
             `
           : nothing}
 
-        <span part="tooltip-trigger" style=${!this._hasTooltip ? 'display: none;' : nothing}>
+        <span
+          part="tooltip-trigger"
+          style=${!this._hasTooltip ? 'display: none;' : nothing}
+        >
           <slot name="tooltip" @slotchange=${this._handleSlotChange}></slot>
         </span>
       </label>

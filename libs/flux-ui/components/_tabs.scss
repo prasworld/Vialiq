@@ -2,20 +2,18 @@
 @use '../styles/functions' as func;
 
 @layer components {
-
-// ─────────────────────────────────────────────────────────────────────────────
-// vi-tabs — Container, tablist, SLIDING CURSOR, indicator, all variants
-//
-// Architecture:
-//  • .vi-tabs__cursor  → absolutely positioned, slides between tabs (JS-positioned)
-//                         Used by: pill, card, enclosed (the "selected surface")
-//  • .vi-tabs__indicator → absolutely positioned thin line at bottom/side (JS-positioned)
-//                          Used by: line, secondary (the "underline signal")
-//
-// The cursor element ALWAYS exists in the DOM. CSS on each variant controls
-// whether it's visible (opacity, border-radius, shadow etc.)
-// ─────────────────────────────────────────────────────────────────────────────
-
+  // ─────────────────────────────────────────────────────────────────────────────
+  // vi-tabs — Container, tablist, SLIDING CURSOR, indicator, all variants
+  //
+  // Architecture:
+  //  • .vi-tabs__cursor  → absolutely positioned, slides between tabs (JS-positioned)
+  //                         Used by: pill, card, enclosed (the "selected surface")
+  //  • .vi-tabs__indicator → absolutely positioned thin line at bottom/side (JS-positioned)
+  //                          Used by: line, secondary (the "underline signal")
+  //
+  // The cursor element ALWAYS exists in the DOM. CSS on each variant controls
+  // whether it's visible (opacity, border-radius, shadow etc.)
+  // ─────────────────────────────────────────────────────────────────────────────
 
   .vi-tabs {
     display: grid;
@@ -35,35 +33,42 @@
     color: var(--vi-tabs-text-color, #{tokens.$text-primary});
     cursor: pointer;
     transition: opacity 0.2s;
-    
+
     &[disabled] {
       opacity: 0;
       pointer-events: none;
     }
 
-    &:hover, &:focus-visible {
+    &:hover,
+    &:focus-visible {
       color: var(--vi-tabs-primary-color, #{tokens.$color-primary});
       outline: none;
     }
 
     &--left {
       justify-self: start;
-      background: linear-gradient(to right, var(--vi-tabs-surface-primary, #{tokens.$layer-01}) 50%, transparent 100%);
+      background: linear-gradient(
+        to right,
+        var(--vi-tabs-surface-primary, #{tokens.$layer-01}) 50%,
+        transparent 100%
+      );
       padding-right: 12px; // Push icon slightly left
     }
 
     &--right {
       justify-self: end;
-      background: linear-gradient(to left, var(--vi-tabs-surface-primary, #{tokens.$layer-01}) 50%, transparent 100%);
+      background: linear-gradient(
+        to left,
+        var(--vi-tabs-surface-primary, #{tokens.$layer-01}) 50%,
+        transparent 100%
+      );
       padding-left: 12px; // Push icon slightly right
     }
   }
 
-
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Add Button
-// ─────────────────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Add Button
+  // ─────────────────────────────────────────────────────────────────────────────
 
   .vi-tabs__add-btn {
     display: flex;
@@ -80,7 +85,9 @@
     margin-left: 4px;
     outline: none;
     position: relative;
-    transition: background-color 0.2s, color 0.2s;
+    transition:
+      background-color 0.2s,
+      color 0.2s;
     order: 9998; // Ensure it stays right before the More menu
 
     &::before {
@@ -113,9 +120,9 @@
     }
   }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  Shared tablist base
-// ─────────────────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────────
+  //  Shared tablist base
+  // ─────────────────────────────────────────────────────────────────────────────
 
   .vi-tabs__tablist {
     grid-area: 1 / 1;
@@ -130,11 +137,11 @@
     min-width: 0;
   }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// SLIDING CURSOR — the magic that makes this feel premium
-//
-// Positioned absolutely by JS. Each variant styles it differently.
-// ─────────────────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────────
+  // SLIDING CURSOR — the magic that makes this feel premium
+  //
+  // Positioned absolutely by JS. Each variant styles it differently.
+  // ─────────────────────────────────────────────────────────────────────────────
 
   .vi-tabs__cursor {
     position: absolute;
@@ -146,16 +153,16 @@
 
     // Transitions — fast out slow in, matching motion system
     transition:
-      left    220ms cubic-bezier(0.4, 0, 0.2, 1),
-      top     220ms cubic-bezier(0.4, 0, 0.2, 1),
-      width   220ms cubic-bezier(0.4, 0, 0.2, 1),
-      height  220ms cubic-bezier(0.4, 0, 0.2, 1),
+      left 220ms cubic-bezier(0.4, 0, 0.2, 1),
+      top 220ms cubic-bezier(0.4, 0, 0.2, 1),
+      width 220ms cubic-bezier(0.4, 0, 0.2, 1),
+      height 220ms cubic-bezier(0.4, 0, 0.2, 1),
       opacity 120ms ease;
   }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// BOTTOM-LINE INDICATOR — for line / secondary variants
-// ─────────────────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────────
+  // BOTTOM-LINE INDICATOR — for line / secondary variants
+  // ─────────────────────────────────────────────────────────────────────────────
 
   .vi-tabs__indicator {
     position: absolute;
@@ -170,23 +177,24 @@
     z-index: 2;
 
     transition:
-      left    220ms cubic-bezier(0.4, 0, 0.2, 1),
-      width   220ms cubic-bezier(0.4, 0, 0.2, 1),
-      top     220ms cubic-bezier(0.4, 0, 0.2, 1),
-      height  220ms cubic-bezier(0.4, 0, 0.2, 1),
+      left 220ms cubic-bezier(0.4, 0, 0.2, 1),
+      width 220ms cubic-bezier(0.4, 0, 0.2, 1),
+      top 220ms cubic-bezier(0.4, 0, 0.2, 1),
+      height 220ms cubic-bezier(0.4, 0, 0.2, 1),
       opacity 120ms ease;
   }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// VARIANT: line (default) — clean underline, minimal strip
-//
-// Design reference: Vercel, Linear, GitHub navigation
-// Strip: barely-there border, no bg. Typography + indicator do the work.
-// ─────────────────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────────
+  // VARIANT: line (default) — clean underline, minimal strip
+  //
+  // Design reference: Vercel, Linear, GitHub navigation
+  // Strip: barely-there border, no bg. Typography + indicator do the work.
+  // ─────────────────────────────────────────────────────────────────────────────
 
   .vi-tabs--line {
     .vi-tabs__tablist {
-      border-bottom: 1px solid var(--vi-tabs-border-color, #{tokens.$color-grey-200});
+      border-bottom: 1px solid
+        var(--vi-tabs-border-color, #{tokens.$color-grey-200});
       background: transparent;
       padding: 0;
       gap: 0;
@@ -207,13 +215,13 @@
     }
   }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// VARIANT: pill — segmented control / HeroUI / shadcn style
-//
-// Design reference: Apple iOS, shadcn/ui, HeroUI
-// The cursor IS the active pill — white card that slides between tabs.
-// Container: inset-shadow tray. Active: white card with shadow.
-// ─────────────────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────────
+  // VARIANT: pill — segmented control / HeroUI / shadcn style
+  //
+  // Design reference: Apple iOS, shadcn/ui, HeroUI
+  // The cursor IS the active pill — white card that slides between tabs.
+  // Container: inset-shadow tray. Active: white card with shadow.
+  // ─────────────────────────────────────────────────────────────────────────────
 
   .vi-tabs--pill {
     .vi-tabs__tablist {
@@ -229,7 +237,7 @@
     // The sliding white pill cursor
     .vi-tabs__cursor {
       display: block;
-      inset: 4px auto;          // matches tablist padding
+      inset: 4px auto; // matches tablist padding
       border-radius: #{func.to-rem(7px)};
       background: var(--vi-tabs-surface-primary, #{tokens.$layer-01});
       // Multi-layer shadow for floating card feel
@@ -242,18 +250,21 @@
     }
   }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// VARIANT: secondary (M3 — sub-hierarchy, thinner indicator)
-// ─────────────────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────────
+  // VARIANT: secondary (M3 — sub-hierarchy, thinner indicator)
+  // ─────────────────────────────────────────────────────────────────────────────
 
   .vi-tabs--secondary {
     .vi-tabs__tablist {
-      border-bottom: 1px solid var(--vi-tabs-border-color, #{tokens.$color-border});
+      border-bottom: 1px solid
+        var(--vi-tabs-border-color, #{tokens.$color-border});
       background: transparent;
       padding: 0;
     }
 
-    .vi-tabs__cursor { display: none; }
+    .vi-tabs__cursor {
+      display: none;
+    }
 
     .vi-tabs__indicator {
       bottom: -1px;
@@ -263,18 +274,19 @@
     }
   }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// VARIANT: card — browser-tab file-folder aesthetic
-//
-// Design reference: browser tabs, VS Code editor tabs
-// Active tab: white surface merges with content area below.
-// The cursor element becomes the white card + side borders.
-// ─────────────────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────────
+  // VARIANT: card — browser-tab file-folder aesthetic
+  //
+  // Design reference: browser tabs, VS Code editor tabs
+  // Active tab: white surface merges with content area below.
+  // The cursor element becomes the white card + side borders.
+  // ─────────────────────────────────────────────────────────────────────────────
 
   .vi-tabs--card {
     .vi-tabs__tablist {
       background: var(--vi-tabs-surface-secondary, #{tokens.$layer-02});
-      border-bottom: 1px solid var(--vi-tabs-border-color, #{tokens.$color-border});
+      border-bottom: 1px solid
+        var(--vi-tabs-border-color, #{tokens.$color-border});
       padding: var(--vi-tabs-spacing-md-md-none, 8px 8px 0);
       gap: var(--vi-tabs-gap-sm, 4px);
       align-items: flex-end;
@@ -292,25 +304,28 @@
       box-shadow: #{tokens.$shadow-sm};
     }
 
-    .vi-tabs__indicator { display: none; }
+    .vi-tabs__indicator {
+      display: none;
+    }
   }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// VARIANT: enclosed — bordered box with shared header/content border
-//
-// Design reference: Mantine, Chakra UI enclosed tabs
-// The entire component lives in a border box. Active tab has indicator only.
-// ─────────────────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────────
+  // VARIANT: enclosed — bordered box with shared header/content border
+  //
+  // Design reference: Mantine, Chakra UI enclosed tabs
+  // The entire component lives in a border box. Active tab has indicator only.
+  // ─────────────────────────────────────────────────────────────────────────────
 
   .vi-tabs--enclosed {
     border: 1px solid var(--vi-tabs-border-color, #{tokens.$color-border});
     border-radius: #{func.to-rem(10px)};
-    overflow: clip;  // Enclosed: clip cursor inside rounded border box
+    overflow: clip; // Enclosed: clip cursor inside rounded border box
     box-shadow: #{tokens.$shadow-sm};
 
     .vi-tabs__tablist {
       background: var(--vi-tabs-surface-secondary, #{tokens.$layer-02});
-      border-bottom: 1px solid var(--vi-tabs-border-color, #{tokens.$color-border});
+      border-bottom: 1px solid
+        var(--vi-tabs-border-color, #{tokens.$color-border});
       padding: 0;
       gap: 0;
     }
@@ -321,8 +336,10 @@
       top: 0;
       border-radius: 0;
       background: rgba(#{tokens.$color-primary}, 0.06);
-      border-right: 1px solid var(--vi-tabs-border-color, #{tokens.$color-border});
-      border-left: 1px solid var(--vi-tabs-border-color, #{tokens.$color-border});
+      border-right: 1px solid
+        var(--vi-tabs-border-color, #{tokens.$color-border});
+      border-left: 1px solid
+        var(--vi-tabs-border-color, #{tokens.$color-border});
     }
 
     // Thin indicator at bottom of strip header
@@ -330,19 +347,21 @@
       bottom: 0;
       height: 3px;
       background: var(--vi-tabs-primary-color, #{tokens.$color-primary});
-      box-shadow: 0 0 8px color-mix(in srgb, #{tokens.$color-primary} 50%, transparent);
+      box-shadow: 0 0 8px
+        color-mix(in srgb, #{tokens.$color-primary} 50%, transparent);
       border-radius: 0;
     }
 
     ::slotted(vi-tab) {
-      border-right: 1px solid var(--vi-tabs-border-color, #{tokens.$color-border}) !important;
+      border-right: 1px solid
+        var(--vi-tabs-border-color, #{tokens.$color-border}) !important;
       min-height: 44px !important;
     }
   }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ORIENTATION: vertical (sidebar settings pattern)
-// ─────────────────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────────
+  // ORIENTATION: vertical (sidebar settings pattern)
+  // ─────────────────────────────────────────────────────────────────────────────
 
   .vi-tabs--vertical {
     grid-template-columns: auto minmax(0, 1fr);
@@ -352,7 +371,8 @@
       flex-direction: column;
       align-items: stretch;
       background: var(--vi-tabs-surface-secondary, #{tokens.$layer-02});
-      border-right: 1px solid var(--vi-tabs-border-color, #{tokens.$color-border});
+      border-right: 1px solid
+        var(--vi-tabs-border-color, #{tokens.$color-border});
       border-bottom: none;
       padding: var(--vi-tabs-spacing-sm-xs, 6px 4px);
       min-width: 168px;
@@ -380,7 +400,8 @@
       height: 0;
       border-radius: #{func.to-rem(3px)} 0 0 #{func.to-rem(3px)};
       background: var(--vi-tabs-primary-color, #{tokens.$color-primary});
-      box-shadow: 0 0 6px color-mix(in srgb, #{tokens.$color-primary} 40%, transparent);
+      box-shadow: 0 0 6px
+        color-mix(in srgb, #{tokens.$color-primary} 40%, transparent);
     }
 
     ::slotted(vi-tab) {
@@ -395,9 +416,9 @@
     }
   }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Reduced motion — respect system preferences
-// ─────────────────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Reduced motion — respect system preferences
+  // ─────────────────────────────────────────────────────────────────────────────
 
   @media (prefers-reduced-motion: reduce) {
     .vi-tabs__cursor,
@@ -406,32 +427,66 @@
     }
   }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// OVERFLOW: scroll
-//
-// Tablist scrolls horizontally. Fade gradients hint at hidden content.
-// ─────────────────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────────
+  // OVERFLOW: scroll
+  //
+  // Tablist scrolls horizontally. Fade gradients hint at hidden content.
+  // ─────────────────────────────────────────────────────────────────────────────
 
   .vi-tabs--overflow-scroll .vi-tabs__tablist {
     overflow-x: auto;
     overflow-y: hidden;
     scrollbar-width: none;
-    &::-webkit-scrollbar { display: none; }
+    &::-webkit-scrollbar {
+      display: none;
+    }
 
     // Premium visual indicator using mask-image to fade tabs at the scroll edges
-    mask-image: linear-gradient(to right, transparent 0%, black 24px, black calc(100% - 24px), transparent 100%);
-    -webkit-mask-image: linear-gradient(to right, transparent 0%, black 24px, black calc(100% - 24px), transparent 100%);
-  
+    mask-image: linear-gradient(
+      to right,
+      transparent 0%,
+      black 24px,
+      black calc(100% - 24px),
+      transparent 100%
+    );
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent 0%,
+      black 24px,
+      black calc(100% - 24px),
+      transparent 100%
+    );
+
     // When at scroll start, hide left fade
     &[data-scroll-start] {
-      mask-image: linear-gradient(to right, black 0%, black calc(100% - 24px), transparent 100%);
-      -webkit-mask-image: linear-gradient(to right, black 0%, black calc(100% - 24px), transparent 100%);
+      mask-image: linear-gradient(
+        to right,
+        black 0%,
+        black calc(100% - 24px),
+        transparent 100%
+      );
+      -webkit-mask-image: linear-gradient(
+        to right,
+        black 0%,
+        black calc(100% - 24px),
+        transparent 100%
+      );
     }
 
     // When at scroll end, hide right fade
     &[data-scroll-end] {
-      mask-image: linear-gradient(to right, transparent 0%, black 24px, black 100%);
-      -webkit-mask-image: linear-gradient(to right, transparent 0%, black 24px, black 100%);
+      mask-image: linear-gradient(
+        to right,
+        transparent 0%,
+        black 24px,
+        black 100%
+      );
+      -webkit-mask-image: linear-gradient(
+        to right,
+        transparent 0%,
+        black 24px,
+        black 100%
+      );
     }
 
     // When no scroll possible, no fades
@@ -441,11 +496,11 @@
     }
   }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// OVERFLOW: wrap
-//
-// Tabs wrap to the next line.
-// ─────────────────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────────
+  // OVERFLOW: wrap
+  //
+  // Tabs wrap to the next line.
+  // ─────────────────────────────────────────────────────────────────────────────
 
   .vi-tabs--overflow-wrap .vi-tabs__tablist {
     flex-wrap: wrap;
@@ -453,11 +508,11 @@
     height: auto;
   }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// OVERFLOW: menu — "More" button + dropdown
-// ─────────────────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────────
+  // OVERFLOW: menu — "More" button + dropdown
+  // ─────────────────────────────────────────────────────────────────────────────
 
-// More wrapper sits at end of tablist
+  // More wrapper sits at end of tablist
   .vi-tabs__more-wrapper {
     position: relative;
     display: inline-flex;
@@ -467,7 +522,7 @@
     order: 9999; // ensure it sits after visually reordered tabs
   }
 
-// More trigger button
+  // More trigger button
   .vi-tabs__more-btn {
     display: inline-flex;
     align-items: center;
@@ -482,7 +537,9 @@
     font-weight: 500;
     color: var(--vi-tabs-text-secondary, #{tokens.$text-secondary});
     border-radius: #{func.to-rem(6px)} #{func.to-rem(6px)} 0 0;
-    transition: color 150ms ease, background-color 150ms ease;
+    transition:
+      color 150ms ease,
+      background-color 150ms ease;
 
     &:hover {
       color: var(--vi-tabs-text-primary, #{tokens.$text-primary});
@@ -503,7 +560,7 @@
     }
   }
 
-// More dropdown menu
+  // More dropdown menu
   .vi-tabs__more-menu {
     position: absolute;
     top: calc(100% + 4px);
@@ -520,11 +577,17 @@
   }
 
   @keyframes vi-menu-appear {
-    from { opacity: 0; transform: scale(0.95) translateY(-4px); }
-    to   { opacity: 1; transform: scale(1)    translateY(0); }
+    from {
+      opacity: 0;
+      transform: scale(0.95) translateY(-4px);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
   }
 
-// Individual menu item
+  // Individual menu item
   .vi-tabs__more-item {
     display: flex;
     align-items: center;
@@ -539,7 +602,9 @@
     color: var(--vi-tabs-text-secondary, #{tokens.$text-secondary});
     cursor: pointer;
     text-align: left;
-    transition: background-color 100ms ease, color 100ms ease;
+    transition:
+      background-color 100ms ease,
+      color 100ms ease;
 
     &:hover:not(:disabled) {
       background: var(--vi-tabs-surface-secondary, #{tokens.$layer-02});
@@ -557,10 +622,12 @@
       background: color-mix(in srgb, #{tokens.$color-primary} 6%, transparent);
 
       &:hover {
-        background: color-mix(in srgb, #{tokens.$color-primary} 10%, transparent);
+        background: color-mix(
+          in srgb,
+          #{tokens.$color-primary} 10%,
+          transparent
+        );
       }
     }
   }
-
-
 }

@@ -58,7 +58,7 @@ describe('vi-sidebar', () => {
 
     const el = document.querySelector('vi-sidebar') as ViSidebar;
     await el.updateComplete;
-    
+
     // Send Escape key
     await browser.keys(['Escape']);
     await el.updateComplete;
@@ -66,7 +66,10 @@ describe('vi-sidebar', () => {
   });
 
   it('should apply ARIA dialog roles when trapFocus is true', async () => {
-    render(html`<vi-sidebar trap-focus aria-label="My Sidebar"></vi-sidebar>`, wrapper);
+    render(
+      html`<vi-sidebar trap-focus aria-label="My Sidebar"></vi-sidebar>`,
+      wrapper,
+    );
     const host = await $('vi-sidebar');
     await expect(host).toExist();
 
@@ -81,46 +84,55 @@ describe('vi-sidebar', () => {
     const host = await $('vi-sidebar');
     await expect(host).toExist();
 
-    const aside = () => document.querySelector('vi-sidebar')?.shadowRoot?.querySelector('aside');
+    const aside = () =>
+      document.querySelector('vi-sidebar')?.shadowRoot?.querySelector('aside');
     expect(aside()?.hasAttribute('role')).toBe(false);
     expect(aside()?.hasAttribute('aria-modal')).toBe(false);
   });
 
   it('should trigger click outside correctly', async () => {
-    render(html`
-      <div>
-        <vi-sidebar close-on-click-outside opened></vi-sidebar>
-        <button id="outside">Outside</button>
-      </div>
-    `, wrapper);
+    render(
+      html`
+        <div>
+          <vi-sidebar close-on-click-outside opened></vi-sidebar>
+          <button id="outside">Outside</button>
+        </div>
+      `,
+      wrapper,
+    );
     const host = await $('vi-sidebar');
     await expect(host).toExist();
-    
+
     const sidebar = document.querySelector('vi-sidebar') as ViSidebar;
     const btn = document.querySelector('#outside') as HTMLButtonElement;
-    
+
     expect(sidebar.opened).toBe(true);
-    btn.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, composed: true })); // Trigger click outside
+    btn.dispatchEvent(
+      new MouseEvent('mousedown', { bubbles: true, composed: true }),
+    ); // Trigger click outside
     await sidebar.updateComplete;
     expect(sidebar.opened).toBe(false);
   });
 
   it('should constrain height and allow scrolling when slotted content is tall', async () => {
-    render(html`
-      <vi-sidebar opened style="height: 200px; display: block;">
-        <div style="height: 1000px;">Tall content</div>
-      </vi-sidebar>
-    `, wrapper);
+    render(
+      html`
+        <vi-sidebar opened style="height: 200px; display: block;">
+          <div style="height: 1000px;">Tall content</div>
+        </vi-sidebar>
+      `,
+      wrapper,
+    );
     const host = await $('vi-sidebar');
     await expect(host).toExist();
-    
+
     const el = document.querySelector('vi-sidebar') as ViSidebar;
-    
+
     // The host should remain at the constrained height
     expect(el.getBoundingClientRect().height).toBe(200);
 
     const contentArea = el.shadowRoot!.querySelector('.vi-sidebar__content')!;
-    
+
     // The content area should shrink to fit within the host and become scrollable.
     expect(contentArea.clientHeight).toBeLessThanOrEqual(200);
     expect(contentArea.scrollHeight).toBeGreaterThanOrEqual(1000);

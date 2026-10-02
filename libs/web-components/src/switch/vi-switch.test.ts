@@ -75,7 +75,10 @@ describe('vi-switch', () => {
   });
 
   it('handles label placement correctly', async () => {
-    render(html`<vi-switch label-placement="start">Test Label</vi-switch>`, container);
+    render(
+      html`<vi-switch label-placement="start">Test Label</vi-switch>`,
+      container,
+    );
     const el = container.querySelector('vi-switch') as ViSwitch;
     await el.updateComplete;
 
@@ -93,7 +96,7 @@ describe('vi-switch', () => {
           <vi-switch checked name="notify">Notify</vi-switch>
         </form>
       `,
-      container
+      container,
     );
     const form = container.querySelector('form') as HTMLFormElement;
     const el = container.querySelector('vi-switch') as ViSwitch;

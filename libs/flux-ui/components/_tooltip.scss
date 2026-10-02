@@ -3,9 +3,15 @@
 $vi-tooltip-background: var(--vi-tooltip-background, #{tokens.$layer-inverse});
 $vi-tooltip-color: var(--vi-tooltip-color, #{tokens.$text-primary-inverse});
 $vi-tooltip-font-size: var(--vi-tooltip-font-size, #{tokens.$font-size-xs});
-$vi-tooltip-border-radius: var(--vi-tooltip-border-radius, #{tokens.$border-radius-sm});
+$vi-tooltip-border-radius: var(
+  --vi-tooltip-border-radius,
+  #{tokens.$border-radius-sm}
+);
 // Padding: 6px vertical is between $spacing-unit (4px) and $spacing-xs (8px); kept as-is for visual compactness
-$vi-tooltip-padding: var(--vi-tooltip-padding, #{tokens.$spacing-unit} #{tokens.$spacing-xs});
+$vi-tooltip-padding: var(
+  --vi-tooltip-padding,
+  #{tokens.$spacing-unit} #{tokens.$spacing-xs}
+);
 $vi-tooltip-max-width: var(--vi-tooltip-max-width, 240px);
 // Arrow size 6px is not on the standard grid; kept explicit as it is a geometric value
 $vi-tooltip-arrow-size: var(--vi-tooltip-arrow-size, 6px);
@@ -18,7 +24,9 @@ $vi-tooltip-shadow: var(--vi-tooltip-shadow, #{tokens.$shadow-md});
   pointer-events: none;
   opacity: 0;
   transform: scale(0.95);
-  transition: opacity 0.15s ease-out, transform 0.15s ease-out;
+  transition:
+    opacity 0.15s ease-out,
+    transform 0.15s ease-out;
   margin: 0;
   border: none;
   background: transparent;
@@ -71,8 +79,8 @@ $vi-tooltip-shadow: var(--vi-tooltip-shadow, #{tokens.$shadow-md});
 // ----------------------------------------------------------------------------
 
 // 1. Default placements (used both as initial state and JS fallback)
-.tooltip-panel[placement^="top"],
-.tooltip-panel[data-placement^="top"] {
+.tooltip-panel[placement^='top'],
+.tooltip-panel[data-placement^='top'] {
   .tooltip-arrow {
     bottom: calc(-1 * $vi-tooltip-arrow-size);
     left: 50%;
@@ -82,8 +90,8 @@ $vi-tooltip-shadow: var(--vi-tooltip-shadow, #{tokens.$shadow-md});
   }
 }
 
-.tooltip-panel[placement^="bottom"],
-.tooltip-panel[data-placement^="bottom"] {
+.tooltip-panel[placement^='bottom'],
+.tooltip-panel[data-placement^='bottom'] {
   .tooltip-arrow {
     top: calc(-1 * $vi-tooltip-arrow-size);
     left: 50%;
@@ -93,31 +101,33 @@ $vi-tooltip-shadow: var(--vi-tooltip-shadow, #{tokens.$shadow-md});
   }
 }
 
-.tooltip-panel[placement="left"],
-.tooltip-panel[data-placement="left"] {
+.tooltip-panel[placement='left'],
+.tooltip-panel[data-placement='left'] {
   .tooltip-arrow {
     right: calc(-1 * $vi-tooltip-arrow-size);
     top: 50%;
     transform: translateY(-50%);
-    border-width: $vi-tooltip-arrow-size 0 $vi-tooltip-arrow-size $vi-tooltip-arrow-size;
+    border-width: $vi-tooltip-arrow-size 0 $vi-tooltip-arrow-size
+      $vi-tooltip-arrow-size;
     border-left-color: $vi-tooltip-background;
   }
 }
 
-.tooltip-panel[placement="right"],
-.tooltip-panel[data-placement="right"] {
+.tooltip-panel[placement='right'],
+.tooltip-panel[data-placement='right'] {
   .tooltip-arrow {
     left: calc(-1 * $vi-tooltip-arrow-size);
     top: 50%;
     transform: translateY(-50%);
-    border-width: $vi-tooltip-arrow-size $vi-tooltip-arrow-size $vi-tooltip-arrow-size 0;
+    border-width: $vi-tooltip-arrow-size $vi-tooltip-arrow-size
+      $vi-tooltip-arrow-size 0;
     border-right-color: $vi-tooltip-background;
   }
 }
 
 // Start variations
-.tooltip-panel[placement$="-start"],
-.tooltip-panel[data-placement$="-start"] {
+.tooltip-panel[placement$='-start'],
+.tooltip-panel[data-placement$='-start'] {
   .tooltip-arrow {
     left: 12px;
     transform: none;
@@ -125,8 +135,8 @@ $vi-tooltip-shadow: var(--vi-tooltip-shadow, #{tokens.$shadow-md});
 }
 
 // End variations
-.tooltip-panel[placement$="-end"],
-.tooltip-panel[data-placement$="-end"] {
+.tooltip-panel[placement$='-end'],
+.tooltip-panel[data-placement$='-end'] {
   .tooltip-arrow {
     left: auto;
     right: 12px;

@@ -77,7 +77,7 @@ export const GroupSingle: StoryObj = {
 export const WithAvatar: StoryObj = {
   render: () => html`
     <vi-chip removable>
-      <img slot="avatar" src="https://i.pravatar.cc/150?u=1" alt="Avatar">
+      <img slot="avatar" src="https://i.pravatar.cc/150?u=1" alt="Avatar" />
       John Doe
     </vi-chip>
   `,

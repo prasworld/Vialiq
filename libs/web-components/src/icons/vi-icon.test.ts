@@ -8,7 +8,10 @@ describe('vi-icon', () => {
   let container: HTMLElement;
 
   before(() => {
-    registerIcons({ name: 'test-icon', data: '<svg><path d="M0,0 H1"></path></svg>' });
+    registerIcons({
+      name: 'test-icon',
+      data: '<svg><path d="M0,0 H1"></path></svg>',
+    });
   });
 
   beforeEach(() => {
@@ -36,7 +39,10 @@ describe('vi-icon', () => {
   });
 
   it('renders accessible icon with role=img and aria-label when label is provided', async () => {
-    render(html`<vi-icon name="test-icon" label="Accessible Label"></vi-icon>`, container);
+    render(
+      html`<vi-icon name="test-icon" label="Accessible Label"></vi-icon>`,
+      container,
+    );
     const icon = await $('vi-icon');
     const span = await icon.shadow$('span');
     await expect(span).toExist();
@@ -45,18 +51,24 @@ describe('vi-icon', () => {
   });
 
   it('sets and removes --vi-icon-size inline style based on size attribute', async () => {
-    render(html`<vi-icon id="sized" name="test-icon" size="32"></vi-icon>`, container);
+    render(
+      html`<vi-icon id="sized" name="test-icon" size="32"></vi-icon>`,
+      container,
+    );
     const icon = await $('#sized');
-    
+
     let style = await icon.getAttribute('style');
     expect(style).toContain('--vi-icon-size: 32px');
 
     // Remove the attribute to test the removeProperty branch
-    await browser.execute(async (el: ViIcon) => {
-      el.removeAttribute('size');
-      await el.updateComplete;
-    }, await icon as unknown as ViIcon);
-    
+    await browser.execute(
+      async (el: ViIcon) => {
+        el.removeAttribute('size');
+        await el.updateComplete;
+      },
+      (await icon) as unknown as ViIcon,
+    );
+
     style = await icon.getAttribute('style');
     expect(style).not.toContain('--vi-icon-size');
   });

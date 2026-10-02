@@ -48,18 +48,33 @@
   // TEXT ELEMENTS
   // ============================================================================
 
-  p, h1, h2, h3, h4, h5, h6, ul, ol, dl {
+  p,
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  ul,
+  ol,
+  dl {
     margin: 0;
     padding: 0;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-weight: inherit;
     font-size: inherit;
     line-height: inherit;
   }
 
-  ul, ol {
+  ul,
+  ol {
     list-style: none;
   }
 
@@ -82,7 +97,9 @@
   // CODE
   // ============================================================================
 
-  code, pre, samp {
+  code,
+  pre,
+  samp {
     font-family: $font-family-mono;
     font-size: 1em;
   }
@@ -108,9 +125,9 @@
   }
 
   button,
-  input[type="button"],
-  input[type="reset"],
-  input[type="submit"] {
+  input[type='button'],
+  input[type='reset'],
+  input[type='submit'] {
     background: transparent;
     border: 0;
     cursor: pointer;
@@ -122,12 +139,12 @@
     }
   }
 
-  input[type="checkbox"] {
+  input[type='checkbox'] {
     padding: 0;
     -webkit-appearance: checkbox;
   }
 
-  input[type="radio"] {
+  input[type='radio'] {
     padding: 0;
     -webkit-appearance: radio;
   }

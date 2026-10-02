@@ -35,7 +35,7 @@ registerIcons([chevronDownIcon, xIcon]);
  * Form-associated single-choice select control.
  *
  * @element vi-select
- * 
+ *
  * @fires {CustomEvent<{value:string; label:string}>} vi-select-change - Fires when selection changes
  * @fires {CustomEvent<void>} vi-select-clear - Fires when selection is cleared
  */
@@ -256,7 +256,10 @@ export class ViSelect extends ValidityMixin(FocusableMixin(ViElement)) {
       this._setHostFocusable(!this.disabled);
     }
 
-    if (changedProperties.has('open') && this.open !== changedProperties.get('open')) {
+    if (
+      changedProperties.has('open') &&
+      this.open !== changedProperties.get('open')
+    ) {
       if (this.open) {
         this._floatingController.start();
         if (this.value && this._activeIndex >= 0) {

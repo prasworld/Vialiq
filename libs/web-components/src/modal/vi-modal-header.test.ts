@@ -17,7 +17,8 @@ describe('vi-modal-header', () => {
     }
   });
 
-  const getHeader = () => container.querySelector('vi-modal-header') as ViModalHeader;
+  const getHeader = () =>
+    container.querySelector('vi-modal-header') as ViModalHeader;
 
   it('renders default state', async () => {
     render(html`<vi-modal-header></vi-modal-header>`, container);
@@ -38,7 +39,7 @@ describe('vi-modal-header', () => {
         title="Test Title"
         description="Test description"
       ></vi-modal-header>`,
-      container
+      container,
     );
     const el = getHeader();
     await el.updateComplete;
@@ -55,7 +56,9 @@ describe('vi-modal-header', () => {
     const el = getHeader();
     await el.updateComplete;
 
-    const closeBtn = el.shadowRoot!.querySelector('[part="close-btn"]') as HTMLElement;
+    const closeBtn = el.shadowRoot!.querySelector(
+      '[part="close-btn"]',
+    ) as HTMLElement;
     expect(closeBtn).toBeTruthy();
 
     let eventFired = false;
@@ -72,7 +75,9 @@ describe('vi-modal-header', () => {
     const el = getHeader();
     await el.updateComplete;
 
-    const maxBtn = el.shadowRoot!.querySelector('[part="maximize-btn"]') as HTMLElement;
+    const maxBtn = el.shadowRoot!.querySelector(
+      '[part="maximize-btn"]',
+    ) as HTMLElement;
     expect(maxBtn).toBeTruthy();
 
     let eventFired = false;
@@ -85,11 +90,16 @@ describe('vi-modal-header', () => {
   });
 
   it('renders alert variant icon', async () => {
-    render(html`<vi-modal-header alert-variant="warning"></vi-modal-header>`, container);
+    render(
+      html`<vi-modal-header alert-variant="warning"></vi-modal-header>`,
+      container,
+    );
     const el = getHeader();
     await el.updateComplete;
 
-    const icon = el.shadowRoot!.querySelector('vi-icon[name="triangle-warning"]');
+    const icon = el.shadowRoot!.querySelector(
+      'vi-icon[name="triangle-warning"]',
+    );
     expect(icon).toBeTruthy();
   });
 });

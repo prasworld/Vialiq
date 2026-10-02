@@ -27,8 +27,16 @@ class ViTestDraggable extends DraggableMixin(LitElement) {
 
   override render() {
     return html`
-      <div class="target" style="width: 200px; height: 200px; background: red; position: fixed; top: 100px; left: 100px;">
-        <div class="handle" style="width: 100%; height: 50px; background: blue;">Handle</div>
+      <div
+        class="target"
+        style="width: 200px; height: 200px; background: red; position: fixed; top: 100px; left: 100px;"
+      >
+        <div
+          class="handle"
+          style="width: 100%; height: 50px; background: blue;"
+        >
+          Handle
+        </div>
       </div>
     `;
   }
@@ -46,20 +54,21 @@ describe('DraggableMixin', () => {
     // Mock pointer capture for synthetic events
     originalSetPointerCapture = Element.prototype.setPointerCapture;
     originalReleasePointerCapture = Element.prototype.releasePointerCapture;
-    Element.prototype.setPointerCapture = function() {};
-    Element.prototype.releasePointerCapture = function() {};
+    Element.prototype.setPointerCapture = function () {};
+    Element.prototype.releasePointerCapture = function () {};
   });
 
   afterEach(() => {
     if (container.parentNode) {
       document.body.removeChild(container);
     }
-    
+
     Element.prototype.setPointerCapture = originalSetPointerCapture;
     Element.prototype.releasePointerCapture = originalReleasePointerCapture;
   });
 
-  const getElement = () => container.querySelector('vi-test-draggable') as ViTestDraggable;
+  const getElement = () =>
+    container.querySelector('vi-test-draggable') as ViTestDraggable;
 
   it('does not attach drag listeners if draggable is false', async () => {
     render(html`<vi-test-draggable></vi-test-draggable>`, container);
@@ -68,11 +77,25 @@ describe('DraggableMixin', () => {
 
     expect(el.draggable).toBe(false);
     expect(el.handleEl.style.cursor).toBe('');
-    
+
     // Simulating a pointerdown shouldn't apply any transforms
-    el.handleEl.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, composed: true, clientX: 100, clientY: 100 }));
-    document.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, composed: true, clientX: 150, clientY: 150 }));
-    
+    el.handleEl.dispatchEvent(
+      new PointerEvent('pointerdown', {
+        bubbles: true,
+        composed: true,
+        clientX: 100,
+        clientY: 100,
+      }),
+    );
+    document.dispatchEvent(
+      new PointerEvent('pointermove', {
+        bubbles: true,
+        composed: true,
+        clientX: 150,
+        clientY: 150,
+      }),
+    );
+
     expect(el.targetEl.style.transform).toBe('');
   });
 
@@ -85,18 +108,34 @@ describe('DraggableMixin', () => {
     expect(el.handleEl.style.cursor).toBe('grab');
 
     // Start drag
-    el.handleEl.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, composed: true, clientX: 100, clientY: 100 }));
-    
+    el.handleEl.dispatchEvent(
+      new PointerEvent('pointerdown', {
+        bubbles: true,
+        composed: true,
+        clientX: 100,
+        clientY: 100,
+      }),
+    );
+
     // Move
-    document.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, composed: true, clientX: 150, clientY: 120 }));
-    
+    document.dispatchEvent(
+      new PointerEvent('pointermove', {
+        bubbles: true,
+        composed: true,
+        clientX: 150,
+        clientY: 120,
+      }),
+    );
+
     // Check transform
     expect(el.targetEl.style.transform).toBe('translate3d(50px, 20px, 0px)');
     expect(document.body.style.userSelect).toBe('none');
 
     // End drag
-    document.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, composed: true }));
-    
+    document.dispatchEvent(
+      new PointerEvent('pointerup', { bubbles: true, composed: true }),
+    );
+
     expect(document.body.style.userSelect).toBe(''); // Restored
   });
 
@@ -106,16 +145,48 @@ describe('DraggableMixin', () => {
     await el.updateComplete;
 
     // First drag (+50, +20)
-    el.handleEl.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, composed: true, clientX: 100, clientY: 100 }));
-    document.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, composed: true, clientX: 150, clientY: 120 }));
-    document.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, composed: true }));
+    el.handleEl.dispatchEvent(
+      new PointerEvent('pointerdown', {
+        bubbles: true,
+        composed: true,
+        clientX: 100,
+        clientY: 100,
+      }),
+    );
+    document.dispatchEvent(
+      new PointerEvent('pointermove', {
+        bubbles: true,
+        composed: true,
+        clientX: 150,
+        clientY: 120,
+      }),
+    );
+    document.dispatchEvent(
+      new PointerEvent('pointerup', { bubbles: true, composed: true }),
+    );
 
     expect(el.targetEl.style.transform).toBe('translate3d(50px, 20px, 0px)');
 
     // Second drag (+10, -10) -> Total (60, 10)
-    el.handleEl.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, composed: true, clientX: 200, clientY: 200 }));
-    document.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, composed: true, clientX: 210, clientY: 190 }));
-    document.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, composed: true }));
+    el.handleEl.dispatchEvent(
+      new PointerEvent('pointerdown', {
+        bubbles: true,
+        composed: true,
+        clientX: 200,
+        clientY: 200,
+      }),
+    );
+    document.dispatchEvent(
+      new PointerEvent('pointermove', {
+        bubbles: true,
+        composed: true,
+        clientX: 210,
+        clientY: 190,
+      }),
+    );
+    document.dispatchEvent(
+      new PointerEvent('pointerup', { bubbles: true, composed: true }),
+    );
 
     expect(el.targetEl.style.transform).toBe('translate3d(60px, 10px, 0px)');
   });
@@ -125,9 +196,25 @@ describe('DraggableMixin', () => {
     const el = getElement();
     await el.updateComplete;
 
-    el.handleEl.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, composed: true, clientX: 100, clientY: 100 }));
-    document.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, composed: true, clientX: 150, clientY: 120 }));
-    document.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, composed: true }));
+    el.handleEl.dispatchEvent(
+      new PointerEvent('pointerdown', {
+        bubbles: true,
+        composed: true,
+        clientX: 100,
+        clientY: 100,
+      }),
+    );
+    document.dispatchEvent(
+      new PointerEvent('pointermove', {
+        bubbles: true,
+        composed: true,
+        clientX: 150,
+        clientY: 120,
+      }),
+    );
+    document.dispatchEvent(
+      new PointerEvent('pointerup', { bubbles: true, composed: true }),
+    );
 
     expect(el.targetEl.style.transform).toBe('translate3d(50px, 20px, 0px)');
 

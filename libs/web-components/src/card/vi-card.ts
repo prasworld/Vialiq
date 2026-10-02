@@ -33,7 +33,9 @@ import cardStyles from './vi-card.scss?inline';
  */
 @customElement('vi-card')
 export class ViCard extends ViElement {
-  static override styles = css`${unsafeCSS(cardStyles)}`;
+  static override styles = css`
+    ${unsafeCSS(cardStyles)}
+  `;
 
   /** Renders a border around the card */
   @property({ type: Boolean, reflect: true }) accessor bordered = false;
@@ -45,7 +47,11 @@ export class ViCard extends ViElement {
   @property({ type: Boolean, reflect: true }) accessor loading = false;
 
   /** Controls the padding size scale */
-  @property({ type: String, reflect: true }) accessor size: 'fluid' | 'sm' | 'md' | 'lg' = 'fluid';
+  @property({ type: String, reflect: true }) accessor size:
+    | 'fluid'
+    | 'sm'
+    | 'md'
+    | 'lg' = 'fluid';
 
   override render(): TemplateResult {
     // Classes applied based on attributes
@@ -81,29 +87,43 @@ export class ViCard extends ViElement {
 
         <!-- Body Section -->
         <div class="vi-card-body" part="body">
-          ${this.loading ? html`
-            <slot name="loader">
-              <div class="vi-card-skeleton">
-                <div class="vi-card-skeleton-content">
-                  <vi-skeleton variant="text" class="vi-card-skeleton-title"></vi-skeleton>
-                  <vi-skeleton variant="text"></vi-skeleton>
-                  <vi-skeleton variant="text"></vi-skeleton>
-                  <vi-skeleton variant="text" class="vi-card-skeleton-short"></vi-skeleton>
-                </div>
-              </div>
-            </slot>
-          ` : html`
-            <slot></slot>
-          `}
+          ${this.loading
+            ? html`
+                <slot name="loader">
+                  <div class="vi-card-skeleton">
+                    <div class="vi-card-skeleton-content">
+                      <vi-skeleton
+                        variant="text"
+                        class="vi-card-skeleton-title"
+                      ></vi-skeleton>
+                      <vi-skeleton variant="text"></vi-skeleton>
+                      <vi-skeleton variant="text"></vi-skeleton>
+                      <vi-skeleton
+                        variant="text"
+                        class="vi-card-skeleton-short"
+                      ></vi-skeleton>
+                    </div>
+                  </div>
+                </slot>
+              `
+            : html` <slot></slot> `}
         </div>
 
         <!-- Footer Section -->
-        <div class="vi-card-footer" part="footer" style=${this.loading ? 'display: none;' : ''}>
+        <div
+          class="vi-card-footer"
+          part="footer"
+          style=${this.loading ? 'display: none;' : ''}
+        >
           <slot name="footer"></slot>
         </div>
 
         <!-- Actions Section -->
-        <div class="vi-card-actions" part="actions" style=${this.loading ? 'display: none;' : ''}>
+        <div
+          class="vi-card-actions"
+          part="actions"
+          style=${this.loading ? 'display: none;' : ''}
+        >
           <slot name="actions"></slot>
         </div>
       </div>

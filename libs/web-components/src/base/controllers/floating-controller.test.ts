@@ -21,7 +21,12 @@ class ViTestFloating extends LitElement {
   override render() {
     return html`
       <div class="ref" style="width: 100px; height: 30px;">Reference</div>
-      <div class="float" style="width: 200px; height: 100px; position: absolute;">Floating</div>
+      <div
+        class="float"
+        style="width: 200px; height: 100px; position: absolute;"
+      >
+        Floating
+      </div>
     `;
   }
 }
@@ -40,7 +45,8 @@ describe('FloatingController', () => {
     }
   });
 
-  const getElement = () => container.querySelector('vi-test-floating') as ViTestFloating;
+  const getElement = () =>
+    container.querySelector('vi-test-floating') as ViTestFloating;
 
   it('initializes correctly without throwing', async () => {
     render(html`<vi-test-floating></vi-test-floating>`, container);
@@ -56,10 +62,10 @@ describe('FloatingController', () => {
     await el.updateComplete;
 
     el.floatingController.start();
-    
+
     // Z-index should not be set by OverlayManager
     expect(OverlayManager.getZIndex(el.floatingEl)).toBeNull();
-    
+
     el.floatingController.stop();
   });
 
@@ -70,7 +76,7 @@ describe('FloatingController', () => {
 
     el.doHoist = true;
     el.floatingController.start();
-    
+
     const zIndex = OverlayManager.getZIndex(el.floatingEl);
     expect(zIndex).not.toBeNull();
     expect(el.floatingEl.style.zIndex).toBe(zIndex?.toString());
@@ -86,12 +92,12 @@ describe('FloatingController', () => {
 
     el.doHoist = true;
     el.floatingController.start();
-    
+
     expect(OverlayManager.getZIndex(el.floatingEl)).not.toBeNull();
 
     // Removing the element simulates disconnection
     container.removeChild(el);
-    
+
     // The controller hooks into hostDisconnected to call stop()
     expect(OverlayManager.getZIndex(el.floatingEl)).toBeNull();
   });

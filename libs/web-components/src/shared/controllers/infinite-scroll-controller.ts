@@ -13,7 +13,7 @@ export class InfiniteScrollController implements ReactiveController {
 
   constructor(
     private host: ReactiveControllerHost & HTMLElement,
-    private options: InfiniteScrollControllerOptions
+    private options: InfiniteScrollControllerOptions,
   ) {
     this.host.addController(this);
   }
@@ -47,7 +47,7 @@ export class InfiniteScrollController implements ReactiveController {
                   bubbles: true,
                   composed: true,
                   detail: { id: this.host.id || '', direction },
-                })
+                }),
               );
             }
           }
@@ -56,7 +56,7 @@ export class InfiniteScrollController implements ReactiveController {
           root: listbox,
           rootMargin: this.options.rootMargin ?? '100px',
           threshold: 0,
-        }
+        },
       );
 
       if (top) this._observer.observe(top);

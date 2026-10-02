@@ -34,14 +34,19 @@
 .vi-menu-item {
   display: flex;
   align-items: center;
-  padding: var(--vi-menu-item-padding, #{tokens.$spacing-sm} #{tokens.$spacing-sm});
+  padding: var(
+    --vi-menu-item-padding,
+    #{tokens.$spacing-sm} #{tokens.$spacing-sm}
+  );
   margin: var(--vi-menu-item-margin, 2px 0);
   border-radius: var(--vi-menu-item-border-radius, #{tokens.$border-radius-sm});
   cursor: pointer;
   font-size: tokens.$font-size-base;
   line-height: tokens.$line-height-tight;
   color: var(--vi-menu-item-color, #{tokens.$text-primary});
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
   user-select: none;
   outline: none;
   background-color: var(--vi-menu-item-bg, transparent);
@@ -64,7 +69,10 @@
 
     &:hover,
     &:focus-visible {
-      background-color: var(--vi-menu-item-bg-danger-hover, #{tokens.$bg-error});
+      background-color: var(
+        --vi-menu-item-bg-danger-hover,
+        #{tokens.$bg-error}
+      );
     }
   }
 
@@ -86,5 +94,3 @@
     color: var(--vi-menu-item-color-danger, #{tokens.$text-error});
   }
 }
-
-

@@ -11,7 +11,7 @@
   pointer-events: none;
 }
 
-:host([status="invalid"]) {
+:host([status='invalid']) {
   --vi-radio-group-label-color: #{tokens.$color-error};
 }
 
@@ -39,4 +39,3 @@
   --vi-radio-group-label-font-size: #{tokens.$font-size-lg};
   --vi-radio-group-legend-margin-bottom: 10px;
 }
-

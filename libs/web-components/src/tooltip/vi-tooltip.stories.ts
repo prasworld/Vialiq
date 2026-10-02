@@ -15,9 +15,14 @@ const meta: Meta = {
     placement: {
       control: 'select',
       options: [
-        'top', 'top-start', 'top-end',
-        'bottom', 'bottom-start', 'bottom-end',
-        'left', 'right'
+        'top',
+        'top-start',
+        'top-end',
+        'bottom',
+        'bottom-start',
+        'bottom-end',
+        'left',
+        'right',
       ],
       description: 'Preferred position of the tooltip relative to its trigger',
     },
@@ -56,7 +61,9 @@ const meta: Meta = {
   },
   render: (args) => {
     return html`
-      <div style="padding: 100px; display: flex; justify-content: center; align-items: center;">
+      <div
+        style="padding: 100px; display: flex; justify-content: center; align-items: center;"
+      >
         <vi-tooltip
           .content=${args.content}
           .placement=${args.placement}
@@ -80,7 +87,9 @@ export const Default: Story = {};
 
 export const RichContent: Story = {
   render: (args) => html`
-    <div style="padding: 100px; display: flex; justify-content: center; align-items: center;">
+    <div
+      style="padding: 100px; display: flex; justify-content: center; align-items: center;"
+    >
       <vi-tooltip
         .placement=${args.placement}
         .trigger=${args.trigger}
@@ -89,12 +98,14 @@ export const RichContent: Story = {
         .maxWidth=${args.maxWidth}
         ?disabled=${args.disabled}
       >
-        <vi-button variant="ghost" size="sm">
-          Grade Info
-        </vi-button>
+        <vi-button variant="ghost" size="sm"> Grade Info </vi-button>
         <div slot="content">
           Grade per NCI CTCAE v5.0.
-          <a href="https://ctep.cancer.gov/protocoldevelopment/electronic_applications/ctc.htm" target="_blank" style="color: #64b5f6; text-decoration: underline;">
+          <a
+            href="https://ctep.cancer.gov/protocoldevelopment/electronic_applications/ctc.htm"
+            target="_blank"
+            style="color: #64b5f6; text-decoration: underline;"
+          >
             View criteria
           </a>
         </div>
@@ -105,23 +116,39 @@ export const RichContent: Story = {
 
 export const Placements: Story = {
   render: (args) => html`
-    <div style="padding: 120px; display: grid; grid-template-columns: repeat(3, 160px); gap: 40px; justify-content: center; justify-items: center; align-items: center;">
+    <div
+      style="padding: 120px; display: grid; grid-template-columns: repeat(3, 160px); gap: 40px; justify-content: center; justify-items: center; align-items: center;"
+    >
       <div></div>
       <vi-tooltip content="Top placement" placement="top" .delay=${args.delay}>
         <vi-button size="sm">Top</vi-button>
       </vi-tooltip>
       <div></div>
 
-      <vi-tooltip content="Left placement" placement="left" .delay=${args.delay}>
+      <vi-tooltip
+        content="Left placement"
+        placement="left"
+        .delay=${args.delay}
+      >
         <vi-button size="sm">Left</vi-button>
       </vi-tooltip>
-      <div style="font-size: 11px; color: #888; text-align: center;">Placements Grid</div>
-      <vi-tooltip content="Right placement" placement="right" .delay=${args.delay}>
+      <div style="font-size: 11px; color: #888; text-align: center;">
+        Placements Grid
+      </div>
+      <vi-tooltip
+        content="Right placement"
+        placement="right"
+        .delay=${args.delay}
+      >
         <vi-button size="sm">Right</vi-button>
       </vi-tooltip>
 
       <div></div>
-      <vi-tooltip content="Bottom placement" placement="bottom" .delay=${args.delay}>
+      <vi-tooltip
+        content="Bottom placement"
+        placement="bottom"
+        .delay=${args.delay}
+      >
         <vi-button size="sm">Bottom</vi-button>
       </vi-tooltip>
       <div></div>

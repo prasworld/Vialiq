@@ -12,10 +12,7 @@
   left: 0;
   right: 0;
   z-index: var(--vi-alert-floating-z-index, tokens.$alert-floating-z-index);
-  box-shadow: var(
-    --vi-alert-floating-shadow,
-    0 4px 12px rgba(0, 0, 0, 0.12)
-  );
+  box-shadow: var(--vi-alert-floating-shadow, 0 4px 12px rgba(0, 0, 0, 0.12));
 }
 
 :host([hidden]) {
@@ -95,7 +92,10 @@
   color: var(--vi-alert-danger-text-color, #{tokens.$text-error});
 
   .alert-title {
-    color: var(--vi-alert-danger-title-color, #{tokens.$text-error}); // typically darker in tokens, using base here
+    color: var(
+      --vi-alert-danger-title-color,
+      #{tokens.$text-error}
+    ); // typically darker in tokens, using base here
   }
 
   .alert-icon {
@@ -113,7 +113,7 @@ vi-icon,
 }
 
 // Close button positioning adjustment
-vi-button[part="close-btn"] {
+vi-button[part='close-btn'] {
   // Pull the button slightly up and right to align better with padding
   margin-top: -4px;
   margin-right: -4px;

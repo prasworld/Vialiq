@@ -24,7 +24,10 @@
 }
 
 .button {
-  padding-block: var(--vi-button-spacing-padding-block, #{tokens.$spacing-unit});
+  padding-block: var(
+    --vi-button-spacing-padding-block,
+    #{tokens.$spacing-unit}
+  );
   height: var(--vi-button-sizing-min-height, #{func.to-rem(32px)});
 }
 
@@ -34,25 +37,43 @@
 
 :host([size='xs']) .button {
   padding-block: var(--vi-button-spacing-padding-block, 0);
-  padding-inline: var(--vi-button-spacing-padding-inline, #{tokens.$spacing-unit});
+  padding-inline: var(
+    --vi-button-spacing-padding-inline,
+    #{tokens.$spacing-unit}
+  );
   font-size: var(--vi-button-typography-font-size, #{tokens.$font-size-xs});
-  border-radius: var(--vi-button-shape-border-radius, #{tokens.$border-radius-sm});
+  border-radius: var(
+    --vi-button-shape-border-radius,
+    #{tokens.$border-radius-sm}
+  );
   height: var(--vi-button-sizing-min-height, #{func.to-rem(20px)});
 }
 
 :host([size='sm']) .button {
   padding-block: var(--vi-button-spacing-padding-block, 0);
-  padding-inline: var(--vi-button-spacing-padding-inline, #{tokens.$spacing-xs});
+  padding-inline: var(
+    --vi-button-spacing-padding-inline,
+    #{tokens.$spacing-xs}
+  );
   font-size: var(--vi-button-typography-font-size, #{tokens.$font-size-base});
-  border-radius: var(--vi-button-shape-border-radius, #{tokens.$border-radius-sm});
+  border-radius: var(
+    --vi-button-shape-border-radius,
+    #{tokens.$border-radius-sm}
+  );
   height: var(--vi-button-sizing-min-height, #{func.to-rem(24px)});
 }
 
 :host([size='lg']) .button {
   padding-block: var(--vi-button-spacing-padding-block, #{tokens.$spacing-xs});
-  padding-inline: var(--vi-button-spacing-padding-inline, #{tokens.$spacing-md});
+  padding-inline: var(
+    --vi-button-spacing-padding-inline,
+    #{tokens.$spacing-md}
+  );
   font-size: var(--vi-button-typography-font-size, #{tokens.$font-size-lg});
-  border-radius: var(--vi-button-shape-border-radius, #{tokens.$border-radius-lg});
+  border-radius: var(
+    --vi-button-shape-border-radius,
+    #{tokens.$border-radius-lg}
+  );
   height: var(--vi-button-sizing-min-height, #{func.to-rem(40px)});
 }
 
@@ -88,42 +109,74 @@
   border-width: 0;
 }
 
-
 // ============================================================================
 // Variant rules
 // ============================================================================
 
 :host([variant='primary']) .button {
-  background-color: var(--vi-button-surface-primary-background-color, #{tokens.$color-primary});
+  background-color: var(
+    --vi-button-surface-primary-background-color,
+    #{tokens.$color-primary}
+  );
   /* $text-primary-inverse (#ffffff) gives 4.50:1 contrast on $color-primary (#3676d0) — passes WCAG AA.
    * grey-100 (#f5f5f5) only gives 4.13:1 which fails. */
-  color: var(--vi-button-surface-primary-text-color, #{tokens.$text-primary-inverse});
+  color: var(
+    --vi-button-surface-primary-text-color,
+    #{tokens.$text-primary-inverse}
+  );
 }
 
 :host([variant='secondary']) .button {
-  background-color: var(--vi-button-surface-secondary-background-color, #{tokens.$color-secondary});
-  color: var(--vi-button-surface-secondary-text-color, #{tokens.$color-foreground});
+  background-color: var(
+    --vi-button-surface-secondary-background-color,
+    #{tokens.$color-secondary}
+  );
+  color: var(
+    --vi-button-surface-secondary-text-color,
+    #{tokens.$color-foreground}
+  );
   border-color: #{tokens.$color-border};
 }
 
 :host([variant='danger']) .button {
-  background-color: var(--vi-button-surface-danger-background-color, #{tokens.$color-error});
+  background-color: var(
+    --vi-button-surface-danger-background-color,
+    #{tokens.$color-error}
+  );
   /* White text on colored backgrounds — consistent AA compliance across variants. */
-  color: var(--vi-button-surface-danger-text-color, #{tokens.$text-primary-inverse});
+  color: var(
+    --vi-button-surface-danger-text-color,
+    #{tokens.$text-primary-inverse}
+  );
 }
 
 :host([variant='success']) .button {
-  background-color: var(--vi-button-surface-success-background-color, #{tokens.$color-success});
-  color: var(--vi-button-surface-success-text-color, #{tokens.$text-primary-inverse});
+  background-color: var(
+    --vi-button-surface-success-background-color,
+    #{tokens.$color-success}
+  );
+  color: var(
+    --vi-button-surface-success-text-color,
+    #{tokens.$text-primary-inverse}
+  );
 }
 
 :host([variant='info']) .button {
-  background-color: var(--vi-button-surface-info-background-color, #{tokens.$color-info});
-  color: var(--vi-button-surface-info-text-color, #{tokens.$text-primary-inverse});
+  background-color: var(
+    --vi-button-surface-info-background-color,
+    #{tokens.$color-info}
+  );
+  color: var(
+    --vi-button-surface-info-text-color,
+    #{tokens.$text-primary-inverse}
+  );
 }
 
 :host([variant='ghost']) .button {
-  background-color: var(--vi-button-surface-ghost-background-color, transparent);
+  background-color: var(
+    --vi-button-surface-ghost-background-color,
+    transparent
+  );
   color: var(--vi-button-surface-ghost-text-color, #{tokens.$color-primary});
 }
 
@@ -166,7 +219,7 @@
     --vi-button-effect-shadow-hover,
     inset 0 1px 0 rgba(255, 255, 255, 0.18),
     0 4px 8px rgba(0, 0, 0, 0.22),
-    0 2px 4px rgba(0, 0, 0, 0.10)
+    0 2px 4px rgba(0, 0, 0, 0.1)
   );
   transform: translateY(-1px);
 }
@@ -215,9 +268,11 @@
 // ============================================================================
 
 .button:focus-visible:not(:disabled) {
-  outline: #{tokens.$border-width-base} solid var(--vi-button-focus-ring-color, #{tokens.$color-primary});
+  outline: #{tokens.$border-width-base} solid
+    var(--vi-button-focus-ring-color, #{tokens.$color-primary});
   outline-offset: 0;
-  box-shadow: var(--vi-button-effect-shadow-raised,
+  box-shadow: var(
+    --vi-button-effect-shadow-raised,
     inset 0 1px 0 rgba(255, 255, 255, 0.14),
     0 2px 4px rgba(0, 0, 0, 0.18),
     0 1px 2px rgba(0, 0, 0, 0.08)
@@ -230,7 +285,8 @@
   .button {
     transform: none !important;
     // Overrides the base transition to exclude 'transform'
-    transition-property: color, background-color, border-color, box-shadow, opacity !important;
+    transition-property:
+      color, background-color, border-color, box-shadow, opacity !important;
   }
 }
 

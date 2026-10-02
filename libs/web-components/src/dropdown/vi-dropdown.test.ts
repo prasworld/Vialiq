@@ -18,14 +18,17 @@ describe('vi-dropdown', () => {
   });
 
   it('should render trigger element', async () => {
-    render(html`
-      <vi-dropdown>
-        <vi-button id="trigger">Dropdown</vi-button>
-        <vi-menu slot="content">
-          <vi-menu-item value="1">Item 1</vi-menu-item>
-        </vi-menu>
-      </vi-dropdown>
-    `, container);
+    render(
+      html`
+        <vi-dropdown>
+          <vi-button id="trigger">Dropdown</vi-button>
+          <vi-menu slot="content">
+            <vi-menu-item value="1">Item 1</vi-menu-item>
+          </vi-menu>
+        </vi-dropdown>
+      `,
+      container,
+    );
 
     const el = container.querySelector('vi-dropdown') as ViDropdown;
     await el.updateComplete;
@@ -37,14 +40,17 @@ describe('vi-dropdown', () => {
   });
 
   it('should close when a menu item is clicked', async () => {
-    render(html`
-      <vi-dropdown open>
-        <vi-button>Dropdown</vi-button>
-        <vi-menu slot="content">
-          <vi-menu-item value="1">Item 1</vi-menu-item>
-        </vi-menu>
-      </vi-dropdown>
-    `, container);
+    render(
+      html`
+        <vi-dropdown open>
+          <vi-button>Dropdown</vi-button>
+          <vi-menu slot="content">
+            <vi-menu-item value="1">Item 1</vi-menu-item>
+          </vi-menu>
+        </vi-dropdown>
+      `,
+      container,
+    );
 
     const el = container.querySelector('vi-dropdown') as ViDropdown;
     await el.updateComplete;
@@ -52,7 +58,7 @@ describe('vi-dropdown', () => {
 
     const menuItem = el.querySelector('vi-menu-item');
     const innerLi = menuItem!.shadowRoot!.querySelector('li');
-    
+
     // Simulate clicking the menu item
     innerLi!.click();
 

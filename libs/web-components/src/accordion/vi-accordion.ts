@@ -45,7 +45,10 @@ export class ViAccordion extends ViElement {
 
   constructor() {
     super();
-    this.addEventListener('vi-accordion-before-open', this._handleBeforeItemOpen);
+    this.addEventListener(
+      'vi-accordion-before-open',
+      this._handleBeforeItemOpen,
+    );
     this.addEventListener('vi-accordion-open', this._handleItemOpen);
     this.addEventListener('vi-accordion-close', this._handleItemClose);
   }
@@ -67,7 +70,7 @@ export class ViAccordion extends ViElement {
 
   private _propagateProps(): void {
     const items = this._getAccordionItems();
-    items.forEach(item => {
+    items.forEach((item) => {
       item.size = this.size;
       item.variant = this.variant;
     });
@@ -81,7 +84,9 @@ export class ViAccordion extends ViElement {
     const targetId = (target as ViAccordionItem).itemId;
 
     const items = this._getAccordionItems();
-    const openItems = items.filter(item => item.open && item.itemId !== targetId);
+    const openItems = items.filter(
+      (item) => item.open && item.itemId !== targetId,
+    );
 
     for (const openItem of openItems) {
       const beforeCloseEvent = new CustomEvent('vi-accordion-before-close', {
@@ -106,7 +111,7 @@ export class ViAccordion extends ViElement {
 
     if (!this.multi) {
       const items = this._getAccordionItems();
-      items.forEach(item => {
+      items.forEach((item) => {
         if (item.itemId !== targetId && item.open) {
           item.open = false;
           item.dispatchEvent(
@@ -114,7 +119,7 @@ export class ViAccordion extends ViElement {
               detail: { itemId: item.itemId },
               bubbles: true,
               composed: true,
-            })
+            }),
           );
         }
       });
@@ -135,21 +140,21 @@ export class ViAccordion extends ViElement {
         detail: { itemId, open },
         bubbles: true,
         composed: true,
-      })
+      }),
     );
   }
 
   private _onKeyDown(e: KeyboardEvent): void {
-    const items = this._getAccordionItems().filter(item => !item.disabled);
+    const items = this._getAccordionItems().filter((item) => !item.disabled);
     if (items.length === 0) return;
 
     const activeElement = document.activeElement;
     // Roving focus matching: check button inside shadow root of accordion items, or host element
     const focusedIndex = items.findIndex(
-      item =>
+      (item) =>
         item === activeElement ||
         item.shadowRoot?.activeElement === activeElement ||
-        item === (activeElement as unknown as { host?: unknown })?.host
+        item === (activeElement as unknown as { host?: unknown })?.host,
     );
 
     if (focusedIndex === -1) return;
@@ -187,7 +192,7 @@ export class ViAccordion extends ViElement {
 
   override render(): TemplateResult {
     const containerClasses = classMap({
-      'accordion': true,
+      accordion: true,
       'accordion--bordered': this.variant === 'bordered',
       'accordion--flush': this.variant === 'flush',
       'accordion--card': this.variant === 'card',

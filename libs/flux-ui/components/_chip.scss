@@ -12,7 +12,10 @@
     border-style: solid;
 
     // Tokens mapped directly from docs
-    height: var(--vi-chip-height, var(--vi-chip-height-md, #{tokens.$spacing-xl}));
+    height: var(
+      --vi-chip-height,
+      var(--vi-chip-height-md, #{tokens.$spacing-xl})
+    );
     padding: var(--vi-chip-padding, 0 10px);
     border-radius: var(--vi-chip-border-radius, #{tokens.$border-radius-full});
     border-width: var(--vi-chip-border-width, 1px);
@@ -29,13 +32,14 @@
 
   // Focus ring
   .chip:focus-visible {
-    outline: #{tokens.$border-width-base} solid var(--vi-chip-focus-ring-color, #{tokens.$focus});
+    outline: #{tokens.$border-width-base} solid
+      var(--vi-chip-focus-ring-color, #{tokens.$focus});
     outline-offset: 0;
     box-shadow: #{tokens.$focus-ring-shadow};
   }
 
   // Disabled state structure
-  .chip[aria-disabled="true"] {
+  .chip[aria-disabled='true'] {
     cursor: not-allowed;
     // Colors handled by variant mapped tokens
   }

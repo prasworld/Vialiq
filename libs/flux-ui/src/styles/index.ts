@@ -18,8 +18,8 @@
  */
 export const fluxUiStyles = {
   variables: '@vialiq/flux-ui/styles/_variables.scss',
-  reset:     '@vialiq/flux-ui/styles/_reset.scss',
-  layout:    '@vialiq/flux-ui/styles/_layout.scss',
+  reset: '@vialiq/flux-ui/styles/_reset.scss',
+  layout: '@vialiq/flux-ui/styles/_layout.scss',
   utilities: '@vialiq/flux-ui/styles/_utilities.scss',
 } as const;
 

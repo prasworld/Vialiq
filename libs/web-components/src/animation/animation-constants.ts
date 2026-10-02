@@ -226,26 +226,26 @@ export const PRESET_KEYFRAMES: Record<string, Keyframe[]> = {
     { maxWidth: '0px', opacity: 0, overflow: 'hidden' },
   ],
 
-  'pulse': [
+  pulse: [
     { transform: 'scale3d(1, 1, 1)' },
     { transform: 'scale3d(1.05, 1.05, 1.05)' },
     { transform: 'scale3d(1, 1, 1)' },
   ],
-  'bounce': [
+  bounce: [
     { transform: 'translate3d(0, 0, 0)' },
     { transform: 'translate3d(0, -12px, 0)' },
     { transform: 'translate3d(0, 0, 0)' },
     { transform: 'translate3d(0, -6px, 0)' },
     { transform: 'translate3d(0, 0, 0)' },
   ],
-  'shake': [
+  shake: [
     { transform: 'translate3d(0, 0, 0)' },
     { transform: 'translate3d(-4px, 0, 0)' },
     { transform: 'translate3d(4px, 0, 0)' },
     { transform: 'translate3d(-4px, 0, 0)' },
     { transform: 'translate3d(0, 0, 0)' },
   ],
-  'wobble': [
+  wobble: [
     { transform: 'translate3d(0, 0, 0) rotate(0deg)' },
     { transform: 'translate3d(-15%, 0, 0) rotate(-4deg)' },
     { transform: 'translate3d(12%, 0, 0) rotate(3deg)' },
@@ -253,14 +253,14 @@ export const PRESET_KEYFRAMES: Record<string, Keyframe[]> = {
     { transform: 'translate3d(6%, 0, 0) rotate(1deg)' },
     { transform: 'translate3d(0, 0, 0) rotate(0deg)' },
   ],
-  'heartbeat': [
+  heartbeat: [
     { transform: 'scale(1)' },
     { transform: 'scale(1.15)' },
     { transform: 'scale(1)' },
     { transform: 'scale(1.15)' },
     { transform: 'scale(1)' },
   ],
-  'shimmer': [
+  shimmer: [
     { backgroundPosition: '-200% 0' },
     { backgroundPosition: '200% 0' },
   ],

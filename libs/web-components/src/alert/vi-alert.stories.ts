@@ -177,13 +177,17 @@ export const ExternalControl: Story = {
   },
   render: (args) => {
     return html`
-      <div style="display: flex; flex-direction: column; gap: 1rem; align-items: flex-start;">
+      <div
+        style="display: flex; flex-direction: column; gap: 1rem; align-items: flex-start;"
+      >
         <div style="display: flex; gap: 0.5rem;">
           <vi-button
             variant="primary"
             size="sm"
             @click=${() => {
-              const alert = document.querySelector('#controlled-alert') as ViAlert | null;
+              const alert = document.querySelector(
+                '#controlled-alert',
+              ) as ViAlert | null;
               alert?.show();
             }}
           >
@@ -193,7 +197,9 @@ export const ExternalControl: Story = {
             variant="secondary"
             size="sm"
             @click=${() => {
-              const alert = document.querySelector('#controlled-alert') as ViAlert | null;
+              const alert = document.querySelector(
+                '#controlled-alert',
+              ) as ViAlert | null;
               alert?.hide();
             }}
           >
@@ -209,7 +215,8 @@ export const ExternalControl: Story = {
           icon=${ifDefined(args.icon)}
           ?no-icon=${args.noIcon}
         >
-          This alert can be opened and closed externally using methods or the <code>open</code> property.
+          This alert can be opened and closed externally using methods or the
+          <code>open</code> property.
         </vi-alert>
       </div>
     `;
@@ -240,7 +247,9 @@ export const FloatingContainerOverlay: Story = {
           This card is currently locked for editing.
         </vi-alert>
 
-        <h3 style="margin-top: ${args.floating ? '40px' : '0'};">Subject Form Record</h3>
+        <h3 style="margin-top: ${args.floating ? '40px' : '0'};">
+          Subject Form Record
+        </h3>
         <p>Subject ID: SUBJ-10492</p>
         <p>Site: St. Jude Medical Center</p>
         <p>Status: Locked</p>

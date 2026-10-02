@@ -1,5 +1,15 @@
-import { css, html, unsafeCSS, type PropertyValues, type TemplateResult } from 'lit';
-import { customElement, property, queryAssignedElements } from 'lit/decorators.js';
+import {
+  css,
+  html,
+  unsafeCSS,
+  type PropertyValues,
+  type TemplateResult,
+} from 'lit';
+import {
+  customElement,
+  property,
+  queryAssignedElements,
+} from 'lit/decorators.js';
 import { ViElement } from '../base/vi-element.js';
 import { ValidityMixin, type ControlStatus } from '../base/validity-mixin.js';
 import type { ViChip } from './vi-chip.js';
@@ -27,7 +37,9 @@ import groupStyles from './vi-chip-group.scss?inline';
  */
 @customElement('vi-chip-group')
 export class ViChipGroup extends ValidityMixin<string[]>(ViElement) {
-  static styles = css`${unsafeCSS(groupStyles)}`;
+  static styles = css`
+    ${unsafeCSS(groupStyles)}
+  `;
 
   /** Currently selected chip values. */
   @property({ type: Array }) accessor value: string[] = [];
@@ -62,7 +74,10 @@ export class ViChipGroup extends ValidityMixin<string[]>(ViElement) {
   constructor() {
     super();
     this._mutationObserver = new MutationObserver(() => this._syncChips());
-    this.addEventListener('vi-chip-select', this._handleChipSelect as EventListener);
+    this.addEventListener(
+      'vi-chip-select',
+      this._handleChipSelect as EventListener,
+    );
   }
 
   override connectedCallback(): void {
@@ -104,7 +119,10 @@ export class ViChipGroup extends ValidityMixin<string[]>(ViElement) {
     this.validityMessage = '';
   }
 
-  formStateRestoreCallback(state: string | File | FormData | null, _mode: 'restore' | 'autocomplete'): void {
+  formStateRestoreCallback(
+    state: string | File | FormData | null,
+    _mode: 'restore' | 'autocomplete',
+  ): void {
     if (typeof state === 'string') {
       try {
         const parsed = JSON.parse(state);
@@ -114,7 +132,7 @@ export class ViChipGroup extends ValidityMixin<string[]>(ViElement) {
       }
     } else if (state instanceof FormData) {
       const values = state.getAll(this.name);
-      this.value = values.map(v => v.toString());
+      this.value = values.map((v) => v.toString());
     }
   }
 
@@ -132,19 +150,33 @@ export class ViChipGroup extends ValidityMixin<string[]>(ViElement) {
   /** Selects all available child chips (if multi is true) */
   selectAll(): void {
     if (!this.multi) return;
-    this.value = this._chips.map(chip => chip.value).filter(val => val !== undefined);
-    this.dispatchEvent(new CustomEvent('vi-chip-group-change', { detail: { value: this.value }, bubbles: true, composed: true }));
+    this.value = this._chips
+      .map((chip) => chip.value)
+      .filter((val) => val !== undefined);
+    this.dispatchEvent(
+      new CustomEvent('vi-chip-group-change', {
+        detail: { value: this.value },
+        bubbles: true,
+        composed: true,
+      }),
+    );
   }
 
   /** Deselects all child chips */
   clearAll(): void {
     this.value = [];
-    this.dispatchEvent(new CustomEvent('vi-chip-group-change', { detail: { value: this.value }, bubbles: true, composed: true }));
+    this.dispatchEvent(
+      new CustomEvent('vi-chip-group-change', {
+        detail: { value: this.value },
+        bubbles: true,
+        composed: true,
+      }),
+    );
   }
 
   private _syncInternals(): void {
     const formData = new FormData();
-    this.value.forEach(val => formData.append(this.name, val));
+    this.value.forEach((val) => formData.append(this.name, val));
     this._internals.setFormValue(formData);
   }
 
@@ -153,7 +185,7 @@ export class ViChipGroup extends ValidityMixin<string[]>(ViElement) {
 
     let hasFocusable = false;
 
-    this._chips.forEach(chip => {
+    this._chips.forEach((chip) => {
       chip.selected = this.value.includes(chip.value);
       if (this.disabled) {
         chip.disabled = true;
@@ -162,7 +194,10 @@ export class ViChipGroup extends ValidityMixin<string[]>(ViElement) {
       }
 
       // Roving tabindex: Only the first selected chip (or the first chip if none selected) is focusable
-      if (!chip.disabled && (chip.selected || (!hasFocusable && this.value.length === 0))) {
+      if (
+        !chip.disabled &&
+        (chip.selected || (!hasFocusable && this.value.length === 0))
+      ) {
         chip.tabIndex = 0;
         hasFocusable = true;
       } else {
@@ -172,7 +207,7 @@ export class ViChipGroup extends ValidityMixin<string[]>(ViElement) {
 
     // If no chip was focusable yet (e.g. none selected), make the first non-disabled chip focusable
     if (!hasFocusable && this._chips.length > 0) {
-      const firstEnabled = this._chips.find(c => !c.disabled);
+      const firstEnabled = this._chips.find((c) => !c.disabled);
       if (firstEnabled) firstEnabled.tabIndex = 0;
     }
   }
@@ -182,12 +217,17 @@ export class ViChipGroup extends ValidityMixin<string[]>(ViElement) {
 
     // Disconnect old, connect new observers for child mutations
     this._mutationObserver.disconnect();
-    this._chips.forEach(chip => {
-      this._mutationObserver.observe(chip, { attributes: true, attributeFilter: ['value', 'disabled'] });
+    this._chips.forEach((chip) => {
+      this._mutationObserver.observe(chip, {
+        attributes: true,
+        attributeFilter: ['value', 'disabled'],
+      });
     });
   }
 
-  private _handleChipSelect(e: CustomEvent<{ value: string; selected: boolean }>): void {
+  private _handleChipSelect(
+    e: CustomEvent<{ value: string; selected: boolean }>,
+  ): void {
     e.stopPropagation(); // Stop the inner event
     const { value, selected } = e.detail;
 
@@ -197,7 +237,7 @@ export class ViChipGroup extends ValidityMixin<string[]>(ViElement) {
       if (selected) {
         if (!newValue.includes(value)) newValue.push(value);
       } else {
-        newValue = newValue.filter(v => v !== value);
+        newValue = newValue.filter((v) => v !== value);
       }
     } else {
       if (selected) {
@@ -210,14 +250,22 @@ export class ViChipGroup extends ValidityMixin<string[]>(ViElement) {
     }
 
     this.value = newValue;
-    this.dispatchEvent(new CustomEvent('vi-chip-group-change', { detail: { value: this.value }, bubbles: true, composed: true }));
+    this.dispatchEvent(
+      new CustomEvent('vi-chip-group-change', {
+        detail: { value: this.value },
+        bubbles: true,
+        composed: true,
+      }),
+    );
   }
 
   private _handleKeyDown(e: KeyboardEvent): void {
-    const focusableChips = this._chips.filter(c => !c.disabled);
+    const focusableChips = this._chips.filter((c) => !c.disabled);
     if (focusableChips.length === 0) return;
 
-    const currentIndex = focusableChips.findIndex(c => c === document.activeElement || c.shadowRoot?.activeElement);
+    const currentIndex = focusableChips.findIndex(
+      (c) => c === document.activeElement || c.shadowRoot?.activeElement,
+    );
     if (currentIndex === -1) return;
 
     let nextIndex = currentIndex;
@@ -231,7 +279,8 @@ export class ViChipGroup extends ValidityMixin<string[]>(ViElement) {
       case 'ArrowLeft':
       case 'ArrowUp':
         e.preventDefault();
-        nextIndex = (currentIndex - 1 + focusableChips.length) % focusableChips.length;
+        nextIndex =
+          (currentIndex - 1 + focusableChips.length) % focusableChips.length;
         break;
       case 'Home':
         e.preventDefault();
@@ -245,7 +294,7 @@ export class ViChipGroup extends ValidityMixin<string[]>(ViElement) {
         return; // Let other keys do their thing
     }
 
-    this._chips.forEach(c => c.tabIndex = -1);
+    this._chips.forEach((c) => (c.tabIndex = -1));
     const nextChip = focusableChips[nextIndex];
     nextChip.tabIndex = 0;
     nextChip.focus();

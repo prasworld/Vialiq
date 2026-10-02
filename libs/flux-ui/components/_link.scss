@@ -6,7 +6,9 @@
   text-decoration-thickness: 1px;
   text-underline-offset: var(--vi-link-underline-offset, 2px);
   cursor: pointer;
-  transition: color 0.2s ease, text-decoration-color 0.2s ease;
+  transition:
+    color 0.2s ease,
+    text-decoration-color 0.2s ease;
   outline: none;
   text-decoration: underline;
 
@@ -38,17 +40,38 @@
   }
 
   &.variant-secondary {
-    --vi-link-color: var(--vi-link-color-secondary, #{tokens.$link-color-secondary});
-    --vi-link-color-hover: var(--vi-link-color-secondary-hover, #{tokens.$color-grey-800});
-    --vi-link-color-active: var(--vi-link-color-secondary-active, #{tokens.$color-grey-900});
-    --vi-link-color-visited: var(--vi-link-color-secondary-visited, #{tokens.$color-grey-700});
+    --vi-link-color: var(
+      --vi-link-color-secondary,
+      #{tokens.$link-color-secondary}
+    );
+    --vi-link-color-hover: var(
+      --vi-link-color-secondary-hover,
+      #{tokens.$color-grey-800}
+    );
+    --vi-link-color-active: var(
+      --vi-link-color-secondary-active,
+      #{tokens.$color-grey-900}
+    );
+    --vi-link-color-visited: var(
+      --vi-link-color-secondary-visited,
+      #{tokens.$color-grey-700}
+    );
   }
 
   &.variant-muted {
     --vi-link-color: var(--vi-link-color-muted, #{tokens.$link-color-muted});
-    --vi-link-color-hover: var(--vi-link-color-muted-hover, #{tokens.$color-grey-600});
-    --vi-link-color-active: var(--vi-link-color-muted-active, #{tokens.$color-grey-700});
-    --vi-link-color-visited: var(--vi-link-color-muted-visited, #{tokens.$color-grey-500});
+    --vi-link-color-hover: var(
+      --vi-link-color-muted-hover,
+      #{tokens.$color-grey-600}
+    );
+    --vi-link-color-active: var(
+      --vi-link-color-muted-active,
+      #{tokens.$color-grey-700}
+    );
+    --vi-link-color-visited: var(
+      --vi-link-color-muted-visited,
+      #{tokens.$color-grey-500}
+    );
   }
 
   &:visited {
@@ -67,7 +90,8 @@
     @include vi-focus-ring(tokens.$link-color, transparent);
   }
 
-  &[aria-disabled="true"], &.disabled {
+  &[aria-disabled='true'],
+  &.disabled {
     color: var(--vi-link-color-disabled, #{tokens.$link-color-disabled});
     pointer-events: none;
     cursor: not-allowed;

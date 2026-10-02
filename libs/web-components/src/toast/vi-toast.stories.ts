@@ -15,7 +15,8 @@ const meta: Meta = {
   parameters: {
     docs: {
       description: {
-        component: 'Ephemeral floating notifications that appear in response to user actions or system events. Primarily triggered programmatically via `toastService`.',
+        component:
+          'Ephemeral floating notifications that appear in response to user actions or system events. Primarily triggered programmatically via `toastService`.',
       },
     },
   },
@@ -39,7 +40,7 @@ export const ProgrammaticUsage: Story = {
       >
         Show Info
       </vi-button>
-      
+
       <vi-button
         variant="primary"
         @click=${() => {
@@ -90,7 +91,7 @@ export const ProgrammaticUsage: Story = {
           span.style.textDecoration = 'underline';
           frag.appendChild(strong);
           frag.appendChild(span);
-          
+
           toastService.show({
             variant: 'info',
             content: frag,
@@ -114,7 +115,9 @@ export const WithActions: Story = {
           message: 'You will be logged out in 5 minutes.',
           duration: 0, // sticky
           closable: true,
-          actions: [{ label: 'Extend session', action: 'extend', variant: 'primary' }],
+          actions: [
+            { label: 'Extend session', action: 'extend', variant: 'primary' },
+          ],
           onAction: (action) => alert(`Action triggered: ${action}`),
         });
       }}
@@ -130,7 +133,11 @@ export const CustomPositions: Story = {
       <vi-button
         variant="secondary"
         @click=${() => {
-          toastService.show({ variant: 'info', message: 'I am on the top left!', position: 'top-left' });
+          toastService.show({
+            variant: 'info',
+            message: 'I am on the top left!',
+            position: 'top-left',
+          });
         }}
       >
         Top Left
@@ -139,7 +146,11 @@ export const CustomPositions: Story = {
       <vi-button
         variant="secondary"
         @click=${() => {
-          toastService.show({ variant: 'info', message: 'I am on the top center!', position: 'top-center' });
+          toastService.show({
+            variant: 'info',
+            message: 'I am on the top center!',
+            position: 'top-center',
+          });
         }}
       >
         Top Center
@@ -148,7 +159,11 @@ export const CustomPositions: Story = {
       <vi-button
         variant="secondary"
         @click=${() => {
-          toastService.show({ variant: 'info', message: 'I am on the top right!', position: 'top-right' });
+          toastService.show({
+            variant: 'info',
+            message: 'I am on the top right!',
+            position: 'top-right',
+          });
         }}
       >
         Top Right
@@ -157,16 +172,24 @@ export const CustomPositions: Story = {
       <vi-button
         variant="secondary"
         @click=${() => {
-          toastService.show({ variant: 'info', message: 'I am on the bottom left!', position: 'bottom-left' });
+          toastService.show({
+            variant: 'info',
+            message: 'I am on the bottom left!',
+            position: 'bottom-left',
+          });
         }}
       >
         Bottom Left
       </vi-button>
-      
+
       <vi-button
         variant="secondary"
         @click=${() => {
-          toastService.show({ variant: 'info', message: 'I am in the bottom center!', position: 'bottom-center' });
+          toastService.show({
+            variant: 'info',
+            message: 'I am in the bottom center!',
+            position: 'bottom-center',
+          });
         }}
       >
         Bottom Center
@@ -175,7 +198,11 @@ export const CustomPositions: Story = {
       <vi-button
         variant="secondary"
         @click=${() => {
-          toastService.show({ variant: 'info', message: 'I am on the bottom right!', position: 'bottom-right' });
+          toastService.show({
+            variant: 'info',
+            message: 'I am on the bottom right!',
+            position: 'bottom-right',
+          });
         }}
       >
         Bottom Right
@@ -193,7 +220,11 @@ export const DismissAll: Story = {
           toastService.configure({ position: 'top-right' });
           for (let i = 0; i < 3; i++) {
             setTimeout(() => {
-              toastService.show({ variant: 'info', message: `Toast ${i + 1}`, duration: 0 });
+              toastService.show({
+                variant: 'info',
+                message: `Toast ${i + 1}`,
+                duration: 0,
+              });
             }, i * 200);
           }
         }}
@@ -201,10 +232,7 @@ export const DismissAll: Story = {
         Spawn Multiple
       </vi-button>
 
-      <vi-button
-        variant="danger"
-        @click=${() => toastService.dismissAll()}
-      >
+      <vi-button variant="danger" @click=${() => toastService.dismissAll()}>
         Dismiss All
       </vi-button>
     </div>
@@ -219,15 +247,18 @@ export const StickyNetworkLoss: Story = {
         @click=${() => {
           const frag = document.createDocumentFragment();
           const span = document.createElement('span');
-          span.innerHTML = '<strong>Network Offline!</strong> Some features may not be available until you reconnect.';
+          span.innerHTML =
+            '<strong>Network Offline!</strong> Some features may not be available until you reconnect.';
           frag.appendChild(span);
-          
+
           toastService.show({
             variant: 'danger',
             content: frag,
             duration: 0, // sticky indefinitely
             closable: true,
-            actions: [{ label: 'Try again', action: 'retry', variant: 'primary' }],
+            actions: [
+              { label: 'Try again', action: 'retry', variant: 'primary' },
+            ],
             onAction: (action) => alert(`Action triggered: ${action}`),
           });
         }}

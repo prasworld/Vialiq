@@ -144,7 +144,9 @@ export class ViSidebar extends FocusTrapMixin(ViElement) {
 
     if (this.autoCollapseWidth || this.autoCollapseHeight) {
       // Use window resize event — more reliable than ResizeObserver on body.
-      this._resizeObserver = new ResizeObserver(() => this._checkAutoCollapse());
+      this._resizeObserver = new ResizeObserver(() =>
+        this._checkAutoCollapse(),
+      );
       this._resizeObserver.observe(document.documentElement);
 
       if (this.autoCollapseOnInit) {
@@ -245,7 +247,8 @@ export class ViSidebar extends FocusTrapMixin(ViElement) {
 
   override render() {
     // Sidebar is effectively invisible when dock=true and dockedSize=0px and closed.
-    const effectivelyVisible = this.opened || (this.dock && parseFloat(this.dockedSize) > 0);
+    const effectivelyVisible =
+      this.opened || (this.dock && parseFloat(this.dockedSize) > 0);
 
     return html`
       <aside
@@ -254,7 +257,11 @@ export class ViSidebar extends FocusTrapMixin(ViElement) {
         aria-hidden=${!effectivelyVisible}
         role=${ifDefined(this.trapFocus ? 'dialog' : undefined)}
         aria-modal=${ifDefined(this.trapFocus ? 'true' : undefined)}
-        aria-label=${ifDefined(this.trapFocus ? (this.getAttribute('aria-label') || 'Sidebar') : undefined)}
+        aria-label=${ifDefined(
+          this.trapFocus
+            ? this.getAttribute('aria-label') || 'Sidebar'
+            : undefined,
+        )}
       >
         <div class="vi-sidebar__content">
           <slot></slot>
@@ -274,7 +281,10 @@ export class ViSidebar extends FocusTrapMixin(ViElement) {
   open() {
     if (!this.opened) {
       this.dispatchEvent(
-        new CustomEvent('vi-sidebar-open-start', { bubbles: true, composed: true }),
+        new CustomEvent('vi-sidebar-open-start', {
+          bubbles: true,
+          composed: true,
+        }),
       );
       this.opened = true;
     }
@@ -284,7 +294,10 @@ export class ViSidebar extends FocusTrapMixin(ViElement) {
   close() {
     if (this.opened) {
       this.dispatchEvent(
-        new CustomEvent('vi-sidebar-close-start', { bubbles: true, composed: true }),
+        new CustomEvent('vi-sidebar-close-start', {
+          bubbles: true,
+          composed: true,
+        }),
       );
       this.opened = false;
     }
@@ -305,7 +318,7 @@ export class ViSidebar extends FocusTrapMixin(ViElement) {
 
   /** Syncs `--vi-sidebar-docked-size` CSS variable to drive the dock animation. */
   private _syncDockedSizeVar() {
-    const size = (this.dock && !this.opened) ? this.dockedSize : '0px';
+    const size = this.dock && !this.opened ? this.dockedSize : '0px';
     this.style.setProperty('--vi-sidebar-docked-size', size);
   }
 
@@ -323,8 +336,10 @@ export class ViSidebar extends FocusTrapMixin(ViElement) {
     const height = window.innerHeight;
     let shouldCollapse = false;
 
-    if (this.autoCollapseWidth && width <= this.autoCollapseWidth) shouldCollapse = true;
-    if (this.autoCollapseHeight && height <= this.autoCollapseHeight) shouldCollapse = true;
+    if (this.autoCollapseWidth && width <= this.autoCollapseWidth)
+      shouldCollapse = true;
+    if (this.autoCollapseHeight && height <= this.autoCollapseHeight)
+      shouldCollapse = true;
 
     if (shouldCollapse && this.opened) {
       this._wasCollapsed = true;
@@ -370,16 +385,28 @@ export class ViSidebar extends FocusTrapMixin(ViElement) {
       const rect = this.getBoundingClientRect();
 
       if (this.position === 'start' || this.position === 'left') {
-        const newWidth = Math.max(this.resizeMin, Math.min(e.clientX - rect.left, this.resizeMax));
+        const newWidth = Math.max(
+          this.resizeMin,
+          Math.min(e.clientX - rect.left, this.resizeMax),
+        );
         this.style.setProperty('--vi-sidebar-width', `${newWidth}px`);
       } else if (this.position === 'end' || this.position === 'right') {
-        const newWidth = Math.max(this.resizeMin, Math.min(rect.right - e.clientX, this.resizeMax));
+        const newWidth = Math.max(
+          this.resizeMin,
+          Math.min(rect.right - e.clientX, this.resizeMax),
+        );
         this.style.setProperty('--vi-sidebar-width', `${newWidth}px`);
       } else if (this.position === 'top') {
-        const newHeight = Math.max(this.resizeMin, Math.min(e.clientY - rect.top, this.resizeMax));
+        const newHeight = Math.max(
+          this.resizeMin,
+          Math.min(e.clientY - rect.top, this.resizeMax),
+        );
         this.style.setProperty('--vi-sidebar-height', `${newHeight}px`);
       } else if (this.position === 'bottom') {
-        const newHeight = Math.max(this.resizeMin, Math.min(rect.bottom - e.clientY, this.resizeMax));
+        const newHeight = Math.max(
+          this.resizeMin,
+          Math.min(rect.bottom - e.clientY, this.resizeMax),
+        );
         this.style.setProperty('--vi-sidebar-height', `${newHeight}px`);
       }
 
@@ -408,19 +435,28 @@ export class ViSidebar extends FocusTrapMixin(ViElement) {
     if (
       e.target === this &&
       (e.propertyName === 'transform' ||
-       e.propertyName === 'width' ||
-       e.propertyName === 'height')
+        e.propertyName === 'width' ||
+        e.propertyName === 'height')
     ) {
       this.dispatchEvent(
-        new CustomEvent('vi-sidebar-transition-end', { bubbles: true, composed: true }),
+        new CustomEvent('vi-sidebar-transition-end', {
+          bubbles: true,
+          composed: true,
+        }),
       );
       if (this.opened) {
         this.dispatchEvent(
-          new CustomEvent('vi-sidebar-after-opened', { bubbles: true, composed: true }),
+          new CustomEvent('vi-sidebar-after-opened', {
+            bubbles: true,
+            composed: true,
+          }),
         );
       } else {
         this.dispatchEvent(
-          new CustomEvent('vi-sidebar-after-closed', { bubbles: true, composed: true }),
+          new CustomEvent('vi-sidebar-after-closed', {
+            bubbles: true,
+            composed: true,
+          }),
         );
       }
     }

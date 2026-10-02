@@ -63,26 +63,42 @@ export class ViAnimation extends ViElement {
     return this;
   }
 
-  @property({ type: String, reflect: true }) accessor name: AnimationPreset | string = 'fade-in';
-  @property({ type: String, reflect: true }) accessor enter: AnimationPreset | string = '';
-  @property({ type: String, reflect: true }) accessor exit: AnimationPreset | string = '';
+  @property({ type: String, reflect: true }) accessor name:
+    | AnimationPreset
+    | string = 'fade-in';
+  @property({ type: String, reflect: true }) accessor enter:
+    | AnimationPreset
+    | string = '';
+  @property({ type: String, reflect: true }) accessor exit:
+    | AnimationPreset
+    | string = '';
   @property({ type: Number, reflect: true }) accessor duration = 300;
   @property({ type: Number, reflect: true }) accessor delay = 0;
-  @property({ type: String, reflect: true }) accessor easing = 'cubic-bezier(0.2, 0, 0, 1)';
+  @property({ type: String, reflect: true }) accessor easing =
+    'cubic-bezier(0.2, 0, 0, 1)';
   @property({ type: Number, reflect: true }) accessor iterations = 1;
-  @property({ type: String, reflect: true }) accessor direction: PlaybackDirection = 'normal';
-  @property({ type: String, reflect: true }) accessor fill: FillMode = 'forwards';
+  @property({ type: String, reflect: true })
+  accessor direction: PlaybackDirection = 'normal';
+  @property({ type: String, reflect: true }) accessor fill: FillMode =
+    'forwards';
   @property({ type: Boolean, reflect: true }) accessor open = true;
-  @property({ type: Boolean, attribute: 'auto-play', reflect: true }) accessor autoPlay = true;
+  @property({ type: Boolean, attribute: 'auto-play', reflect: true })
+  accessor autoPlay = true;
 
   @property({ type: Boolean, reflect: true }) accessor cascade = false;
   @property({ type: Number, reflect: true }) accessor stagger = 50;
-  @property({ type: String, attribute: 'stagger-selector', reflect: true }) accessor staggerSelector = ':scope > *';
-  @property({ type: String, attribute: 'stagger-direction', reflect: true }) accessor staggerDirection: StaggerDirection = 'normal';
+  @property({ type: String, attribute: 'stagger-selector', reflect: true })
+  accessor staggerSelector = ':scope > *';
+  @property({ type: String, attribute: 'stagger-direction', reflect: true })
+  accessor staggerDirection: StaggerDirection = 'normal';
 
-  @property({ type: String, attribute: 'reduced-motion', reflect: true }) accessor reducedMotion: 'auto' | 'disable' | 'fade-only' = 'auto';
+  @property({ type: String, attribute: 'reduced-motion', reflect: true })
+  accessor reducedMotion: 'auto' | 'disable' | 'fade-only' = 'auto';
 
-  @property({ attribute: false }) accessor keyframes: Keyframe[] | PropertyIndexedKeyframes | null = null;
+  @property({ attribute: false }) accessor keyframes:
+    | Keyframe[]
+    | PropertyIndexedKeyframes
+    | null = null;
 
   @state() private accessor _isAnimating = false;
 
@@ -120,9 +136,14 @@ export class ViAnimation extends ViElement {
     }
 
     if (typeof window !== 'undefined') {
-      this._reducedMotionMQ = window.matchMedia('(prefers-reduced-motion: reduce)');
+      this._reducedMotionMQ = window.matchMedia(
+        '(prefers-reduced-motion: reduce)',
+      );
       this._reducedMotionListener = () => this.requestUpdate();
-      this._reducedMotionMQ.addEventListener('change', this._reducedMotionListener);
+      this._reducedMotionMQ.addEventListener(
+        'change',
+        this._reducedMotionListener,
+      );
     }
   }
 
@@ -131,7 +152,10 @@ export class ViAnimation extends ViElement {
     // Cancel in-flight animations to release resources on detached nodes
     this._cancelSilently();
     if (this._reducedMotionMQ && this._reducedMotionListener) {
-      this._reducedMotionMQ.removeEventListener('change', this._reducedMotionListener);
+      this._reducedMotionMQ.removeEventListener(
+        'change',
+        this._reducedMotionListener,
+      );
       this._reducedMotionMQ = null;
       this._reducedMotionListener = null;
     }
@@ -142,7 +166,10 @@ export class ViAnimation extends ViElement {
     // _updateGuard prevents show()/hide() from being called again when the
     // imperative API internally sets this.open to keep property state in sync
     if (this._updateGuard) return;
-    if (changedProperties.has('open') && changedProperties.get('open') !== undefined) {
+    if (
+      changedProperties.has('open') &&
+      changedProperties.get('open') !== undefined
+    ) {
       if (this.open) {
         this.show();
       } else {
@@ -248,7 +275,11 @@ export class ViAnimation extends ViElement {
    */
   public cancel(): void {
     this._cancelSilently();
-    this._dispatch('vi-animation-cancel', { name: this.name, target: this, phase: 'custom' });
+    this._dispatch('vi-animation-cancel', {
+      name: this.name,
+      target: this,
+      phase: 'custom',
+    });
   }
 
   /**
@@ -259,9 +290,17 @@ export class ViAnimation extends ViElement {
     // Clear state first so stale callbacks don't double-process
     this._cancelSilently();
     anims.forEach((a) => {
-      try { a.finish(); } catch { /* already finished or cancelled */ }
+      try {
+        a.finish();
+      } catch {
+        /* already finished or cancelled */
+      }
     });
-    this._dispatch('vi-animation-finish', { name: this.name, target: this, phase: 'custom' });
+    this._dispatch('vi-animation-finish', {
+      name: this.name,
+      target: this,
+      phase: 'custom',
+    });
   }
 
   // ─── Private helpers ──────────────────────────────────────────────────────
@@ -273,7 +312,11 @@ export class ViAnimation extends ViElement {
   private _cancelSilently(): void {
     this._sequenceId++; // invalidate any pending async continuations
     this._activeAnimations.forEach((a) => {
-      try { a.cancel(); } catch { /* already finished or cancelled */ }
+      try {
+        a.cancel();
+      } catch {
+        /* already finished or cancelled */
+      }
     });
     this._activeAnimations = [];
     this._isAnimating = false;
@@ -305,7 +348,9 @@ export class ViAnimation extends ViElement {
           targetElements.push(node);
           matched = true;
         }
-        const children = Array.from(node.querySelectorAll<HTMLElement>(this.staggerSelector));
+        const children = Array.from(
+          node.querySelectorAll<HTMLElement>(this.staggerSelector),
+        );
         if (children.length > 0) {
           targetElements.push(...children);
           matched = true;
@@ -344,19 +389,35 @@ export class ViAnimation extends ViElement {
       const w = target.scrollWidth;
       switch (animName) {
         case 'expand-vertical':
-          return [{ maxHeight: '0px', opacity: 0, overflow: 'hidden' }, { maxHeight: `${h}px`, opacity: 1, overflow: 'hidden' }];
+          return [
+            { maxHeight: '0px', opacity: 0, overflow: 'hidden' },
+            { maxHeight: `${h}px`, opacity: 1, overflow: 'hidden' },
+          ];
         case 'collapse-vertical':
-          return [{ maxHeight: `${h}px`, opacity: 1, overflow: 'hidden' }, { maxHeight: '0px', opacity: 0, overflow: 'hidden' }];
+          return [
+            { maxHeight: `${h}px`, opacity: 1, overflow: 'hidden' },
+            { maxHeight: '0px', opacity: 0, overflow: 'hidden' },
+          ];
         case 'expand-horizontal':
-          return [{ maxWidth: '0px', opacity: 0, overflow: 'hidden' }, { maxWidth: `${w}px`, opacity: 1, overflow: 'hidden' }];
+          return [
+            { maxWidth: '0px', opacity: 0, overflow: 'hidden' },
+            { maxWidth: `${w}px`, opacity: 1, overflow: 'hidden' },
+          ];
         case 'collapse-horizontal':
-          return [{ maxWidth: `${w}px`, opacity: 1, overflow: 'hidden' }, { maxWidth: '0px', opacity: 0, overflow: 'hidden' }];
+          return [
+            { maxWidth: `${w}px`, opacity: 1, overflow: 'hidden' },
+            { maxWidth: '0px', opacity: 0, overflow: 'hidden' },
+          ];
       }
     }
     return PRESET_KEYFRAMES[animName] ?? PRESET_KEYFRAMES['fade-in'];
   }
 
-  private _calculateStaggerDelay(index: number, total: number, shuffledOrder?: number[]): number {
+  private _calculateStaggerDelay(
+    index: number,
+    total: number,
+    shuffledOrder?: number[],
+  ): number {
     if (!this.cascade || total <= 1) return this.delay;
 
     let orderIndex = index;
@@ -387,9 +448,10 @@ export class ViAnimation extends ViElement {
     this._isAnimating = true;
     // 'auto' mode: shorten duration AND substitute keyframes.
     // 'fade-only' mode: substitute keyframes only, original duration is preserved.
-    const actualDuration = (isReduced && this.reducedMotion !== 'fade-only')
-      ? Math.min(this.duration, 100)
-      : this.duration;
+    const actualDuration =
+      isReduced && this.reducedMotion !== 'fade-only'
+        ? Math.min(this.duration, 100)
+        : this.duration;
 
     this._dispatch('vi-animation-start', {
       name: animName,
@@ -400,10 +462,15 @@ export class ViAnimation extends ViElement {
     });
 
     // Pre-compute shuffled order so all elements get unique, non-repeating delay slots
-    const shuffledOrder = this.staggerDirection === 'random' ? shuffleIndices(targets.length) : undefined;
+    const shuffledOrder =
+      this.staggerDirection === 'random'
+        ? shuffleIndices(targets.length)
+        : undefined;
 
     const animationPromises = targets.map((el, index) => {
-      const elementDelay = isReduced ? 0 : this._calculateStaggerDelay(index, targets.length, shuffledOrder);
+      const elementDelay = isReduced
+        ? 0
+        : this._calculateStaggerDelay(index, targets.length, shuffledOrder);
       const kf = this._getKeyframes(animName, phase, isReduced, el);
 
       const anim = el.animate(kf as Parameters<typeof el.animate>[0], {
@@ -423,8 +490,16 @@ export class ViAnimation extends ViElement {
           // cancel the WAAPI fill so external CSS can take over later (avoids
           // invisible elements if the element is re-shown via show() or style).
           if (isExitPhase) {
-            try { anim.commitStyles(); } catch { /* element not rendered or already cancelled */ }
-            try { anim.cancel(); } catch { /* already finished */ }
+            try {
+              anim.commitStyles();
+            } catch {
+              /* element not rendered or already cancelled */
+            }
+            try {
+              anim.cancel();
+            } catch {
+              /* already finished */
+            }
           }
         },
         () => null, // Animation was cancelled — treat as resolved so Promise.all doesn't reject
@@ -460,12 +535,17 @@ export class ViAnimation extends ViElement {
   private _shouldReduceMotion(): boolean {
     if (this.reducedMotion === 'disable') return false;
     // Gate on the OS/browser preference for both 'auto' and 'fade-only'.
-    return this._reducedMotionMQ?.matches ??
-      (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    return (
+      this._reducedMotionMQ?.matches ??
+      (typeof window !== 'undefined' &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches)
+    );
   }
 
   private _dispatch(eventName: string, detail: ViAnimationEventDetail): void {
-    this.dispatchEvent(new CustomEvent(eventName, { detail, bubbles: true, composed: true }));
+    this.dispatchEvent(
+      new CustomEvent(eventName, { detail, bubbles: true, composed: true }),
+    );
   }
 
   /**
@@ -485,7 +565,6 @@ export class ViAnimation extends ViElement {
     this.dispatchEvent(event);
     return !event.defaultPrevented;
   }
-
 }
 
 declare global {

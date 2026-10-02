@@ -16,20 +16,24 @@ export type ViSkeletonAnimation = 'shimmer' | 'pulse' | 'none';
  * @attr animation - The animation style ('shimmer' | 'pulse' | 'none')
  *
  * @csspart skeleton - The main skeleton block
- * 
+ *
  * @cssprop --vi-skeleton-width - Width of the skeleton
  * @cssprop --vi-skeleton-height - Height of the skeleton
  * @cssprop --vi-skeleton-radius - Border radius of the skeleton
  */
 @customElement('vi-skeleton')
 export class ViSkeleton extends ViElement {
-  static override styles = css`${unsafeCSS(skeletonStyles)}`;
+  static override styles = css`
+    ${unsafeCSS(skeletonStyles)}
+  `;
 
   /** The shape of the skeleton */
-  @property({ type: String, reflect: true }) accessor variant: ViSkeletonVariant = 'text';
+  @property({ type: String, reflect: true })
+  accessor variant: ViSkeletonVariant = 'text';
 
   /** The animation style */
-  @property({ type: String, reflect: true }) accessor animation: ViSkeletonAnimation = 'shimmer';
+  @property({ type: String, reflect: true })
+  accessor animation: ViSkeletonAnimation = 'shimmer';
 
   override render(): TemplateResult {
     const classes = {
@@ -38,9 +42,7 @@ export class ViSkeleton extends ViElement {
       [`vi-skeleton--animation-${this.animation}`]: true,
     };
 
-    return html`
-      <div class=${classMap(classes)} part="skeleton"></div>
-    `;
+    return html` <div class=${classMap(classes)} part="skeleton"></div> `;
   }
 }
 

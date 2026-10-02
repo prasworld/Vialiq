@@ -1,4 +1,10 @@
-import { css, html, unsafeCSS, type PropertyValues, type TemplateResult } from 'lit';
+import {
+  css,
+  html,
+  unsafeCSS,
+  type PropertyValues,
+  type TemplateResult,
+} from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { ViElement } from '../base/vi-element.js';
 import { registerIcons } from '../icons/registry.js';
@@ -65,7 +71,8 @@ export class ViComboboxItem extends ViElement implements SlottedListboxItem {
 
   @property({ type: Boolean, reflect: true }) accessor active = false;
 
-  @property({ type: String, attribute: 'highlight-text' }) accessor highlightText = '';
+  @property({ type: String, attribute: 'highlight-text' })
+  accessor highlightText = '';
 
   @state() accessor _hasSlotContent = false;
 
@@ -86,12 +93,14 @@ export class ViComboboxItem extends ViElement implements SlottedListboxItem {
     this.setAttribute('aria-disabled', this.disabled ? 'true' : 'false');
   }
 
-
   protected override updated(changedProperties: PropertyValues): void {
     super.updated(changedProperties);
     // Keep host-level ARIA attributes in sync with reactive properties so they
     // always reflect the current selected/disabled state for AT.
-    if (changedProperties.has('selected') || changedProperties.has('disabled')) {
+    if (
+      changedProperties.has('selected') ||
+      changedProperties.has('disabled')
+    ) {
       this.setAttribute('aria-selected', this.selected ? 'true' : 'false');
       this.setAttribute('aria-disabled', this.disabled ? 'true' : 'false');
     }
@@ -135,10 +144,10 @@ export class ViComboboxItem extends ViElement implements SlottedListboxItem {
     const regex = new RegExp(`(${escaped})`, 'gi');
     const parts = this.label.split(regex);
 
-    return html`${parts.map(part => 
-      part.toLowerCase() === this.highlightText.toLowerCase() 
-        ? html`<mark class="highlight">${part}</mark>` 
-        : part
+    return html`${parts.map((part) =>
+      part.toLowerCase() === this.highlightText.toLowerCase()
+        ? html`<mark class="highlight">${part}</mark>`
+        : part,
     )}`;
   }
 

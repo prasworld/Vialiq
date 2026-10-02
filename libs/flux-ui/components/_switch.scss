@@ -58,11 +58,19 @@
     height: var(--vi-switch-track-height, func.to-rem(22px));
     background-color: var(--vi-switch-track-color-off, #{tokens.$border-03});
     border-radius: var(--vi-border-radius-full, #{tokens.$border-radius-full});
-    transition: background-color var(--vi-switch-transition-duration, 150ms) ease;
+    transition: background-color var(--vi-switch-transition-duration, 150ms)
+      ease;
     flex-shrink: 0;
     // Align track centre with first-line cap-height
     margin-top: calc(
-      (1em * #{tokens.$line-height-normal} - var(--vi-switch-track-height, func.to-rem(24px))) / 2
+      (
+          1em *
+            #{tokens.$line-height-normal} - var(
+              --vi-switch-track-height,
+              func.to-rem(24px)
+            )
+        ) /
+        2
     );
   }
 
@@ -75,7 +83,10 @@
     transform: translateY(-50%);
     width: var(--vi-switch-thumb-size, func.to-rem(18px));
     height: var(--vi-switch-thumb-size, func.to-rem(18px));
-    background-color: var(--vi-switch-thumb-color, #{tokens.$text-primary-inverse});
+    background-color: var(
+      --vi-switch-thumb-color,
+      #{tokens.$text-primary-inverse}
+    );
     border-radius: 50%;
     box-shadow: var(--vi-switch-thumb-shadow, #{tokens.$shadow-md});
     transition: left var(--vi-switch-transition-duration, 150ms) ease;
@@ -88,7 +99,10 @@
 
     .switch-thumb {
       left: calc(
-        100% - var(--vi-switch-thumb-size, func.to-rem(18px)) - var(--vi-switch-thumb-offset, func.to-rem(2px))
+        100% - var(--vi-switch-thumb-size, func.to-rem(18px)) - var(
+            --vi-switch-thumb-offset,
+            func.to-rem(2px)
+          )
       );
     }
   }
@@ -109,11 +123,17 @@
     opacity: var(--vi-switch-disabled-opacity, 0.5);
 
     .switch-track {
-      background-color: var(--vi-switch-track-color-disabled, #{tokens.$border-03});
+      background-color: var(
+        --vi-switch-track-color-disabled,
+        #{tokens.$border-03}
+      );
     }
 
     .switch-input:checked ~ .switch-track {
-      background-color: var(--vi-switch-track-color-on-disabled, #{tokens.$text-disabled});
+      background-color: var(
+        --vi-switch-track-color-on-disabled,
+        #{tokens.$text-disabled}
+      );
     }
   }
 

@@ -6,7 +6,11 @@ import type {
 } from '../shared/types/listbox.types.js';
 
 export type ComboboxMode = 'single' | 'multi' | 'tags' | 'creatable';
-export type DropdownPlacement = 'bottom-start' | 'bottom-end' | 'top-start' | 'top-end';
+export type DropdownPlacement =
+  | 'bottom-start'
+  | 'bottom-end'
+  | 'top-start'
+  | 'top-end';
 
 export type ComboboxOptionData = {
   isTemporary?: boolean;

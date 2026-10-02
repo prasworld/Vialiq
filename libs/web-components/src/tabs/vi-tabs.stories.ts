@@ -558,9 +558,19 @@ export const ClosableTabs: Story = {
         panelEl.setAttribute('for', tab.id);
         render(
           html`<div style="padding: 20px 4px 8px;">
-            <h3 style="margin: 0 0 8px; font-size: 15px; font-weight: 600; color: #111827;">${tab.label}</h3>
-            <p style="margin: 0; font-size: 13.5px; color: #6b7280;">${tab.content}</p>
-            ${openTabIds.length === 0 ? html`<p style="color:#9ca3af;font-style:italic">All tabs closed.</p>` : nothing}
+            <h3
+              style="margin: 0 0 8px; font-size: 15px; font-weight: 600; color: #111827;"
+            >
+              ${tab.label}
+            </h3>
+            <p style="margin: 0; font-size: 13.5px; color: #6b7280;">
+              ${tab.content}
+            </p>
+            ${openTabIds.length === 0
+              ? html`<p style="color:#9ca3af;font-style:italic">
+                  All tabs closed.
+                </p>`
+              : nothing}
           </div>`,
           panelEl,
         );
@@ -569,7 +579,11 @@ export const ClosableTabs: Story = {
 
       if (openTabIds.length === 0) {
         render(
-          html`<p style="font-size:13px;color:#9ca3af;font-style:italic;margin:16px 4px;">All tabs have been closed.</p>`,
+          html`<p
+            style="font-size:13px;color:#9ca3af;font-style:italic;margin:16px 4px;"
+          >
+            All tabs have been closed.
+          </p>`,
           el,
         );
       } else {
@@ -684,10 +698,22 @@ export const DestroyOnClose: Story = {
         <vi-tab tab-id="tab-1">Permanent Tab</vi-tab>
         <vi-tab tab-id="tab-2" closable>Self-Destroying Tab 1</vi-tab>
         <vi-tab tab-id="tab-3" closable>Self-Destroying Tab 2</vi-tab>
-        
-        <vi-tab-panel for="tab-1">${panelContent('Permanent', 'I cannot be closed.')}</vi-tab-panel>
-        <vi-tab-panel for="tab-2">${panelContent('Self-Destroying Tab 1', 'When you close me, I will be automatically removed from the DOM.')}</vi-tab-panel>
-        <vi-tab-panel for="tab-3">${panelContent('Self-Destroying Tab 2', 'When you close me, I will be automatically removed from the DOM.')}</vi-tab-panel>
+
+        <vi-tab-panel for="tab-1"
+          >${panelContent('Permanent', 'I cannot be closed.')}</vi-tab-panel
+        >
+        <vi-tab-panel for="tab-2"
+          >${panelContent(
+            'Self-Destroying Tab 1',
+            'When you close me, I will be automatically removed from the DOM.',
+          )}</vi-tab-panel
+        >
+        <vi-tab-panel for="tab-3"
+          >${panelContent(
+            'Self-Destroying Tab 2',
+            'When you close me, I will be automatically removed from the DOM.',
+          )}</vi-tab-panel
+        >
       </vi-tabs>
     `;
   },
@@ -947,8 +973,14 @@ export const AddableTabs: Story = {
         panelEl.setAttribute('for', id);
         render(
           html`<div style="padding: 20px 4px 8px;">
-            <h3 style="margin: 0 0 8px; font-size: 15px; font-weight: 600; color: #111827;">Document ${i}</h3>
-            <p style="margin: 0; font-size: 13.5px; color: #6b7280;">Content for dynamically added document ${i}.</p>
+            <h3
+              style="margin: 0 0 8px; font-size: 15px; font-weight: 600; color: #111827;"
+            >
+              Document ${i}
+            </h3>
+            <p style="margin: 0; font-size: 13.5px; color: #6b7280;">
+              Content for dynamically added document ${i}.
+            </p>
           </div>`,
           panelEl,
         );

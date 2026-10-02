@@ -17,12 +17,7 @@ describe('vi-progress', () => {
   });
 
   it('should render the custom element and its shadow DOM structure for a basic line progress', async () => {
-    render(
-      html`
-        <vi-progress value="30"></vi-progress>
-      `,
-      container
-    );
+    render(html` <vi-progress value="30"></vi-progress> `, container);
 
     const host = await $('vi-progress');
     await expect(host).toExist();
@@ -33,7 +28,7 @@ describe('vi-progress', () => {
 
     const indicator = await host.shadow$('.vi-progress-indicator');
     await expect(indicator).toExist();
-    
+
     // Check aria attributes
     await expect(base).toHaveAttribute('role', 'progressbar');
     await expect(base).toHaveAttribute('aria-valuenow', '30');
@@ -45,14 +40,24 @@ describe('vi-progress', () => {
     render(html`<vi-progress value="45"></vi-progress>`, container);
     let host = document.querySelector('vi-progress') as ViProgress;
     await host.updateComplete;
-    let slotText = host.shadowRoot?.querySelector('.vi-progress-info')?.textContent?.trim();
+    let slotText = host.shadowRoot
+      ?.querySelector('.vi-progress-info')
+      ?.textContent?.trim();
     expect(slotText).toBe('45%');
 
     // 2. Custom format function
-    render(html`<vi-progress value="45" .format=${(p: number) => p + ' Days'}></vi-progress>`, container);
+    render(
+      html`<vi-progress
+        value="45"
+        .format=${(p: number) => p + ' Days'}
+      ></vi-progress>`,
+      container,
+    );
     host = document.querySelector('vi-progress') as ViProgress;
     await host.updateComplete;
-    slotText = host.shadowRoot?.querySelector('.vi-progress-info')?.textContent?.trim();
+    slotText = host.shadowRoot
+      ?.querySelector('.vi-progress-info')
+      ?.textContent?.trim();
     expect(slotText).toBe('45 Days');
   });
 
@@ -63,7 +68,7 @@ describe('vi-progress', () => {
 
     const base = host.shadowRoot?.querySelector('.vi-progress');
     expect(base?.classList.contains('vi-progress--status-success')).toBe(true);
-    
+
     // Status should fall back to normal if value goes below max
     host.value = 90;
     await host.updateComplete;
@@ -71,16 +76,19 @@ describe('vi-progress', () => {
   });
 
   it('should render a circular progress bar with SVG elements', async () => {
-    render(html`<vi-progress type="circle" value="50"></vi-progress>`, container);
+    render(
+      html`<vi-progress type="circle" value="50"></vi-progress>`,
+      container,
+    );
     const host = document.querySelector('vi-progress') as ViProgress;
     await host.updateComplete;
 
     const svg = host.shadowRoot?.querySelector('svg');
     expect(svg).not.toBeNull();
-    
+
     const circles = svg?.querySelectorAll('circle');
     expect(circles?.length).toBe(2); // Track and Indicator
-    
+
     const indicator = svg?.querySelector('.vi-progress-circle-indicator');
     expect(indicator).not.toBeNull();
   });
@@ -95,14 +103,19 @@ describe('vi-progress', () => {
 
     const items = stepsContainer?.querySelectorAll('.vi-progress-step-item');
     expect(items?.length).toBe(5);
-    
+
     // Value 30 out of 100 with 5 steps means (30/100)*5 = 1.5 => floor(1.5) = 1 active step
-    const activeItems = stepsContainer?.querySelectorAll('.vi-progress-step-item--active');
+    const activeItems = stepsContainer?.querySelectorAll(
+      '.vi-progress-step-item--active',
+    );
     expect(activeItems?.length).toBe(1);
   });
 
   it('should render circular segmented steps via SVG', async () => {
-    render(html`<vi-progress type="circle" value="50" steps="10"></vi-progress>`, container);
+    render(
+      html`<vi-progress type="circle" value="50" steps="10"></vi-progress>`,
+      container,
+    );
     const host = document.querySelector('vi-progress') as ViProgress;
     await host.updateComplete;
 
@@ -111,49 +124,53 @@ describe('vi-progress', () => {
 
     const circles = svg?.querySelectorAll('circle');
     expect(circles?.length).toBe(10); // 10 distinct segments
-    
-    const activeCircles = svg?.querySelectorAll('.vi-progress-circle-indicator');
+
+    const activeCircles = svg?.querySelectorAll(
+      '.vi-progress-circle-indicator',
+    );
     expect(activeCircles?.length).toBe(5); // 50% of 10 is 5 active
   });
 
   it('should inject complex gradient styles when strokeColor is an object', async () => {
     render(
       html`
-        <vi-progress 
-          value="50" 
+        <vi-progress
+          value="50"
           .strokeColor=${{ '0%': 'red', '100%': 'blue', direction: 'to right' }}
         ></vi-progress>
-      `, 
-      container
+      `,
+      container,
     );
     const host = document.querySelector('vi-progress') as ViProgress;
     await host.updateComplete;
 
     const base = host.shadowRoot?.querySelector('.vi-progress') as HTMLElement;
     const styleString = base.getAttribute('style') || '';
-    expect(styleString.includes('linear-gradient(to right, red 0%, blue 100%)')).toBe(true);
+    expect(
+      styleString.includes('linear-gradient(to right, red 0%, blue 100%)'),
+    ).toBe(true);
   });
 
   it('should parse complex strokeColor into SVG defs for circles', async () => {
     render(
       html`
-        <vi-progress 
-          type="circle" 
-          value="50" 
+        <vi-progress
+          type="circle"
+          value="50"
           .strokeColor=${{ '0%': 'red', '100%': 'blue' }}
         ></vi-progress>
-      `, 
-      container
+      `,
+      container,
     );
     const host = document.querySelector('vi-progress') as ViProgress;
     await host.updateComplete;
 
     const defs = host.shadowRoot?.querySelector('defs');
     expect(defs).not.toBeNull();
-    
+
     const gradient = defs?.querySelector('linearGradient');
     expect(gradient).not.toBeNull();
-    
+
     const stops = gradient?.querySelectorAll('stop');
     expect(stops?.length).toBe(2);
     expect(stops?.[0].getAttribute('stop-color')).toBe('red');
@@ -162,24 +179,38 @@ describe('vi-progress', () => {
 
   it('should support secondary success segment', async () => {
     // Test on Line progress
-    render(html`<vi-progress value="50" success-percent="20"></vi-progress>`, container);
+    render(
+      html`<vi-progress value="50" success-percent="20"></vi-progress>`,
+      container,
+    );
     let host = document.querySelector('vi-progress') as ViProgress;
     await host.updateComplete;
-    
-    const successIndicator = host.shadowRoot?.querySelector('.vi-progress-success-indicator');
+
+    const successIndicator = host.shadowRoot?.querySelector(
+      '.vi-progress-success-indicator',
+    );
     expect(successIndicator).not.toBeNull();
 
     // Test on Circle progress
-    render(html`<vi-progress type="circle" value="50" success-percent="20"></vi-progress>`, container);
+    render(
+      html`<vi-progress
+        type="circle"
+        value="50"
+        success-percent="20"
+      ></vi-progress>`,
+      container,
+    );
     host = document.querySelector('vi-progress') as ViProgress;
     await host.updateComplete;
-    
+
     // Circle with success segment should have 3 circles: Track, Indicator, Success
     const circles = host.shadowRoot?.querySelectorAll('circle');
     expect(circles?.length).toBe(3);
-    
+
     // We expect the third circle to be the success segment, check its class/style
-    const successCircle = host.shadowRoot?.querySelector('.vi-progress-circle-success');
+    const successCircle = host.shadowRoot?.querySelector(
+      '.vi-progress-circle-success',
+    );
     expect(successCircle).not.toBeNull();
   });
 
@@ -192,9 +223,9 @@ describe('vi-progress', () => {
 
       render(
         html`
-          <vi-progress value="42" .ariaLabel=${"Loading files"}></vi-progress>
+          <vi-progress value="42" .ariaLabel=${'Loading files'}></vi-progress>
         `,
-        container
+        container,
       );
 
       const host = document.querySelector('vi-progress') as ViProgress;
@@ -206,9 +237,9 @@ describe('vi-progress', () => {
           'html-has-lang': { enabled: false },
           'page-has-heading-one': { enabled: false },
           'landmark-one-main': { enabled: false },
-          'region': { enabled: false },
-          'color-contrast': { enabled: false }
-        }
+          region: { enabled: false },
+          'color-contrast': { enabled: false },
+        },
       });
 
       expect(results.violations).toHaveLength(0);

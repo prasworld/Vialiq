@@ -17,16 +17,16 @@ export declare class DraggableInterface {
 
 /**
  * DraggableMixin
- * 
+ *
  * Provides native drag-and-drop capabilities using Pointer Events to any LitElement.
  * It applies performant `transform: translate3d(x, y, 0)` positioning to `_dragTarget`.
- * 
+ *
  * Subclasses MUST implement:
  * - `_dragTarget`: The HTML element that moves (usually the outer container or dialog).
  * - `_dragHandle`: The HTML element that accepts pointer events to initiate the drag (usually a header).
  */
 export function DraggableMixin<T extends Constructor<LitElement>>(
-  Base: T
+  Base: T,
 ): T & Constructor<DraggableInterface> {
   class DraggableMixinClass extends Base {
     /**
@@ -40,7 +40,8 @@ export function DraggableMixin<T extends Constructor<LitElement>>(
      * - `'viewport'`: Clamps so the dragged element stays fully within the viewport.
      * - `'parent'`: Clamps within the bounding rect of the element's offset parent.
      */
-    @property({ type: String, attribute: 'drag-containment' }) accessor dragContainment: DragContainment = 'none';
+    @property({ type: String, attribute: 'drag-containment' })
+    accessor dragContainment: DragContainment = 'none';
 
     private _isDragging = false;
     private _previousUserSelect: string | null = null;
@@ -121,7 +122,14 @@ export function DraggableMixin<T extends Constructor<LitElement>>(
           const tag = node.tagName.toLowerCase();
           const role = node.getAttribute('role');
           return (
-            ['button', 'a', 'input', 'select', 'textarea', 'vi-button'].includes(tag) ||
+            [
+              'button',
+              'a',
+              'input',
+              'select',
+              'textarea',
+              'vi-button',
+            ].includes(tag) ||
             role === 'button' ||
             node.hasAttribute('data-no-drag')
           );
@@ -151,7 +159,8 @@ export function DraggableMixin<T extends Constructor<LitElement>>(
       if (handle) {
         handle.style.cursor = 'grabbing';
       }
-      this._previousUserSelect = document.body.style.getPropertyValue('user-select') || null;
+      this._previousUserSelect =
+        document.body.style.getPropertyValue('user-select') || null;
       document.body.style.setProperty('user-select', 'none', 'important');
 
       window.addEventListener('pointermove', this._boundOnPointerMove);
@@ -238,8 +247,14 @@ export function DraggableMixin<T extends Constructor<LitElement>>(
       const minY = boundsTop - naturalRect.top;
       const maxY = boundsBottom - naturalRect.bottom;
 
-      this._currentTranslateX = Math.max(minX, Math.min(this._currentTranslateX, maxX));
-      this._currentTranslateY = Math.max(minY, Math.min(this._currentTranslateY, maxY));
+      this._currentTranslateX = Math.max(
+        minX,
+        Math.min(this._currentTranslateX, maxX),
+      );
+      this._currentTranslateY = Math.max(
+        minY,
+        Math.min(this._currentTranslateY, maxY),
+      );
     }
 
     private _onPointerUp(e: PointerEvent) {
@@ -259,14 +274,17 @@ export function DraggableMixin<T extends Constructor<LitElement>>(
           // Ignore if release fails
         }
       }
-      
+
       document.body.style.cursor = '';
       if (handle) {
         handle.style.cursor = 'grab';
       }
 
       if (this._previousUserSelect !== null) {
-        document.body.style.setProperty('user-select', this._previousUserSelect);
+        document.body.style.setProperty(
+          'user-select',
+          this._previousUserSelect,
+        );
       } else {
         document.body.style.removeProperty('user-select');
       }
@@ -289,7 +307,7 @@ export function DraggableMixin<T extends Constructor<LitElement>>(
       window.removeEventListener('pointerup', this._boundOnPointerUp);
       window.removeEventListener('pointercancel', this._boundOnPointerUp);
     }
-    
+
     /**
      * Resets the drag translation back to origin (0,0).
      */
@@ -310,14 +328,17 @@ export function DraggableMixin<T extends Constructor<LitElement>>(
       this._isDragging = false;
 
       this._removeWindowListeners();
-      
+
       if (this._previousUserSelect !== null) {
-        document.body.style.setProperty('user-select', this._previousUserSelect);
+        document.body.style.setProperty(
+          'user-select',
+          this._previousUserSelect,
+        );
       } else {
         document.body.style.removeProperty('user-select');
       }
       this._previousUserSelect = null;
-      
+
       const target = this._dragTarget;
       if (target) {
         if (this._previousTransition !== null) {

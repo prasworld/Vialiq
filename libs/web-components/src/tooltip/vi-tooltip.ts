@@ -1,4 +1,11 @@
-import { css, html, unsafeCSS, nothing, type PropertyValues, type TemplateResult } from 'lit';
+import {
+  css,
+  html,
+  unsafeCSS,
+  nothing,
+  type PropertyValues,
+  type TemplateResult,
+} from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { ViElement } from '../base/vi-element.js';
 import {
@@ -14,20 +21,25 @@ import tooltipStyles from './vi-tooltip.scss?inline';
 import { OverlayManager } from '../base/overlay-manager.js';
 
 export type TooltipPlacement =
-  | 'top' | 'top-start' | 'top-end'
-  | 'bottom' | 'bottom-start' | 'bottom-end'
-  | 'left' | 'right';
+  | 'top'
+  | 'top-start'
+  | 'top-end'
+  | 'bottom'
+  | 'bottom-start'
+  | 'bottom-end'
+  | 'left'
+  | 'right';
 
 export type TooltipTrigger = 'hover focus' | 'hover' | 'focus' | 'click';
 
 /**
  * vi-tooltip
- * 
+ *
  * A floating hint providing supplementary info on hover or focus using Floating UI.
- * 
+ *
  * **Developer Notes & Architecture:**
  * - **Positioning Strategy**: Tooltips always use `strategy: absolute` natively, but users can override this via the `popper-options` property if they need `fixed` hoisting to escape tight containers.
- * - **Z-Index**: `OverlayManager` guarantees tooltips render above modals and dropdowns. 
+ * - **Z-Index**: `OverlayManager` guarantees tooltips render above modals and dropdowns.
  * - **Accessibility**: Automatically calculates whether its slotted content is interactive (contains links/buttons). If so, it uses `aria-details`; if plain text, it uses `aria-describedby`.
  * - **Teleportation**: `vi-tooltip` does **not** teleport its floating panel to `document.body`. This is an explicit design choice to preserve Shadow DOM encapsulation for the `<slot name="content">` and scoped styling.
  *
@@ -50,11 +62,14 @@ export type TooltipTrigger = 'hover focus' | 'hover' | 'focus' | 'click';
  */
 @customElement('vi-tooltip')
 export class ViTooltip extends ViElement {
-  static override styles = css`${unsafeCSS(tooltipStyles)}`;
+  static override styles = css`
+    ${unsafeCSS(tooltipStyles)}
+  `;
 
   @property({ type: String }) accessor content = '';
 
-  @property({ type: String, reflect: true }) accessor placement: TooltipPlacement = 'top';
+  @property({ type: String, reflect: true })
+  accessor placement: TooltipPlacement = 'top';
 
   @property({ type: String }) accessor trigger: TooltipTrigger = 'hover focus';
 
@@ -69,38 +84,41 @@ export class ViTooltip extends ViElement {
   /**
    * Custom options passed directly to Floating UI's computePosition.
    * Note: the `popper-options` attribute only supports JSON-serializable values;
-   * middleware functions must be set via the `popperOptions` property.        
-  */
-   @property({
-     type: Object,
-     attribute: 'popper-options',
-     converter: {
-       fromAttribute: (value) => {
-         if (value == null || value === '') return {};
-         try {
-           return JSON.parse(value) as Partial<ComputePositionConfig>;
-         } catch {
-           return {};
-         }
-       },
-     },
-   })
-   accessor popperOptions: Partial<ComputePositionConfig> = {};
+   * middleware functions must be set via the `popperOptions` property.
+   */
+  @property({
+    type: Object,
+    attribute: 'popper-options',
+    converter: {
+      fromAttribute: (value) => {
+        if (value == null || value === '') return {};
+        try {
+          return JSON.parse(value) as Partial<ComputePositionConfig>;
+        } catch {
+          return {};
+        }
+      },
+    },
+  })
+  accessor popperOptions: Partial<ComputePositionConfig> = {};
 
   @state() private accessor _open = false;
 
   @state() private accessor _isInteractive = false;
 
-  @query('.tooltip-panel') private accessor _tooltipPanel!: HTMLDivElement | null;
-  @query('slot:not([name])') private accessor _defaultSlot!: HTMLSlotElement | null;
-  @query('slot[name="content"]') private accessor _contentSlot!: HTMLSlotElement | null;
+  @query('.tooltip-panel')
+  private accessor _tooltipPanel!: HTMLDivElement | null;
+  @query('slot:not([name])')
+  private accessor _defaultSlot!: HTMLSlotElement | null;
+  @query('slot[name="content"]')
+  private accessor _contentSlot!: HTMLSlotElement | null;
 
   private _showTimeout?: number;
   private _hideTimeout?: number;
   private _triggerElement: HTMLElement | null = null;
   private _cleanupAutoUpdate?: () => void;
   private _overlayZIndex: number | null = null;
-  
+
   private _panelId = `vi-tooltip-panel-${Math.random().toString(36).substring(2, 9)}`;
 
   constructor() {
@@ -120,7 +138,7 @@ export class ViTooltip extends ViElement {
       this._cleanupAutoUpdate();
       this._cleanupAutoUpdate = undefined;
     }
-    
+
     if (this._tooltipPanel && this._overlayZIndex !== null) {
       OverlayManager.unregister(this._tooltipPanel);
       this._overlayZIndex = null;
@@ -146,9 +164,15 @@ export class ViTooltip extends ViElement {
       });
     }
     if (changed.has('maxWidth') && this._tooltipPanel) {
-      this._tooltipPanel.style.setProperty('--vi-tooltip-max-width', `${this.maxWidth}px`);
+      this._tooltipPanel.style.setProperty(
+        '--vi-tooltip-max-width',
+        `${this.maxWidth}px`,
+      );
     }
-    if ((changed.has('placement') || changed.has('popperOptions')) && this._open) {
+    if (
+      (changed.has('placement') || changed.has('popperOptions')) &&
+      this._open
+    ) {
       this._positionTooltip();
     }
   }
@@ -170,26 +194,28 @@ export class ViTooltip extends ViElement {
     }
   }
 
-/** Force hide the tooltip */
-hide(immediate = false): void {
-  window.clearTimeout(this._showTimeout);
-  window.clearTimeout(this._hideTimeout);
+  /** Force hide the tooltip */
+  hide(immediate = false): void {
+    window.clearTimeout(this._showTimeout);
+    window.clearTimeout(this._hideTimeout);
 
-  if (!this._open) return;
+    if (!this._open) return;
 
-  if (this.hideDelay > 0 && !immediate) {
-    this._hideTimeout = window.setTimeout(() => {
+    if (this.hideDelay > 0 && !immediate) {
+      this._hideTimeout = window.setTimeout(() => {
+        this._closeTooltip();
+      }, this.hideDelay);
+    } else {
       this._closeTooltip();
-    }, this.hideDelay);
-  } else {
-    this._closeTooltip();
+    }
   }
-}
 
   private _openTooltip(): void {
     this._open = true;
     const panel = this._tooltipPanel;
-    const trigger = this._triggerElement || this.shadowRoot?.querySelector('.trigger-wrapper') as HTMLElement;
+    const trigger =
+      this._triggerElement ||
+      (this.shadowRoot?.querySelector('.trigger-wrapper') as HTMLElement);
     if (panel && trigger) {
       try {
         if (!panel.matches(':popover-open')) {
@@ -204,7 +230,7 @@ hide(immediate = false): void {
       panel.style.zIndex = this._overlayZIndex.toString();
 
       this._positionTooltip();
-      
+
       // Start autoUpdate monitoring for bounds changes
       this._cleanupAutoUpdate = autoUpdate(trigger, panel, () => {
         this._positionTooltip();
@@ -214,8 +240,10 @@ hide(immediate = false): void {
         document.addEventListener('pointerdown', this._handleDocumentClick);
       }
     }
-    
-    this.dispatchEvent(new CustomEvent('vi-tooltip-show', { bubbles: true, composed: true }));
+
+    this.dispatchEvent(
+      new CustomEvent('vi-tooltip-show', { bubbles: true, composed: true }),
+    );
   }
 
   private _closeTooltip(): void {
@@ -229,7 +257,7 @@ hide(immediate = false): void {
       } catch {
         panel.style.display = 'none';
       }
-      
+
       OverlayManager.unregister(panel);
       panel.style.removeProperty('z-index');
       this._overlayZIndex = null;
@@ -241,7 +269,9 @@ hide(immediate = false): void {
       document.removeEventListener('pointerdown', this._handleDocumentClick);
     }
 
-    this.dispatchEvent(new CustomEvent('vi-tooltip-hide', { bubbles: true, composed: true }));
+    this.dispatchEvent(
+      new CustomEvent('vi-tooltip-hide', { bubbles: true, composed: true }),
+    );
   }
 
   private _clearTimeouts(): void {
@@ -263,7 +293,7 @@ hide(immediate = false): void {
     if (newTrigger !== this._triggerElement) {
       this._triggerElement = newTrigger;
     }
-    
+
     this._updateTriggerAria();
   }
 
@@ -280,15 +310,16 @@ hide(immediate = false): void {
       'textarea:not([disabled])',
       'vi-button:not([disabled])',
       'vi-link',
-      '[tabindex]:not([tabindex="-1"])'
+      '[tabindex]:not([tabindex="-1"])',
     ];
 
     const hasFocusable = (el: Element): boolean => {
-      if (focusableSelectors.some(selector => el.matches(selector))) return true;
-      return Array.from(el.children).some(child => hasFocusable(child));
+      if (focusableSelectors.some((selector) => el.matches(selector)))
+        return true;
+      return Array.from(el.children).some((child) => hasFocusable(child));
     };
 
-    return assigned.some(el => hasFocusable(el));
+    return assigned.some((el) => hasFocusable(el));
   }
 
   private _updateTriggerAria(): void {
@@ -363,7 +394,12 @@ hide(immediate = false): void {
   private _handleDocumentClick(event: PointerEvent): void {
     const target = event.target as Node;
     const panel = this._tooltipPanel;
-    if (this._open && panel && !panel.contains(target) && !this.contains(target)) {
+    if (
+      this._open &&
+      panel &&
+      !panel.contains(target) &&
+      !this.contains(target)
+    ) {
       this.hide(true);
     }
   }
@@ -378,7 +414,9 @@ hide(immediate = false): void {
 
     panel.style.setProperty('--vi-tooltip-max-width', `${this.maxWidth}px`);
 
-    const trigger = this._triggerElement || this.shadowRoot?.querySelector('.trigger-wrapper') as HTMLElement;
+    const trigger =
+      this._triggerElement ||
+      (this.shadowRoot?.querySelector('.trigger-wrapper') as HTMLElement);
     if (!trigger) return;
 
     const arrowEl = panel.querySelector('.tooltip-arrow') as HTMLElement;
@@ -391,57 +429,70 @@ hide(immediate = false): void {
       arrowEl ? arrow({ element: arrowEl }) : null,
     ].filter(Boolean);
 
-// Merge consumer popperOptions, allowing overrides for middleware, strategy, etc.
-// (but keep `placement` controlled by the `placement` prop to avoid two sources of truth)
-const { placement: _ignoredPlacement, ...popperOptions } = this.popperOptions ?? {};
-const config: ComputePositionConfig = {
-  placement: this.placement,
-  strategy: popperOptions.strategy ?? 'absolute',
-  middleware: popperOptions.middleware ?? defaultMiddleware,
-  ...popperOptions,
-};
+    // Merge consumer popperOptions, allowing overrides for middleware, strategy, etc.
+    // (but keep `placement` controlled by the `placement` prop to avoid two sources of truth)
+    const { placement: _ignoredPlacement, ...popperOptions } =
+      this.popperOptions ?? {};
+    const config: ComputePositionConfig = {
+      placement: this.placement,
+      strategy: popperOptions.strategy ?? 'absolute',
+      middleware: popperOptions.middleware ?? defaultMiddleware,
+      ...popperOptions,
+    };
 
-    computePosition(trigger, panel, config).then(({ x, y, placement, strategy, middlewareData }) => {
-      Object.assign(panel.style, {
-        position: strategy,
-        left: `${x}px`,
-        top: `${y}px`,
-        right: 'auto',
-        bottom: 'auto',
-        margin: '0',
-      });
+    computePosition(trigger, panel, config).then(
+      ({ x, y, placement, strategy, middlewareData }) => {
+        Object.assign(panel.style, {
+          position: strategy,
+          left: `${x}px`,
+          top: `${y}px`,
+          right: 'auto',
+          bottom: 'auto',
+          margin: '0',
+        });
 
-      // Update data-placement attribute to trigger arrow CSS styles
-      panel.setAttribute('data-placement', placement);
+        // Update data-placement attribute to trigger arrow CSS styles
+        panel.setAttribute('data-placement', placement);
 
-      // Position the arrow if arrow middleware data exists
-      if (arrowEl && middlewareData.arrow) {
-        const { x: arrowX, y: arrowY } = middlewareData.arrow;
-        
-        // Find which side the arrow is on depending on placement
-        const side = placement.split('-')[0];
-        const staticSide = {
-          top: 'bottom',
-          right: 'left',
-          bottom: 'top',
-          left: 'right',
-        }[side];
+        // Position the arrow if arrow middleware data exists
+        if (arrowEl && middlewareData.arrow) {
+          const { x: arrowX, y: arrowY } = middlewareData.arrow;
 
-        if (staticSide) {
-          Object.assign(arrowEl.style, {
-            left: arrowX != null ? `${arrowX}px` : '',
-            top: arrowY != null ? `${arrowY}px` : '',
-            right: '',
-            bottom: '',
-            [staticSide]: `${-arrowEl.offsetWidth / 2 || -6}px`, // position arrow exactly on edge
-          });
+          // Find which side the arrow is on depending on placement
+          const side = placement.split('-')[0];
+          const staticSide = {
+            top: 'bottom',
+            right: 'left',
+            bottom: 'top',
+            left: 'right',
+          }[side];
+
+          if (staticSide) {
+            Object.assign(arrowEl.style, {
+              left: arrowX != null ? `${arrowX}px` : '',
+              top: arrowY != null ? `${arrowY}px` : '',
+              right: '',
+              bottom: '',
+              [staticSide]: `${-arrowEl.offsetWidth / 2 || -6}px`, // position arrow exactly on edge
+            });
+          }
         }
-      }
-    });
+      },
+    );
   }
 
   override render(): TemplateResult {
-    const { _panelId, content, placement, _onPointerEnter, _onPointerLeave, _onFocusIn, _onFocusOut, _onClick, _onKeyDown } = this;
+    const {
+      _panelId,
+      content,
+      placement,
+      _onPointerEnter,
+      _onPointerLeave,
+      _onFocusIn,
+      _onFocusOut,
+      _onClick,
+      _onKeyDown,
+    } = this;
 
     return html`
       <span
@@ -463,7 +514,7 @@ const config: ComputePositionConfig = {
         role=${this._isInteractive ? 'dialog' : 'tooltip'}
         popover="manual"
         aria-modal=${this._isInteractive ? 'false' : nothing}
-        aria-label=${this._isInteractive ? (content || 'Tooltip') : nothing}
+        aria-label=${this._isInteractive ? content || 'Tooltip' : nothing}
         placement=${placement}
         @pointerenter=${_onPointerEnter}
         @pointerleave=${_onPointerLeave}
@@ -472,7 +523,9 @@ const config: ComputePositionConfig = {
         @keydown=${_onKeyDown}
       >
         <div class="tooltip-content" part="content">
-          <slot name="content" @slotchange=${this._updateTriggerAria}>${content}</slot>
+          <slot name="content" @slotchange=${this._updateTriggerAria}
+            >${content}</slot
+          >
           <div class="tooltip-arrow" part="arrow"></div>
         </div>
       </div>

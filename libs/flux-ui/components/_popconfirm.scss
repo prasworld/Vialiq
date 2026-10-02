@@ -1,26 +1,28 @@
 @use '../styles/variables' as tokens;
 
-
 .popconfirm-body {
   display: flex;
   align-items: flex-start;
   gap: tokens.$spacing-sm;
-  
+
   .popconfirm-icon {
     flex-shrink: 0;
     margin-top: 2px; // slightly align with the text line height
   }
-  
+
   .popconfirm-text {
     display: flex;
     flex-direction: column;
     gap: tokens.$spacing-xs;
-    
+
     .popconfirm-title {
-      font-weight: var(--vi-popconfirm-title-weight, #{tokens.$font-weight-medium});
+      font-weight: var(
+        --vi-popconfirm-title-weight,
+        #{tokens.$font-weight-medium}
+      );
       color: var(--vi-popconfirm-title-color, #{tokens.$text-primary});
     }
-    
+
     .popconfirm-desc {
       font-size: var(--vi-popconfirm-desc-size, #{tokens.$font-size-sm});
       color: var(--vi-popconfirm-desc-color, #{tokens.$text-secondary});

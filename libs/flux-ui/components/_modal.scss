@@ -108,7 +108,8 @@
       margin-left: auto;
 
       &[open] {
-        animation: vi-modal-drawer-enter-right tokens.$modal-animation-duration ease-out;
+        animation: vi-modal-drawer-enter-right tokens.$modal-animation-duration
+          ease-out;
       }
     }
 
@@ -116,7 +117,8 @@
       margin-right: auto;
 
       &[open] {
-        animation: vi-modal-drawer-enter-left tokens.$modal-animation-duration ease-out;
+        animation: vi-modal-drawer-enter-left tokens.$modal-animation-duration
+          ease-out;
       }
     }
   }
@@ -159,16 +161,27 @@
     }
 
     &[open] {
-      animation: vi-modal-alert-enter tokens.$modal-animation-duration cubic-bezier(0.175, 0.885, 0.32, 1.275); // spring-like
+      animation: vi-modal-alert-enter tokens.$modal-animation-duration
+        cubic-bezier(0.175, 0.885, 0.32, 1.275); // spring-like
     }
   }
 
   /* Sizes (Default Variant Only) */
-  .modal-size-xs { max-width: tokens.$modal-max-width-xs; }
-  .modal-size-sm { max-width: tokens.$modal-max-width-sm; }
-  .modal-size-md { max-width: tokens.$modal-max-width-md; }
-  .modal-size-lg { max-width: tokens.$modal-max-width-lg; }
-  .modal-size-xl { max-width: tokens.$modal-max-width-xl; }
+  .modal-size-xs {
+    max-width: tokens.$modal-max-width-xs;
+  }
+  .modal-size-sm {
+    max-width: tokens.$modal-max-width-sm;
+  }
+  .modal-size-md {
+    max-width: tokens.$modal-max-width-md;
+  }
+  .modal-size-lg {
+    max-width: tokens.$modal-max-width-lg;
+  }
+  .modal-size-xl {
+    max-width: tokens.$modal-max-width-xl;
+  }
 
   .modal-size-fullscreen {
     max-width: none;
@@ -198,23 +211,43 @@
 
   /* Animations */
   @keyframes vi-modal-enter {
-    from { opacity: 0; transform: scale(0.96); }
-    to   { opacity: 1; transform: scale(1); }
+    from {
+      opacity: 0;
+      transform: scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
   }
 
   @keyframes vi-modal-drawer-enter-right {
-    from { transform: translateX(100%); }
-    to   { transform: translateX(0); }
+    from {
+      transform: translateX(100%);
+    }
+    to {
+      transform: translateX(0);
+    }
   }
 
   @keyframes vi-modal-drawer-enter-left {
-    from { transform: translateX(-100%); }
-    to   { transform: translateX(0); }
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(0);
+    }
   }
 
   @keyframes vi-modal-alert-enter {
-    from { opacity: 0; transform: scale(0.8); }
-    to   { opacity: 1; transform: scale(1); }
+    from {
+      opacity: 0;
+      transform: scale(0.8);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
   }
 
   /* Reduced Motion */
@@ -242,7 +275,7 @@
     .modal-header {
       padding: tokens.$spacing-md; // slightly tighter padding on mobile
     }
-    
+
     .modal-body {
       padding: tokens.$spacing-md;
     }

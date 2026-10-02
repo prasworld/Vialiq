@@ -26,7 +26,12 @@ describe('vi-modal', () => {
     (container.querySelector('vi-modal') as ViModal);
 
   it('renders closed by default', async () => {
-    render(html`<vi-modal><vi-modal-header slot="header"></vi-modal-header></vi-modal>`, container);
+    render(
+      html`<vi-modal
+        ><vi-modal-header slot="header"></vi-modal-header
+      ></vi-modal>`,
+      container,
+    );
     const el = getModal();
     await el.updateComplete;
 
@@ -39,7 +44,12 @@ describe('vi-modal', () => {
   });
 
   it('opens and closes reflect on native dialog', async () => {
-    render(html`<vi-modal><vi-modal-header slot="header"></vi-modal-header></vi-modal>`, container);
+    render(
+      html`<vi-modal
+        ><vi-modal-header slot="header"></vi-modal-header
+      ></vi-modal>`,
+      container,
+    );
     const el = getModal();
     await el.updateComplete;
     const dialog = el.shadowRoot!.querySelector('dialog') as HTMLDialogElement;
@@ -58,7 +68,13 @@ describe('vi-modal', () => {
   });
 
   it('renders correct variant and sizes', async () => {
-    render(html`<vi-modal variant="alert" size="lg"><vi-modal-header slot="header" alert-variant="warning"></vi-modal-header></vi-modal>`,
+    render(
+      html`<vi-modal variant="alert" size="lg"
+        ><vi-modal-header
+          slot="header"
+          alert-variant="warning"
+        ></vi-modal-header
+      ></vi-modal>`,
       container,
     );
     const el = getModal();
@@ -79,7 +95,12 @@ describe('vi-modal', () => {
   });
 
   it('fires correct events on close request', async () => {
-    render(html`<vi-modal open><vi-modal-header slot="header"></vi-modal-header></vi-modal>`, container);
+    render(
+      html`<vi-modal open
+        ><vi-modal-header slot="header"></vi-modal-header
+      ></vi-modal>`,
+      container,
+    );
     const el = getModal();
     await el.updateComplete;
 
@@ -105,7 +126,12 @@ describe('vi-modal', () => {
   });
 
   it('can prevent default on request close', async () => {
-    render(html`<vi-modal open><vi-modal-header slot="header"></vi-modal-header></vi-modal>`, container);
+    render(
+      html`<vi-modal open
+        ><vi-modal-header slot="header"></vi-modal-header
+      ></vi-modal>`,
+      container,
+    );
     const el = getModal();
     await el.updateComplete;
 
@@ -127,7 +153,12 @@ describe('vi-modal', () => {
   });
 
   it('closes on header close button click', async () => {
-    render(html`<vi-modal open><vi-modal-header slot="header" closable></vi-modal-header></vi-modal>`, container);
+    render(
+      html`<vi-modal open
+        ><vi-modal-header slot="header" closable></vi-modal-header
+      ></vi-modal>`,
+      container,
+    );
     const el = getModal();
     await el.updateComplete;
 
@@ -135,14 +166,16 @@ describe('vi-modal', () => {
     el.addEventListener('vi-modal-close', (e: Event) => {
       closeReason = (e as CustomEvent).detail.reason;
     });
-    
+
     let requestCloseCount = 0;
     el.addEventListener('vi-modal-close-request', () => {
       requestCloseCount++;
     });
 
     const header = el.querySelector('vi-modal-header') as HTMLElement;
-    const closeBtn = header.shadowRoot!.querySelector('[part="close-btn"]') as HTMLElement;
+    const closeBtn = header.shadowRoot!.querySelector(
+      '[part="close-btn"]',
+    ) as HTMLElement;
     expect(closeBtn).toBeTruthy();
 
     closeBtn.dispatchEvent(
@@ -156,7 +189,12 @@ describe('vi-modal', () => {
   });
 
   it('handles backdrop clicks depending on persistence', async () => {
-    render(html`<vi-modal open persistent><vi-modal-header slot="header"></vi-modal-header></vi-modal>`, container);
+    render(
+      html`<vi-modal open persistent
+        ><vi-modal-header slot="header"></vi-modal-header
+      ></vi-modal>`,
+      container,
+    );
     const el = getModal() as ViModal;
     await el.updateComplete;
 
@@ -208,7 +246,12 @@ describe('vi-modal', () => {
   });
 
   it('teleports to document.body when rendered and cleans up', async () => {
-    render(html`<vi-modal open><vi-modal-header slot="header"></vi-modal-header></vi-modal>`, container);
+    render(
+      html`<vi-modal open
+        ><vi-modal-header slot="header"></vi-modal-header
+      ></vi-modal>`,
+      container,
+    );
     const el = getModal() as ViModal;
     await el.updateComplete;
 
@@ -224,7 +267,12 @@ describe('vi-modal', () => {
   });
 
   it('can be maximized and minimized', async () => {
-    render(html`<vi-modal open><vi-modal-header slot="header" maximizable></vi-modal-header></vi-modal>`, container);
+    render(
+      html`<vi-modal open
+        ><vi-modal-header slot="header" maximizable></vi-modal-header
+      ></vi-modal>`,
+      container,
+    );
     const el = getModal() as ViModal;
     await el.updateComplete;
 
@@ -232,7 +280,9 @@ describe('vi-modal', () => {
     expect(dialog.classList.contains('modal-size-fullscreen')).toBe(false);
 
     const header = el.querySelector('vi-modal-header') as HTMLElement;
-    const maxBtn = header.shadowRoot!.querySelector('[part="maximize-btn"]') as HTMLElement;
+    const maxBtn = header.shadowRoot!.querySelector(
+      '[part="maximize-btn"]',
+    ) as HTMLElement;
     maxBtn.dispatchEvent(
       new MouseEvent('click', { bubbles: true, cancelable: true }),
     );
@@ -252,7 +302,12 @@ describe('vi-modal', () => {
   });
 
   it('supports full-width size', async () => {
-    render(html`<vi-modal open size="full-width"><vi-modal-header slot="header"></vi-modal-header></vi-modal>`, container);
+    render(
+      html`<vi-modal open size="full-width"
+        ><vi-modal-header slot="header"></vi-modal-header
+      ></vi-modal>`,
+      container,
+    );
     const el = getModal() as ViModal;
     await el.updateComplete;
 
@@ -263,7 +318,12 @@ describe('vi-modal', () => {
   });
 
   it('supports position sizes', async () => {
-    render(html`<vi-modal open position="top"><vi-modal-header slot="header"></vi-modal-header></vi-modal>`, container);
+    render(
+      html`<vi-modal open position="top"
+        ><vi-modal-header slot="header"></vi-modal-header
+      ></vi-modal>`,
+      container,
+    );
     const el = getModal() as ViModal;
     await el.updateComplete;
 
@@ -275,7 +335,9 @@ describe('vi-modal', () => {
 
   it('supports drawer variant', async () => {
     render(
-      html`<vi-modal open variant="drawer" drawer-placement="left"><vi-modal-header slot="header"></vi-modal-header></vi-modal>`,
+      html`<vi-modal open variant="drawer" drawer-placement="left"
+        ><vi-modal-header slot="header"></vi-modal-header
+      ></vi-modal>`,
       container,
     );
     const el = getModal() as ViModal;
@@ -294,7 +356,9 @@ describe('vi-modal', () => {
     container.appendChild(targetBtn);
 
     render(
-      html`<vi-modal open return-focus="#custom-return-target"><vi-modal-header slot="header"></vi-modal-header></vi-modal>`,
+      html`<vi-modal open return-focus="#custom-return-target"
+        ><vi-modal-header slot="header"></vi-modal-header
+      ></vi-modal>`,
       container,
     );
     const el = getModal() as ViModal;
@@ -327,7 +391,9 @@ describe('vi-modal', () => {
 
   it('respects aria-label set on host modal', async () => {
     render(
-      html`<vi-modal open aria-label="Accessible Modal"><vi-modal-header slot="header"></vi-modal-header></vi-modal>`,
+      html`<vi-modal open aria-label="Accessible Modal"
+        ><vi-modal-header slot="header"></vi-modal-header
+      ></vi-modal>`,
       container,
     );
     const el = getModal() as ViModal;
@@ -361,7 +427,12 @@ describe('vi-modal', () => {
   it('cleans up original parent and sibling references when closed', async () => {
     const wrapper = document.createElement('div');
     container.appendChild(wrapper);
-    render(html`<vi-modal open><vi-modal-header slot="header"></vi-modal-header></vi-modal>`, wrapper);
+    render(
+      html`<vi-modal open
+        ><vi-modal-header slot="header"></vi-modal-header
+      ></vi-modal>`,
+      wrapper,
+    );
     const el = document.body.querySelector('vi-modal') as ViModal;
     await el.updateComplete;
 
@@ -381,7 +452,12 @@ describe('vi-modal', () => {
     document.body.appendChild(sibling1);
     document.body.appendChild(sibling2);
 
-    render(html`<vi-modal><vi-modal-header slot="header"></vi-modal-header></vi-modal>`, container);
+    render(
+      html`<vi-modal
+        ><vi-modal-header slot="header"></vi-modal-header
+      ></vi-modal>`,
+      container,
+    );
     const el = getModal() as ViModal;
     await el.updateComplete;
 
@@ -407,7 +483,12 @@ describe('vi-modal', () => {
   });
 
   it('triggers shake animation instead of closing when persistent on Escape', async () => {
-    render(html`<vi-modal open persistent><vi-modal-header slot="header"></vi-modal-header></vi-modal>`, container);
+    render(
+      html`<vi-modal open persistent
+        ><vi-modal-header slot="header"></vi-modal-header
+      ></vi-modal>`,
+      container,
+    );
     const el = getModal() as ViModal;
     await el.updateComplete;
 
@@ -425,7 +506,10 @@ describe('vi-modal', () => {
       requestCloseCount++;
     });
 
-    const cancelEvent = new Event('cancel', { bubbles: false, cancelable: true });
+    const cancelEvent = new Event('cancel', {
+      bubbles: false,
+      cancelable: true,
+    });
     dialog.dispatchEvent(cancelEvent);
 
     await el.updateComplete;
@@ -441,7 +525,12 @@ describe('vi-modal', () => {
 
   describe('Draggable functionality', () => {
     it('attaches drag pointerdown listeners to header when open with draggable=true', async () => {
-      render(html`<vi-modal draggable><vi-modal-header slot="header"></vi-modal-header></vi-modal>`, container);
+      render(
+        html`<vi-modal draggable
+          ><vi-modal-header slot="header"></vi-modal-header
+        ></vi-modal>`,
+        container,
+      );
       const el = getModal() as ViModal;
       await el.updateComplete;
 
@@ -489,7 +578,12 @@ describe('vi-modal', () => {
     });
 
     it('resets drag transform on resetDrag() or closing', async () => {
-      render(html`<vi-modal open draggable><vi-modal-header slot="header"></vi-modal-header></vi-modal>`, container);
+      render(
+        html`<vi-modal open draggable
+          ><vi-modal-header slot="header"></vi-modal-header
+        ></vi-modal>`,
+        container,
+      );
       const el = getModal() as ViModal;
       await el.updateComplete;
 
@@ -507,7 +601,12 @@ describe('vi-modal', () => {
 
   describe('no-backdrop mode', () => {
     it('does not render backdrop overlay when no-backdrop attribute is set', async () => {
-      render(html`<vi-modal open no-backdrop><vi-modal-header slot="header"></vi-modal-header></vi-modal>`, container);
+      render(
+        html`<vi-modal open no-backdrop
+          ><vi-modal-header slot="header"></vi-modal-header
+        ></vi-modal>`,
+        container,
+      );
       const el = getModal() as ViModal;
       await el.updateComplete;
 
@@ -520,7 +619,12 @@ describe('vi-modal', () => {
       sibling.textContent = 'Sibling Button';
       container.appendChild(sibling);
 
-      render(html`<vi-modal open no-backdrop><vi-modal-header slot="header"></vi-modal-header></vi-modal>`, container);
+      render(
+        html`<vi-modal open no-backdrop
+          ><vi-modal-header slot="header"></vi-modal-header
+        ></vi-modal>`,
+        container,
+      );
       const el = getModal() as ViModal;
       await el.updateComplete;
 
@@ -529,7 +633,12 @@ describe('vi-modal', () => {
     });
 
     it('does not set aria-modal="true" when no-backdrop attribute is set', async () => {
-      render(html`<vi-modal open no-backdrop><vi-modal-header slot="header"></vi-modal-header></vi-modal>`, container);
+      render(
+        html`<vi-modal open no-backdrop
+          ><vi-modal-header slot="header"></vi-modal-header
+        ></vi-modal>`,
+        container,
+      );
       const el = getModal() as ViModal;
       await el.updateComplete;
 
@@ -542,7 +651,12 @@ describe('vi-modal', () => {
 
   describe('Resizable', () => {
     it('renders 8 resize handles when resizable=true', async () => {
-      render(html`<vi-modal open resizable><vi-modal-header slot="header"></vi-modal-header></vi-modal>`, container);
+      render(
+        html`<vi-modal open resizable
+          ><vi-modal-header slot="header"></vi-modal-header
+        ></vi-modal>`,
+        container,
+      );
       const el = getModal() as ViModal;
       await el.updateComplete;
 
@@ -551,7 +665,12 @@ describe('vi-modal', () => {
     });
 
     it('does not render resize handles when resizable=false (default)', async () => {
-      render(html`<vi-modal open><vi-modal-header slot="header"></vi-modal-header></vi-modal>`, container);
+      render(
+        html`<vi-modal open
+          ><vi-modal-header slot="header"></vi-modal-header
+        ></vi-modal>`,
+        container,
+      );
       const el = getModal() as ViModal;
       await el.updateComplete;
 
@@ -560,7 +679,12 @@ describe('vi-modal', () => {
     });
 
     it('suppresses resize via duck-type when maximized', async () => {
-      render(html`<vi-modal open resizable maximizable><vi-modal-header slot="header"></vi-modal-header></vi-modal>`, container);
+      render(
+        html`<vi-modal open resizable maximizable
+          ><vi-modal-header slot="header"></vi-modal-header
+        ></vi-modal>`,
+        container,
+      );
       const el = getModal() as ViModal;
       await el.updateComplete;
 
@@ -580,12 +704,21 @@ describe('vi-modal', () => {
     });
 
     it('applies width and height via pointer events on se handle', async () => {
-      render(html`<vi-modal open resizable><vi-modal-header slot="header"></vi-modal-header></vi-modal>`, container);
+      render(
+        html`<vi-modal open resizable
+          ><vi-modal-header slot="header"></vi-modal-header
+        ></vi-modal>`,
+        container,
+      );
       const el = getModal() as ViModal;
       await el.updateComplete;
 
-      const dialog = el.shadowRoot!.querySelector('dialog') as HTMLDialogElement;
-      const handle = el.shadowRoot!.querySelector('.resize-handle-se') as HTMLElement;
+      const dialog = el.shadowRoot!.querySelector(
+        'dialog',
+      ) as HTMLDialogElement;
+      const handle = el.shadowRoot!.querySelector(
+        '.resize-handle-se',
+      ) as HTMLElement;
       expect(handle).toBeTruthy();
 
       handle.dispatchEvent(
@@ -598,7 +731,11 @@ describe('vi-modal', () => {
         }),
       );
       window.dispatchEvent(
-        new PointerEvent('pointermove', { clientX: 180, clientY: 160, bubbles: true }),
+        new PointerEvent('pointermove', {
+          clientX: 180,
+          clientY: 160,
+          bubbles: true,
+        }),
       );
       window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
 
@@ -609,11 +746,18 @@ describe('vi-modal', () => {
     });
 
     it('_resetResize clears inline width/height/maxWidth/maxHeight', async () => {
-      render(html`<vi-modal open resizable><vi-modal-header slot="header"></vi-modal-header></vi-modal>`, container);
+      render(
+        html`<vi-modal open resizable
+          ><vi-modal-header slot="header"></vi-modal-header
+        ></vi-modal>`,
+        container,
+      );
       const el = getModal() as ViModal;
       await el.updateComplete;
 
-      const dialog = el.shadowRoot!.querySelector('dialog') as HTMLDialogElement;
+      const dialog = el.shadowRoot!.querySelector(
+        'dialog',
+      ) as HTMLDialogElement;
       dialog.style.width = '500px';
       dialog.style.height = '300px';
       dialog.style.maxWidth = '500px';
@@ -634,7 +778,12 @@ describe('vi-modal', () => {
 
   describe('append-to', () => {
     it('teleports to document.body by default', async () => {
-      render(html`<vi-modal open><vi-modal-header slot="header"></vi-modal-header></vi-modal>`, container);
+      render(
+        html`<vi-modal open
+          ><vi-modal-header slot="header"></vi-modal-header
+        ></vi-modal>`,
+        container,
+      );
       const el = getModal() as ViModal;
       await el.updateComplete;
       await new Promise((r) => setTimeout(r, 0));
@@ -649,7 +798,9 @@ describe('vi-modal', () => {
       document.body.appendChild(portal);
 
       render(
-        html`<vi-modal open append-to="#test-portal" no-backdrop><vi-modal-header slot="header"></vi-modal-header></vi-modal>`,
+        html`<vi-modal open append-to="#test-portal" no-backdrop
+          ><vi-modal-header slot="header"></vi-modal-header
+        ></vi-modal>`,
         container,
       );
       const el = getModal() as ViModal;
@@ -664,7 +815,9 @@ describe('vi-modal', () => {
 
     it('falls back to body when append-to selector does not match', async () => {
       render(
-        html`<vi-modal open append-to="#nonexistent" no-backdrop><vi-modal-header slot="header"></vi-modal-header></vi-modal>`,
+        html`<vi-modal open append-to="#nonexistent" no-backdrop
+          ><vi-modal-header slot="header"></vi-modal-header
+        ></vi-modal>`,
         container,
       );
       const el = getModal() as ViModal;
@@ -684,7 +837,9 @@ describe('vi-modal', () => {
       document.body.appendChild(wrapper);
 
       render(
-        html`<vi-modal append-to="#test-portal-2" no-backdrop><vi-modal-header slot="header"></vi-modal-header></vi-modal>`,
+        html`<vi-modal append-to="#test-portal-2" no-backdrop
+          ><vi-modal-header slot="header"></vi-modal-header
+        ></vi-modal>`,
         wrapper,
       );
       const el = wrapper.querySelector('vi-modal') as ViModal;
@@ -711,7 +866,12 @@ describe('vi-modal', () => {
 
   describe('drag-containment', () => {
     it('defaults to "none" (no clamping)', async () => {
-      render(html`<vi-modal open draggable><vi-modal-header slot="header"></vi-modal-header></vi-modal>`, container);
+      render(
+        html`<vi-modal open draggable
+          ><vi-modal-header slot="header"></vi-modal-header
+        ></vi-modal>`,
+        container,
+      );
       const el = getModal() as ViModal;
       await el.updateComplete;
 
@@ -721,7 +881,9 @@ describe('vi-modal', () => {
 
     it('reflects drag-containment attribute', async () => {
       render(
-        html`<vi-modal open draggable drag-containment="viewport"><vi-modal-header slot="header"></vi-modal-header></vi-modal>`,
+        html`<vi-modal open draggable drag-containment="viewport"
+          ><vi-modal-header slot="header"></vi-modal-header
+        ></vi-modal>`,
         container,
       );
       const el = getModal() as ViModal;
@@ -733,7 +895,9 @@ describe('vi-modal', () => {
 
     it('does not throw with drag-containment="viewport" during pointer events', async () => {
       render(
-        html`<vi-modal open draggable drag-containment="viewport"><vi-modal-header slot="header"></vi-modal-header></vi-modal>`,
+        html`<vi-modal open draggable drag-containment="viewport"
+          ><vi-modal-header slot="header"></vi-modal-header
+        ></vi-modal>`,
         container,
       );
       const el = getModal() as ViModal;
@@ -754,7 +918,11 @@ describe('vi-modal', () => {
           }),
         );
         window.dispatchEvent(
-          new PointerEvent('pointermove', { clientX: 250, clientY: 220, bubbles: true }),
+          new PointerEvent('pointermove', {
+            clientX: 250,
+            clientY: 220,
+            bubbles: true,
+          }),
         );
         window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
       } catch {
@@ -776,7 +944,14 @@ describe('vi-modal', () => {
 
       // We append it directly to the parent, setting append-to so it stays there
       render(
-        html`<vi-modal open draggable drag-containment="parent" append-to="#test-parent" no-backdrop><vi-modal-header slot="header"></vi-modal-header></vi-modal>`,
+        html`<vi-modal
+          open
+          draggable
+          drag-containment="parent"
+          append-to="#test-parent"
+          no-backdrop
+          ><vi-modal-header slot="header"></vi-modal-header
+        ></vi-modal>`,
         parent,
       );
       const el = parent.querySelector('vi-modal') as ViModal;
@@ -785,14 +960,24 @@ describe('vi-modal', () => {
       // Because the modal dialog has position: fixed, offsetParent is null.
       // It should fallback to this.parentElement.
       const header = el.querySelector('vi-modal-header') as HTMLElement;
-      
+
       let threw = false;
       try {
         header.dispatchEvent(
-          new PointerEvent('pointerdown', { button: 0, clientX: 10, clientY: 10, bubbles: true, composed: true }),
+          new PointerEvent('pointerdown', {
+            button: 0,
+            clientX: 10,
+            clientY: 10,
+            bubbles: true,
+            composed: true,
+          }),
         );
         window.dispatchEvent(
-          new PointerEvent('pointermove', { clientX: 500, clientY: 500, bubbles: true }),
+          new PointerEvent('pointermove', {
+            clientX: 500,
+            clientY: 500,
+            bubbles: true,
+          }),
         );
         window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
       } catch (_e) {
@@ -800,7 +985,7 @@ describe('vi-modal', () => {
       }
 
       expect(threw).toBe(false);
-      
+
       // Cleanup
       el.remove();
       parent.remove();
@@ -809,15 +994,24 @@ describe('vi-modal', () => {
 
   describe('Lifecycle Events', () => {
     it('should fire before-open and before-close events on property assignment', async () => {
-      render(html`<vi-modal animation-duration="0"><vi-modal-header slot="header"></vi-modal-header></vi-modal>`, container);
+      render(
+        html`<vi-modal animation-duration="0"
+          ><vi-modal-header slot="header"></vi-modal-header
+        ></vi-modal>`,
+        container,
+      );
       const el = getModal();
       await el.updateComplete;
 
       let beforeOpenFired = false;
       let beforeCloseFired = false;
 
-      el.addEventListener('vi-modal-before-open', () => { beforeOpenFired = true; });
-      el.addEventListener('vi-modal-before-close', () => { beforeCloseFired = true; });
+      el.addEventListener('vi-modal-before-open', () => {
+        beforeOpenFired = true;
+      });
+      el.addEventListener('vi-modal-before-close', () => {
+        beforeCloseFired = true;
+      });
 
       el.open = true;
       await el.updateComplete;
@@ -833,11 +1027,18 @@ describe('vi-modal', () => {
     });
 
     it('should prevent opening if vi-modal-before-open is canceled', async () => {
-      render(html`<vi-modal animation-duration="0"><vi-modal-header slot="header"></vi-modal-header></vi-modal>`, container);
+      render(
+        html`<vi-modal animation-duration="0"
+          ><vi-modal-header slot="header"></vi-modal-header
+        ></vi-modal>`,
+        container,
+      );
       const el = getModal();
       await el.updateComplete;
 
-      el.addEventListener('vi-modal-before-open', (e) => { e.preventDefault(); });
+      el.addEventListener('vi-modal-before-open', (e) => {
+        e.preventDefault();
+      });
 
       el.open = true;
       expect(el.open).toBe(false); // State remains unchanged
@@ -845,11 +1046,18 @@ describe('vi-modal', () => {
     });
 
     it('should prevent closing if vi-modal-before-close is canceled', async () => {
-      render(html`<vi-modal animation-duration="0" open><vi-modal-header slot="header"></vi-modal-header></vi-modal>`, container);
+      render(
+        html`<vi-modal animation-duration="0" open
+          ><vi-modal-header slot="header"></vi-modal-header
+        ></vi-modal>`,
+        container,
+      );
       const el = getModal();
       await el.updateComplete;
-      
-      el.addEventListener('vi-modal-before-close', (e) => { e.preventDefault(); });
+
+      el.addEventListener('vi-modal-before-close', (e) => {
+        e.preventDefault();
+      });
 
       el.open = false;
       expect(el.open).toBe(true); // State remains unchanged
@@ -857,29 +1065,37 @@ describe('vi-modal', () => {
     });
 
     it('should fire after-open and after-close after animations complete', async () => {
-      render(html`<vi-modal animation-duration="0"><vi-modal-header slot="header"></vi-modal-header></vi-modal>`, container);
+      render(
+        html`<vi-modal animation-duration="0"
+          ><vi-modal-header slot="header"></vi-modal-header
+        ></vi-modal>`,
+        container,
+      );
       const el = getModal();
       await el.updateComplete;
 
       let afterOpenFired = false;
       let afterCloseFired = false;
 
-      el.addEventListener('vi-modal-after-open', () => { afterOpenFired = true; });
-      el.addEventListener('vi-modal-after-close', () => { afterCloseFired = true; });
+      el.addEventListener('vi-modal-after-open', () => {
+        afterOpenFired = true;
+      });
+      el.addEventListener('vi-modal-after-close', () => {
+        afterCloseFired = true;
+      });
 
       el.open = true;
-      
+
       await el.updateComplete;
-      await new Promise(resolve => setTimeout(resolve, 20));
+      await new Promise((resolve) => setTimeout(resolve, 20));
 
       expect(afterOpenFired).toBe(true);
 
       el.open = false;
       await el.updateComplete;
-      await new Promise(resolve => setTimeout(resolve, 20));
+      await new Promise((resolve) => setTimeout(resolve, 20));
 
       expect(afterCloseFired).toBe(true);
     });
   });
 });
-

@@ -1,4 +1,10 @@
-import { css, html, nothing, type PropertyValues, type TemplateResult } from 'lit';
+import {
+  css,
+  html,
+  nothing,
+  type PropertyValues,
+  type TemplateResult,
+} from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { ViElement } from '../base/vi-element.js';
@@ -117,9 +123,7 @@ export class ViIcon extends ViElement {
     }
 
     return html`
-      <span aria-hidden="true">
-        ${unsafeHTML(this._icon.data)}
-      </span>
+      <span aria-hidden="true"> ${unsafeHTML(this._icon.data)} </span>
     `;
   }
 }

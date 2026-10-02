@@ -1,0 +1,41 @@
+@use '@vialiq/flux-ui/styles/variables' as tokens;
+@use '@vialiq/flux-ui/styles/functions' as func;
+@use '@vialiq/flux-ui/components/upload';
+
+:host {
+  display: block;
+  font-family: var(--vi-font-family, #{tokens.$font-family-base});
+}
+
+:host([disabled]) .dropzone {
+  cursor: not-allowed;
+  opacity: 0.5;
+  border-color: var(--vi-upload-border-color, #{tokens.$border-02});
+  background-color: var(--vi-upload-bg, #{tokens.$layer-01});
+}
+
+// ── Size Variants ────────────────────────────────────────────────────────────
+
+:host([size='sm']) .dropzone {
+  flex-direction: row;
+  justify-content: flex-start;
+  padding: var(
+    --vi-upload-dropzone-padding-sm,
+    #{tokens.$spacing-sm} #{tokens.$spacing-md}
+  );
+  gap: var(--vi-upload-dropzone-gap-sm, #{tokens.$spacing-xs});
+  min-height: auto;
+
+  .icon-container {
+    ::slotted([slot='icon']),
+    ::slotted(svg),
+    svg {
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  .text {
+    font-size: var(--vi-upload-font-size-sm, #{tokens.$font-size-sm});
+  }
+}

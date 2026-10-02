@@ -35,7 +35,8 @@
   justify-content: space-between;
   width: 100%;
   min-height: var(--vi-input-sizing-min-height, func.to-rem(32px));
-  padding: var(--vi-input-spacing-padding-block, func.to-rem(4px)) var(--vi-input-spacing-padding-inline, func.to-rem(11px));
+  padding: var(--vi-input-spacing-padding-block, func.to-rem(4px))
+    var(--vi-input-spacing-padding-inline, func.to-rem(11px));
   background: var(--vi-input-bg, tokens.$layer-01);
   border: 1px solid var(--vi-input-trigger-border-color, tokens.$border-02);
   border-radius: var(--vi-border-radius-md, func.to-rem(6px));
@@ -63,7 +64,8 @@
 
   :host([invalid]:focus-within) & {
     border-color: var(--vi-input-error-border-color, tokens.$color-error);
-    box-shadow: 0 0 0 1px var(--vi-input-error-border-color, tokens.$color-error);
+    box-shadow: 0 0 0 1px
+      var(--vi-input-error-border-color, tokens.$color-error);
   }
 
   &:disabled {

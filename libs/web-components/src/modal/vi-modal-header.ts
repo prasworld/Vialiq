@@ -86,20 +86,26 @@ export class ViModalHeader extends LitElement {
   private _handleClose(e: Event) {
     e.stopPropagation();
     this.dispatchEvent(
-      new CustomEvent('vi-modal-header-close', { bubbles: true, composed: true }),
+      new CustomEvent('vi-modal-header-close', {
+        bubbles: true,
+        composed: true,
+      }),
     );
   }
 
   private _handleMaximize(e: Event) {
     e.stopPropagation();
     this.dispatchEvent(
-      new CustomEvent('vi-modal-header-maximize', { bubbles: true, composed: true }),
+      new CustomEvent('vi-modal-header-maximize', {
+        bubbles: true,
+        composed: true,
+      }),
     );
   }
 
   override render(): TemplateResult {
     const isAlert = !!this.alertVariant || !!this.icon;
-    
+
     const headerClasses = {
       'modal-header': true,
       'modal-header--alert': isAlert,
@@ -111,7 +117,10 @@ export class ViModalHeader extends LitElement {
           ? html`
               <div part="icon" class="modal-alert-icon">
                 <slot name="icon">
-                  <vi-icon name=${ifDefined(this._defaultIcon)} aria-hidden="true"></vi-icon>
+                  <vi-icon
+                    name=${ifDefined(this._defaultIcon)}
+                    aria-hidden="true"
+                  ></vi-icon>
                 </slot>
               </div>
             `
@@ -122,7 +131,9 @@ export class ViModalHeader extends LitElement {
             <span part="title" class="modal-title">${this.title}</span>
           </slot>
           ${this.description
-            ? html`<p part="description" class="modal-description">${this.description}</p>`
+            ? html`<p part="description" class="modal-description">
+                ${this.description}
+              </p>`
             : ''}
         </div>
 
@@ -142,7 +153,9 @@ export class ViModalHeader extends LitElement {
                           : this.maximizeLabel}
                       >
                         <vi-icon
-                          name=${this.maximized ? 'arrows-minimize' : 'arrows-maximize'}
+                          name=${this.maximized
+                            ? 'arrows-minimize'
+                            : 'arrows-maximize'}
                           slot="icon"
                         ></vi-icon>
                       </vi-button>

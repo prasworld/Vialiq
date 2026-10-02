@@ -1,10 +1,10 @@
 @use '@vialiq/flux-ui/styles/variables' as tokens;
-@use "@vialiq/flux-ui/components/tab";
+@use '@vialiq/flux-ui/components/tab';
 :host {
   display: inline-flex;
   align-items: stretch;
   flex-shrink: 0;
-  position: relative;  // Needed so cursor element can be z-indexed behind tab content
+  position: relative; // Needed so cursor element can be z-indexed behind tab content
   z-index: 0;
 }
 :host([data-overflow]) {

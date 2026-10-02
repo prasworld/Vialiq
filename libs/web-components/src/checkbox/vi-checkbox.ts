@@ -148,11 +148,14 @@ export class ViCheckbox extends ValidityMixin(FocusableMixin(ViElement)) {
     this.indeterminate = input.indeterminate;
 
     this.dispatchEvent(
-      new CustomEvent<{ checked: boolean; value: string }>('vi-checkbox-change', {
-        detail: { checked: this.checked, value: this.value },
-        bubbles: true,
-        composed: true,
-      })
+      new CustomEvent<{ checked: boolean; value: string }>(
+        'vi-checkbox-change',
+        {
+          detail: { checked: this.checked, value: this.value },
+          bubbles: true,
+          composed: true,
+        },
+      ),
     );
   }
 
@@ -183,15 +186,19 @@ export class ViCheckbox extends ValidityMixin(FocusableMixin(ViElement)) {
           ?disabled=${isValDisabled}
           ?required=${this.required}
           aria-required=${this.required ? 'true' : 'false'}
-          aria-checked=${this.indeterminate ? 'mixed' : this.checked ? 'true' : 'false'}
+          aria-checked=${this.indeterminate
+            ? 'mixed'
+            : this.checked
+              ? 'true'
+              : 'false'}
           @change=${this._onChange}
         />
         <span part="box" class="checkbox-box" aria-hidden="true">
           <svg part="check" class="checkbox-check" viewBox="0 0 12 12">
             <!-- Checkmark path shown when checked -->
-            <polyline class="check-mark" points="2,6 5,9 10,3"/>
+            <polyline class="check-mark" points="2,6 5,9 10,3" />
             <!-- Dash shown when indeterminate -->
-            <line class="check-dash" x1="2" y1="6" x2="10" y2="6"/>
+            <line class="check-dash" x1="2" y1="6" x2="10" y2="6" />
           </svg>
         </span>
         <span part="label" class="checkbox-label">

@@ -1,7 +1,12 @@
 import { ReactiveController, ReactiveControllerHost } from 'lit';
-import type { ListboxOption, SlottedListboxItem } from '../types/listbox.types.js';
+import type {
+  ListboxOption,
+  SlottedListboxItem,
+} from '../types/listbox.types.js';
 
-export interface KeyboardControllerHost extends ReactiveControllerHost, HTMLElement {
+export interface KeyboardControllerHost
+  extends ReactiveControllerHost,
+    HTMLElement {
   disabled: boolean;
   open: boolean;
   isSearchable: boolean;
@@ -15,7 +20,7 @@ export interface KeyboardControllerOptions<TData = unknown> {
   getSlottedItems: () => SlottedListboxItem[];
   getVisibleSlottedItems: () => SlottedListboxItem[];
   getSelectedValues: () => string[];
-  
+
   updateSlottedActiveState: (index: number) => void;
   scrollToActiveIndex: () => void;
   selectOption: (opt: ListboxOption<TData>) => void;
@@ -27,18 +32,22 @@ export interface KeyboardControllerOptions<TData = unknown> {
   onTypeAheadChange?: (str: string) => void;
 }
 
-export class ListboxKeyboardController<TData = unknown> implements ReactiveController {
+export class ListboxKeyboardController<TData = unknown>
+  implements ReactiveController
+{
   private _searchString = '';
   private _searchTimeout?: ReturnType<typeof setTimeout>;
 
   constructor(
     private host: KeyboardControllerHost,
-    private config: KeyboardControllerOptions<TData>
+    private config: KeyboardControllerOptions<TData>,
   ) {
     this.host.addController(this);
   }
 
-  hostConnected() { /* No‑op – required for ReactiveController lifecycle */ }
+  hostConnected() {
+    /* No‑op – required for ReactiveController lifecycle */
+  }
 
   public handleKeyDown(e: KeyboardEvent): void {
     if (this.host.disabled) return;
@@ -70,22 +79,34 @@ export class ListboxKeyboardController<TData = unknown> implements ReactiveContr
               this.config.selectOption({
                 value: item.value,
                 label: item.label || item.value,
-                searchText: item.searchText.length > 0 ? item.searchText.join(' ') : undefined,
+                searchText:
+                  item.searchText.length > 0
+                    ? item.searchText.join(' ')
+                    : undefined,
                 group: item.group || undefined,
                 disabled: item.disabled,
                 icon: item.icon || undefined,
                 description: item.description || undefined,
                 data: item.data as TData,
               });
-            } else if (this.host.mode === 'tags' || this.host.mode === 'creatable') {
+            } else if (
+              this.host.mode === 'tags' ||
+              this.host.mode === 'creatable'
+            ) {
               this.config.handleCreate();
             }
           } else if (activeIndex >= 0 && activeIndex < options.length) {
             this.config.selectOption(options[activeIndex]);
-          } else if (this.host.mode === 'tags' || this.host.mode === 'creatable') {
+          } else if (
+            this.host.mode === 'tags' ||
+            this.host.mode === 'creatable'
+          ) {
             this.config.handleCreate();
           }
-        } else if (this.host.mode === 'tags' || this.host.mode === 'creatable') {
+        } else if (
+          this.host.mode === 'tags' ||
+          this.host.mode === 'creatable'
+        ) {
           this.config.handleCreate();
         } else {
           this.config.openDropdown();
@@ -107,7 +128,11 @@ export class ListboxKeyboardController<TData = unknown> implements ReactiveContr
         break;
 
       case 'Backspace':
-        if (this.host.isSearchable && !this.config.getQuery() && (this.host.mode === 'multi' || this.host.mode === 'tags')) {
+        if (
+          this.host.isSearchable &&
+          !this.config.getQuery() &&
+          (this.host.mode === 'multi' || this.host.mode === 'tags')
+        ) {
           const selected = this.config.getSelectedValues();
           if (selected.length > 0) {
             this.config.removeTag(selected[selected.length - 1]);
@@ -118,7 +143,9 @@ export class ListboxKeyboardController<TData = unknown> implements ReactiveContr
       case 'Home':
         if (this.host.open) {
           e.preventDefault();
-          const len = isSlotted ? this.config.getVisibleSlottedItems().length : options.length;
+          const len = isSlotted
+            ? this.config.getVisibleSlottedItems().length
+            : options.length;
           if (len > 0) this._navigate(1, 0);
         }
         break;
@@ -126,7 +153,9 @@ export class ListboxKeyboardController<TData = unknown> implements ReactiveContr
       case 'End':
         if (this.host.open) {
           e.preventDefault();
-          const len = isSlotted ? this.config.getVisibleSlottedItems().length : options.length;
+          const len = isSlotted
+            ? this.config.getVisibleSlottedItems().length
+            : options.length;
           if (len > 0) this._navigate(-1, len - 1);
         }
         break;
@@ -135,14 +164,24 @@ export class ListboxKeyboardController<TData = unknown> implements ReactiveContr
         if (!this.host.isSearchable && !this.host.open) {
           e.preventDefault();
           this.config.openDropdown();
-        } else if (!this.host.isSearchable && this.host.open && this._searchString.length > 0) {
+        } else if (
+          !this.host.isSearchable &&
+          this.host.open &&
+          this._searchString.length > 0
+        ) {
           e.preventDefault();
           this._handleTypeAhead(' ');
         }
         break;
 
       default:
-        if (!this.host.isSearchable && e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+        if (
+          !this.host.isSearchable &&
+          e.key.length === 1 &&
+          !e.ctrlKey &&
+          !e.altKey &&
+          !e.metaKey
+        ) {
           e.preventDefault();
           this._handleTypeAhead(e.key);
         }
@@ -172,12 +211,17 @@ export class ListboxKeyboardController<TData = unknown> implements ReactiveContr
 
     const getLabel = (i: number) => {
       if (isSlotted) {
-        return (visible[i]?.label || visible[i]?.textContent || '').toLowerCase();
+        return (
+          visible[i]?.label ||
+          visible[i]?.textContent ||
+          ''
+        ).toLowerCase();
       }
       return (options[i]?.label || options[i]?.value || '').toLowerCase();
     };
 
-    const isDisabled = (i: number) => (isSlotted ? visible[i]?.disabled : options[i]?.disabled) ?? false;
+    const isDisabled = (i: number) =>
+      (isSlotted ? visible[i]?.disabled : options[i]?.disabled) ?? false;
 
     // Start searching from current active index + 1
     const startIdx = Math.max(0, this.config.getActiveIndex());
@@ -213,7 +257,8 @@ export class ListboxKeyboardController<TData = unknown> implements ReactiveContr
     const isSlotted = this.config.getSlottedItems().length > 0;
     const visible = isSlotted ? this.config.getVisibleSlottedItems() : [];
     const len = isSlotted ? visible.length : options.length;
-    const isDisabled = (i: number) => (isSlotted ? visible[i]?.disabled : options[i]?.disabled) ?? false;
+    const isDisabled = (i: number) =>
+      (isSlotted ? visible[i]?.disabled : options[i]?.disabled) ?? false;
 
     if (len === 0) {
       this.config.setActiveIndex(-1);
@@ -221,7 +266,8 @@ export class ListboxKeyboardController<TData = unknown> implements ReactiveContr
       return;
     }
 
-    let next = startFrom !== undefined ? startFrom : this.config.getActiveIndex();
+    let next =
+      startFrom !== undefined ? startFrom : this.config.getActiveIndex();
 
     if (startFrom === undefined && next === -1) {
       next = direction === 1 ? -1 : 0;

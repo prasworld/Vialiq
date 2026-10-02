@@ -17,7 +17,8 @@ describe('vi-modal-footer', () => {
     }
   });
 
-  const getFooter = () => container.querySelector('vi-modal-footer') as ViModalFooter;
+  const getFooter = () =>
+    container.querySelector('vi-modal-footer') as ViModalFooter;
 
   it('renders correctly', async () => {
     render(html`<vi-modal-footer>Footer Content</vi-modal-footer>`, container);

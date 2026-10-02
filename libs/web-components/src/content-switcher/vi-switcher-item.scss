@@ -1,0 +1,103 @@
+@use '@vialiq/flux-ui/styles/variables' as tokens;
+@use '@vialiq/flux-ui/styles/functions' as func;
+
+// ── Host ─────────────────────────────────────────────────────────────────────
+
+:host {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--vi-content-switcher-icon-gap, 8px);
+  position: relative; // stacks above the sliding indicator
+  z-index: 1;
+  cursor: pointer;
+  outline: none;
+
+  padding-block: var(
+    --vi-content-switcher-item-padding-block,
+    #{func.to-rem(6px)}
+  );
+  padding-inline: var(
+    --vi-content-switcher-item-padding-inline,
+    #{tokens.$spacing-md}
+  );
+
+  font-size: var(--vi-content-switcher-font-size, #{tokens.$font-size-base});
+  font-weight: var(
+    --vi-content-switcher-font-weight,
+    #{tokens.$font-weight-medium}
+  );
+  line-height: var(
+    --vi-content-switcher-line-height,
+    #{tokens.$line-height-tight}
+  );
+  white-space: nowrap;
+
+  color: var(--vi-content-switcher-item-color, #{tokens.$text-secondary});
+  border-radius: var(
+    --vi-content-switcher-indicator-radius,
+    #{tokens.$border-radius-lg}
+  );
+
+  transition:
+    color var(--vi-content-switcher-transition, 160ms ease),
+    font-weight var(--vi-content-switcher-transition, 160ms ease);
+
+  user-select: none;
+}
+
+// Active: text becomes bold and primary inverse (to contrast with the primary background)
+:host([active]) {
+  color: var(
+    --vi-content-switcher-item-color-active,
+    #{tokens.$text-primary-inverse}
+  );
+  font-weight: var(
+    --vi-content-switcher-font-weight-active,
+    #{tokens.$font-weight-semibold}
+  );
+}
+
+// Hover on inactive items
+:host(:not([active]):not([disabled]):hover) {
+  color: var(--vi-content-switcher-item-color-hover, #{tokens.$text-primary});
+}
+
+// Keyboard focus ring
+:host(:focus-visible) {
+  outline: 2px solid
+    var(--vi-content-switcher-focus-ring-color, #{tokens.$focus});
+  outline-offset: -2px;
+  box-shadow: #{tokens.$focus-ring-shadow};
+}
+
+:host([disabled]) {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+// ── Icons ─────────────────────────────────────────────────────────────────────
+
+::slotted([slot='icon']) {
+  flex-shrink: 0;
+  width: var(--vi-content-switcher-icon-size, 1.25em);
+  height: var(--vi-content-switcher-icon-size, 1.25em);
+  fill: currentColor;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// ── Label ─────────────────────────────────────────────────────────────────────
+
+.item-label {
+  display: contents;
+}
+
+// ── Reduced motion ────────────────────────────────────────────────────────────
+
+@media (prefers-reduced-motion: reduce) {
+  :host {
+    transition: none;
+  }
+}

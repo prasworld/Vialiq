@@ -14,7 +14,9 @@ import menuStyles from './vi-menu.scss?inline';
  */
 @customElement('vi-menu')
 export class ViMenu extends ViElement {
-  static override styles = css`${unsafeCSS(menuStyles)}`;
+  static override styles = css`
+    ${unsafeCSS(menuStyles)}
+  `;
 
   private _handleSlotChange = () => {
     this._resetTabIndexes();
@@ -24,12 +26,14 @@ export class ViMenu extends ViElement {
     const items = this._getItems();
     items.forEach((item, index) => {
       // Make only the first non-disabled item tabbable
-      (item as any).tabbable = (index === 0);
+      (item as any).tabbable = index === 0;
     });
   }
 
   private _getItems() {
-    return Array.from(this.querySelectorAll('vi-menu-item:not([disabled])')) as HTMLElement[];
+    return Array.from(
+      this.querySelectorAll('vi-menu-item:not([disabled])'),
+    ) as HTMLElement[];
   }
 
   private _handleKeyDown = (e: KeyboardEvent) => {
@@ -39,7 +43,9 @@ export class ViMenu extends ViElement {
     const items = this._getItems();
     if (!items.length) return;
 
-    const activeItem = document.activeElement?.closest('vi-menu-item') as HTMLElement;
+    const activeItem = document.activeElement?.closest(
+      'vi-menu-item',
+    ) as HTMLElement;
     const currentIndex = activeItem ? items.indexOf(activeItem) : -1;
 
     e.preventDefault();
@@ -60,7 +66,7 @@ export class ViMenu extends ViElement {
 
     if (newlyFocused) {
       newlyFocused.focus();
-      items.forEach(item => (item as any).tabbable = false);
+      items.forEach((item) => ((item as any).tabbable = false));
       (newlyFocused as any).tabbable = true;
     }
   };
@@ -69,15 +75,15 @@ export class ViMenu extends ViElement {
     const target = e.target as HTMLElement;
     const item = target.closest('vi-menu-item') as any;
     if (item && !item.disabled) {
-      this._getItems().forEach(i => (i as any).tabbable = false);
+      this._getItems().forEach((i) => ((i as any).tabbable = false));
       item.tabbable = true;
     }
   };
 
   override render() {
     return html`
-      <ul 
-        class="vi-menu" 
+      <ul
+        class="vi-menu"
         role="menu"
         tabindex="-1"
         @keydown=${this._handleKeyDown}

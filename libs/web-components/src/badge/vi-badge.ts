@@ -3,7 +3,13 @@ import { customElement, property, state } from 'lit/decorators.js';
 import { ViElement } from '../base/vi-element.js';
 import badgeStyles from './vi-badge.scss?inline';
 
-export type BadgeVariant = 'neutral' | 'primary' | 'success' | 'warning' | 'danger' | 'info';
+export type BadgeVariant =
+  | 'neutral'
+  | 'primary'
+  | 'success'
+  | 'warning'
+  | 'danger'
+  | 'info';
 export type BadgeSize = 'sm' | 'md' | 'lg';
 
 /**
@@ -28,10 +34,13 @@ export type BadgeSize = 'sm' | 'md' | 'lg';
  */
 @customElement('vi-badge')
 export class ViBadge extends ViElement {
-  static override styles = css`${unsafeCSS(badgeStyles)}`;
+  static override styles = css`
+    ${unsafeCSS(badgeStyles)}
+  `;
 
   /** Colour semantic */
-  @property({ type: String, reflect: true }) accessor variant: BadgeVariant = 'neutral';
+  @property({ type: String, reflect: true }) accessor variant: BadgeVariant =
+    'neutral';
 
   /** Size */
   @property({ type: String, reflect: true }) accessor size: BadgeSize = 'md';
@@ -43,10 +52,13 @@ export class ViBadge extends ViElement {
   @property({ type: Boolean, reflect: true }) accessor pill = true;
 
   /** Numeric count to display */
-  @property({ type: Number, reflect: true }) accessor count: number | undefined = undefined;
+  @property({ type: Number, reflect: true }) accessor count:
+    | number
+    | undefined = undefined;
 
   /** Show the badge even if the count is zero */
-  @property({ type: Boolean, reflect: true, attribute: 'show-zero' }) accessor showZero = false;
+  @property({ type: Boolean, reflect: true, attribute: 'show-zero' })
+  accessor showZero = false;
 
   /** Max count before showing {max}+ */
   @property({ type: Number }) accessor max = 99;
@@ -62,15 +74,27 @@ export class ViBadge extends ViElement {
     this.updateAriaHidden();
   }
 
-  override updated(changedProperties: Map<string | number | symbol, unknown>): void {
+  override updated(
+    changedProperties: Map<string | number | symbol, unknown>,
+  ): void {
     super.updated(changedProperties);
-    if (changedProperties.has('dot') || changedProperties.has('count') || changedProperties.has('showZero') || changedProperties.has('_hasDefaultSlot')) {
+    if (
+      changedProperties.has('dot') ||
+      changedProperties.has('count') ||
+      changedProperties.has('showZero') ||
+      changedProperties.has('_hasDefaultSlot')
+    ) {
       this.updateAriaHidden();
     }
   }
 
   private updateAriaHidden(): void {
-    const isPurelyDecorative = this.dot && !this._hasDefaultSlot && this.count === undefined && !this.hasAttribute('aria-label') && !this.hasAttribute('aria-labelledby');
+    const isPurelyDecorative =
+      this.dot &&
+      !this._hasDefaultSlot &&
+      this.count === undefined &&
+      !this.hasAttribute('aria-label') &&
+      !this.hasAttribute('aria-labelledby');
     if (isPurelyDecorative) {
       this.setAttribute('aria-hidden', 'true');
     } else {
@@ -85,10 +109,16 @@ export class ViBadge extends ViElement {
 
   private onDefaultSlotChange(e: Event): void {
     const slot = e.target as HTMLSlotElement;
-    this._hasDefaultSlot = slot.assignedNodes({ flatten: true }).some(node => {
-      // Check if it's text with actual content or an element
-      return (node.nodeType === Node.TEXT_NODE && node.textContent?.trim().length) || node.nodeType === Node.ELEMENT_NODE;
-    });
+    this._hasDefaultSlot = slot
+      .assignedNodes({ flatten: true })
+      .some((node) => {
+        // Check if it's text with actual content or an element
+        return (
+          (node.nodeType === Node.TEXT_NODE &&
+            node.textContent?.trim().length) ||
+          node.nodeType === Node.ELEMENT_NODE
+        );
+      });
     this.updateAriaHidden();
   }
 
@@ -98,13 +128,24 @@ export class ViBadge extends ViElement {
     const hideDefaultSlot = this.count !== undefined;
 
     if (this.count !== undefined) {
-      countContent = html`${this.count > this.max ? `${this.max}+` : `${this.count}`}`;
+      countContent = html`${this.count > this.max
+        ? `${this.max}+`
+        : `${this.count}`}`;
     }
 
-    const dotContent = this.dot ? html`<span part="dot" class="dot"></span>` : '';
+    const dotContent = this.dot
+      ? html`<span part="dot" class="dot"></span>`
+      : '';
 
     return html`
-      <span class="badge ${this.dot && !this._hasDefaultSlot && this.count === undefined ? 'dot-only' : ''}" part="badge">
+      <span
+        class="badge ${this.dot &&
+        !this._hasDefaultSlot &&
+        this.count === undefined
+          ? 'dot-only'
+          : ''}"
+        part="badge"
+      >
         <slot
           name="icon"
           part="icon"
@@ -112,9 +153,11 @@ export class ViBadge extends ViElement {
           ?hidden=${!this._hasIcon}
           @slotchange=${this.onIconSlotChange}
         ></slot>
-        ${dotContent}
-        ${countContent}
-        <slot ?hidden=${hideDefaultSlot} @slotchange=${this.onDefaultSlotChange}></slot>
+        ${dotContent} ${countContent}
+        <slot
+          ?hidden=${hideDefaultSlot}
+          @slotchange=${this.onDefaultSlotChange}
+        ></slot>
       </span>
     `;
   }

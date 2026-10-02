@@ -8,7 +8,7 @@ describe('plugin-utils', () => {
   const mockViPlugin: ViDatePickerPlugin = {
     id: 'test-plugin',
     label: 'Test',
-    factory: mockFactory as unknown as Plugin
+    factory: mockFactory as unknown as Plugin,
   };
 
   describe('isViPlugin', () => {
@@ -27,7 +27,9 @@ describe('plugin-utils', () => {
     });
 
     it('returns plugin for raw plugin', () => {
-      expect(resolvePlugin(mockFactory as unknown as Plugin)).toBe(mockFactory as unknown as Plugin);
+      expect(resolvePlugin(mockFactory as unknown as Plugin)).toBe(
+        mockFactory as unknown as Plugin,
+      );
     });
   });
 
@@ -42,7 +44,7 @@ describe('plugin-utils', () => {
     it('deduplicates by id', () => {
       const modePlugin = mockViPlugin;
       const dupPlugin: ViDatePickerPlugin = { ...mockViPlugin };
-      
+
       const result = mergePlugins(modePlugin, [mockViPlugin, dupPlugin]);
       expect(result).toHaveLength(1); // 1 mode, duplicate dropped
       expect(result[0]).toBe(mockViPlugin.factory);
@@ -51,8 +53,11 @@ describe('plugin-utils', () => {
     it('allows duplicate raw plugins', () => {
       const p1 = () => ({});
       const p2 = () => ({});
-      
-      const result = mergePlugins(null, [p1 as unknown as Plugin, p2 as unknown as Plugin]);
+
+      const result = mergePlugins(null, [
+        p1 as unknown as Plugin,
+        p2 as unknown as Plugin,
+      ]);
       expect(result).toHaveLength(2);
     });
   });

@@ -6,9 +6,21 @@ import '../icons/vi-icon.js';
 import '../button/vi-button.js';
 import { registerIcons } from '../icons/registry.js';
 
-import { checkCircleIcon, triangleWarningIcon, infoIcon, xIcon, lockIcon } from '@vialiq/icons';
+import {
+  checkCircleIcon,
+  triangleWarningIcon,
+  infoIcon,
+  xIcon,
+  lockIcon,
+} from '@vialiq/icons';
 
-registerIcons([checkCircleIcon, triangleWarningIcon, infoIcon, xIcon, lockIcon]);
+registerIcons([
+  checkCircleIcon,
+  triangleWarningIcon,
+  infoIcon,
+  xIcon,
+  lockIcon,
+]);
 
 export type AlertVariant =
   | 'info'
@@ -104,10 +116,7 @@ export class ViAlert extends ViElement {
 
   /** Helper to check whether auto-hide is enabled via boolean toggle or duration setting */
   private get _shouldAutoHide(): boolean {
-    return (
-      this.autoHide ||
-      (this.duration !== undefined && this.duration > 0)
-    );
+    return this.autoHide || (this.duration !== undefined && this.duration > 0);
   }
 
   override connectedCallback(): void {
@@ -132,7 +141,10 @@ export class ViAlert extends ViElement {
     if (changedProperties.has('variant')) {
       this.updateRole();
     }
-    if (changedProperties.has('open') && changedProperties.get('open') !== undefined) {
+    if (
+      changedProperties.has('open') &&
+      changedProperties.get('open') !== undefined
+    ) {
       if (this.open) {
         this._handleOpen();
       } else if (!this.hidden) {
@@ -242,7 +254,9 @@ export class ViAlert extends ViElement {
 
     this._dismissPromise = (async () => {
       if (this.shadowRoot) {
-        const root = this.shadowRoot.querySelector('.alert-root') as HTMLElement;
+        const root = this.shadowRoot.querySelector(
+          '.alert-root',
+        ) as HTMLElement;
         if (root && typeof root.animate === 'function') {
           try {
             const computed = getComputedStyle(root);

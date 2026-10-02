@@ -83,7 +83,7 @@ export declare class FocusableInterface {
  *   }
  */
 export function FocusableMixin<T extends Constructor<LitElement>>(
-  Base: T
+  Base: T,
 ): T & Constructor<FocusableInterface> {
   class FocusableMixinClass extends Base {
     /**
@@ -175,8 +175,8 @@ export function FocusableMixin<T extends Constructor<LitElement>>(
      * Example: a vi-input might render a "Clear" <button> before the <input>
      * in the DOM. Native focus would land on the clear button; this explicit
      * call guarantees focus lands on the <input> regardless of DOM order.
-     * 
-     * If called before the first render (when `_focusableElement` is null), 
+     *
+     * If called before the first render (when `_focusableElement` is null),
      * it safely falls back to `super.focus()`.
      */
     override focus(options?: FocusOptions): void {

@@ -1,6 +1,5 @@
 @use '../styles/variables' as tokens;
 
-
 .popover-panel {
   display: flex;
   flex-direction: column;
@@ -17,7 +16,9 @@
   opacity: 0;
   pointer-events: none;
   transform: scale(0.95);
-  transition: opacity 0.15s ease, transform 0.15s ease;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
 
   &.open {
     opacity: 1;
@@ -26,8 +27,12 @@
   }
 
   .popover-header {
-    padding: var(--vi-popover-header-padding, #{tokens.$spacing-sm} #{tokens.$spacing-md});
-    border-bottom: 1px solid var(--vi-popover-border-color, #{tokens.$border-02});
+    padding: var(
+      --vi-popover-header-padding,
+      #{tokens.$spacing-sm} #{tokens.$spacing-md}
+    );
+    border-bottom: 1px solid
+      var(--vi-popover-border-color, #{tokens.$border-02});
     font-weight: var(--vi-popover-title-weight, #{tokens.$font-weight-medium});
     font-size: var(--vi-popover-title-size, #{tokens.$font-size-base});
     color: var(--vi-popover-title-color, #{tokens.$text-primary});

@@ -8,19 +8,19 @@
 }
 
 // Positioning variants
-:host([position^="top"]) {
+:host([position^='top']) {
   top: var(--vi-toast-top-offset, #{tokens.$spacing-lg});
 }
-:host([position^="bottom"]) {
+:host([position^='bottom']) {
   bottom: var(--vi-toast-bottom-offset, #{tokens.$spacing-lg});
 }
-:host([position$="right"]) {
+:host([position$='right']) {
   right: var(--vi-toast-right-offset, #{tokens.$spacing-lg});
 }
-:host([position$="left"]) {
+:host([position$='left']) {
   left: var(--vi-toast-left-offset, #{tokens.$spacing-lg});
 }
-:host([position$="center"]) {
+:host([position$='center']) {
   left: 50%;
   transform: translateX(-50%);
 }
@@ -34,7 +34,7 @@
 }
 
 /* If bottom positioned, we want newest toasts to appear at the bottom (stack up) */
-:host([position^="bottom"]) .toast-stack {
+:host([position^='bottom']) .toast-stack {
   flex-direction: column-reverse;
 }
 
@@ -49,16 +49,16 @@
   opacity: 0;
 }
 
-:host([position$="right"]) ::slotted(vi-toast.entering) {
+:host([position$='right']) ::slotted(vi-toast.entering) {
   transform: translateX(var(--vi-toast-slide-distance, 24px));
 }
-:host([position$="left"]) ::slotted(vi-toast.entering) {
+:host([position$='left']) ::slotted(vi-toast.entering) {
   transform: translateX(calc(-1 * var(--vi-toast-slide-distance, 24px)));
 }
-:host([position$="center"][position^="top"]) ::slotted(vi-toast.entering) {
+:host([position$='center'][position^='top']) ::slotted(vi-toast.entering) {
   transform: translateY(calc(-1 * var(--vi-toast-slide-distance, 24px)));
 }
-:host([position$="center"][position^="bottom"]) ::slotted(vi-toast.entering) {
+:host([position$='center'][position^='bottom']) ::slotted(vi-toast.entering) {
   transform: translateY(var(--vi-toast-slide-distance, 24px));
 }
 
@@ -66,7 +66,9 @@
 ::slotted(vi-toast.exiting) {
   opacity: 0 !important;
   max-height: 0 !important;
-  margin-top: calc(-1 * #{tokens.$spacing-sm}) !important; /* Collapse the gap */
+  margin-top: calc(
+    -1 * #{tokens.$spacing-sm}
+  ) !important; /* Collapse the gap */
   margin-bottom: 0 !important;
   padding-top: 0 !important;
   padding-bottom: 0 !important;

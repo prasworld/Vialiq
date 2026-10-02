@@ -27,7 +27,15 @@ describe('vi-link', () => {
   });
 
   it('sets correct properties on the anchor element', async () => {
-    render(html`<vi-link href="https://example.com" target="_blank" download="file.pdf">Link</vi-link>`, container);
+    render(
+      html`<vi-link
+        href="https://example.com"
+        target="_blank"
+        download="file.pdf"
+        >Link</vi-link
+      >`,
+      container,
+    );
     const link = container.querySelector('vi-link') as ViLink;
     await link.updateComplete;
     const anchor = link.shadowRoot!.querySelector('a')!;
@@ -38,7 +46,15 @@ describe('vi-link', () => {
   });
 
   it('handles external links correctly and delegates aria-label', async () => {
-    render(html`<vi-link href="https://example.com" external aria-label="My External Link">Link</vi-link>`, container);
+    render(
+      html`<vi-link
+        href="https://example.com"
+        external
+        aria-label="My External Link"
+        >Link</vi-link
+      >`,
+      container,
+    );
     const link = container.querySelector('vi-link') as ViLink;
     await link.updateComplete;
     const anchor = link.shadowRoot!.querySelector('a')!;
@@ -50,7 +66,10 @@ describe('vi-link', () => {
   });
 
   it('removes href and sets aria-disabled when disabled', async () => {
-    render(html`<vi-link href="https://example.com" disabled>Link</vi-link>`, container);
+    render(
+      html`<vi-link href="https://example.com" disabled>Link</vi-link>`,
+      container,
+    );
     const link = container.querySelector('vi-link') as ViLink;
     await link.updateComplete;
     const anchor = link.shadowRoot!.querySelector('a')!;

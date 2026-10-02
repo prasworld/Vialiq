@@ -50,7 +50,7 @@ export const Default: Story = {
     spinning: true,
   },
   render: (args) => html`
-    <vi-spin 
+    <vi-spin
       ?spinning=${args.spinning}
       size=${ifDefined(args.size)}
       variant=${ifDefined(args.variant)}
@@ -79,30 +79,31 @@ export const InsideContainer: Story = {
   },
   render: (args) => html`
     <div style="width: 100%; max-width: 500px;">
-      <vi-spin 
+      <vi-spin
         ?spinning=${args.spinning}
         size=${ifDefined(args.size)}
         tip=${ifDefined(args.tip)}
         delay=${ifDefined(args.delay)}
       >
-        <vi-alert 
-          variant="info" 
+        <vi-alert
+          variant="info"
           title="Alert message title"
           message="Further details about the context of this alert. This is an example of spinning overlaying content."
         ></vi-alert>
       </vi-spin>
-      
+
       <div style="margin-top: 24px; font-size: 14px;">
         <label>
-          <input 
-            type="checkbox" 
-            ?checked=${args.spinning} 
+          <input
+            type="checkbox"
+            ?checked=${args.spinning}
             @change=${(e: Event) => {
               const target = e.target as HTMLInputElement;
               const spinEl = document.querySelector('vi-spin');
               if (spinEl) spinEl.spinning = target.checked;
-            }} 
-          /> Toggle Spinning
+            }}
+          />
+          Toggle Spinning
         </label>
       </div>
     </div>
@@ -115,7 +116,7 @@ export const CustomTip: Story = {
     tip: 'Preparing data...',
   },
   render: (args) => html`
-    <vi-spin 
+    <vi-spin
       ?spinning=${args.spinning}
       size=${ifDefined(args.size)}
       tip=${ifDefined(args.tip)}
@@ -135,7 +136,10 @@ export const Variants: Story = {
 export const CustomIndicator: Story = {
   render: () => html`
     <vi-spin tip="Loading...">
-      <div slot="indicator" style="font-size: 24px; animation: viSpinRotate 2s linear infinite; display: inline-block;">
+      <div
+        slot="indicator"
+        style="font-size: 24px; animation: viSpinRotate 2s linear infinite; display: inline-block;"
+      >
         🌀
       </div>
     </vi-spin>
@@ -161,18 +165,22 @@ export const Fullscreen: Story = {
   render: (args) => html`
     <div style="height: 200px; padding: 20px; border: 1px solid #ccc;">
       <p>This is a container.</p>
-      <button @click=${() => {
-        const spin = document.createElement('vi-spin');
-        spin.fullscreen = true;
-        spin.tip = 'Loading full screen... closing in 3s';
-        document.body.appendChild(spin);
-        setTimeout(() => spin.remove(), 3000);
-      }}>
+      <button
+        @click=${() => {
+          const spin = document.createElement('vi-spin');
+          spin.fullscreen = true;
+          spin.tip = 'Loading full screen... closing in 3s';
+          document.body.appendChild(spin);
+          setTimeout(() => spin.remove(), 3000);
+        }}
+      >
         Show Fullscreen Spinner
       </button>
-      ${args.fullscreen ? html`
-        <vi-spin ?fullscreen=${args.fullscreen} tip=${args.tip}></vi-spin>
-      ` : ''}
+      ${args.fullscreen
+        ? html`
+            <vi-spin ?fullscreen=${args.fullscreen} tip=${args.tip}></vi-spin>
+          `
+        : ''}
     </div>
   `,
 };
@@ -182,20 +190,21 @@ export const LottieAnimation: Story = {
     // Inject the Lottie Player script if it doesn't exist
     if (!document.querySelector('script[src*="lottie-player"]')) {
       const script = document.createElement('script');
-      script.src = 'https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js';
+      script.src =
+        'https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js';
       document.head.appendChild(script);
     }
-    
+
     return html`
       <vi-spin tip="Loading Lottie...">
         <!-- Replace 'src' with your own Lottie JSON URL -->
-        <lottie-player 
+        <lottie-player
           slot="indicator"
           src="https://assets2.lottiefiles.com/packages/lf20_usmfx6bp.json"
-          background="transparent" 
-          speed="1" 
-          style="width: 60px; height: 60px;" 
-          loop 
+          background="transparent"
+          speed="1"
+          style="width: 60px; height: 60px;"
+          loop
           autoplay
         ></lottie-player>
       </vi-spin>

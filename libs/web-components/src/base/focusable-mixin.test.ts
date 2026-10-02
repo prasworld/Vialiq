@@ -35,7 +35,7 @@ class ViFocusableNullTest extends FocusableMixin(LitElement) {
 describe('FocusableMixin', () => {
   describe('Standard Component', () => {
     let element: ViFocusableTest;
-    
+
     beforeEach(async () => {
       element = document.createElement('vi-focusable-test') as ViFocusableTest;
       document.body.appendChild(element);
@@ -52,51 +52,55 @@ describe('FocusableMixin', () => {
     });
 
     it('respects consumer defined tabIndex', async () => {
-      const customEl = document.createElement('vi-focusable-test') as ViFocusableTest;
+      const customEl = document.createElement(
+        'vi-focusable-test',
+      ) as ViFocusableTest;
       customEl.setAttribute('tabindex', '2');
       document.body.appendChild(customEl);
       await customEl.updateComplete;
-      
+
       expect(customEl.tabIndex).toBe(2);
       customEl.remove();
     });
 
     it('manages tabIndex when disabled', async () => {
       expect(element.tabIndex).toBe(0);
-      
+
       element.disabled = true;
       await element.updateComplete;
-      
+
       expect(element.tabIndex).toBe(-1);
-      
+
       element.disabled = false;
       await element.updateComplete;
-      
+
       expect(element.tabIndex).toBe(0);
     });
 
     it('restores custom tabIndex after being re-enabled', async () => {
-      const customEl = document.createElement('vi-focusable-test') as ViFocusableTest;
+      const customEl = document.createElement(
+        'vi-focusable-test',
+      ) as ViFocusableTest;
       customEl.setAttribute('tabindex', '2');
       document.body.appendChild(customEl);
       await customEl.updateComplete;
-      
+
       customEl.disabled = true;
       await customEl.updateComplete;
       expect(customEl.tabIndex).toBe(-1);
-      
+
       customEl.disabled = false;
       await customEl.updateComplete;
       expect(customEl.tabIndex).toBe(2);
-      
+
       customEl.remove();
     });
 
     it('delegates focus to _focusableElement', () => {
       const innerButton = element.shadowRoot?.querySelector('button');
-      
+
       element.focus();
-      
+
       expect(document.activeElement).toBe(element); // shadow dom routing means host is active in light DOM
       expect(element.shadowRoot?.activeElement).toBe(innerButton); // inner element is focused in shadow DOM
     });
@@ -104,12 +108,12 @@ describe('FocusableMixin', () => {
     it('delegates focus with FocusOptions', () => {
       const innerButton = element.shadowRoot?.querySelector('button');
       let optionsReceived: FocusOptions | undefined;
-      
+
       // Stub inner focus
       innerButton!.focus = (options) => {
         optionsReceived = options;
       };
-      
+
       element.focus({ preventScroll: true });
       expect(optionsReceived?.preventScroll).toBe(true);
     });
@@ -117,9 +121,11 @@ describe('FocusableMixin', () => {
 
   describe('Null Focusable Element', () => {
     let element: ViFocusableNullTest;
-    
+
     beforeEach(async () => {
-      element = document.createElement('vi-focusable-null-test') as ViFocusableNullTest;
+      element = document.createElement(
+        'vi-focusable-null-test',
+      ) as ViFocusableNullTest;
       document.body.appendChild(element);
       // DON'T await updateComplete yet to test the pre-render state
     });

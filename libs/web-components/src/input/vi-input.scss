@@ -21,17 +21,33 @@
 :host {
   display: block;
   outline: none;
+  --vi-input-placeholder-color: #{tokens.$text-placeholder};
 }
 
 .input-control {
+  box-sizing: border-box;
+  width: 100%;
   padding-block: var(--vi-input-spacing-padding-block, #{tokens.$spacing-unit});
   padding-inline: var(--vi-input-spacing-padding-inline, #{tokens.$spacing-sm});
   font-size: var(--vi-input-typography-font-size, #{tokens.$font-size-base});
-  border-radius: var(--vi-input-shape-border-radius, #{tokens.$border-radius-md});
+  border-radius: var(
+    --vi-input-shape-border-radius,
+    #{tokens.$border-radius-md}
+  );
   min-height: var(--vi-input-sizing-min-height, 32px);
+
+  &::placeholder {
+    color: var(--vi-input-placeholder-color, #{tokens.$text-placeholder});
+    opacity: 1;
+    font-weight: 400;
+  }
 }
 
-
+.input-field {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
 
 // ============================================================================
 // Disabled state
@@ -45,7 +61,7 @@
 // Invalid state — colour overrides propagate into the shared input layer
 // ============================================================================
 
-:host([status="invalid"]) {
+:host([status='invalid']) {
   --vi-input-border-color: #{tokens.$color-error};
   --vi-input-border-color-hover: #{tokens.$color-error};
   --vi-input-focus-ring-color: #{tokens.$color-error};
@@ -57,7 +73,7 @@
 // Valid/success state — colour overrides propagate into the shared input layer
 // ============================================================================
 
-:host([status="valid"]) {
+:host([status='valid']) {
   --vi-input-border-color: #{tokens.$color-success};
   --vi-input-border-color-hover: #{tokens.$color-success};
   --vi-input-focus-ring-color: #{tokens.$color-success};
@@ -104,32 +120,36 @@
 
 :host([size='xs']) .input-control {
   padding-block: var(--vi-input-spacing-padding-block, 0px);
-  padding-inline: var(--vi-input-spacing-padding-inline, #{tokens.$spacing-unit});
+  padding-inline: var(
+    --vi-input-spacing-padding-inline,
+    #{tokens.$spacing-unit}
+  );
   font-size: var(--vi-input-typography-font-size, #{tokens.$font-size-xs});
-  border-radius: var(--vi-input-shape-border-radius, #{tokens.$border-radius-sm});
+  border-radius: var(
+    --vi-input-shape-border-radius,
+    #{tokens.$border-radius-sm}
+  );
   min-height: var(--vi-input-sizing-min-height, 20px);
 }
-
 
 :host([size='sm']) .input-control {
   padding-block: var(--vi-input-spacing-padding-block, 0px);
   padding-inline: var(--vi-input-spacing-padding-inline, #{tokens.$spacing-xs});
   font-size: var(--vi-input-typography-font-size, #{tokens.$font-size-base});
-  border-radius: var(--vi-input-shape-border-radius, #{tokens.$border-radius-sm});
+  border-radius: var(
+    --vi-input-shape-border-radius,
+    #{tokens.$border-radius-sm}
+  );
   min-height: var(--vi-input-sizing-min-height, 24px);
 }
-
 
 :host([size='lg']) .input-control {
   padding-block: var(--vi-input-spacing-padding-block, #{tokens.$spacing-xs});
   padding-inline: var(--vi-input-spacing-padding-inline, #{tokens.$spacing-sm});
   font-size: var(--vi-input-typography-font-size, #{tokens.$font-size-lg});
-  border-radius: var(--vi-input-shape-border-radius, #{tokens.$border-radius-lg});
+  border-radius: var(
+    --vi-input-shape-border-radius,
+    #{tokens.$border-radius-lg}
+  );
   min-height: var(--vi-input-sizing-min-height, 40px);
 }
-
-
-
-
-
-

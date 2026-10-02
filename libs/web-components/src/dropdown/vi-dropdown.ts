@@ -14,16 +14,22 @@ import '../popover/index.js';
  * @attr placement - The placement of the dropdown (e.g., bottom-start)
  * @attr trigger - The interaction that triggers the dropdown (click, hover, focus, contextmenu)
  * @attr open - Whether the dropdown is open
- * 
+ *
  * @slot - The trigger element
  * @slot content - The vi-menu element
  */
 @customElement('vi-dropdown')
 export class ViDropdown extends ViElement {
-  static override styles = css`${unsafeCSS(dropdownStyles)}`;
+  static override styles = css`
+    ${unsafeCSS(dropdownStyles)}
+  `;
 
   @property({ type: String }) accessor placement: Placement = 'bottom-start';
-  @property({ type: String }) accessor trigger: 'click' | 'hover' | 'focus' | 'contextmenu' = 'click';
+  @property({ type: String }) accessor trigger:
+    | 'click'
+    | 'hover'
+    | 'focus'
+    | 'contextmenu' = 'click';
   @property({ type: Boolean, reflect: true }) accessor open = false;
 
   override connectedCallback() {
@@ -47,7 +53,9 @@ export class ViDropdown extends ViElement {
       // Wait for popover and menu to render/display
       setTimeout(() => {
         const menu = this.querySelector('vi-menu');
-        const firstItem = menu?.querySelector('vi-menu-item:not([disabled])') as HTMLElement;
+        const firstItem = menu?.querySelector(
+          'vi-menu-item:not([disabled])',
+        ) as HTMLElement;
         firstItem?.focus();
       }, 10);
     }
@@ -55,20 +63,24 @@ export class ViDropdown extends ViElement {
 
   private _handleShow = () => {
     this.open = true;
-    this.dispatchEvent(new CustomEvent('vi-dropdown-open-change', {
-      detail: { open: true },
-      bubbles: true,
-      composed: true
-    }));
+    this.dispatchEvent(
+      new CustomEvent('vi-dropdown-open-change', {
+        detail: { open: true },
+        bubbles: true,
+        composed: true,
+      }),
+    );
   };
 
   private _handleHide = () => {
     this.open = false;
-    this.dispatchEvent(new CustomEvent('vi-dropdown-open-change', {
-      detail: { open: false },
-      bubbles: true,
-      composed: true
-    }));
+    this.dispatchEvent(
+      new CustomEvent('vi-dropdown-open-change', {
+        detail: { open: false },
+        bubbles: true,
+        composed: true,
+      }),
+    );
   };
 
   private _handleMenuItemClick = () => {

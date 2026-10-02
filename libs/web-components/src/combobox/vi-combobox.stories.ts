@@ -604,7 +604,9 @@ class InfiniteScrollDemo extends LitElement {
               </div>
             </div>
           `}
-          @vi-combobox-load-more=${(e: CustomEvent) => { if (e.detail.direction === 'down') this._loadMore(); }}
+          @vi-combobox-load-more=${(e: CustomEvent) => {
+            if (e.detail.direction === 'down') this._loadMore();
+          }}
         ></vi-combobox>
       </div>
     `;
@@ -629,5 +631,3 @@ export const InfiniteScrollWithMockApi: StoryObj = {
     `;
   },
 };
-
-

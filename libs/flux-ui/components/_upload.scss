@@ -1,0 +1,201 @@
+@use '../styles/variables' as tokens;
+@use '../styles/functions' as func;
+
+@layer components {
+  // ── Dropzone ─────────────────────────────────────────────────────────────────
+
+  .dropzone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--vi-upload-dropzone-gap, #{tokens.$spacing-sm});
+
+    padding: var(--vi-upload-dropzone-padding, #{tokens.$spacing-2xl});
+    border: 2px dashed var(--vi-upload-border-color, #{tokens.$border-04});
+    border-radius: var(--vi-upload-border-radius, #{tokens.$border-radius-lg});
+    background-color: var(--vi-upload-bg, #{tokens.$layer-01});
+
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    outline: none;
+
+    &:hover,
+    &.drag-active {
+      border-color: var(
+        --vi-upload-border-color-active,
+        #{tokens.$color-primary}
+      );
+      background-color: var(--vi-upload-bg-active, #{tokens.$layer-hover-01});
+    }
+
+    &:focus-visible {
+      border-style: solid;
+      border-color: var(--vi-upload-focus-color, #{tokens.$focus});
+      box-shadow: #{tokens.$focus-ring-shadow};
+    }
+  }
+
+  .icon-container {
+    color: var(--vi-upload-icon-color, #{tokens.$text-secondary});
+    display: flex;
+
+    ::slotted([slot='icon']),
+    ::slotted(svg),
+    svg {
+      width: 2rem;
+      height: 2rem;
+    }
+  }
+
+  .text {
+    color: var(--vi-upload-text-color, #{tokens.$text-primary});
+    font-weight: var(--vi-upload-font-weight, #{tokens.$font-weight-medium});
+    text-align: center;
+  }
+
+  // ── File List ────────────────────────────────────────────────────────────────
+
+  .file-list {
+    margin: var(--vi-upload-list-margin-top, #{tokens.$spacing-md}) 0 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--vi-upload-list-gap, #{tokens.$spacing-sm});
+  }
+
+  .file-item {
+    display: flex;
+    align-items: center;
+    gap: var(--vi-upload-item-content-gap, #{tokens.$spacing-sm});
+    padding: var(
+      --vi-upload-item-padding,
+      #{tokens.$spacing-xs} #{tokens.$spacing-sm}
+    );
+    border: 1px solid var(--vi-upload-item-border, #{tokens.$border-02});
+    border-radius: var(--vi-upload-item-radius, #{tokens.$border-radius-md});
+    background-color: var(--vi-upload-item-bg, #{tokens.$layer-01});
+
+    &.error {
+      border-color: var(--vi-upload-error-color, #{tokens.$color-error});
+      background-color: var(--vi-upload-error-bg, #{tokens.$bg-error});
+    }
+
+    &.success {
+      border-color: var(--vi-upload-success-color, #{tokens.$color-green-500});
+      background-color: var(--vi-upload-success-bg, #{tokens.$color-green-100});
+    }
+  }
+
+  .file-info-container {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    gap: var(--vi-upload-item-gap, #{tokens.$spacing-xs});
+    min-width: 0;
+  }
+
+  .file-info {
+    display: flex;
+    align-items: center;
+    gap: #{tokens.$spacing-sm};
+    overflow: hidden;
+  }
+
+  .file-name {
+    font-size: var(--vi-upload-item-name-size, #{tokens.$font-size-sm});
+    color: var(--vi-upload-item-name-color, #{tokens.$text-primary});
+    font-weight: var(
+      --vi-upload-item-name-weight,
+      #{tokens.$font-weight-medium}
+    );
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .file-size {
+    font-size: var(--vi-upload-item-size-size, #{tokens.$font-size-xs});
+    color: var(--vi-upload-item-size-color, #{tokens.$text-secondary});
+  }
+
+  .file-error-message {
+    font-size: var(--vi-upload-item-size-size, #{tokens.$font-size-xs});
+    color: var(--vi-upload-error-color, #{tokens.$color-error});
+  }
+
+  .remove-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: transparent;
+    color: var(--vi-upload-icon-color, #{tokens.$text-secondary});
+    cursor: pointer;
+    border-radius: var(--vi-upload-item-radius, #{tokens.$border-radius-sm});
+    transition: all 0.2s;
+
+    &:hover {
+      background-color: var(
+        --vi-upload-remove-hover-bg,
+        #{tokens.$layer-hover-01}
+      );
+      color: var(--vi-upload-remove-hover-color, #{tokens.$text-primary});
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--vi-upload-focus-color, #{tokens.$focus});
+      outline-offset: -2px;
+    }
+
+    svg {
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  .progress-bar {
+    width: 100%;
+    height: 4px;
+    background-color: var(--vi-upload-progress-bg, #{tokens.$border-02});
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background-color: var(--vi-upload-progress-color, #{tokens.$color-primary});
+    transition: width 0.3s ease;
+  }
+
+  // ── Thumbnails ───────────────────────────────────────────────────────────────
+
+  .file-thumbnail {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: var(--vi-upload-thumbnail-radius, 4px);
+    background-color: var(--vi-upload-thumbnail-bg, #{tokens.$layer-02});
+    border: 1px solid var(--vi-upload-thumbnail-border, #{tokens.$border-02});
+    box-shadow: var(--vi-upload-thumbnail-shadow, #{tokens.$shadow-sm});
+    overflow: hidden;
+    flex-shrink: 0;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    vi-icon {
+      width: 16px;
+      height: 16px;
+      color: var(--vi-upload-thumbnail-icon-color, #{tokens.$text-secondary});
+    }
+  }
+}

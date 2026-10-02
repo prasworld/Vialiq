@@ -18,12 +18,14 @@ export interface ViMenuItemClickEventDetail {
  * @attr value - Unique identifier for the item
  * @attr disabled - Disables the item
  * @attr danger - Applies danger/destructive styling
- * 
+ *
  * @fires vi-menu-item-click - Fired when clicked
  */
 @customElement('vi-menu-item')
 export class ViMenuItem extends ViElement {
-  static override styles = css`${unsafeCSS(menuStyles)}`;
+  static override styles = css`
+    ${unsafeCSS(menuStyles)}
+  `;
 
   @property({ type: String }) accessor value = '';
   @property({ type: Boolean, reflect: true }) accessor disabled = false;
@@ -70,7 +72,7 @@ export class ViMenuItem extends ViElement {
       <li
         class=${classMap(classes)}
         role="menuitem"
-        tabindex=${this.disabled ? '-1' : (this.tabbable ? '0' : '-1')}
+        tabindex=${this.disabled ? '-1' : this.tabbable ? '0' : '-1'}
         aria-disabled=${this.disabled ? 'true' : 'false'}
         @click=${this._handleClick}
         @keydown=${this._handleKeyDown}

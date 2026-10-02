@@ -137,7 +137,13 @@ export const Default: Story = {
       ?autofocus=${args.autofocus}
       ?scrollable=${args.scrollable}
     >
-      <vi-modal-header slot="header" alert-variant=${ifDefined(args?.alertVariant)} ?closable=${args?.closable ?? true} ?maximizable=${args?.maximizable ?? false}>Default Modal</vi-modal-header>
+      <vi-modal-header
+        slot="header"
+        alert-variant=${ifDefined(args?.alertVariant)}
+        ?closable=${args?.closable ?? true}
+        ?maximizable=${args?.maximizable ?? false}
+        >Default Modal</vi-modal-header
+      >
       <p>
         This is the default modal content. It acts as a standard dialog for
         forms and general information.
@@ -163,7 +169,13 @@ export const Sizes: Story = {
             >Size: ${size}</vi-button
           >
           <vi-modal id="modal-size-${size}" size=${size}>
-            <vi-modal-header slot="header" alert-variant=${ifDefined(args?.alertVariant)} ?closable=${args?.closable ?? true} ?maximizable=${args?.maximizable ?? false}>Modal Size: ${size}</vi-modal-header>
+            <vi-modal-header
+              slot="header"
+              alert-variant=${ifDefined(args?.alertVariant)}
+              ?closable=${args?.closable ?? true}
+              ?maximizable=${args?.maximizable ?? false}
+              >Modal Size: ${size}</vi-modal-header
+            >
             <p>This modal is rendered with size <strong>${size}</strong>.</p>
             <vi-modal-footer slot="footer">
               <vi-button @click=${() => closeModal(`modal-size-${size}`)}
@@ -188,7 +200,13 @@ export const Drawer: Story = {
       variant="drawer"
       drawer-placement=${args.drawerPlacement}
     >
-      <vi-modal-header slot="header" alert-variant=${ifDefined(args?.alertVariant)} ?closable=${args?.closable ?? true} ?maximizable=${args?.maximizable ?? false}>Drawer Variant</vi-modal-header>
+      <vi-modal-header
+        slot="header"
+        alert-variant=${ifDefined(args?.alertVariant)}
+        ?closable=${args?.closable ?? true}
+        ?maximizable=${args?.maximizable ?? false}
+        >Drawer Variant</vi-modal-header
+      >
       <p>
         Drawers slide in from the edge of the screen and take up the full
         viewport height.
@@ -221,7 +239,13 @@ export const Alert: Story = {
       ?persistent=${args.persistent}
       size="sm"
     >
-      <vi-modal-header slot="header" alert-variant=${ifDefined(args?.alertVariant)} ?closable=${args?.closable ?? true} ?maximizable=${args?.maximizable ?? false}>Lock Data</vi-modal-header>
+      <vi-modal-header
+        slot="header"
+        alert-variant=${ifDefined(args?.alertVariant)}
+        ?closable=${args?.closable ?? true}
+        ?maximizable=${args?.maximizable ?? false}
+        >Lock Data</vi-modal-header
+      >
       <p>
         This action is <strong>irreversible</strong>. All forms will be locked
         for editing.
@@ -247,7 +271,13 @@ export const ScrollableContent: Story = {
       >Open Scrollable Modal</vi-button
     >
     <vi-modal id="modal-scroll" size="md">
-      <vi-modal-header slot="header" alert-variant=${ifDefined(args?.alertVariant)} ?closable=${args?.closable ?? true} ?maximizable=${args?.maximizable ?? false}>Terms and Conditions</vi-modal-header>
+      <vi-modal-header
+        slot="header"
+        alert-variant=${ifDefined(args?.alertVariant)}
+        ?closable=${args?.closable ?? true}
+        ?maximizable=${args?.maximizable ?? false}
+        >Terms and Conditions</vi-modal-header
+      >
       <div
         style="height: 1200px; padding: 1rem; background: repeating-linear-gradient(45deg, #f0f0f0, #f0f0f0 10px, #fafafa 10px, #fafafa 20px);"
       >
@@ -293,7 +323,13 @@ export const ProgrammaticGuard: Story = {
         size="sm"
         @vi-modal-close-request=${handleRequestClose}
       >
-        <vi-modal-header slot="header" alert-variant=${ifDefined(args?.alertVariant)} ?closable=${args?.closable ?? true} ?maximizable=${args?.maximizable ?? false}>Edit Record</vi-modal-header>
+        <vi-modal-header
+          slot="header"
+          alert-variant=${ifDefined(args?.alertVariant)}
+          ?closable=${args?.closable ?? true}
+          ?maximizable=${args?.maximizable ?? false}
+          >Edit Record</vi-modal-header
+        >
         <vi-input placeholder="Type something..."></vi-input>
         <p style="margin-top: 1rem; color: #666; font-size: 0.875rem;">
           Try clicking outside or pressing Escape. A browser confirm dialog will
@@ -328,7 +364,13 @@ export const DraggableAndMaximizable: Story = {
       >Open Draggable Modal</vi-button
     >
     <vi-modal id="modal-drag-max" size="md" draggable>
-      <vi-modal-header slot="header" alert-variant=${ifDefined(args?.alertVariant)} ?closable=${args?.closable ?? true} maximizable>Interactive Modal</vi-modal-header>
+      <vi-modal-header
+        slot="header"
+        alert-variant=${ifDefined(args?.alertVariant)}
+        ?closable=${args?.closable ?? true}
+        maximizable
+        >Interactive Modal</vi-modal-header
+      >
       <p>Drag me by the header, or click the maximize button!</p>
       <div style="margin-top: 1rem;">
         <vi-input placeholder="Try typing..."></vi-input>
@@ -363,7 +405,13 @@ export const Positioning: Story = {
             >${pos}</vi-button
           >
           <vi-modal id="modal-pos-${pos}" position=${pos} size="sm">
-            <vi-modal-header slot="header" alert-variant=${ifDefined(args?.alertVariant)} ?closable=${args?.closable ?? true} ?maximizable=${args?.maximizable ?? false}>Position: ${pos}</vi-modal-header>
+            <vi-modal-header
+              slot="header"
+              alert-variant=${ifDefined(args?.alertVariant)}
+              ?closable=${args?.closable ?? true}
+              ?maximizable=${args?.maximizable ?? false}
+              >Position: ${pos}</vi-modal-header
+            >
             <p>This modal appears at ${pos}.</p>
             <vi-modal-footer slot="footer">
               <vi-button @click=${() => closeModal(`modal-pos-${pos}`)}
@@ -391,7 +439,13 @@ export const ZIndexStacking: Story = {
         </vi-button>
 
         <vi-modal id="stacking-modal-1" size="lg" closable>
-          <vi-modal-header slot="header" alert-variant=${ifDefined(args?.alertVariant)} ?closable=${args?.closable ?? true} ?maximizable=${args?.maximizable ?? false}>Stacking Modal 1 (Base)</vi-modal-header>
+          <vi-modal-header
+            slot="header"
+            alert-variant=${ifDefined(args?.alertVariant)}
+            ?closable=${args?.closable ?? true}
+            ?maximizable=${args?.maximizable ?? false}
+            >Stacking Modal 1 (Base)</vi-modal-header
+          >
 
           <div style="padding: 16px; min-height: 300px;">
             <p style="margin-bottom: 24px;">
@@ -427,7 +481,13 @@ export const ZIndexStacking: Story = {
         </vi-modal>
 
         <vi-modal id="stacking-modal-2" size="sm" closable>
-          <vi-modal-header slot="header" alert-variant=${ifDefined(args?.alertVariant)} ?closable=${args?.closable ?? true} ?maximizable=${args?.maximizable ?? false}>Nested Modal 2</vi-modal-header>
+          <vi-modal-header
+            slot="header"
+            alert-variant=${ifDefined(args?.alertVariant)}
+            ?closable=${args?.closable ?? true}
+            ?maximizable=${args?.maximizable ?? false}
+            >Nested Modal 2</vi-modal-header
+          >
 
           <div style="padding: 16px;">
             <p>
@@ -503,7 +563,13 @@ so consumers can show a custom in-modal warning message instead.
         size="sm"
         @vi-modal-close-request=${handleRequestClose}
       >
-        <vi-modal-header slot="header" alert-variant=${ifDefined(args?.alertVariant)} ?closable=${args?.closable ?? true} ?maximizable=${args?.maximizable ?? false}>⚠️ Action Required</vi-modal-header>
+        <vi-modal-header
+          slot="header"
+          alert-variant=${ifDefined(args?.alertVariant)}
+          ?closable=${args?.closable ?? true}
+          ?maximizable=${args?.maximizable ?? false}
+          >⚠️ Action Required</vi-modal-header
+        >
         <div>
           <p>
             You <strong>must</strong> make a choice before dismissing this
@@ -614,7 +680,13 @@ You can also adjust the animation duration with \`animation-duration\`.
       exit-animation=${args.exitAnimation}
       animation-duration=${args.animationDuration}
     >
-      <vi-modal-header slot="header" alert-variant=${ifDefined(args?.alertVariant)} ?closable=${args?.closable ?? true} ?maximizable=${args?.maximizable ?? false}>Custom Animation</vi-modal-header>
+      <vi-modal-header
+        slot="header"
+        alert-variant=${ifDefined(args?.alertVariant)}
+        ?closable=${args?.closable ?? true}
+        ?maximizable=${args?.maximizable ?? false}
+        >Custom Animation</vi-modal-header
+      >
       <div>
         <p>This modal is using custom enter and exit animations.</p>
         <ul style="margin-top: 1rem; margin-bottom: 1rem;">
@@ -663,7 +735,13 @@ export const NoBackdrop: Story = {
       no-backdrop
       position="top-right"
     >
-      <vi-modal-header slot="header" alert-variant=${ifDefined(args?.alertVariant)} ?closable=${args?.closable ?? true} ?maximizable=${args?.maximizable ?? false}>Floating Inspector</vi-modal-header>
+      <vi-modal-header
+        slot="header"
+        alert-variant=${ifDefined(args?.alertVariant)}
+        ?closable=${args?.closable ?? true}
+        ?maximizable=${args?.maximizable ?? false}
+        >Floating Inspector</vi-modal-header
+      >
       <div>
         <p>This modal floats without a dark backdrop overlay.</p>
         <p style="margin-top: 0.5rem; color: #666; font-size: 0.875rem;">
@@ -753,7 +831,13 @@ export const MultipleFloatingWindows: Story = {
       no-backdrop
       position="top-left"
     >
-      <vi-modal-header slot="header" alert-variant=${ifDefined(args?.alertVariant)} ?closable=${args?.closable ?? true} ?maximizable=${args?.maximizable ?? false}>Subject Inspector</vi-modal-header>
+      <vi-modal-header
+        slot="header"
+        alert-variant=${ifDefined(args?.alertVariant)}
+        ?closable=${args?.closable ?? true}
+        ?maximizable=${args?.maximizable ?? false}
+        >Subject Inspector</vi-modal-header
+      >
       <div>
         <p style="margin: 0; font-size: 0.875rem; color: #334155;">
           <strong>Subject ID:</strong> SUBJ-0042
@@ -782,7 +866,13 @@ export const MultipleFloatingWindows: Story = {
       no-backdrop
       position="center"
     >
-      <vi-modal-header slot="header" alert-variant=${ifDefined(args?.alertVariant)} ?closable=${args?.closable ?? true} ?maximizable=${args?.maximizable ?? false}>Filter Palette</vi-modal-header>
+      <vi-modal-header
+        slot="header"
+        alert-variant=${ifDefined(args?.alertVariant)}
+        ?closable=${args?.closable ?? true}
+        ?maximizable=${args?.maximizable ?? false}
+        >Filter Palette</vi-modal-header
+      >
       <div>
         <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: #334155;">
           Active Filter Options:
@@ -815,7 +905,13 @@ export const MultipleFloatingWindows: Story = {
       no-backdrop
       position="top-right"
     >
-      <vi-modal-header slot="header" alert-variant=${ifDefined(args?.alertVariant)} ?closable=${args?.closable ?? true} ?maximizable=${args?.maximizable ?? false}>Live Metrics</vi-modal-header>
+      <vi-modal-header
+        slot="header"
+        alert-variant=${ifDefined(args?.alertVariant)}
+        ?closable=${args?.closable ?? true}
+        ?maximizable=${args?.maximizable ?? false}
+        >Live Metrics</vi-modal-header
+      >
       <div>
         <p style="margin: 0; font-size: 0.875rem; color: #334155;">
           <strong>Sync Latency:</strong> 12ms
@@ -857,7 +953,13 @@ export const ResizableModal: Story = {
       >Open Resizable Modal</vi-button
     >
     <vi-modal id="modal-resizable" size="md" draggable resizable>
-      <vi-modal-header slot="header" alert-variant=${ifDefined(args?.alertVariant)} ?closable=${args?.closable ?? true} maximizable>Window Panel</vi-modal-header>
+      <vi-modal-header
+        slot="header"
+        alert-variant=${ifDefined(args?.alertVariant)}
+        ?closable=${args?.closable ?? true}
+        maximizable
+        >Window Panel</vi-modal-header
+      >
       <p>
         This modal can be dragged by its header and resized from any of its 8
         edges and corners.
@@ -905,7 +1007,13 @@ export const ContainedDrag: Story = {
       draggable
       drag-containment="viewport"
     >
-      <vi-modal-header slot="header" alert-variant=${ifDefined(args?.alertVariant)} ?closable=${args?.closable ?? true} ?maximizable=${args?.maximizable ?? false}>Contained Draggable</vi-modal-header>
+      <vi-modal-header
+        slot="header"
+        alert-variant=${ifDefined(args?.alertVariant)}
+        ?closable=${args?.closable ?? true}
+        ?maximizable=${args?.maximizable ?? false}
+        >Contained Draggable</vi-modal-header
+      >
       <p>
         Try dragging this modal to the edge of the viewport — it will stop at
         the boundary and cannot go off-screen.
@@ -968,7 +1076,13 @@ export const CustomAppendTo: Story = {
         no-backdrop
         draggable
       >
-        <vi-modal-header slot="header" alert-variant=${ifDefined(args?.alertVariant)} ?closable=${args?.closable ?? true} ?maximizable=${args?.maximizable ?? false}>Scoped Modal</vi-modal-header>
+        <vi-modal-header
+          slot="header"
+          alert-variant=${ifDefined(args?.alertVariant)}
+          ?closable=${args?.closable ?? true}
+          ?maximizable=${args?.maximizable ?? false}
+          >Scoped Modal</vi-modal-header
+        >
         <p>
           This modal was teleported into
           <code>#custom-portal</code>, not <code>body</code>.
@@ -977,7 +1091,9 @@ export const CustomAppendTo: Story = {
           Useful for scoped stacking contexts or micro-frontend shells.
         </p>
         <vi-modal-footer slot="footer">
-          <vi-button @click=${() => closeModal('modal-append-to')}>Close</vi-button>
+          <vi-button @click=${() => closeModal('modal-append-to')}
+            >Close</vi-button
+          >
         </vi-modal-footer>
       </vi-modal>
     </div>
@@ -1041,7 +1157,13 @@ export const DragContainmentDemo: Story = {
         append-to="#drag-parent-container"
         no-backdrop
       >
-        <vi-modal-header slot="header" alert-variant=${ifDefined(args?.alertVariant)} ?closable=${args?.closable ?? true} ?maximizable=${args?.maximizable ?? false}>Bound to Parent</vi-modal-header>
+        <vi-modal-header
+          slot="header"
+          alert-variant=${ifDefined(args?.alertVariant)}
+          ?closable=${args?.closable ?? true}
+          ?maximizable=${args?.maximizable ?? false}
+          >Bound to Parent</vi-modal-header
+        >
         <p>I cannot be dragged outside the dashed box.</p>
         <vi-modal-footer slot="footer">
           <vi-button size="sm" @click=${() => closeModal('modal-drag-parent')}
@@ -1059,7 +1181,13 @@ export const DragContainmentDemo: Story = {
       drag-containment="viewport"
       no-backdrop
     >
-      <vi-modal-header slot="header" alert-variant=${ifDefined(args?.alertVariant)} ?closable=${args?.closable ?? true} ?maximizable=${args?.maximizable ?? false}>Bound to Viewport</vi-modal-header>
+      <vi-modal-header
+        slot="header"
+        alert-variant=${ifDefined(args?.alertVariant)}
+        ?closable=${args?.closable ?? true}
+        ?maximizable=${args?.maximizable ?? false}
+        >Bound to Viewport</vi-modal-header
+      >
       <p>I cannot be dragged off the screen. Try throwing me off the edge!</p>
       <vi-modal-footer slot="footer">
         <vi-button size="sm" @click=${() => closeModal('modal-drag-viewport')}
@@ -1092,7 +1220,13 @@ export const ModelessScroll: Story = {
         no-backdrop
         scroll-strategy="noop"
       >
-        <vi-modal-header slot="header" alert-variant=${ifDefined(args?.alertVariant)} ?closable=${args?.closable ?? true} ?maximizable=${args?.maximizable ?? false}>Modeless Palette</vi-modal-header>
+        <vi-modal-header
+          slot="header"
+          alert-variant=${ifDefined(args?.alertVariant)}
+          ?closable=${args?.closable ?? true}
+          ?maximizable=${args?.maximizable ?? false}
+          >Modeless Palette</vi-modal-header
+        >
         <p>
           Because <code>scroll-strategy="noop"</code> is set and there's no
           backdrop, you can still scroll the background document while this is
@@ -1132,7 +1266,13 @@ export const NestedScrolling: Story = {
         no-backdrop
         draggable
       >
-        <vi-modal-header slot="header" alert-variant=${ifDefined(args?.alertVariant)} ?closable=${args?.closable ?? true} ?maximizable=${args?.maximizable ?? false}>Scrollable Modal</vi-modal-header>
+        <vi-modal-header
+          slot="header"
+          alert-variant=${ifDefined(args?.alertVariant)}
+          ?closable=${args?.closable ?? true}
+          ?maximizable=${args?.maximizable ?? false}
+          >Scrollable Modal</vi-modal-header
+        >
         <div style="padding-right: 1rem;">
           <p>This modal has a lot of content, so it will scroll internally.</p>
           ${Array.from({ length: 20 }).map(
@@ -1215,11 +1355,20 @@ export const EventLifecycle: Story = {
     return html`
       <div style="display: flex; gap: 2rem; align-items: flex-start;">
         <div>
-          <vi-button @click=${() => openModal('modal-events')}>Open Event Modal</vi-button>
-          
+          <vi-button @click=${() => openModal('modal-events')}
+            >Open Event Modal</vi-button
+          >
+
           <div style="margin-top: 1rem;">
-            <label style="display: flex; align-items: center; gap: 0.5rem; font-family: sans-serif;">
-              <input type="checkbox" @change=${(e: Event) => { preventClose = (e.target as HTMLInputElement).checked; }}>
+            <label
+              style="display: flex; align-items: center; gap: 0.5rem; font-family: sans-serif;"
+            >
+              <input
+                type="checkbox"
+                @change=${(e: Event) => {
+                  preventClose = (e.target as HTMLInputElement).checked;
+                }}
+              />
               Prevent Closing (tests before-close cancellation)
             </label>
           </div>
@@ -1227,19 +1376,25 @@ export const EventLifecycle: Story = {
 
         <div style="flex: 1; min-width: 300px; max-width: 400px;">
           <h3 style="margin-top: 0; font-family: sans-serif;">Event Log</h3>
-          <div 
-            id="event-logger" 
+          <div
+            id="event-logger"
             style="height: 300px; overflow-y: auto; background: #1e293b; color: #a5b4fc; padding: 1rem; border-radius: 8px; font-family: monospace; font-size: 13px;"
           >
             <em>Waiting for events...</em>
           </div>
-          <vi-button variant="ghost" size="sm" style="margin-top: 0.5rem;" @click=${() => {
-            const logger = document.getElementById('event-logger');
-            if (logger) {
-              render(html`<em>Waiting for events...</em>`, logger);
-              logCount = 0;
-            }
-          }}>Clear Log</vi-button>
+          <vi-button
+            variant="ghost"
+            size="sm"
+            style="margin-top: 0.5rem;"
+            @click=${() => {
+              const logger = document.getElementById('event-logger');
+              if (logger) {
+                render(html`<em>Waiting for events...</em>`, logger);
+                logCount = 0;
+              }
+            }}
+            >Clear Log</vi-button
+          >
         </div>
       </div>
 
@@ -1254,7 +1409,13 @@ export const EventLifecycle: Story = {
         @vi-modal-close=${handleClose}
         @vi-modal-after-close=${handleAfterClose}
       >
-        <vi-modal-header slot="header" alert-variant=${ifDefined(args?.alertVariant)} ?closable=${args?.closable ?? true} ?maximizable=${args?.maximizable ?? false}>Lifecycle Events</vi-modal-header>
+        <vi-modal-header
+          slot="header"
+          alert-variant=${ifDefined(args?.alertVariant)}
+          ?closable=${args?.closable ?? true}
+          ?maximizable=${args?.maximizable ?? false}
+          >Lifecycle Events</vi-modal-header
+        >
         <p>Watch the event log to the right.</p>
         <p>This modal fires events in the following order when opening:</p>
         <ol style="font-family: sans-serif;">
@@ -1264,17 +1425,21 @@ export const EventLifecycle: Story = {
         </ol>
         <p>And when closing:</p>
         <ol style="font-family: sans-serif;">
-          <li><code>vi-modal-close-request</code> (cancelable, provides reason)</li>
+          <li>
+            <code>vi-modal-close-request</code> (cancelable, provides reason)
+          </li>
           <li><code>vi-modal-before-close</code> (cancelable)</li>
           <li><code>vi-modal-close</code></li>
           <li><code>vi-modal-after-close</code> (post-animation)</li>
         </ol>
         <vi-modal-footer slot="footer">
-          <vi-button variant="ghost" @click=${() => closeModal('modal-events')}>Close Programmatically</vi-button>
+          <vi-button variant="ghost" @click=${() => closeModal('modal-events')}
+            >Close Programmatically</vi-button
+          >
         </vi-modal-footer>
       </vi-modal>
     `;
-  }
+  },
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1302,13 +1467,21 @@ export const ResponsiveMobile: Story = {
       >Open Responsive Modal</vi-button
     >
     <vi-modal id="modal-responsive" size="md">
-      <vi-modal-header slot="header" alert-variant=${ifDefined(args?.alertVariant)} ?closable=${args?.closable ?? true} ?maximizable=${args?.maximizable ?? false}>Mobile Optimized View</vi-modal-header>
+      <vi-modal-header
+        slot="header"
+        alert-variant=${ifDefined(args?.alertVariant)}
+        ?closable=${args?.closable ?? true}
+        ?maximizable=${args?.maximizable ?? false}
+        >Mobile Optimized View</vi-modal-header
+      >
       <div style="display: flex; flex-direction: column; gap: 1rem;">
         <p>
-          This modal is designed to automatically adapt to small screens. When the 
-          viewport width drops below 640px, it expands to 100vw and 100vh.
+          This modal is designed to automatically adapt to small screens. When
+          the viewport width drops below 640px, it expands to 100vw and 100vh.
         </p>
-        <div style="padding: 1rem; background-color: var(--vi-color-grey-100); border-radius: 4px;">
+        <div
+          style="padding: 1rem; background-color: var(--vi-color-grey-100); border-radius: 4px;"
+        >
           <h4 style="margin-top: 0;">Try it out:</h4>
           <ol style="margin-bottom: 0;">
             <li>Open this modal on a desktop screen.</li>
@@ -1317,17 +1490,21 @@ export const ResponsiveMobile: Story = {
           </ol>
         </div>
         <p>
-          Also notice that if the content becomes too long, the body scrolls smoothly 
-          while the header and footer remain pinned to the top and bottom of your screen, 
-          ensuring action buttons are always reachable.
+          Also notice that if the content becomes too long, the body scrolls
+          smoothly while the header and footer remain pinned to the top and
+          bottom of your screen, ensuring action buttons are always reachable.
         </p>
         <!-- Adding some dummy height to prove scrolling works -->
-        <div style="height: 400px; border: 1px dashed var(--vi-color-grey-300); display: flex; align-items: center; justify-content: center; color: var(--vi-color-grey-500);">
+        <div
+          style="height: 400px; border: 1px dashed var(--vi-color-grey-300); display: flex; align-items: center; justify-content: center; color: var(--vi-color-grey-500);"
+        >
           Scrollable Content Area
         </div>
       </div>
       <vi-modal-footer slot="footer">
-        <vi-button variant="ghost" @click=${() => closeModal('modal-responsive')}
+        <vi-button
+          variant="ghost"
+          @click=${() => closeModal('modal-responsive')}
           >Cancel</vi-button
         >
         <vi-button

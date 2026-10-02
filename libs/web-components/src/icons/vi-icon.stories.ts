@@ -70,7 +70,7 @@ export const AllIcons: Story = {
               <vi-icon name="${iconDef.name}" size="${args.size}"></vi-icon>
               <span class="icon-name">${iconDef.name}</span>
             </div>
-          `
+          `,
         )}
       </div>
     `;

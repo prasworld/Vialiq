@@ -35,7 +35,10 @@ describe('vi-spin', () => {
   });
 
   it('renders nested loading correctly when children are present', async () => {
-    render(html`<vi-spin><div class="content">Content</div></vi-spin>`, container);
+    render(
+      html`<vi-spin><div class="content">Content</div></vi-spin>`,
+      container,
+    );
     const el = container.querySelector('vi-spin') as ViSpin;
     await el.updateComplete;
 
@@ -47,7 +50,7 @@ describe('vi-spin', () => {
     render(html`<vi-spin delay="100"></vi-spin>`, container);
     const el = container.querySelector('vi-spin') as ViSpin;
     // We do not await updateComplete immediately because we want to catch the state before delay
-    
+
     const wrapper = el.shadowRoot?.querySelector('.spin-wrapper');
     expect(wrapper).toBeFalsy();
 

@@ -9,7 +9,8 @@ export type {
   ButtonIconPlacement,
 } from './button/vi-button.js';
 export { ViInput } from './input/vi-input.js';
-export type { InputType, InputSize } from './input/vi-input.js';
+export { AUTOCOMPLETE_VALUES } from './input/types.js';
+export type { InputType, InputSize, AutocompleteValue } from './input/types.js';
 export { ViIcon } from './icons/vi-icon.js';
 export { registerIcons, getIcon } from './icons/registry.js';
 export type { SvgIconDef } from './icons/registry.js';
@@ -67,7 +68,10 @@ export { ViSelectGroup } from './select/vi-select-group.js';
 
 export { ViCombobox } from './combobox/vi-combobox.js';
 export { ViComboboxItem } from './combobox/vi-combobox-item.js';
-export { ViDatePicker, VI_DATE_PICKER_CHANGE } from './date-picker/vi-date-picker.js';
+export {
+  ViDatePicker,
+  VI_DATE_PICKER_CHANGE,
+} from './date-picker/vi-date-picker.js';
 export { ViDatePickerInput } from './date-picker/vi-date-picker-input.js';
 export type {
   DatePickerMode,
@@ -97,4 +101,11 @@ export * from './popover/index.js';
 export * from './popconfirm/index.js';
 export * from './menu/index.js';
 export * from './dropdown/index.js';
+export * from './upload/vi-upload.js';
 export * from './context-menu/index.js';
+export {
+  ViContentSwitcher,
+  ViSwitcherItem,
+} from './content-switcher/vi-content-switcher.js';
+export type { ContentSwitcherSize } from './content-switcher/vi-content-switcher.js';
+export * from './masked-input/index.js';
