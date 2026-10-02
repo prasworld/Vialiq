@@ -356,6 +356,7 @@ describe('vi-content-switcher', () => {
       expect(firstItem.tabIndex).toBe(-1);
 
       fieldset.disabled = false;
+      await new Promise((resolve) => setTimeout(resolve, 50));
       await host.updateComplete;
 
       expect(host.disabled).toBe(false);

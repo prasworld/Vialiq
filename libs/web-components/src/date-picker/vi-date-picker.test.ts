@@ -25,8 +25,18 @@ describe('vi-date-picker', () => {
   const waitForUpdate = async (el: ViDatePicker) => {
     await el.updateComplete;
     // Flatpickr initialization is async (it loads locale, plugins, etc.)
-    // We can yield to the event loop to give it a chance to finish.
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    // We poll until it creates its calendar DOM, or timeout after 500ms
+    let attempts = 0;
+    while (attempts < 10) {
+      if (
+        el.shadowRoot?.querySelector('.flatpickr-calendar') ||
+        document.querySelector('.flatpickr-calendar')
+      ) {
+        break;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      attempts++;
+    }
   };
 
   it('renders without errors and initializes flatpickr', async () => {
