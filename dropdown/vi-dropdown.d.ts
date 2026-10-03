@@ -1,3 +1,4 @@
+import { CSSResultGroup } from 'lit';
 import { ViElement } from '../base/vi-element.js';
 import { Placement } from '@floating-ui/dom';
 /**
@@ -14,7 +15,7 @@ import { Placement } from '@floating-ui/dom';
  * @slot content - The vi-menu element
  */
 export declare class ViDropdown extends ViElement {
-    static styles: import('lit').CSSResult;
+    static styles: CSSResultGroup;
     accessor placement: Placement;
     accessor trigger: 'click' | 'hover' | 'focus' | 'contextmenu';
     accessor open: boolean;

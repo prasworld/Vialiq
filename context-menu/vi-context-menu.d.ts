@@ -7,7 +7,7 @@ import { ViDropdown } from '../dropdown/vi-dropdown.js';
  * @element vi-context-menu
  */
 export declare class ViContextMenu extends ViDropdown {
-    static styles: import('lit').CSSResult[];
+    static styles: import('lit').CSSResultGroup[];
     constructor();
 }
 declare global {
