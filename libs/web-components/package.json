@@ -352,6 +352,22 @@
       "types": "./context-menu/vi-context-menu.d.ts",
       "default": "./context-menu/vi-context-menu.js"
     },
+    "./content-switcher": {
+      "types": "./content-switcher/index.d.ts",
+      "default": "./content-switcher/index.js"
+    },
+    "./content-switcher/vi-content-switcher": {
+      "types": "./content-switcher/vi-content-switcher.d.ts",
+      "default": "./content-switcher/vi-content-switcher.js"
+    },
+    "./upload": {
+      "types": "./upload/index.d.ts",
+      "default": "./upload/index.js"
+    },
+    "./upload/vi-upload": {
+      "types": "./upload/vi-upload.d.ts",
+      "default": "./upload/vi-upload.js"
+    },
     "./masked-input": {
       "types": "./masked-input/index.d.ts",
       "default": "./masked-input/index.js"

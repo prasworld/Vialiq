@@ -294,6 +294,24 @@ export default defineConfig({
           'src/menu/vi-menu-item.ts',
         ),
         'menu/index': path.resolve(__dirname, 'src/menu/index.ts'),
+        'content-switcher/vi-content-switcher': path.resolve(
+          __dirname,
+          'src/content-switcher/vi-content-switcher.ts',
+        ),
+        'content-switcher/index': path.resolve(
+          __dirname,
+          'src/content-switcher/index.ts',
+        ),
+        'upload/vi-upload': path.resolve(__dirname, 'src/upload/vi-upload.ts'),
+        'upload/index': path.resolve(__dirname, 'src/upload/index.ts'),
+        'masked-input/vi-masked-input': path.resolve(
+          __dirname,
+          'src/masked-input/vi-masked-input.ts',
+        ),
+        'masked-input/index': path.resolve(
+          __dirname,
+          'src/masked-input/index.ts',
+        ),
       },
       formats: ['es'],
     },
