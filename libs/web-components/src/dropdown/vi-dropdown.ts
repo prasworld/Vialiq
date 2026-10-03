@@ -1,4 +1,4 @@
-import { css, html, unsafeCSS } from 'lit';
+import { css, html, unsafeCSS, type CSSResultGroup } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { ViElement } from '../base/vi-element.js';
 import dropdownStyles from './vi-dropdown.scss?inline';
@@ -20,7 +20,7 @@ import '../popover/index.js';
  */
 @customElement('vi-dropdown')
 export class ViDropdown extends ViElement {
-  static override styles = css`
+  static override styles: CSSResultGroup = css`
     ${unsafeCSS(dropdownStyles)}
   `;
 
