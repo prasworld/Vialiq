@@ -356,6 +356,10 @@ describe('vi-content-switcher', () => {
       expect(firstItem.tabIndex).toBe(-1);
 
       fieldset.disabled = false;
+      await browser.waitUntil(async () => host.disabled === false, {
+        timeout: 2000,
+        timeoutMsg: 'expected disabled to be false',
+      });
       await host.updateComplete;
 
       expect(host.disabled).toBe(false);

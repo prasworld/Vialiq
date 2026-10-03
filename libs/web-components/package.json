@@ -1,6 +1,6 @@
 {
   "name": "@vialiq/web-components",
-  "version": "0.33.0",
+  "version": "0.34.0",
   "private": false,
   "publishConfig": {
     "access": "public"
@@ -352,6 +352,30 @@
       "types": "./context-menu/vi-context-menu.d.ts",
       "default": "./context-menu/vi-context-menu.js"
     },
+    "./content-switcher": {
+      "types": "./content-switcher/index.d.ts",
+      "default": "./content-switcher/index.js"
+    },
+    "./content-switcher/vi-content-switcher": {
+      "types": "./content-switcher/vi-content-switcher.d.ts",
+      "default": "./content-switcher/vi-content-switcher.js"
+    },
+    "./upload": {
+      "types": "./upload/index.d.ts",
+      "default": "./upload/index.js"
+    },
+    "./upload/vi-upload": {
+      "types": "./upload/vi-upload.d.ts",
+      "default": "./upload/vi-upload.js"
+    },
+    "./masked-input": {
+      "types": "./masked-input/index.d.ts",
+      "default": "./masked-input/index.js"
+    },
+    "./masked-input/vi-masked-input": {
+      "types": "./masked-input/vi-masked-input.d.ts",
+      "default": "./masked-input/vi-masked-input.js"
+    },
     "./*": {
       "types": "./*.d.ts",
       "default": "./*.js"
@@ -359,8 +383,8 @@
   },
   "peerDependencies": {
     "@floating-ui/dom": ">=1.0.0",
-    "@vialiq/flux-ui": ">=0.25.0",
-    "@vialiq/icons": ">=0.10.0",
+    "@vialiq/flux-ui": ">=0.26.0",
+    "@vialiq/icons": ">=0.11.0",
     "flatpickr": ">=4.6.0",
     "imask": ">=7.6.0",
     "lit": "^3.0.0",
@@ -412,10 +436,10 @@
     "popconfirm/",
     "dropdown/",
     "context-menu/",
-"menu/",
-"upload/",
-"content-switcher/",
-"masked-input/"
+    "menu/",
+    "upload/",
+    "content-switcher/",
+    "masked-input/"
   ],
   "peerDependenciesMeta": {
     "flatpickr": {
