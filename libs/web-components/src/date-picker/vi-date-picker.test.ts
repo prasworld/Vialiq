@@ -25,18 +25,17 @@ describe('vi-date-picker', () => {
   const waitForUpdate = async (el: ViDatePicker) => {
     await el.updateComplete;
     // Flatpickr initialization is async (it loads locale, plugins, etc.)
-    // We poll until it creates its calendar DOM, or timeout after 500ms
-    let attempts = 0;
-    while (attempts < 10) {
-      if (
-        el.shadowRoot?.querySelector('.flatpickr-calendar') ||
-        document.querySelector('.flatpickr-calendar')
-      ) {
-        break;
+    await browser.waitUntil(
+      async () => {
+        return !!(
+          el.shadowRoot?.querySelector('.flatpickr-calendar') ||
+          document.querySelector('.flatpickr-calendar')
+        );
+      },
+      {
+        timeoutMsg: 'expected flatpickr to initialize and render calendar DOM',
       }
-      await new Promise((resolve) => setTimeout(resolve, 50));
-      attempts++;
-    }
+    );
   };
 
   it('renders without errors and initializes flatpickr', async () => {

@@ -152,7 +152,10 @@ describe('vi-upload', () => {
     expect(dropzone.getAttribute('aria-disabled')).toBe('true');
 
     fieldset.disabled = false;
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await browser.waitUntil(async () => el.disabled === false, {
+      timeout: 2000,
+      timeoutMsg: 'expected disabled to be false',
+    });
     await el.updateComplete;
 
     expect(el.disabled).toBe(false);
