@@ -269,3 +269,8 @@ export * from './user-md';
 export * from './user-pen';
 export * from './users';
 export * from './x';
+export { browserIcon } from './browser.js';
+export { switchHorizontalIcon } from './switch-horizontal.js';
+export { sectionIcon } from './section.js';
+export { repeatIcon } from './repeat.js';
+export { separatorIcon } from './separator.js';
