@@ -2,6 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import type { ComponentDescriptor } from '../types/component-descriptor';
 import { BUILDER_COMPONENTS } from '../tokens/builder-components.token';
 import { BUILDER_CONFIG } from '../tokens/builder-config.token';
+import { BUILT_IN_BUILDER_COMPONENTS } from '../built-in-components';
 
 /**
  * Collects all registered ComponentDescriptors (built-in + custom),
@@ -18,10 +19,14 @@ export class BuilderRegistryService {
     const config = inject(BUILDER_CONFIG);
     this._groupOrder = config.groupOrder ?? ['Basic Info', 'Text Inputs', 'Layout', 'Utilities'];
 
-    const allDescriptors = inject(BUILDER_COMPONENTS, { optional: true }) ?? [];
+    const customDescriptors = inject(BUILDER_COMPONENTS, { optional: true }) ?? [];
 
     // Flatten — multi-token returns ComponentDescriptor[][] when each provider uses useValue
-    const flat: ComponentDescriptor[] = allDescriptors.flat();
+    // Custom descriptors take precedence over built-in ones (first one wins in the map loop)
+    const flat: ComponentDescriptor[] = [
+      ...customDescriptors.flat(),
+      ...BUILT_IN_BUILDER_COMPONENTS
+    ];
 
     this._descriptors = new Map<string, ComponentDescriptor>();
 

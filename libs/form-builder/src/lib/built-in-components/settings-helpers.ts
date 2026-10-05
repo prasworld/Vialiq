@@ -1,41 +1,86 @@
-/**
- * Shared helper for building consistent SettingsSchema tabs.
- * Used by all built-in descriptors.
- */
 import type { SettingsSchema, SettingsTab, SettingsField } from '../types/component-descriptor';
+import type { BaseComponentSchema } from '../types/component-schemas';
+
+/**
+ * Returns true if the schema has a `required` validation rule configured.
+ * Used by canvasProps() across all input descriptors to reflect the `required`
+ * attribute on the web component — providing an accurate canvas preview.
+ */
+export function hasRequiredRule(schema: BaseComponentSchema): boolean {
+  return schema.validation?.some((r) => r.descriptor.type === 'required') ?? false;
+}
+
+/** Reusable size settings field for controls that support the size scale (xs/sm/md/lg). */
+export const sizeField: SettingsField = {
+  key: 'size',
+  label: 'Size',
+  type: 'select',
+  options: [
+    { label: 'Extra small', value: 'xs' },
+    { label: 'Small', value: 'sm' },
+    { label: 'Medium (default)', value: 'md' },
+    { label: 'Large', value: 'lg' },
+  ],
+  defaultValue: 'md',
+};
+
+/** Reusable full-width toggle for button-like controls. */
+export const fullWidthField: SettingsField = {
+  key: 'fullWidth',
+  label: 'Full width',
+  type: 'boolean',
+  hint: 'Stretch to fill the container',
+};
+
+export interface DisplayTabOptions {
+  hideLabel?: boolean;
+  labelRequired?: boolean;
+  hideDescription?: boolean;
+  hideLabelPosition?: boolean;
+}
 
 /** Standard "Display" tab — label, description, placeholder, labelPosition */
-export function displayTab(extras: SettingsField[] = []): SettingsTab {
+export function displayTab(extras: SettingsField[] = [], options: DisplayTabOptions = {}): SettingsTab {
+  const fields: SettingsField[] = [];
+
+  if (!options.hideLabel) {
+    fields.push({
+      key: 'label',
+      label: 'Label',
+      type: 'label',
+      required: options.labelRequired ?? true,
+    });
+  }
+
+  if (!options.hideDescription) {
+    fields.push({
+      key: 'description',
+      label: 'Description / Help text',
+      type: 'text',
+      placeholder: 'Optional hint shown below the field',
+    });
+  }
+
+  if (!options.hideLabelPosition) {
+    fields.push({
+      key: 'labelPosition',
+      label: 'Label position',
+      type: 'select',
+      options: [
+        { label: 'Top', value: 'top' },
+        { label: 'Left', value: 'left' },
+        { label: 'Hidden', value: 'hidden' },
+      ],
+      defaultValue: 'top',
+    });
+  }
+
+  fields.push(...extras);
+
   return {
     id: 'display',
     label: 'Display',
-    fields: [
-      {
-        key: 'label',
-        label: 'Label',
-        type: 'label',
-        required: true,
-      },
-      {
-        key: 'description',
-        label: 'Description / Help text',
-        type: 'text',
-        placeholder: 'Optional hint shown below the field',
-      },
-      {
-        key: 'labelPosition',
-        label: 'Label position',
-        type: 'select',
-        options: [
-          { label: 'Top', value: 'top' },
-          { label: 'Left', value: 'left' },
-          { label: 'Right', value: 'right' },
-          { label: 'Hidden', value: 'hidden' },
-        ],
-        defaultValue: 'top',
-      },
-      ...extras,
-    ],
+    fields,
   };
 }
 
@@ -86,10 +131,10 @@ export function logicTab(): SettingsTab | null {
 }
 
 /** Convenience: build a standard 4-tab settings schema */
-export function standardSettings(displayExtras: SettingsField[] = [], dataExtras: SettingsField[] = []): SettingsSchema {
+export function standardSettings(displayExtras: SettingsField[] = [], dataExtras: SettingsField[] = [], displayOptions: DisplayTabOptions = {}): SettingsSchema {
   return {
     tabs: [
-      displayTab(displayExtras),
+      displayTab(displayExtras, displayOptions),
       dataTab(dataExtras),
     ].filter(Boolean) as SettingsTab[],
   };

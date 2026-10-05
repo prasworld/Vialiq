@@ -1,4 +1,4 @@
-import type { ComponentDescriptor } from '../types/component-descriptor';
+import type { ComponentDescriptor, SettingsTab } from '../types/component-descriptor';
 import { displayTab, logicTab } from './settings-helpers';
 
 export const PANEL_DESCRIPTOR: ComponentDescriptor = {
@@ -6,7 +6,8 @@ export const PANEL_DESCRIPTOR: ComponentDescriptor = {
   label: 'Panel',
   category: 'layout',
   group: 'Layout',
-  icon: 'building',
+  icon: 'layout-panel-top',
+  traits: { isContainer: true, isDisplayOnly: true },
   weight: 10,
   canvasElement: 'div',
   canvasProps: () => ({ class: 'vi-panel' }),
@@ -18,10 +19,11 @@ export const PANEL_DESCRIPTOR: ComponentDescriptor = {
   },
   settingsSchema: {
     tabs: [
-      displayTab(),
+      displayTab([], { labelRequired: false }),
       logicTab(),
-    ].filter(Boolean) as any[],
+    ].filter(Boolean) as SettingsTab[],
   },
+  disallowedChildren: ['panel', 'fieldset'],
   rendererRef: 'vi-renderer-panel',
 };
 
@@ -30,7 +32,8 @@ export const COLUMNS_DESCRIPTOR: ComponentDescriptor = {
   label: 'Columns',
   category: 'layout',
   group: 'Layout',
-  icon: 'folder-download',
+  icon: 'columns',
+  traits: { isContainer: true, isDisplayOnly: true },
   weight: 20,
   canvasElement: 'div',
   canvasProps: () => ({ class: 'vi-columns' }),
@@ -47,10 +50,11 @@ export const COLUMNS_DESCRIPTOR: ComponentDescriptor = {
     tabs: [
       displayTab([
         { key: 'layoutConfig.columns', label: 'Number of columns', type: 'number', defaultValue: 2 },
-      ]),
+      ], { labelRequired: false }),
       logicTab(),
-    ].filter(Boolean) as any[],
+    ].filter(Boolean) as SettingsTab[],
   },
+  disallowedChildren: ['columns'],
   rendererRef: 'vi-renderer-columns',
 };
 
@@ -59,10 +63,19 @@ export const TABS_DESCRIPTOR: ComponentDescriptor = {
   label: 'Tabs',
   category: 'layout',
   group: 'Layout',
-  icon: 'folder-download',
+  icon: 'browser',
+  traits: { isContainer: true, isDisplayOnly: true },
   weight: 30,
   canvasElement: 'vi-tabs',
-  canvasProps: () => ({}),
+  canvasProps: (s) => {
+    const config = (s as Record<string, unknown>)['layoutConfig'] as Record<string, unknown> | undefined;
+    const tabs = (config?.['tabs'] as { id: string; label: string }[]) || [];
+    const html = tabs.map(t => `<vi-tab slot="tabs" value="${t.id}">${t.label}</vi-tab>`).join('');
+    return {
+      value: tabs.length > 0 ? tabs[0].id : '',
+      unsafeHtmlContent: html
+    };
+  },
   defaultSchema: {
     type: 'tabs',
     label: 'Tabs',
@@ -74,9 +87,16 @@ export const TABS_DESCRIPTOR: ComponentDescriptor = {
   },
   settingsSchema: {
     tabs: [
-      displayTab(),
-    ].filter(Boolean) as any[],
+      displayTab([
+        {
+          key: 'layoutConfig.tabs',
+          label: 'Tabs',
+          type: 'item-list',
+        }
+      ], { labelRequired: false, hideDescription: true, hideLabelPosition: true }),
+    ].filter(Boolean) as SettingsTab[],
   },
+  disallowedChildren: ['tabs'],
   rendererRef: 'vi-renderer-tabs',
 };
 
@@ -85,9 +105,10 @@ export const FIELDSET_DESCRIPTOR: ComponentDescriptor = {
   label: 'Fieldset',
   category: 'layout',
   group: 'Layout',
-  icon: 'save',
+  icon: 'section',
+  traits: { isContainer: true, isDisplayOnly: true },
   weight: 40,
-  canvasElement: 'fieldset',
+  canvasElement: 'div',
   canvasProps: () => ({ class: 'vi-fieldset' }),
   defaultSchema: {
     type: 'fieldset',
@@ -97,10 +118,11 @@ export const FIELDSET_DESCRIPTOR: ComponentDescriptor = {
   },
   settingsSchema: {
     tabs: [
-      displayTab(),
+      displayTab([], { labelRequired: false }),
       logicTab(),
-    ].filter(Boolean) as any[],
+    ].filter(Boolean) as SettingsTab[],
   },
+  disallowedChildren: ['fieldset', 'panel'],
   rendererRef: 'vi-renderer-fieldset', // note: generic renderer can just wrap in <fieldset>
 };
 
@@ -109,7 +131,8 @@ export const REPEATER_DESCRIPTOR: ComponentDescriptor = {
   label: 'Repeater',
   category: 'layout',
   group: 'Layout',
-  icon: 'document',
+  icon: 'repeat',
+  traits: { isContainer: true, isDisplayOnly: true },
   weight: 50,
   canvasElement: 'div',
   canvasProps: () => ({ class: 'vi-repeater' }),
@@ -127,9 +150,55 @@ export const REPEATER_DESCRIPTOR: ComponentDescriptor = {
         { key: 'layoutConfig.minRows', label: 'Minimum repeats', type: 'number', defaultValue: 1 },
         { key: 'layoutConfig.maxRows', label: 'Maximum repeats', type: 'number' },
         { key: 'layoutConfig.addLabel', label: 'Add button label', type: 'text', defaultValue: 'Add Item' },
-      ]),
+      ], { labelRequired: false }),
       logicTab(),
-    ].filter(Boolean) as any[],
+    ].filter(Boolean) as SettingsTab[],
   },
   rendererRef: 'vi-renderer-repeater',
+};
+
+export const CONTENT_SWITCHER_DESCRIPTOR: ComponentDescriptor = {
+  type: 'content-switcher',
+  label: 'Content Switcher',
+  category: 'layout',
+  group: 'Layout',
+  icon: 'switch-horizontal',
+  traits: { isContainer: true, isDisplayOnly: true },
+  weight: 35,
+  canvasElement: 'vi-content-switcher',
+  canvasProps: (s) => {
+    const config = (s as Record<string, unknown>)['layoutConfig'] as Record<string, unknown> | undefined;
+    const views = (config?.['views'] as { id: string; label: string }[]) || [];
+    const html = views.map(v => `<vi-switcher-item value="${v.id}">${v.label}</vi-switcher-item>`).join('');
+    return {
+      block: true,
+      value: views.length > 0 ? views[0].id : '',
+      unsafeHtmlContent: html
+    };
+  },
+  defaultSchema: {
+    type: 'content-switcher',
+    label: 'Content Switcher',
+    components: [],
+    layoutConfig: {
+      views: [
+        { id: 'view1', label: 'View 1' },
+        { id: 'view2', label: 'View 2' }
+      ],
+      viewAssignments: {},
+    },
+  },
+  settingsSchema: {
+    tabs: [
+      displayTab([
+        {
+          key: 'layoutConfig.views',
+          label: 'Views',
+          type: 'item-list',
+        }
+      ], { labelRequired: false, hideDescription: true, hideLabelPosition: true }),
+    ].filter(Boolean) as SettingsTab[],
+  },
+  disallowedChildren: ['content-switcher'],
+  rendererRef: 'vi-renderer-content-switcher',
 };

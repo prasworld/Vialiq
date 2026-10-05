@@ -27,22 +27,24 @@ describe('Selection Descriptors', () => {
         type: 'select',
         placeholder: 'Select one',
         readOnly: true,
-        multiple: true
+        multiple: true,
+        clearable: true
       };
 
       const props = SELECT_DESCRIPTOR.canvasProps(schema);
       expect(props).toEqual({
         placeholder: 'Select one',
-        readonly: true,
-        multiple: true
+        clearable: '',
+        required: null,
+        disabled: ''
       });
     });
 
     it('should handle null values', () => {
       const props = SELECT_DESCRIPTOR.canvasProps({ type: 'select', id: '1' });
       expect(props.placeholder).toBeNull();
-      expect(props.readonly).toBeNull();
-      expect(props.multiple).toBeNull();
+      expect(props.disabled).toBeNull();
+      expect(props.clearable).toBeNull();
     });
   });
 
@@ -57,20 +59,26 @@ describe('Selection Descriptors', () => {
         id: '1',
         type: 'combobox',
         placeholder: 'Search...',
-        readOnly: true
+        readOnly: true,
+        freeText: true,
+        clearable: true
       };
 
       const props = COMBOBOX_DESCRIPTOR.canvasProps(schema);
       expect(props).toEqual({
         placeholder: 'Search...',
-        readonly: true
+        mode: 'creatable',
+        clearable: '',
+        required: null,
+        disabled: ''
       });
     });
     
     it('should handle null values', () => {
       const props = COMBOBOX_DESCRIPTOR.canvasProps({ type: 'combobox', id: '1' });
       expect(props.placeholder).toBeNull();
-      expect(props.readonly).toBeNull();
+      expect(props.disabled).toBeNull();
+      expect(props.clearable).toBeNull();
     });
   });
 
@@ -85,20 +93,23 @@ describe('Selection Descriptors', () => {
         id: '1',
         type: 'checkbox',
         defaultValue: true,
-        readOnly: true
+        readOnly: true,
+        size: 'sm'
       };
 
       const props = CHECKBOX_DESCRIPTOR.canvasProps(schema);
       expect(props).toEqual({
         checked: true,
-        readonly: true
+        size: 'sm',
+        required: null,
+        htmlContent: 'Preview Option'
       });
     });
     
     it('should handle null values', () => {
       const props = CHECKBOX_DESCRIPTOR.canvasProps({ type: 'checkbox', id: '1' });
       expect(props.checked).toBeNull();
-      expect(props.readonly).toBeNull();
+      expect(props.size).toBeNull();
     });
   });
 
@@ -113,20 +124,20 @@ describe('Selection Descriptors', () => {
         id: '1',
         type: 'radio',
         value: 'option1',
-        readOnly: true
+        readOnly: true,
+        label: 'Custom Option'
       };
 
       const props = RADIO_DESCRIPTOR.canvasProps(schema);
       expect(props).toEqual({
         value: 'option1',
-        readonly: true
+        htmlContent: 'Custom Option'
       });
     });
     
     it('should handle null values', () => {
       const props = RADIO_DESCRIPTOR.canvasProps({ type: 'radio', id: '1' });
       expect(props.value).toBeNull();
-      expect(props.readonly).toBeNull();
     });
   });
 
@@ -136,19 +147,25 @@ describe('Selection Descriptors', () => {
       expect(CHECKBOX_GROUP_DESCRIPTOR.canvasElement).toBe('vi-checkbox');
     });
     it('should generate canvas props correctly', () => {
-      const props = CHECKBOX_GROUP_DESCRIPTOR.canvasProps({ type: 'checkbox-group', id: '1' });
-      expect(props).toEqual({});
+      const props = CHECKBOX_GROUP_DESCRIPTOR.canvasProps({ type: 'checkbox-group', label: 'L' });
+      expect(props).toEqual({
+        readonly: true,
+        htmlContent: 'Option 1'
+      });
     });
   });
 
   describe('RADIO_GROUP_DESCRIPTOR', () => {
     it('should have correct metadata', () => {
       expect(RADIO_GROUP_DESCRIPTOR.type).toBe('radio-group');
-      expect(RADIO_GROUP_DESCRIPTOR.canvasElement).toBe('vi-radio-group');
+      expect(RADIO_GROUP_DESCRIPTOR.canvasElement).toBe('vi-radio');
     });
     it('should generate canvas props correctly', () => {
-      const props = RADIO_GROUP_DESCRIPTOR.canvasProps({ type: 'radio-group', id: '1' });
-      expect(props).toEqual({});
+      const props = RADIO_GROUP_DESCRIPTOR.canvasProps({ type: 'radio-group', label: 'L' });
+      expect(props).toEqual({
+        readonly: true,
+        htmlContent: 'Option 1'
+      });
     });
   });
 });

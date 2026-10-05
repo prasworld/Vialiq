@@ -18,7 +18,8 @@ describe('Number and Textarea Descriptors', () => {
         min: 0,
         max: 100,
         step: 5,
-        readOnly: true
+        readOnly: true,
+        size: 'lg'
       };
 
       const props = NUMBER_DESCRIPTOR.canvasProps(schema);
@@ -29,7 +30,10 @@ describe('Number and Textarea Descriptors', () => {
         min: 0,
         max: 100,
         step: 5,
-        readonly: true
+        readonly: true,
+        size: 'lg',
+        required: null,
+        disabled: null
       });
     });
 
@@ -43,6 +47,9 @@ describe('Number and Textarea Descriptors', () => {
       expect(props.max).toBeNull();
       expect(props.step).toBeNull();
       expect(props.readonly).toBeNull();
+      expect(props.required).toBeNull();
+      expect(props.size).toBeNull();
+      expect(props.disabled).toBeNull();
     });
   });
 
@@ -59,7 +66,10 @@ describe('Number and Textarea Descriptors', () => {
         placeholder: 'Enter text',
         defaultValue: 'test',
         rows: 5,
-        readOnly: true
+        readOnly: true,
+        maxlength: 100,
+        resize: 'none',
+        charCount: true
       };
 
       const props = TEXTAREA_DESCRIPTOR.canvasProps(schema);
@@ -67,7 +77,12 @@ describe('Number and Textarea Descriptors', () => {
         placeholder: 'Enter text',
         value: 'test',
         rows: 5,
-        readonly: true
+        readonly: true,
+        maxlength: 100,
+        resize: 'none',
+        'char-count': '',
+        required: null,
+        disabled: null
       });
     });
 
@@ -79,6 +94,11 @@ describe('Number and Textarea Descriptors', () => {
       expect(props.value).toBeNull();
       expect(props.rows).toBeNull();
       expect(props.readonly).toBeNull();
+      expect(props.maxlength).toBeNull();
+      expect(props.resize).toBeNull();
+      expect(props['char-count']).toBeNull();
+      expect(props.required).toBeNull();
+      expect(props.disabled).toBeNull();
     });
   });
 });

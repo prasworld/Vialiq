@@ -28,7 +28,8 @@ describe('Date and Time Descriptors', () => {
           max: '2025-01-01',
           step: 1,
           readonly: true,
-          htmlContent: '<vi-date-picker-input></vi-date-picker-input>'
+          unsafeHtmlContent: '<vi-date-picker-input></vi-date-picker-input>',
+          required: null
         });
       } else {
         expect(props).toEqual({
@@ -37,7 +38,8 @@ describe('Date and Time Descriptors', () => {
           min: '2020-01-01',
           max: '2025-01-01',
           step: 1,
-          readonly: true
+          readonly: true,
+          required: null
         });
       }
     });
@@ -51,6 +53,7 @@ describe('Date and Time Descriptors', () => {
       expect(props.max).toBeNull();
       expect(props.step).toBeNull();
       expect(props.readonly).toBeNull();
+      expect(props.required).toBeNull();
     });
   };
 

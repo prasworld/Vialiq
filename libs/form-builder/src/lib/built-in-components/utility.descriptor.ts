@@ -1,17 +1,18 @@
-import type { ComponentDescriptor } from '../types/component-descriptor';
+import type { ComponentDescriptor, SettingsTab } from '../types/component-descriptor';
 import type {
   HiddenComponentSchema,
   ContentComponentSchema,
   ButtonComponentSchema,
 } from '../types/component-schemas';
-import { displayTab, logicTab } from './settings-helpers';
+import { displayTab, logicTab, sizeField, fullWidthField } from './settings-helpers';
 
 export const HIDDEN_DESCRIPTOR: ComponentDescriptor = {
   type: 'hidden',
   label: 'Hidden',
   category: 'advanced',
   group: 'Utilities',
-  icon: 'x',
+  icon: 'eye-off',
+  traits: { isInput: true },
   weight: 60,
   canvasElement: 'div',  // rendered as a placeholder badge on canvas
   canvasProps: (s) => {
@@ -43,7 +44,8 @@ export const CONTENT_DESCRIPTOR: ComponentDescriptor = {
   label: 'Content',
   category: 'advanced',
   group: 'Utilities',
-  icon: 'document',
+  icon: 'file-text',
+  traits: { isDisplayOnly: true },
   weight: 70,
   canvasElement: 'div',
   canvasProps: (s) => {
@@ -57,7 +59,7 @@ export const CONTENT_DESCRIPTOR: ComponentDescriptor = {
   },
   settingsSchema: {
     tabs: [
-      displayTab(),
+      displayTab([], { labelRequired: false }),
       {
         id: 'data',
         label: 'Content',
@@ -66,7 +68,7 @@ export const CONTENT_DESCRIPTOR: ComponentDescriptor = {
         ],
       },
       logicTab(),
-    ].filter(Boolean) as any[],
+    ].filter(Boolean) as SettingsTab[],
   },
 };
 
@@ -75,7 +77,8 @@ export const DIVIDER_DESCRIPTOR: ComponentDescriptor = {
   label: 'Divider',
   category: 'advanced',
   group: 'Utilities',
-  icon: 'minus',
+  icon: 'separator',
+  traits: { isDisplayOnly: true },
   weight: 80,
   canvasElement: 'hr',
   canvasProps: () => ({ class: 'vi-divider' }),
@@ -86,7 +89,7 @@ export const DIVIDER_DESCRIPTOR: ComponentDescriptor = {
   settingsSchema: {
     tabs: [
       logicTab(),
-    ].filter(Boolean) as any[],
+    ].filter(Boolean) as SettingsTab[],
   },
 };
 
@@ -95,13 +98,18 @@ export const BUTTON_DESCRIPTOR: ComponentDescriptor = {
   label: 'Button',
   category: 'advanced',
   group: 'Utilities',
-  icon: 'plus',
+  icon: 'square',
+  traits: { isDisplayOnly: true }, // Buttons do not have CDISC SDTM metadata
   weight: 90,
   canvasElement: 'vi-button',
   canvasProps: (s) => {
     const schema = s as ButtonComponentSchema;
     return {
-      variant: schema.variant ?? 'primary',
+      variant: schema.variant ?? 'secondary',
+      size: schema.size ?? null,
+      'full-width': schema.fullWidth ? '' : null,
+      // htmlContent renders the button label text inside the vi-button slot
+      htmlContent: schema.buttonLabel || 'Click me',
     };
   },
   defaultSchema: {
@@ -130,6 +138,8 @@ export const BUTTON_DESCRIPTOR: ComponentDescriptor = {
               { label: 'Ghost', value: 'ghost' },
             ],
           },
+          sizeField,
+          fullWidthField,
         ],
       },
       {
@@ -149,7 +159,7 @@ export const BUTTON_DESCRIPTOR: ComponentDescriptor = {
         ],
       },
       logicTab(),
-    ].filter(Boolean) as any[],
+    ].filter(Boolean) as SettingsTab[],
   },
 };
 
@@ -158,10 +168,21 @@ export const SUBMIT_DESCRIPTOR: ComponentDescriptor = {
   label: 'Submit',
   category: 'advanced',
   group: 'Utilities',
-  icon: 'upload',
+  icon: 'send',
+  traits: { isDisplayOnly: true },
   weight: 100,
   canvasElement: 'vi-button',
-  canvasProps: () => ({ variant: 'primary', type: 'submit' }),
+  canvasProps: (s) => {
+    const schema = s as ButtonComponentSchema;
+    return {
+      variant: schema.variant ?? 'primary',
+      type: 'submit',
+      size: schema.size ?? null,
+      'full-width': schema.fullWidth ? '' : null,
+      // htmlContent renders the button label text inside the vi-button slot
+      htmlContent: schema.buttonLabel || 'Submit',
+    };
+  },
   defaultSchema: {
     type: 'submit',
     label: 'Submit',
@@ -186,9 +207,11 @@ export const SUBMIT_DESCRIPTOR: ComponentDescriptor = {
               { label: 'Secondary', value: 'secondary' },
             ],
           },
+          sizeField,
+          fullWidthField,
         ],
       },
       logicTab(),
-    ].filter(Boolean) as any[],
+    ].filter(Boolean) as SettingsTab[],
   },
 };

@@ -6,10 +6,10 @@
           @if (field().required) {
             <span class="required-asterisk">*</span>
           }
-          @if (field().hint) {
-            <div class="field-desc">{{ field().hint }}</div>
-          }
         </vi-label>
+        @if (field().hint) {
+          <div class="field-desc">{{ field().hint }}</div>
+        }
       }
     
       <!-- Text / Number / Label / Key -->
@@ -34,11 +34,6 @@
       <!-- Boolean / Switch -->
       @if (field().type === 'boolean') {
         <div class="checkbox-field">
-          <vi-switch
-            [id]="'field-' + field().key"
-            [checked]="!!value()"
-            (vi-switch-change)="onValueChange($event)">
-          </vi-switch>
           <div class="checkbox-text">
             <vi-label [attr.for]="'field-' + field().key">
               {{ field().label }}
@@ -50,6 +45,11 @@
               <div class="field-desc">{{ field().hint }}</div>
             }
           </div>
+          <vi-switch
+            [id]="'field-' + field().key"
+            [checked]="!!value()"
+            (vi-switch-change)="onValueChange($event)">
+          </vi-switch>
         </div>
       }
     
@@ -59,12 +59,34 @@
           [id]="'field-' + field().key"
           [value]="value()"
           (vi-select-change)="onValueChange($event)">
-          @for (opt of field().options; track opt) {
+          @for (opt of field().options; track opt.value) {
             <vi-select-option [value]="opt.value">
               {{ opt.label }}
             </vi-select-option>
           }
         </vi-select>
+      }
+
+      <!-- Item List (Tabs/Views) -->
+      @if (field().type === 'item-list') {
+        <div class="item-list-container">
+          @for (item of getItemListValue(); track item.id; let idx = $index) {
+            <div class="item-list-row">
+              <vi-input
+                [value]="item.label"
+                (vi-input-change)="updateItemLabel(idx, $event)">
+              </vi-input>
+              <div class="item-actions">
+                <button type="button" class="action-btn add-btn" (click)="addItem(idx)" aria-label="Add item">
+                  <vi-icon name="plus"></vi-icon>
+                </button>
+                <button type="button" class="action-btn remove-btn" [disabled]="getItemListValue().length <= 1" (click)="removeItem(idx)" aria-label="Remove item">
+                  <vi-icon name="minus"></vi-icon>
+                </button>
+              </div>
+            </div>
+          }
+        </div>
       }
     
     </div>

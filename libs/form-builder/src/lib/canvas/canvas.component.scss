@@ -12,11 +12,12 @@
       padding: 2rem;
       display: flex;
       justify-content: center;
+      align-items: flex-start;
       box-sizing: border-box;
     }
     .canvas-paper {
       width: 100%;
-      max-width: 800px;
+      max-width: 1200px;
       background: tokens.$layer-01;
       border-radius: 0.5rem;
       box-shadow: tokens.$shadow-md;

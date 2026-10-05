@@ -42,12 +42,48 @@ import { saveIcon } from '@vialiq/icons/save';
 import { lockIcon } from '@vialiq/icons/lock';
 import { hospitalIcon } from '@vialiq/icons/hospital';
 
+// Mapped Original Intentions
+import { textCursorIcon } from '@vialiq/icons/text-cursor';
+import { atSignIcon } from '@vialiq/icons/at-sign';
+import { phoneIcon } from '@vialiq/icons/phone';
+import { hashIcon } from '@vialiq/icons/hash';
+import { alignLeftIcon } from '@vialiq/icons/align-left';
+import { chevronsUpDownIcon } from '@vialiq/icons/chevrons-up-down';
+import { listFilterIcon } from '@vialiq/icons/list-filter';
+import { squareCheckIcon } from '@vialiq/icons/square-check';
+import { circleDotIcon } from '@vialiq/icons/circle-dot';
+import { listChecksIcon } from '@vialiq/icons/list-checks';
+import { calendarClockIcon } from '@vialiq/icons/calendar-clock';
+import { eyeOffIcon } from '@vialiq/icons/eye-off';
+import { fileTextIcon } from '@vialiq/icons/file-text';
+import { squareIcon } from '@vialiq/icons/square';
+import { sendIcon } from '@vialiq/icons/send';
+import { layoutPanelTopIcon } from '@vialiq/icons/layout-panel-top';
+import { columnsIcon } from '@vialiq/icons/columns';
+import { folderOpenIcon } from '@vialiq/icons/folder-open';
+import { boxIcon } from '@vialiq/icons/box';
+import { copyIcon } from '@vialiq/icons/copy';
+
+import { browserIcon } from '@vialiq/icons/browser';
+import { switchHorizontalIcon } from '@vialiq/icons/switch-horizontal';
+import { sectionIcon } from '@vialiq/icons/section';
+import { repeatIcon } from '@vialiq/icons/repeat';
+import { separatorIcon } from '@vialiq/icons/separator';
+
 registerIcons([
   edit1Icon, documentIcon, trashIcon, plusIcon, pencilIcon, userIcon, 
   calculatorSimpleIcon, calendarIcon, clockIcon, checkCircleIcon, 
   taskChecklistIcon, chevronDownIcon, searchIcon, alarmClockIcon, xIcon, 
   minusIcon, uploadIcon, buildingIcon, folderDownloadIcon, saveIcon, 
-  lockIcon, hospitalIcon
+  lockIcon, hospitalIcon,
+  
+  // New icons
+  textCursorIcon, atSignIcon, phoneIcon, hashIcon, alignLeftIcon,
+  chevronsUpDownIcon, listFilterIcon, squareCheckIcon, circleDotIcon,
+  listChecksIcon, calendarClockIcon, eyeOffIcon, fileTextIcon,
+  squareIcon, sendIcon, layoutPanelTopIcon, columnsIcon,
+  folderOpenIcon, boxIcon, copyIcon,
+  browserIcon, switchHorizontalIcon, sectionIcon, repeatIcon, separatorIcon
 ]);
 
 

@@ -30,19 +30,49 @@
       opacity: 0;
       transition: opacity 0.2s;
     }
-    .overlay-container:hover .selection-border,
-    .overlay-container.active .selection-border {
+    .overlay-container:hover:not(:has(.overlay-container:hover)) > .selection-border,
+    .overlay-container.active > .selection-border {
       opacity: 1;
     }
 
     .content-wrapper {
       position: relative;
-      z-index: 1;
+      z-index: 3;
       pointer-events: none; /* Block interaction in edit mode */
       padding: 1rem;
       display: flex;
-      flex-direction: column;
       gap: 0.5rem;
+      
+      &.label-pos-top {
+        flex-direction: column;
+      }
+      
+      &.label-pos-left {
+        flex-direction: row;
+        align-items: center;
+        
+        .node-label {
+          flex: 0 0 auto;
+          width: var(--vi-form-label-width, 30%);
+          padding-right: 1rem;
+        }
+        
+        ::ng-deep > :not(.node-label):not(vi-canvas-drop-zone) {
+          flex: 1 1 auto;
+          min-width: 0;
+          display: flex;
+          flex-direction: column;
+          > * {
+            width: 100%;
+          }
+        }
+      }
+      
+
+      
+      &.label-pos-hidden .node-label {
+        display: none;
+      }
     }
     
     .node-label {
@@ -60,7 +90,7 @@
     }
     
     /* Bridge the gap to the toolbar on hover so mouse doesn't fall off */
-    .overlay-container:hover::after,
+    .overlay-container:hover:not(:has(.overlay-container:hover))::after,
     .overlay-container.active::after {
       right: -50px;
     }
@@ -108,10 +138,19 @@
       text-decoration: none;
     }
     
-    .overlay-container:hover .actions-toolbar,
-    .overlay-container.active .actions-toolbar {
+    .overlay-container:hover:not(:has(.overlay-container:hover)) > .actions-toolbar,
+    .overlay-container.active > .actions-toolbar {
       opacity: 1;
       pointer-events: auto;
       right: -42px; /* Slight pop out effect */
     }
     
+    /* If the component is interactive (e.g. tabs), allow clicks to pass through to the web component */
+    .overlay-container.interactive {
+      .content-wrapper {
+        pointer-events: auto;
+      }
+      &::after {
+        display: none;
+      }
+    }

@@ -1,7 +1,6 @@
 import {
   Component,
   Type,
-  OnInit,
   input,
   output,
   computed,
@@ -9,6 +8,8 @@ import {
   CUSTOM_ELEMENTS_SCHEMA,
   signal,
   effect,
+  ElementRef,
+  isDevMode,
 } from '@angular/core';
 
 import { ComponentSchema, ComponentDescriptor } from '../types';
@@ -22,6 +23,7 @@ import type { ExtensionFieldDefinition } from '../types/extension';
   standalone: true,
   imports: [DynamicComponentDirective, SettingsTabComponent],
   templateUrl: './settings-host.component.html',
+  styleUrl: './settings-host.component.scss',
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class SettingsHostComponent {
@@ -30,43 +32,118 @@ export class SettingsHostComponent {
   readonly schemaChange = output<Partial<ComponentSchema>>();
 
   customComponentType = signal<Type<unknown> | null>(null);
-  isLoaded = signal(false);
 
   extensionRegistry = inject(ExtensionRegistryService);
+  private readonly elementRef = inject(ElementRef);
+
+  private _focusTimer: ReturnType<typeof setTimeout> | null = null;
+
+  /**
+   * Tracks the last selection key (`descriptorType::nodeId`) so the effect can
+   * distinguish between a genuine selection change (drag/click a different node)
+   * and a schema-value edit (user types in a field on the same node).
+   *
+   * The schema signal changes on every field edit, causing the effect to re-run.
+   * Without this guard, autofocus and the custom-component reload would fire on
+   * every keystroke, stealing focus and causing the custom settings panel to flicker.
+   */
+  private _lastSelectionKey: string | null = null;
 
   constructor() {
     effect(async () => {
       const descriptor = this.descriptor();
-      
-      // Reset state for new descriptor
-      this.isLoaded.set(false);
-      this.customComponentType.set(null);
+      // Read schema().id to track node identity — ensures the effect re-fires
+      // when clicking a same-type control (descriptor unchanged, but node changed).
+      const _nodeId = this.schema().id;
 
-      if (descriptor.settingsComponent) {
-        try {
-          const comp = await descriptor.settingsComponent();
-          this.customComponentType.set(comp);
-        } catch (err) {
-          console.error('Failed to load custom settings component', err);
+      if (isDevMode() && !_nodeId) {
+        console.error(
+          `[vi-settings-host] ComponentSchema for type "${descriptor.type}" is missing an "id" field.\n` +
+          'The settings panel uses schema.id to track which node is selected.\n' +
+          'Without it, focus will not update when switching between same-type controls.\n' +
+          'Ensure every ComponentSchema has a unique "id" before passing it to the builder.'
+        );
+      }
+
+      // Build a key that uniquely identifies which node is selected.
+      // We use descriptor.type (not object identity) because the same descriptor
+      // singleton is reused across selections of the same component type.
+      const selectionKey = `${descriptor.type ?? ''}::${_nodeId ?? ''}`;
+      const isNewSelection = selectionKey !== this._lastSelectionKey;
+      this._lastSelectionKey = selectionKey;
+
+      // Only reload the custom settings component when the selected node changes,
+      // not on every schema-value edit. Resetting on every edit would cause the
+      // custom panel to unmount/remount (flicker) while the user is typing.
+      if (isNewSelection) {
+        this.customComponentType.set(null);
+        if (descriptor.settingsComponent) {
+          try {
+            const comp = await descriptor.settingsComponent();
+            this.customComponentType.set(comp);
+          } catch (err) {
+            console.error('Failed to load custom settings component', err);
+          }
         }
       }
-      this.isLoaded.set(true);
-    }, { allowSignalWrites: true });
+
+      // Only autofocus when the selected node actually changes (drag or panel
+      // selection switch). Skip when the effect re-runs due to schema value edits
+      // (same node, same id) so we don't steal focus mid-edit.
+      if (!isNewSelection) return;
+
+      // Cancel any previous pending focus (fast descriptor switching).
+      if (this._focusTimer !== null) clearTimeout(this._focusTimer);
+
+      // setTimeout(0) fires after ALL microtasks — meaning after:
+      //   1. Angular's zoneless scheduler renders the new settings UI
+      //   2. Lit's requestUpdate microtask (schedules shadow DOM render)
+      // We then await updateComplete to ensure the internal <input> exists.
+      this._focusTimer = setTimeout(async () => {
+        this._focusTimer = null;
+        const host = this.elementRef.nativeElement as HTMLElement;
+
+        // Reset scroll to top.
+        const scrollContainer = host.closest(
+          '.panel-content',
+        ) as HTMLElement | null;
+        if (scrollContainer) scrollContainer.scrollTop = 0;
+
+        // Focus the first interactive control.
+        const firstControl = host.querySelector(
+          'vi-input, vi-textarea, vi-select, vi-switch, input, select, textarea',
+        ) as (HTMLElement & { updateComplete?: Promise<boolean> }) | null;
+        if (!firstControl) return;
+
+        if (firstControl.updateComplete) {
+          await firstControl.updateComplete;
+        }
+        firstControl.focus({ preventScroll: true });
+        firstControl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 0);
+    });
   }
 
   readonly groupedExtensions = computed(() => {
     const fields = this.extensionRegistry.extensions.value() || [];
     const schema = this.schema();
 
-    // Filter fields that apply to this component type
-    const applicableFields = fields.filter(
-      (f: ExtensionFieldDefinition) =>
-        !f.appliesTo ||
-        f.appliesTo.length === 0 ||
-        f.appliesTo.includes(schema.type),
-    );
+    const applicableFields = fields.filter((f: ExtensionFieldDefinition) => {
+      // 1. Check explicit type appliesTo
+      if (f.appliesTo && f.appliesTo.length > 0) {
+        if (!f.appliesTo.includes(schema.type)) return false;
+      }
+      
+      // 2. Check requiredTraits
+      if (f.requiredTraits && f.requiredTraits.length > 0) {
+        const componentTraits = this.descriptor().traits || {};
+        const hasAllTraits = f.requiredTraits.every(t => componentTraits[t]);
+        if (!hasAllTraits) return false;
+      }
+      
+      return true;
+    });
 
-    // Group by section
     const grouped = applicableFields.reduce(
       (
         acc: Record<string, ExtensionFieldDefinition[]>,
@@ -86,8 +163,6 @@ export class SettingsHostComponent {
     }));
   });
 
-  // Arrow function bound to [outputs] — must accept unknown since dynamic component outputs are untyped at the host boundary.
-  // We narrow the type inside before emitting.
   readonly onChange = (event: unknown): void => {
     this.schemaChange.emit(event as Partial<ComponentSchema>);
   };
@@ -119,5 +194,4 @@ export class SettingsHostComponent {
       metadata: { ...currentMetadata, [key]: val },
     });
   }
-
 }

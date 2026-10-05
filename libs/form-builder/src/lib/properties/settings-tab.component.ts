@@ -20,22 +20,22 @@ export class SettingsTabComponent {
    */
   getFieldValue(key: string): unknown {
     const parts = key.split('.');
-    let current: any = this.schema();
+    let current: unknown = this.schema();
     for (const part of parts) {
-      if (current === undefined || current === null) return undefined;
-      current = current[part];
+      if (current === undefined || current === null || typeof current !== 'object') return undefined;
+      current = (current as Record<string, unknown>)[part];
     }
     return current;
   }
 
   onValueChange(key: string, value: unknown): void {
-    const patch: any = {};
+    const patch: Record<string, unknown> = {};
     const parts = key.split('.');
     
     let current = patch;
     for (let i = 0; i < parts.length - 1; i++) {
       current[parts[i]] = {};
-      current = current[parts[i]];
+      current = current[parts[i]] as Record<string, unknown>;
     }
     current[parts[parts.length - 1]] = value;
 

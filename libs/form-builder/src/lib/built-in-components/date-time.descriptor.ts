@@ -1,6 +1,6 @@
 import type { ComponentDescriptor } from '../types/component-descriptor';
 import type { DateComponentSchema } from '../types/component-schemas';
-import { standardSettings } from './settings-helpers';
+import { standardSettings, hasRequiredRule } from './settings-helpers';
 
 function dateCanvasProps(schema: DateComponentSchema): Record<string, unknown> {
   return {
@@ -8,15 +8,29 @@ function dateCanvasProps(schema: DateComponentSchema): Record<string, unknown> {
     min: schema.min ?? null,
     max: schema.max ?? null,
     step: schema.step ?? null,
+    required: hasRequiredRule(schema) || null,
     readonly: schema.readOnly ?? null,
-    htmlContent: '<vi-date-picker-input></vi-date-picker-input>',
+    unsafeHtmlContent: `<vi-date-picker-input${schema.placeholder ? ` placeholder="${schema.placeholder}"` : ''}></vi-date-picker-input>`,
   };
 }
 
 const dateDataExtras = [
+  { key: 'placeholder', label: 'Placeholder / Format', type: 'text' as const, hint: 'e.g. YYYY-MM-DD' },
   { key: 'min', label: 'Min date/time', type: 'text' as const, hint: 'ISO-8601 format' },
   { key: 'max', label: 'Max date/time', type: 'text' as const, hint: 'ISO-8601 format' },
   { key: 'step', label: 'Step', type: 'number' as const },
+  {
+    key: 'valueMapping',
+    label: 'Submit value as',
+    type: 'select' as const,
+    hint: 'Which representation is sent in the form payload on submit',
+    options: [
+      { label: 'Formatted value (ISO default)', value: 'value' },
+      { label: 'Raw / structured object', value: 'rawValue' },
+      { label: 'Display value (locale)', value: 'displayValue' },
+    ],
+    defaultValue: 'value',
+  },
 ];
 
 export const DATE_DESCRIPTOR: ComponentDescriptor = {
@@ -25,12 +39,14 @@ export const DATE_DESCRIPTOR: ComponentDescriptor = {
   category: 'advanced',
   group: 'Text Inputs',
   icon: 'calendar',
+  traits: { isInput: true },
   weight: 30,
   canvasElement: 'vi-date-picker',
   canvasProps: (s) => dateCanvasProps(s as DateComponentSchema),
   defaultSchema: {
     type: 'date',
     label: 'Date',
+    placeholder: 'YYYY-MM-DD',
   },
   settingsSchema: standardSettings([], dateDataExtras),
   supportsRepeating: true,
@@ -43,11 +59,12 @@ export const TIME_DESCRIPTOR: ComponentDescriptor = {
   category: 'advanced',
   group: 'Text Inputs',
   icon: 'clock',
+  traits: { isInput: true },
   weight: 40,
   canvasElement: 'input',
   canvasProps: (s) => {
     const props = dateCanvasProps(s as DateComponentSchema);
-    delete props['htmlContent'];
+    delete props['unsafeHtmlContent'];
     return { ...props, type: 'time' };
   },
   defaultSchema: {
@@ -64,12 +81,13 @@ export const DATETIME_LOCAL_DESCRIPTOR: ComponentDescriptor = {
   label: 'Date & Time',
   category: 'advanced',
   group: 'Text Inputs',
-  icon: 'alarm-clock',
+  icon: 'calendar-clock',
+  traits: { isInput: true },
   weight: 50,
   canvasElement: 'input',
   canvasProps: (s) => {
     const props = dateCanvasProps(s as DateComponentSchema);
-    delete props['htmlContent'];
+    delete props['unsafeHtmlContent'];
     return { ...props, type: 'datetime-local' };
   },
   defaultSchema: {

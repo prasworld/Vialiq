@@ -1,13 +1,14 @@
 import type { ComponentDescriptor } from '../types/component-descriptor';
 import type { NumberComponentSchema, TextareaComponentSchema } from '../types/component-schemas';
-import { standardSettings } from './settings-helpers';
+import { standardSettings, hasRequiredRule, sizeField } from './settings-helpers';
 
 export const NUMBER_DESCRIPTOR: ComponentDescriptor = {
   type: 'number',
   label: 'Number',
   category: 'basic',
   group: 'Text Inputs',
-  icon: 'calculator-simple',
+  icon: 'hash',
+  traits: { isInput: true },
   weight: 50,
   canvasElement: 'vi-input',
   canvasProps: (s) => {
@@ -19,7 +20,10 @@ export const NUMBER_DESCRIPTOR: ComponentDescriptor = {
       min: schema.min ?? null,
       max: schema.max ?? null,
       step: schema.step ?? null,
+      required: hasRequiredRule(schema) || null,
       readonly: schema.readOnly ?? null,
+      size: schema.size ?? null,
+      disabled: null,
     };
   },
   defaultSchema: {
@@ -30,6 +34,7 @@ export const NUMBER_DESCRIPTOR: ComponentDescriptor = {
   settingsSchema: standardSettings(
     [
       { key: 'placeholder', label: 'Placeholder', type: 'text' },
+      sizeField,
     ],
     [
       { key: 'min', label: 'Min value', type: 'number' },
@@ -46,7 +51,8 @@ export const TEXTAREA_DESCRIPTOR: ComponentDescriptor = {
   label: 'Text Area',
   category: 'basic',
   group: 'Text Inputs',
-  icon: 'document',
+  icon: 'align-left',
+  traits: { isInput: true },
   weight: 60,
   canvasElement: 'vi-textarea',
   canvasProps: (s) => {
@@ -55,7 +61,12 @@ export const TEXTAREA_DESCRIPTOR: ComponentDescriptor = {
       placeholder: schema.placeholder ?? null,
       value: schema.defaultValue ?? null,
       rows: schema.rows ?? null,
+      maxlength: schema.maxlength ?? null,
+      resize: schema.resize ?? null,
+      'char-count': schema.charCount ? '' : null,
+      required: hasRequiredRule(schema) || null,
       readonly: schema.readOnly ?? null,
+      disabled: null,
     };
   },
   defaultSchema: {
@@ -69,8 +80,21 @@ export const TEXTAREA_DESCRIPTOR: ComponentDescriptor = {
       { key: 'placeholder', label: 'Placeholder', type: 'text' },
       { key: 'rows', label: 'Rows', type: 'number', defaultValue: 3 },
       { key: 'maxlength', label: 'Max length', type: 'number' },
+      {
+        key: 'resize',
+        label: 'Resize',
+        type: 'select',
+        options: [
+          { label: 'Vertical (default)', value: 'vertical' },
+          { label: 'None', value: 'none' },
+          { label: 'Both', value: 'both' },
+        ],
+        defaultValue: 'vertical',
+      },
+      { key: 'charCount', label: 'Show character counter', type: 'boolean', hint: 'Requires Max length to be set' },
     ]
   ),
   supportsRepeating: true,
   rendererRef: 'vi-renderer-textarea',
 };
+

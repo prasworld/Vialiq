@@ -61,6 +61,12 @@ export type {
   // Extensions
   ExtensionFieldDefinition,
   ExtensionProvider,
+  // Rich field values (dual-value controls)
+  FieldValue,
+  MaskedFieldValue,
+  DateFieldValue,
+  FieldValueMapping,
+  DateComponents,
 } from './lib/types';
 
 export {

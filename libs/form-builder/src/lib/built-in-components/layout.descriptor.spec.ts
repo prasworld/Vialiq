@@ -37,13 +37,13 @@ describe('Layout Descriptors', () => {
       expect(TABS_DESCRIPTOR.type).toBe('tabs');
       expect(TABS_DESCRIPTOR.canvasElement).toBe('vi-tabs');
     });
-    testCanvasProps(TABS_DESCRIPTOR, {});
+    testCanvasProps(TABS_DESCRIPTOR, { value: '', unsafeHtmlContent: '' });
   });
 
   describe('FIELDSET_DESCRIPTOR', () => {
     it('should have correct metadata', () => {
       expect(FIELDSET_DESCRIPTOR.type).toBe('fieldset');
-      expect(FIELDSET_DESCRIPTOR.canvasElement).toBe('fieldset');
+      expect(FIELDSET_DESCRIPTOR.canvasElement).toBe('div');
     });
     testCanvasProps(FIELDSET_DESCRIPTOR, { class: 'vi-fieldset' });
   });

@@ -15,7 +15,8 @@ export type SettingsFieldType =
   | 'multiselect'
   | 'color'
   | 'icon'
-  | 'custom';    // falls back to settingsComponent
+  | 'custom'     // falls back to settingsComponent
+  | 'item-list'; // lists like tabs or views
 
 export interface SettingsSelectOption {
   label: string;
@@ -47,6 +48,15 @@ export interface SettingsSchema {
   tabs: SettingsTab[];
 }
 
+export interface ComponentTraits {
+  /** True if this control captures user data (e.g. text input, select) */
+  isInput?: boolean;
+  /** True if this control can contain other components */
+  isContainer?: boolean;
+  /** True if this control is purely visual/structural (e.g. separator) */
+  isDisplayOnly?: boolean;
+}
+
 // ─── Component Descriptor ─────────────────────────────────────────────────────
 
 /**
@@ -64,6 +74,8 @@ export interface ComponentDescriptor {
   group: string;
   /** Icon name from @vialiq/icons */
   icon: string;
+  /** High-level behavioral traits of the component */
+  traits?: ComponentTraits;
   /** Lower weight = higher position in palette category (default: 100) */
   weight?: number;
   /** Default schema values when a new instance is added to the canvas */
@@ -83,6 +95,10 @@ export interface ComponentDescriptor {
   supportsRepeating?: boolean;
   /** The vi-renderer-* component name used in form-renderer */
   rendererRef?: string;
+  /** Optional array of component types that are explicitly ALLOWED as children. If defined, all other types are rejected. */
+  allowedChildren?: string[];
+  /** Optional array of component types that are explicitly REJECTED as children. */
+  disallowedChildren?: string[];
 }
 
 // ─── Typed Descriptor Factory ──────────────────────────────────────────────────
