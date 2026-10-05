@@ -1,4 +1,5 @@
 import type { ComponentDescriptor, SettingsTab } from '../types/component-descriptor';
+import type { LayoutComponentSchema } from '../types';
 import { displayTab, logicTab } from './settings-helpers';
 
 export const PANEL_DESCRIPTOR: ComponentDescriptor = {
@@ -68,7 +69,7 @@ export const TABS_DESCRIPTOR: ComponentDescriptor = {
   weight: 30,
   canvasElement: 'vi-tabs',
   canvasProps: (s) => {
-    const config = (s as Record<string, unknown>)['layoutConfig'] as Record<string, unknown> | undefined;
+    const config = (s as LayoutComponentSchema).layoutConfig as Record<string, unknown> | undefined;
     const tabs = (config?.['tabs'] as { id: string; label: string }[]) || [];
     const html = tabs.map(t => `<vi-tab slot="tabs" value="${t.id}">${t.label}</vi-tab>`).join('');
     return {
@@ -167,7 +168,7 @@ export const CONTENT_SWITCHER_DESCRIPTOR: ComponentDescriptor = {
   weight: 35,
   canvasElement: 'vi-content-switcher',
   canvasProps: (s) => {
-    const config = (s as Record<string, unknown>)['layoutConfig'] as Record<string, unknown> | undefined;
+    const config = (s as LayoutComponentSchema).layoutConfig as Record<string, unknown> | undefined;
     const views = (config?.['views'] as { id: string; label: string }[]) || [];
     const html = views.map(v => `<vi-switcher-item value="${v.id}">${v.label}</vi-switcher-item>`).join('');
     return {
