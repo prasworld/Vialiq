@@ -4,7 +4,14 @@ import angular from '@analogjs/vite-plugin-angular';
 
 export default defineConfig({
   root: __dirname,
-  plugins: [angular()],
+  plugins: [angular({ tsconfig: './tsconfig.spec.json' })],
+  css: {
+    preprocessorOptions: {
+      scss: {
+        includePaths: ['../../libs'],
+      },
+    },
+  },
   test: {
     name: 'form-builder',
     globals: true,
