@@ -1,14 +1,16 @@
 /// <reference types="vitest" />
 import { defineConfig } from 'vitest/config';
 import angular from '@analogjs/vite-plugin-angular';
+import { resolve } from 'path';
 
 export default defineConfig({
   root: __dirname,
-  plugins: [angular({ tsconfig: './tsconfig.spec.json' })],
+  plugins: [angular({ tsconfig: resolve(__dirname, 'tsconfig.spec.json') })],
   css: {
     preprocessorOptions: {
       scss: {
-        includePaths: ['../../libs'],
+        // Absolute path so CI can always find flux-ui/styles/variables
+        includePaths: [resolve(__dirname, '../../libs')],
       },
     },
   },
