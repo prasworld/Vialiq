@@ -35,7 +35,7 @@
     "@lit-labs/virtualizer": "^2.1.1",
     "@nx/angular": "^22.5.1",
     "@vialiq/icons": "0.10.0",
-    "@vialiq/web-components": "^0.33.0",
+    "@vialiq/web-components": "^0.34.1",
     "imask": "^7.6.1",
     "lit": "^3.3.2",
     "reflect-metadata": "^0.2.2",
