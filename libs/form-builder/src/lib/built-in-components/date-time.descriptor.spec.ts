@@ -28,7 +28,7 @@ describe('Date and Time Descriptors', () => {
           max: '2025-01-01',
           step: 1,
           readonly: true,
-          unsafeHtmlContent: '<vi-date-picker-input></vi-date-picker-input>',
+          placeholder: '',
           required: null
         });
       } else {
@@ -39,6 +39,7 @@ describe('Date and Time Descriptors', () => {
           max: '2025-01-01',
           step: 1,
           readonly: true,
+          placeholder: '',
           required: null
         });
       }
@@ -55,9 +56,18 @@ describe('Date and Time Descriptors', () => {
       expect(props.readonly).toBeNull();
       expect(props.required).toBeNull();
     });
+    it(`should expose valueMapping in settings schema for ${type}`, () => {
+      const dataTab = descriptor.settingsSchema.tabs.find((t: any) => t.id === 'data');
+      expect(dataTab).toBeDefined();
+      
+      const valueMappingField = dataTab.fields.find((f: any) => f.key === 'valueMapping');
+      expect(valueMappingField).toBeDefined();
+      expect(valueMappingField.type).toBe('select');
+      expect(valueMappingField.options.length).toBeGreaterThan(0);
+    });
   };
 
-  describe('DATE_DESCRIPTOR', () => testCanvasProps(DATE_DESCRIPTOR, 'date', 'vi-date-picker'));
+  describe('DATE_DESCRIPTOR', () => testCanvasProps(DATE_DESCRIPTOR, 'date', 'vi-date-picker-input'));
   describe('TIME_DESCRIPTOR', () => testCanvasProps(TIME_DESCRIPTOR, 'time', 'input'));
   describe('DATETIME_LOCAL_DESCRIPTOR', () => testCanvasProps(DATETIME_LOCAL_DESCRIPTOR, 'datetime-local', 'input'));
 });

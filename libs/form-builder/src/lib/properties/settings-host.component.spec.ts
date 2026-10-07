@@ -103,6 +103,41 @@ describe('SettingsHostComponent', () => {
     expect(component.customComponentType()).toBe(TestCustomSettingsComponent);
   });
 
+  it('should ignore custom component if selection changes during load', async () => {
+    let resolvePromise: (value: any) => void;
+    const customComponentPromise = new Promise<any>((resolve) => {
+      resolvePromise = resolve;
+    });
+
+    // 1. First selection starts loading
+    componentRef.setInput('schema', { id: 'node-1', type: 'test-type' });
+    componentRef.setInput('descriptor', {
+      type: 'test-type',
+      settingsComponent: () => customComponentPromise
+    } as any);
+
+    fixture.detectChanges();
+    TestBed.flushEffects();
+
+    // 2. Before it resolves, switch to another node that has no settings component
+    componentRef.setInput('schema', { id: 'node-2', type: 'other-type' });
+    componentRef.setInput('descriptor', {
+      type: 'other-type',
+      settingsComponent: undefined
+    } as any);
+    
+    fixture.detectChanges();
+    TestBed.flushEffects();
+
+    // 3. Resolve the first promise now
+    resolvePromise!(TestCustomSettingsComponent);
+    await fixture.whenStable();
+    await new Promise(r => setTimeout(r, 0));
+
+    // 4. Because selection changed from node-1 to node-2, it should ignore the first resolution
+    expect(component.customComponentType()).toBeNull();
+  });
+
   it('should handle custom settings component load failure gracefully', async () => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 

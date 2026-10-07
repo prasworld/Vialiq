@@ -1,4 +1,4 @@
-import { Component, ElementRef, OnDestroy, OnInit, effect, inject, input, signal, viewChild } from '@angular/core';
+import { Component, ElementRef, OnDestroy, AfterViewInit, effect, inject, input, signal, viewChild } from '@angular/core';
 
 import { dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { BuilderStateService } from '../services/builder-state.service';
@@ -12,7 +12,7 @@ import { BuilderRegistryService } from '../registry/builder-registry.service';
   templateUrl: './canvas-drop-zone.component.html',
   styleUrl: './canvas-drop-zone.component.scss',
 })
-export class CanvasDropZoneComponent implements OnInit, OnDestroy {
+export class CanvasDropZoneComponent implements AfterViewInit, OnDestroy {
   private readonly state = inject(BuilderStateService);
   private readonly schemaService = inject(FormSchemaService);
   private readonly registry = inject(BuilderRegistryService);
@@ -44,7 +44,7 @@ export class CanvasDropZoneComponent implements OnInit, OnDestroy {
     });
   }
 
-  ngOnInit() {
+  ngAfterViewInit() {
     this._cleanup = dropTargetForElements({
       element: this.dropZone().nativeElement,
       getData: () => ({

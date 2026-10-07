@@ -16,6 +16,8 @@ All events emitted by a component should be prefixed with the component's name.
 - `vi-message`: Should emit `vi-message-close`
 - `vi-modal`: Should emit `vi-modal-open`, `vi-modal-close`
 - `vi-date-picker`: Should emit `vi-date-picker-change`
+- `vi-content-switcher`: Should emit `vi-content-switcher-change`
+- `vi-masked-input`: Should emit `vi-masked-input-change`, `vi-masked-input-input`
 
 ### Code Example
 ```typescript

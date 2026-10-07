@@ -124,6 +124,16 @@ export function remapLayoutConfigs(node: ComponentSchema, idMap: Map<string, str
       }
       config['tabAssignments'] = newAssignments;
     }
+
+    if (config['viewAssignments']) {
+      const oldAssignments = config['viewAssignments'] as Record<string, string>;
+      const newAssignments: Record<string, string> = {};
+      for (const [oldId, viewId] of Object.entries(oldAssignments)) {
+        const newId = idMap.get(oldId) || oldId;
+        newAssignments[newId] = viewId;
+      }
+      config['viewAssignments'] = newAssignments;
+    }
   }
 
   if ('components' in node && Array.isArray((node as LayoutComponentSchema).components)) {

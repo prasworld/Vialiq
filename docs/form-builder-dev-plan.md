@@ -47,10 +47,10 @@
 | **v0.1** | Foundation — scaffold, types, registry, rule engine | Weeks 0–2 | ✅ Complete |
 | **v0.2** | Canvas & DnD — drag from palette, flat canvas, auto-key | Weeks 3–4 | ✅ Complete |
 | **v0.3** | Properties Panel & History — settings, undo/redo, JSON view | Weeks 5–6 | ✅ Complete |
-| **v0.4** | Layout Components — panel, columns, tabs, fieldset, repeater | Weeks 7–8 | ⏳ Next |
-| **v0.5** | Validation & Conditionals — rule editor, conditional visibility | Weeks 9–10 | 🔜 Upcoming |
-| **v0.6** | Drawer & Accessibility — `<vi-drawer>`, keyboard DnD, ARIA | Weeks 11–12 | 🔜 Upcoming |
-| **v1.0** | GA — full tests, Storybook, documentation, published package | Weeks 13–14 | 🔜 Upcoming |
+| **v0.4** | Layout Components — panel, columns, tabs, fieldset, repeater | Weeks 7–8 | ✅ Complete |
+| **v0.5** | Validation & Conditionals — rule editor, conditional visibility | Weeks 9–10 | 🛑 SKIPPED (Deferred) |
+| **v0.6** | Drawer & Accessibility — `<vi-drawer>`, keyboard DnD, ARIA | Weeks 11–12 | 🛑 SKIPPED (Deferred) |
+| **v1.0** | GA — full tests, Storybook, documentation, published package | Weeks 13–14 | ⏳ Next |
 | **v2.0** | Form Renderer — `FormRendererComponent` (`@vi/form-renderer`) | Post v1 | 🔜 Upcoming |
 | **v3.0** | Cross-framework core (`@vi/form-builder-core`) | Backlog | 🔜 Backlog |
 
@@ -60,6 +60,8 @@
 ### `libs/web-components` | Weeks 0–1 (Parallel with Phase 1)
 
 > **Blocker for:** date/time field rendering on canvas. Runs in parallel with Phase 1.
+> 
+> > **UPDATE (Oct 2026): ✅ COMPLETE**. Both `<vi-date-picker>` and `readonly` properties for leaf components (`vi-input`, `vi-textarea`, etc.) were successfully implemented in `@vialiq/web-components`.
 
 ### Goals
 Build `<vi-date-picker>` and harden all `<vi-*>` leaf components with `readonly` support (TD-06).
@@ -123,7 +125,9 @@ export const enum FormPermission {
 
 > **Goal:** Library scaffolded, all types complete, schema parseable, registry injecting built-in descriptors, rule engine fully tested.
 > 
-> **Status: ✅ Complete** — All 1.1–1.7 deliverables done. 53 tests passing.
+> **Status: ✅ Complete** — All 1.1–1.7 deliverables done (except Validation Rule Engine). 53 tests passing.
+> 
+> > **UPDATE (Oct 2026):** Scaffold, Types, and Registry completed perfectly. The `ValidationEngine` and `json-logic-js` implementation were completely deferred to future sprints.
 
 ### 1.1 Nx Library Scaffold
 
@@ -358,7 +362,9 @@ src/lib/
 
 > **Goal:** Selecting a node opens its settings. Edits update schema live. Undo/redo works. JSON view + duplicate land here.
 >
-> **Status: ✅ Complete** — `HistoryService` (signal-reactive, debounced). `PropertiesPanelComponent` + `SettingsTabComponent` + `SettingsFieldComponent`. `BuilderToolbarComponent` (undo/redo/save). `schemaChange` output on `FormBuilderComponent`. `duplicateComponent()` self-contained in `FormSchemaService`.
+> **Status: ✅ Complete** — `HistoryService` (signal-reactive, debounced). `PropertiesPanelComponent` built successfully utilizing a highly scalable `settingsSchema` architecture (`SettingsTabComponent` / `SettingsFieldComponent`).
+> 
+> > **UPDATE (Oct 2026):** Undo/Redo is fully functional. We skipped the structural `SchemaValidatorService` implementation (to catch duplicate keys/orphaned rules), which is deferred to the roadmap.
 
 ### 3.1 History Service
 
@@ -454,6 +460,8 @@ src/lib/json-view/
 ### `libs/form-builder` | Weeks 7–8
 
 > **Goal:** Full recursive nesting — panels, columns, tabs, fieldset, repeater. Drop zones inside containers.
+> 
+> > **UPDATE (Oct 2026): ✅ COMPLETE.** Successfully implemented all nested layouts directly within `canvas-node.component.ts` (Panel, Columns, Tabs, Fieldset, Repeater, and Content Switcher). We encountered and solved complex DOM re-patching edge cases by implementing `activeItemId` binding in `viDynamicElement` and a strict `disallowedChildren` nesting constraint system.
 
 ### 4.1 Canvas Container Component
 
@@ -530,6 +538,8 @@ src/lib/canvas/
 ### `libs/form-builder` | Weeks 9–10
 
 > **Goal:** Validation rules editable in properties panel. Conditional visibility works in preview.
+> 
+> > **UPDATE (Oct 2026): 🛑 SKIPPED.** This entire phase was deferred. Getting the core visual builder (DnD + Registry + Settings + Undo/Redo) stable was the priority. Validation Engine and Rules Editor UI moved to the v2 Roadmap.
 
 > **Architecture (decided 2026-05-29):** Validation uses `ValidationEngine` (Angular `@Injectable()`) with `json-logic-js`. Custom validators via `provideValidation()` from `@vialiq/form-validator-sdk`. See [form-builder-validation.md](file:///Users/prashantgupta/code/nx/docs/form-builder-validation.md) §20 for full implementation spec.
 
@@ -609,6 +619,8 @@ inject(CUSTOM_VALIDATOR_REGISTRY, { optional: true })
 ### `libs/web-components` + `libs/form-builder` | Weeks 11–12
 
 > **Goal:** Sidebar mode with `<vi-drawer>`. Keyboard DnD. ARIA. WCAG 2.1 AA compliance.
+> 
+> > **UPDATE (Oct 2026): 🛑 SKIPPED.** We opted to use a standard right-hand properties panel instead of `<vi-drawer>`. `KeyboardDndService` and advanced ARIA implementations are deferred to the roadmap.
 
 ### 6.1 `<vi-drawer>` Lit Component
 

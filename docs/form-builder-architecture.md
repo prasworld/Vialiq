@@ -8,6 +8,8 @@
 
 ## 1. Nx Project Setup
 
+> **UPDATE (Oct 2026):** We have split the `form-builder` into two distinct libraries: `@vialiq/form-builder` (design-time UI) and `@vialiq/form-renderer` (run-time form execution). This separation drastically reduces bundle size for end users. The structure below is partially deprecated in favor of this split.
+
 ```
 libs/
   form-builder/
@@ -425,6 +427,8 @@ Target: **Zone.js-free** (`provideExperimentalZonelessChangeDetection()`). All s
 
 ### 7.1 Canvas Rendering
 
+> **UPDATE (Oct 2026):** During implementation, we encountered state-reset issues during drag-and-drop due to Angular re-patching the DOM. We solved this by passing an `activeItemId` directly into layout containers (like Tabs/Content Switcher) to persist visual state, and implemented strict `disallowedChildren` constraints to prevent illegal nesting (e.g., Content Switchers cannot be nested inside each other).
+
 `CanvasNodeComponent` reads the `ComponentDescriptor.canvasElement` string (e.g. `'vi-input'`) and renders:
 
 ```html
@@ -453,6 +457,10 @@ The `<vi-drawer>` Lit web component (to be built in `libs/web-components`) has t
 `FormBuilderComponent` uses a `DomPortal` to project `PropertiesPanelComponent`'s DOM into the `<vi-drawer>` slot when `propertiesPanelOpen()` is true. On desktop viewports, the right-hand column is used instead.
 
 ### 7.3 `FormRendererComponent` Preview
+
+> **UPDATE (Oct 2026):** The renderer architecture has been heavily expanded. 
+> 1. To support custom components injected via `BUILDER_COMPONENTS`, the renderer uses an `@default` switch block with `*ngComponentOutlet`. Host applications inject their custom renderer components using the `RENDERER_COMPONENTS` token.
+> 2. **Data Hydration**: We implemented a robust `FieldValue` model (value, displayValue, rawValue) for complex web components. We introduced `serializePayload()` to flatten data for the API, and `deserializePayload()` to rehydrate complex objects when editing existing records.
 
 When the form designer clicks "Preview", `FormBuilderComponent` toggles to `FormPreviewComponent` which renders:
 
@@ -513,6 +521,8 @@ Nx constraints (`eslint.config.mjs` at root):
 ---
 
 ## 10. Codelist & Dynamic Options Architecture
+
+> **TODO (CRITICAL MISS - Oct 2026):** This entire Codelist and Enterprise Terminology section was missed during the Phase 1-5 implementation and the subsequent documentation extraction. We must resurrect this architecture and implement `CodelistService` parallel pre-fetching in the `@vialiq/form-renderer` before it is considered production-ready.
 
 > **⛔ BEFORE IMPLEMENTATION — MANDATORY PREREQUISITES:**
 > The following cross-cutting concerns MUST have signed-off designs before implementation of any codelist or option-control feature begins:

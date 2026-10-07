@@ -42,8 +42,8 @@ export class DynamicElementDirective implements OnChanges {
         this.applyAttribute(key.slice(5), value);
       } else if (key === 'htmlContent') {
         this.setSafeHtmlContent(value as string);
-      } else if (key === 'unsafeHtmlContent') {
-        this.currentElement.innerHTML = value as string;
+      } else if (key === 'childElements') {
+        this.renderChildElements(value as any[]);
       } else if (key === 'class') {
         this.applyClass(value);
       } else {
@@ -52,7 +52,9 @@ export class DynamicElementDirective implements OnChanges {
     }
 
     if (this.activeItemId()) {
-      (this.currentElement as unknown as Record<string, unknown>)['value'] = this.activeItemId();
+      const isTabs = this.currentElement.tagName.toLowerCase() === 'vi-tabs';
+      const propertyName = isTabs ? 'active' : 'value';
+      (this.currentElement as unknown as Record<string, unknown>)[propertyName] = this.activeItemId();
     }
   }
 
@@ -102,6 +104,33 @@ export class DynamicElementDirective implements OnChanges {
     const doc = parser.parseFromString(safeValue, 'text/html');
     this.currentElement.replaceChildren(...Array.from(doc.body.childNodes));
   }
+
+  private renderChildElements(children: any[], parentEl?: any): void {
+    const targetParent = parentEl || this.currentElement;
+    if (!targetParent) return;
+    
+    // Clear dynamically rendered child elements first to prevent duplication
+    if (!parentEl) {
+      targetParent.innerHTML = '';
+    }
+    
+    children.forEach(childDef => {
+      const el = this.renderer.createElement(childDef.tag);
+      if (childDef.attributes) {
+        for (const [attr, val] of Object.entries(childDef.attributes)) {
+          this.renderer.setAttribute(el, attr, String(val));
+        }
+      }
+      if (childDef.textContent) {
+        const text = this.renderer.createText(childDef.textContent);
+        this.renderer.appendChild(el, text);
+      }
+      if (childDef.children && Array.isArray(childDef.children)) {
+        this.renderChildElements(childDef.children, el);
+      }
+      this.renderer.appendChild(targetParent, el);
+    });
+  }
 }
 
 @Component({
@@ -137,13 +166,13 @@ export class CanvasNodeComponent {
   get columnsCount(): number {
     const node = this.node();
     if (node.type === 'columns' && 'layoutConfig' in node) {
-      return ((node.layoutConfig as Record<string, unknown>)?.['columns'] as number) || 2;
+      return Math.max(1, Number((node.layoutConfig as Record<string, unknown>)?.['columns'] ?? 2));
     }
     return 0;
   }
 
   getColumnsArray(): number[] {
-    return Array.from({ length: this.columnsCount }, (_, i) => i);
+    return Array.from({ length: Math.max(1, this.columnsCount) }, (_, i) => i);
   }
 
   getChildrenForColumn(colIndex: number): { child: ComponentSchema; globalIndex: number }[] {
@@ -174,19 +203,22 @@ export class CanvasNodeComponent {
 
   currentActiveTabId = computed(() => {
     const active = this.activeTabId();
-    if (active) return active;
-    
     const node = this.node() as LayoutComponentSchema;
     const config = node.layoutConfig as Record<string, unknown> | undefined;
+
     if (node.type === 'tabs' && config?.['tabs']) {
       const tabs = config['tabs'] as { id: string }[];
+      if (active && tabs.some(t => t.id === active)) return active;
       if (tabs.length > 0) return tabs[0].id;
+      return '';
     }
     if (node.type === 'content-switcher' && config?.['views']) {
       const views = config['views'] as { id: string }[];
+      if (active && views.some(v => v.id === active)) return active;
       if (views.length > 0) return views[0].id;
+      return '';
     }
-    return '';
+    return active || '';
   });
 
   onActiveItemChange(id: string) {

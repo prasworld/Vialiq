@@ -80,9 +80,14 @@ export class SettingsHostComponent {
         if (descriptor.settingsComponent) {
           try {
             const comp = await descriptor.settingsComponent();
-            this.customComponentType.set(comp);
+            // Verify the selection hasn't changed while we were waiting for the chunk to load
+            if (this._lastSelectionKey === selectionKey) {
+              this.customComponentType.set(comp);
+            }
           } catch (err) {
-            console.error('Failed to load custom settings component', err);
+            if (this._lastSelectionKey === selectionKey) {
+              console.error('Failed to load custom settings component', err);
+            }
           }
         }
       }

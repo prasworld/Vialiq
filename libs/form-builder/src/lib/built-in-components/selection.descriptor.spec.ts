@@ -27,7 +27,6 @@ describe('Selection Descriptors', () => {
         type: 'select',
         placeholder: 'Select one',
         readOnly: true,
-        multiple: true,
         clearable: true
       };
 

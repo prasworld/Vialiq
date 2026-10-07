@@ -10,7 +10,7 @@ function dateCanvasProps(schema: DateComponentSchema): Record<string, unknown> {
     step: schema.step ?? null,
     required: hasRequiredRule(schema) || null,
     readonly: schema.readOnly ?? null,
-    unsafeHtmlContent: `<vi-date-picker-input${schema.placeholder ? ` placeholder="${schema.placeholder}"` : ''}></vi-date-picker-input>`,
+    placeholder: schema.placeholder || '',
   };
 }
 
@@ -41,7 +41,7 @@ export const DATE_DESCRIPTOR: ComponentDescriptor = {
   icon: 'calendar',
   traits: { isInput: true },
   weight: 30,
-  canvasElement: 'vi-date-picker',
+  canvasElement: 'vi-date-picker-input',
   canvasProps: (s) => dateCanvasProps(s as DateComponentSchema),
   defaultSchema: {
     type: 'date',
@@ -64,7 +64,6 @@ export const TIME_DESCRIPTOR: ComponentDescriptor = {
   canvasElement: 'input',
   canvasProps: (s) => {
     const props = dateCanvasProps(s as DateComponentSchema);
-    delete props['unsafeHtmlContent'];
     return { ...props, type: 'time' };
   },
   defaultSchema: {
@@ -87,7 +86,6 @@ export const DATETIME_LOCAL_DESCRIPTOR: ComponentDescriptor = {
   canvasElement: 'input',
   canvasProps: (s) => {
     const props = dateCanvasProps(s as DateComponentSchema);
-    delete props['unsafeHtmlContent'];
     return { ...props, type: 'datetime-local' };
   },
   defaultSchema: {

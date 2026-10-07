@@ -71,10 +71,14 @@ export const TABS_DESCRIPTOR: ComponentDescriptor = {
   canvasProps: (s) => {
     const config = (s as LayoutComponentSchema).layoutConfig as Record<string, unknown> | undefined;
     const tabs = (config?.['tabs'] as { id: string; label: string }[]) || [];
-    const html = tabs.map(t => `<vi-tab slot="tabs" value="${t.id}">${t.label}</vi-tab>`).join('');
+    const childElements = tabs.map(t => ({
+      tag: 'vi-tab',
+      attributes: { 'tab-id': t.id },
+      textContent: t.label
+    }));
     return {
-      value: tabs.length > 0 ? tabs[0].id : '',
-      unsafeHtmlContent: html
+      active: tabs.length > 0 ? tabs[0].id : '',
+      childElements
     };
   },
   defaultSchema: {
@@ -170,11 +174,15 @@ export const CONTENT_SWITCHER_DESCRIPTOR: ComponentDescriptor = {
   canvasProps: (s) => {
     const config = (s as LayoutComponentSchema).layoutConfig as Record<string, unknown> | undefined;
     const views = (config?.['views'] as { id: string; label: string }[]) || [];
-    const html = views.map(v => `<vi-switcher-item value="${v.id}">${v.label}</vi-switcher-item>`).join('');
+    const childElements = views.map(v => ({
+      tag: 'vi-switcher-item',
+      attributes: { value: v.id },
+      textContent: v.label
+    }));
     return {
       block: true,
       value: views.length > 0 ? views[0].id : '',
-      unsafeHtmlContent: html
+      childElements
     };
   },
   defaultSchema: {

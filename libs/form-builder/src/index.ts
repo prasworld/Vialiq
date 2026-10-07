@@ -101,6 +101,9 @@ export { FormBuilderComponent } from './lib/builder/form-builder.component';
 
 export * from './lib/built-in-components';
 
+// ─── Utilities ──────────────────────────────────────────────────────────────────
+export { serializeForm } from './lib/utils/form-serializer.util';
+
 // ─── Web Components Registration ──────────────────────────────────────────────
 // Moved to form-builder.component.ts to prevent tree-shaking and guarantee
 // registration when the builder is rendered.
