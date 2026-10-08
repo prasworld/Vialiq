@@ -16,6 +16,7 @@ import { BuilderToolbarComponent } from '../toolbar/builder-toolbar.component';
 import { PropertiesPanelComponent } from '../properties/properties-panel.component';
 import type { FormSchema } from '../types';
 import { EMPTY_FORM_SCHEMA } from '../types/schema';
+import { registerFormBuilderElements } from '../utils/registration.util';
 
 // ─── Icon Registration ────────────────────────────────────────────────────────
 import { registerIcons } from '@vialiq/web-components/icons/registry';
@@ -131,6 +132,11 @@ export class FormBuilderComponent implements OnInit, OnDestroy {
     .subscribe(schema => this.schemaChange.emit(schema));
 
   constructor() {
+    // Automatically register all required web components for the builder
+    registerFormBuilderElements().catch(err => 
+      console.error('[FormBuilder] Auto-registration of web components failed:', err)
+    );
+
     effect(() => {
       // Keep state in sync if contextId input changes (e.g. host component re-uses builder)
       this.state.setContextId(this.contextId());

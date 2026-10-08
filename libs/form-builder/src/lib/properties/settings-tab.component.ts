@@ -31,45 +31,6 @@ export class SettingsTabComponent {
   onValueChange(key: string, value: unknown): void {
     const patch: Record<string, unknown> = {};
     const parts = key.split('.');
-    
-    // Check if we are modifying tabs or views to handle cleanup of deleted items
-    if (key === 'layoutConfig.tabs' || key === 'layoutConfig.views') {
-      const currentItems = this.getFieldValue(key) as { id: string }[] | undefined;
-      const newItems = value as { id: string }[];
-      
-      if (currentItems && newItems && currentItems.length > newItems.length) {
-        // An item was deleted. Find which one.
-        const newIds = new Set(newItems.map(i => i.id));
-        const deletedItem = currentItems.find(i => !newIds.has(i.id));
-        
-        if (deletedItem) {
-          const assignKey = key === 'layoutConfig.tabs' ? 'tabAssignments' : 'viewAssignments';
-          const currentAssignments = this.getFieldValue(`layoutConfig.${assignKey}`) as Record<string, string> | undefined;
-          const fallbackId = newItems.length > 0 ? newItems[0].id : undefined;
-          
-          if (currentAssignments) {
-            const newAssignments = { ...currentAssignments };
-            let assignmentsChanged = false;
-            
-            for (const [childId, assignedTabId] of Object.entries(newAssignments)) {
-              if (assignedTabId === deletedItem.id) {
-                if (fallbackId) {
-                  newAssignments[childId] = fallbackId;
-                } else {
-                  delete newAssignments[childId];
-                }
-                assignmentsChanged = true;
-              }
-            }
-            
-            if (assignmentsChanged) {
-              if (!patch['layoutConfig']) patch['layoutConfig'] = {};
-              (patch['layoutConfig'] as Record<string, unknown>)[assignKey] = newAssignments;
-            }
-          }
-        }
-      }
-    }
 
     let current = patch;
     for (let i = 0; i < parts.length - 1; i++) {

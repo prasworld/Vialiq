@@ -107,3 +107,4 @@ export { serializeForm } from './lib/utils/form-serializer.util';
 // ─── Web Components Registration ──────────────────────────────────────────────
 // Moved to form-builder.component.ts to prevent tree-shaking and guarantee
 // registration when the builder is rendered.
+export { registerFormBuilderElements } from './lib/utils/registration.util';

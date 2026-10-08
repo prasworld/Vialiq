@@ -73,6 +73,7 @@
           @for (item of getItemListValue(); track item.id; let idx = $index) {
             <div class="item-list-row">
               <vi-input
+                [attr.aria-label]="field().label + ' item ' + (idx + 1)"
                 [value]="item.label"
                 (vi-input-change)="updateItemLabel(idx, $event)">
               </vi-input>

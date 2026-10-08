@@ -2,8 +2,8 @@
       [class.active]="isActive"
       [class.dragging]="isDragging"
       [class.interactive]="isInteractive"
-      role="button"
-      tabindex="0"
+      [attr.role]="isInteractive ? null : 'button'"
+      [attr.tabindex]="isInteractive ? null : '0'"
       (click)="selectNode($event)"
       (keydown)="handleKeydown($event)">
     

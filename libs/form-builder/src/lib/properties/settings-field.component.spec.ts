@@ -106,4 +106,65 @@ describe('SettingsFieldComponent', () => {
       expect(emitSpy).toHaveBeenCalledWith('invalid-num'); // Remains as string because isNaN is true
     });
   });
+
+  describe('Item List Behavior', () => {
+    it('should return default item list if value is empty or not an array', () => {
+      fixture.componentRef.setInput('value', null);
+      expect(component.getItemListValue()).toEqual([{ id: 'item1', label: 'Item 1' }]);
+
+      fixture.componentRef.setInput('value', 'not-an-array');
+      expect(component.getItemListValue()).toEqual([{ id: 'item1', label: 'Item 1' }]);
+    });
+
+    it('should return value if it is an array', () => {
+      const list = [{ id: 'tab1', label: 'Tab 1' }];
+      fixture.componentRef.setInput('value', list);
+      expect(component.getItemListValue()).toEqual(list);
+    });
+
+    it('should update item label and emit new list', () => {
+      const emitSpy = vi.spyOn(component.valueChange, 'emit');
+      const list = [{ id: 'tab1', label: 'Tab 1' }];
+      fixture.componentRef.setInput('value', list);
+
+      component.updateItemLabel(0, 'Updated Tab');
+      
+      expect(emitSpy).toHaveBeenCalledWith([{ id: 'tab1', label: 'Updated Tab' }]);
+    });
+
+    it('should add item after specified index and emit new list', () => {
+      const emitSpy = vi.spyOn(component.valueChange, 'emit');
+      const list = [{ id: 'tab1', label: 'Tab 1' }];
+      fixture.componentRef.setInput('value', list);
+
+      component.addItem(0);
+      
+      expect(emitSpy).toHaveBeenCalled();
+      const emittedValue = emitSpy.mock.calls[0][0] as any[];
+      expect(emittedValue.length).toBe(2);
+      expect(emittedValue[0]).toEqual(list[0]);
+      expect(emittedValue[1].id).toMatch(/^item2-\d+$/);
+      expect(emittedValue[1].label).toBe('View 2');
+    });
+
+    it('should remove item at specified index and emit new list', () => {
+      const emitSpy = vi.spyOn(component.valueChange, 'emit');
+      const list = [{ id: 'tab1', label: 'Tab 1' }, { id: 'tab2', label: 'Tab 2' }];
+      fixture.componentRef.setInput('value', list);
+
+      component.removeItem(0);
+      
+      expect(emitSpy).toHaveBeenCalledWith([{ id: 'tab2', label: 'Tab 2' }]);
+    });
+
+    it('should not remove item if there is only 1 item left', () => {
+      const emitSpy = vi.spyOn(component.valueChange, 'emit');
+      const list = [{ id: 'tab1', label: 'Tab 1' }];
+      fixture.componentRef.setInput('value', list);
+
+      component.removeItem(0);
+      
+      expect(emitSpy).not.toHaveBeenCalled();
+    });
+  });
 });

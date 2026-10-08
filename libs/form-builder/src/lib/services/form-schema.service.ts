@@ -94,6 +94,7 @@ export class FormSchemaService {
   removeComponent(nodeId: string) {
     this._schema.update((s) => {
       const newSchema = structuredClone(s);
+      this._cleanupParentLayoutConfig(newSchema.components, nodeId);
       removeNode(newSchema.components, nodeId);
       return newSchema;
     });
@@ -108,6 +109,8 @@ export class FormSchemaService {
         console.warn('Cannot move a component into itself or its descendant');
         return s; // No change
       }
+
+      this._cleanupParentLayoutConfig(newSchema.components, nodeId);
 
       const sourceContext = findNodeWithContext(newSchema.components, nodeId);
       if (!sourceContext.node || !sourceContext.parentArray || sourceContext.index === -1) {
@@ -171,6 +174,10 @@ export class FormSchemaService {
       const newSchema = structuredClone(s);
       const node = findNode(newSchema.components, nodeId);
       if (node) {
+        const patchAsLayout = patch as Partial<LayoutComponentSchema>;
+        if (patchAsLayout.layoutConfig) {
+          this._cleanupOrphanedLayoutChildren(newSchema.components, node as LayoutComponentSchema, patchAsLayout.layoutConfig as Record<string, unknown>);
+        }
         deepMerge(node as unknown as Record<string, unknown>, patch as Record<string, unknown>);
       }
       return newSchema;
@@ -200,6 +207,70 @@ export class FormSchemaService {
     const node = this.getNode(nodeId);
     if (!node || !('components' in node)) return false;
     return isDescendant([node], nodeId, targetId);
+  }
+
+  private _cleanupParentLayoutConfig(components: ComponentSchema[], childId: string, currentParent?: LayoutComponentSchema): boolean {
+    for (const comp of components) {
+      if (comp.id === childId) {
+        if (currentParent && currentParent.layoutConfig) {
+          const config = currentParent.layoutConfig as Record<string, unknown>;
+          if (config['columnAssignments']) {
+            delete (config['columnAssignments'] as Record<string, number>)[childId];
+          }
+          if (config['tabAssignments']) {
+            delete (config['tabAssignments'] as Record<string, string>)[childId];
+          }
+          if (config['viewAssignments']) {
+            delete (config['viewAssignments'] as Record<string, string>)[childId];
+          }
+        }
+        return true;
+      }
+      if ('components' in comp && Array.isArray(comp.components)) {
+        if (this._cleanupParentLayoutConfig(comp.components, childId, comp as LayoutComponentSchema)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  private _cleanupOrphanedLayoutChildren(rootComponents: ComponentSchema[], node: LayoutComponentSchema, patchConfig: Record<string, unknown>) {
+    const currentConfig = (node.layoutConfig || {}) as Record<string, unknown>;
+    
+    // Check tabs
+    if (patchConfig['tabs'] && Array.isArray(patchConfig['tabs']) && currentConfig['tabs'] && Array.isArray(currentConfig['tabs'])) {
+      const newTabIds = new Set(patchConfig['tabs'].map((t: any) => t.id));
+      const oldTabIds = currentConfig['tabs'].map((t: any) => t.id);
+      const removedTabIds = oldTabIds.filter((id: string) => !newTabIds.has(id));
+      
+      if (removedTabIds.length > 0 && currentConfig['tabAssignments']) {
+        const assignments = currentConfig['tabAssignments'] as Record<string, string>;
+        const childrenToRemove = Object.keys(assignments).filter(childId => removedTabIds.includes(assignments[childId]));
+        
+        for (const childId of childrenToRemove) {
+          removeNode(rootComponents, childId);
+          delete assignments[childId];
+        }
+      }
+    }
+    
+    // Check views (content-switcher)
+    if (patchConfig['views'] && Array.isArray(patchConfig['views']) && currentConfig['views'] && Array.isArray(currentConfig['views'])) {
+      const newViewIds = new Set(patchConfig['views'].map((v: any) => v.id));
+      const oldViewIds = currentConfig['views'].map((v: any) => v.id);
+      const removedViewIds = oldViewIds.filter((id: string) => !newViewIds.has(id));
+      
+      if (removedViewIds.length > 0 && currentConfig['viewAssignments']) {
+        const assignments = currentConfig['viewAssignments'] as Record<string, string>;
+        const childrenToRemove = Object.keys(assignments).filter(childId => removedViewIds.includes(assignments[childId]));
+        
+        for (const childId of childrenToRemove) {
+          removeNode(rootComponents, childId);
+          delete assignments[childId];
+        }
+      }
+    }
   }
 }
 

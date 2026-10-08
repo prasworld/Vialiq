@@ -116,7 +116,7 @@ export class SettingsHostComponent {
 
         // Focus the first interactive control.
         const firstControl = host.querySelector(
-          'vi-input, vi-textarea, vi-select, vi-switch, input, select, textarea',
+          'vi-input, vi-textarea, vi-select, vi-switch, vi-masked-input, vi-date-picker-input, vi-combobox, vi-checkbox, vi-radio, vi-upload, input, select, textarea',
         ) as (HTMLElement & { updateComplete?: Promise<boolean> }) | null;
         if (!firstControl) return;
 

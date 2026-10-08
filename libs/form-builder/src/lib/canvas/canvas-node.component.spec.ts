@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Component, ComponentRef, input } from '@angular/core';
+import { By } from '@angular/platform-browser';
 import { CanvasNodeComponent, DynamicElementDirective } from './canvas-node.component';
 import { CanvasDropZoneComponent } from './canvas-drop-zone.component';
 import { CanvasNodeOverlayComponent } from './canvas-node-overlay.component';
@@ -205,6 +206,50 @@ describe('CanvasNodeComponent & DynamicElementDirective', () => {
 
       const switcherEl = fixture.nativeElement.querySelector('vi-content-switcher');
       expect((switcherEl as any).value).toBe('view-2');
+    });
+
+    it('should emit correct active ID on tab/view changes', () => {
+      // 1. vi-tabs
+      vi.spyOn(registryService, 'getByType').mockReturnValue({
+        type: 'tabs-type',
+        label: 'Tabs',
+        category: 'layout',
+        icon: 'test',
+        defaultSchema: { type: 'tabs-type', label: 'Tabs' },
+        canvasElement: 'vi-tabs',
+        canvasProps: () => ({})
+      } as any);
+
+      componentRef.setInput('node', { id: '1', type: 'tabs-type', label: 'Tabs Node' });
+      fixture.detectChanges();
+
+      let activeTabId = '';
+      const tabsEl = fixture.nativeElement.querySelector('vi-tabs');
+      
+      const debugEl = fixture.debugElement.query(By.directive(DynamicElementDirective));
+      const directiveInstance = debugEl.injector.get(DynamicElementDirective);
+      directiveInstance.activeItemChange.subscribe((id: string) => activeTabId = id);
+      
+      tabsEl.dispatchEvent(new CustomEvent('vi-tabs-change', { detail: { fromTabId: 'tab1', toTabId: 'tab2' } }));
+      expect(activeTabId).toBe('tab2');
+
+      // 2. vi-content-switcher
+      vi.spyOn(registryService, 'getByType').mockReturnValue({
+        type: 'switcher-type',
+        label: 'Switcher',
+        category: 'layout',
+        icon: 'test',
+        defaultSchema: { type: 'switcher-type', label: 'Switcher' },
+        canvasElement: 'vi-content-switcher',
+        canvasProps: () => ({})
+      } as any);
+
+      componentRef.setInput('node', { id: '2', type: 'switcher-type', label: 'Switcher Node' });
+      fixture.detectChanges();
+
+      const switcherEl = fixture.nativeElement.querySelector('vi-content-switcher');
+      switcherEl.dispatchEvent(new CustomEvent('vi-content-switcher-change', { detail: { value: 'view2' } }));
+      expect(activeTabId).toBe('view2');
     });
     
     it('should handle changing node type and replacing element', () => {

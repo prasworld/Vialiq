@@ -69,7 +69,7 @@ export class DynamicElementDirective implements OnChanges {
       
       // Listen for tab/view changes
       this.renderer.listen(this.currentElement, 'vi-tabs-change', (e: CustomEvent) => {
-        this.activeItemChange.emit(e.detail.value);
+        this.activeItemChange.emit(e.detail.toTabId);
       });
       this.renderer.listen(this.currentElement, 'vi-content-switcher-change', (e: CustomEvent) => {
         this.activeItemChange.emit(e.detail.value);
