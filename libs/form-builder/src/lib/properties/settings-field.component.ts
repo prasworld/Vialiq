@@ -50,4 +50,40 @@ export class SettingsFieldComponent {
 
     this.valueChange.emit(val);
   }
+
+  // ─── Item List Helpers (Tabs/Views) ──────────────────────────────────────────
+
+  getItemListValue(): { id: string; label: string }[] {
+    const val = this.value();
+    if (Array.isArray(val)) {
+      return val as { id: string; label: string }[];
+    }
+    return [{ id: 'item1', label: 'Item 1' }];
+  }
+
+  updateItemLabel(index: number, event: unknown): void {
+    const customEventDetailValue = (event as CustomEvent)?.detail?.value;
+    const targetValue = (event as Event & { target: { value?: string } })?.target?.value;
+    const val = customEventDetailValue ?? targetValue ?? String(event);
+    const list = [...this.getItemListValue()];
+    if (list[index]) {
+      list[index] = { ...list[index], label: val };
+      this.valueChange.emit(list);
+    }
+  }
+
+  addItem(afterIndex: number): void {
+    const list = [...this.getItemListValue()];
+    const nextIdNumber = list.length + 1; // Simplified ID generation
+    list.splice(afterIndex + 1, 0, { id: `item${nextIdNumber}-${Date.now()}`, label: `View ${nextIdNumber}` });
+    this.valueChange.emit(list);
+  }
+
+  removeItem(index: number): void {
+    const list = [...this.getItemListValue()];
+    if (list.length > 1) {
+      list.splice(index, 1);
+      this.valueChange.emit(list);
+    }
+  }
 }

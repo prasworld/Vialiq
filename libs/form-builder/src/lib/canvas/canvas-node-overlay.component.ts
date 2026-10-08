@@ -27,6 +27,10 @@ export class CanvasNodeOverlayComponent implements OnInit, OnDestroy {
     return this.state.activeNodeId() === this.node().id;
   }
 
+  get isInteractive() {
+    return ['tabs', 'content-switcher'].includes(this.node().type);
+  }
+
   ngOnInit() {
     this._cleanup = draggable({
       element: this.el.nativeElement,

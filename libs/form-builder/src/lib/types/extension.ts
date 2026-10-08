@@ -1,4 +1,5 @@
 import { Observable } from 'rxjs';
+import type { ComponentTraits } from './component-descriptor';
 
 export type ExtensionFieldType = 'text' | 'textarea' | 'select' | 'boolean';
 
@@ -15,6 +16,8 @@ export interface ExtensionFieldDefinition {
   description?: string;
   /** Component types this applies to (if empty, applies to all) */
   appliesTo?: string[];
+  /** Only apply to components that possess ALL these traits */
+  requiredTraits?: (keyof ComponentTraits)[];
   
   // --- Placement Controls ---
   /** 

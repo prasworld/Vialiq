@@ -1,8 +1,9 @@
 <div class="overlay-container"
       [class.active]="isActive"
       [class.dragging]="isDragging"
-      role="button"
-      tabindex="0"
+      [class.interactive]="isInteractive"
+      [attr.role]="isInteractive ? null : 'button'"
+      [attr.tabindex]="isInteractive ? null : '0'"
       (click)="selectNode($event)"
       (keydown)="handleKeydown($event)">
     
@@ -10,7 +11,7 @@
       <div class="selection-border"></div>
     
       <!-- Content wrapper -->
-      <div class="content-wrapper">
+      <div class="content-wrapper" [class]="'label-pos-' + (node().labelPosition || 'top')">
         @if (node().label) {
           <div class="node-label">{{ node().label }}</div>
         }

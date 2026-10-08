@@ -4,6 +4,8 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { FormSettingsPanelComponent } from './form-settings-panel.component';
 import { FormSchemaService } from '../services/form-schema.service';
 import { KeyGeneratorService } from '../services/key-generator.service';
+import { ExtensionRegistryService } from '../services/extension-registry.service';
+import { BuilderStateService } from '../services/builder-state.service';
 
 describe('FormSettingsPanelComponent', () => {
   let component: FormSettingsPanelComponent;
@@ -14,7 +16,7 @@ describe('FormSettingsPanelComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [FormSettingsPanelComponent],
-      providers: [FormSchemaService, KeyGeneratorService]
+      providers: [FormSchemaService, KeyGeneratorService, ExtensionRegistryService, BuilderStateService]
     }).compileComponents();
   });
 

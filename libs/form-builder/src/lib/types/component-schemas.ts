@@ -1,7 +1,8 @@
 import type { ValidationRule } from './validation';
 import type { ConditionalRule } from './conditional';
 import type { OptionSource } from './option-source';
-import type { ColumnsConfig, TabsConfig, PanelConfig, FieldsetConfig, RepeaterConfig } from './layout-schemas';
+import type { ColumnsConfig, TabsConfig, PanelConfig, FieldsetConfig, RepeaterConfig, ContentSwitcherConfig } from './layout-schemas';
+import type { FieldValueMapping } from './field-value';
 
 // ─── Encryption ───────────────────────────────────────────────────────────────
 
@@ -28,9 +29,13 @@ export interface BaseComponentSchema {
   disabled?: boolean;
   readOnly?: boolean;
   locked?: boolean;
-  labelPosition?: 'top' | 'left' | 'right' | 'hidden';
+  labelPosition?: 'top' | 'left' | 'hidden';
   /** Description/hint text rendered below the control */
   description?: string;
+  /** Size scale — controls padding and font size. Not all controls support all sizes. */
+  size?: 'xs' | 'sm' | 'md' | 'lg';
+  /** Stretch the control to fill its container width. Applies to button controls. */
+  fullWidth?: boolean;
   /** Custom metadata injected by host applications (e.g., CDISC OID) */
   metadata?: Record<string, unknown>;
   validation?: ValidationRule[];
@@ -41,6 +46,14 @@ export interface BaseComponentSchema {
   maxRepeat?: number;
   addLabel?: string;
   encryption?: FieldEncryptionConfig;
+  /**
+   * For dual-value controls (masked-input, date-picker), controls which
+   * representation is extracted into the API payload at submit time.
+   * - 'value'        — the canonical serialized string (default)
+   * - 'rawValue'     — the unmasked / structured value
+   * - 'displayValue' — the human-readable formatted string
+   */
+  valueMapping?: FieldValueMapping;
 }
 
 // ─── Input Fields ─────────────────────────────────────────────────────────────
@@ -51,6 +64,19 @@ export interface InputComponentSchema extends BaseComponentSchema {
   defaultValue?: string;
   autocomplete?: string;
   maxlength?: number;
+}
+
+export interface MaskedInputComponentSchema extends BaseComponentSchema {
+  type: 'masked-input';
+  placeholder?: string;
+  defaultValue?: string;
+  autocomplete?: string;
+  maxlength?: number;
+  mask: string;
+  inputType?: 'text' | 'tel' | 'email' | 'url' | 'password';
+  alwaysShowMask?: boolean;
+  // valueMapping inherited from BaseComponentSchema — use 'rawValue' to submit
+  // unmasked digits, 'value' (default) to submit the formatted string.
 }
 
 export interface NumberComponentSchema extends BaseComponentSchema {
@@ -68,6 +94,10 @@ export interface TextareaComponentSchema extends BaseComponentSchema {
   defaultValue?: string;
   rows?: number;
   maxlength?: number;
+  /** CSS resize direction for the textarea handle */
+  resize?: 'none' | 'vertical' | 'both';
+  /** Show character counter (requires maxlength) */
+  charCount?: boolean;
 }
 
 // ─── Date / Time Fields ───────────────────────────────────────────────────────
@@ -78,6 +108,7 @@ export interface DateComponentSchema extends BaseComponentSchema {
   min?: string;
   max?: string;
   step?: number;
+  placeholder?: string;
 }
 
 // ─── Selection Fields ─────────────────────────────────────────────────────────
@@ -85,8 +116,10 @@ export interface DateComponentSchema extends BaseComponentSchema {
 export interface SelectComponentSchema extends BaseComponentSchema {
   type: 'select';
   optionSource?: OptionSource;
-  multiple?: boolean;
-  defaultValue?: string | string[];
+  // NOTE: multiple selection is intentionally omitted — vi-select has no `multiple` attr.
+  // Use ComboboxComponentSchema with freeText or a dedicated multi mode instead.
+  clearable?: boolean;
+  defaultValue?: string;
   placeholder?: string;
 }
 
@@ -94,6 +127,7 @@ export interface ComboboxComponentSchema extends BaseComponentSchema {
   type: 'combobox';
   optionSource?: OptionSource;
   freeText?: boolean;
+  clearable?: boolean;
   defaultValue?: string;
   placeholder?: string;
 }
@@ -121,6 +155,17 @@ export interface CheckboxComponentSchema extends BaseComponentSchema {
 export interface RadioComponentSchema extends BaseComponentSchema {
   type: 'radio';
   value: string;  // the value submitted when this radio is selected
+}
+
+// ─── Upload Fields ────────────────────────────────────────────────────────────
+
+export interface UploadComponentSchema extends BaseComponentSchema {
+  type: 'upload';
+  accept?: string;
+  multiple?: boolean;
+  maxSize?: number;
+  maxFiles?: number;
+  hideThumbnail?: boolean;
 }
 
 // ─── Utility Fields ───────────────────────────────────────────────────────────
@@ -152,15 +197,16 @@ export interface ButtonComponentSchema extends BaseComponentSchema {
 // ─── Layout Components ────────────────────────────────────────────────────────
 
 export interface LayoutComponentSchema extends BaseComponentSchema {
-  type: 'panel' | 'columns' | 'tabs' | 'fieldset' | 'repeater';
+  type: 'panel' | 'columns' | 'tabs' | 'fieldset' | 'repeater' | 'content-switcher';
   components: ComponentSchema[];
-  layoutConfig: PanelConfig | ColumnsConfig | TabsConfig | FieldsetConfig | RepeaterConfig;
+  layoutConfig: PanelConfig | ColumnsConfig | TabsConfig | FieldsetConfig | RepeaterConfig | ContentSwitcherConfig;
 }
 
 // ─── Discriminated Union ──────────────────────────────────────────────────────
 
 export type ComponentSchema =
   | InputComponentSchema
+  | MaskedInputComponentSchema
   | NumberComponentSchema
   | TextareaComponentSchema
   | DateComponentSchema
@@ -174,10 +220,11 @@ export type ComponentSchema =
   | ContentComponentSchema
   | DividerComponentSchema
   | ButtonComponentSchema
+  | UploadComponentSchema
   | LayoutComponentSchema;
 
 /** Component types that can hold children */
-export type LayoutType = 'panel' | 'columns' | 'tabs' | 'fieldset' | 'repeater';
+export type LayoutType = 'panel' | 'columns' | 'tabs' | 'fieldset' | 'repeater' | 'content-switcher';
 
 /** Component types that are leaf field inputs (not layout containers) */
 export type FieldType = Exclude<ComponentSchema['type'], LayoutType>;

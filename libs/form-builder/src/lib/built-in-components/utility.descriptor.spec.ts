@@ -98,13 +98,16 @@ describe('Utility Descriptors', () => {
 
       const props = BUTTON_DESCRIPTOR.canvasProps(schema);
       expect(props).toEqual({
-        variant: 'danger'
+        variant: 'danger',
+        size: null,
+        'full-width': null,
+        htmlContent: 'Click'
       });
     });
 
     it('should provide default variant', () => {
       const props = BUTTON_DESCRIPTOR.canvasProps({ type: 'button', id: '1' } as any);
-      expect(props.variant).toBe('primary');
+      expect(props.variant).toBe('secondary');
     });
   });
 
@@ -118,7 +121,10 @@ describe('Utility Descriptors', () => {
       const props = SUBMIT_DESCRIPTOR.canvasProps({ type: 'submit', id: '1' } as any);
       expect(props).toEqual({
         variant: 'primary',
-        type: 'submit'
+        type: 'submit',
+        size: null,
+        'full-width': null,
+        htmlContent: 'Submit'
       });
     });
   });

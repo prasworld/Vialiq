@@ -87,3 +87,12 @@ export type {
   ExtensionFieldDefinition,
   ExtensionProvider,
 } from './extension';
+
+// Rich field values (dual-value controls: masked-input, date-picker, etc.)
+export type {
+  FieldValue,
+  MaskedFieldValue,
+  DateFieldValue,
+  FieldValueMapping,
+  DateComponents,
+} from './field-value';

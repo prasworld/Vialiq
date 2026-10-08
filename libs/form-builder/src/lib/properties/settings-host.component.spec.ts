@@ -37,6 +37,9 @@ describe('SettingsHostComponent', () => {
   let extensionRegistryService: ExtensionRegistryService;
 
   beforeEach(async () => {
+    // jsdom does not implement scrollIntoView — mock it globally
+    Element.prototype.scrollIntoView = vi.fn();
+
     await TestBed.configureTestingModule({
       imports: [SettingsHostComponent],
       providers: [ExtensionRegistryService, BuilderStateService]
@@ -71,15 +74,15 @@ describe('SettingsHostComponent', () => {
     fixture.detectChanges();
     TestBed.flushEffects();
     await fixture.whenStable();
-    
+
     expect(component).toBeTruthy();
-    expect(component.isLoaded()).toBe(true);
+    // No settingsComponent on descriptor => customComponentType stays null
     expect(component.customComponentType()).toBeNull();
   });
 
   it('should load custom settings component if provided', async () => {
     const customComponentPromise = Promise.resolve(TestCustomSettingsComponent);
-    
+
     componentRef.setInput('descriptor', {
       type: 'test-type',
       label: 'Test',
@@ -90,18 +93,54 @@ describe('SettingsHostComponent', () => {
       canvasProps: () => ({}),
       settingsComponent: () => customComponentPromise
     });
-    
+
     fixture.detectChanges();
     TestBed.flushEffects();
     await fixture.whenStable();
-    
-    expect(component.isLoaded()).toBe(true);
+    // Wait an extra tick for the async settingsComponent promise to resolve
+    await new Promise(r => setTimeout(r, 0));
+
     expect(component.customComponentType()).toBe(TestCustomSettingsComponent);
+  });
+
+  it('should ignore custom component if selection changes during load', async () => {
+    let resolvePromise: (value: any) => void;
+    const customComponentPromise = new Promise<any>((resolve) => {
+      resolvePromise = resolve;
+    });
+
+    // 1. First selection starts loading
+    componentRef.setInput('schema', { id: 'node-1', type: 'test-type' });
+    componentRef.setInput('descriptor', {
+      type: 'test-type',
+      settingsComponent: () => customComponentPromise
+    } as any);
+
+    fixture.detectChanges();
+    TestBed.flushEffects();
+
+    // 2. Before it resolves, switch to another node that has no settings component
+    componentRef.setInput('schema', { id: 'node-2', type: 'other-type' });
+    componentRef.setInput('descriptor', {
+      type: 'other-type',
+      settingsComponent: undefined
+    } as any);
+    
+    fixture.detectChanges();
+    TestBed.flushEffects();
+
+    // 3. Resolve the first promise now
+    resolvePromise!(TestCustomSettingsComponent);
+    await fixture.whenStable();
+    await new Promise(r => setTimeout(r, 0));
+
+    // 4. Because selection changed from node-1 to node-2, it should ignore the first resolution
+    expect(component.customComponentType()).toBeNull();
   });
 
   it('should handle custom settings component load failure gracefully', async () => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    
+
     componentRef.setInput('descriptor', {
       type: 'test-type',
       label: 'Test',
@@ -112,13 +151,14 @@ describe('SettingsHostComponent', () => {
       canvasProps: () => ({}),
       settingsComponent: () => Promise.reject(new Error('Failed to load'))
     });
-    
+
     fixture.detectChanges();
     TestBed.flushEffects();
     await fixture.whenStable();
-    
+    await new Promise(r => setTimeout(r, 0));
+
     expect(errorSpy).toHaveBeenCalled();
-    expect(component.isLoaded()).toBe(true);
+    // After failure, customComponentType should remain null
     expect(component.customComponentType()).toBeNull();
     errorSpy.mockRestore();
   });

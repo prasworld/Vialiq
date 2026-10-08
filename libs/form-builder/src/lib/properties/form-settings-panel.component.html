@@ -39,5 +39,62 @@
             <vi-select-option value="wizard">Wizard (Multi-step)</vi-select-option>
           </vi-select>
         </div>
+
+        <!-- Extension Fields -->
+        @for (group of groupedExtensions(); track group.section) {
+          <div class="settings-group">
+            <h4 class="group-title">{{ group.section }}</h4>
+            @for (field of group.fields; track field.key) {
+              <div class="settings-field">
+                @if (field.type !== 'boolean') {
+                  <vi-label class="field-label" [attr.for]="'ext-' + field.key">
+                    {{ field.label }}
+                  </vi-label>
+                  @if (field.description) {
+                    <div class="field-desc">{{ field.description }}</div>
+                  }
+                }
+                
+                @if (field.type === 'text') {
+                  <vi-input
+                    type="text"
+                    [id]="'ext-' + field.key"
+                    [value]="schema().metadata?.[field.key] ?? ''"
+                    (vi-input-change)="onMetadataChange(field.key, $event)">
+                  </vi-input>
+                } @else if (field.type === 'textarea') {
+                  <vi-textarea
+                    [id]="'ext-' + field.key"
+                    [value]="schema().metadata?.[field.key] ?? ''"
+                    (vi-textarea-change)="onMetadataChange(field.key, $event)">
+                  </vi-textarea>
+                } @else if (field.type === 'select') {
+                  <vi-select
+                    [id]="'ext-' + field.key"
+                    [value]="schema().metadata?.[field.key]"
+                    (vi-select-change)="onMetadataChange(field.key, $event)">
+                    @for (opt of field.options; track opt.value) {
+                      <vi-select-option [value]="opt.value">{{ opt.label }}</vi-select-option>
+                    }
+                  </vi-select>
+                } @else if (field.type === 'boolean') {
+                  <div class="checkbox-field">
+                    <div class="checkbox-text">
+                      <vi-label [attr.for]="'ext-' + field.key">{{ field.label }}</vi-label>
+                      @if (field.description) {
+                        <div class="field-desc">{{ field.description }}</div>
+                      }
+                    </div>
+                    <vi-switch
+                      [id]="'ext-' + field.key"
+                      [checked]="!!schema().metadata?.[field.key]"
+                      (vi-switch-change)="onMetadataChange(field.key, $event)">
+                    </vi-switch>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
       </div>
     </div>

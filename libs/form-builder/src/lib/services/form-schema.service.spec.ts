@@ -179,6 +179,9 @@ describe('FormSchemaService', () => {
           },
           tabAssignments: {
             'child1': 'tabA'
+          },
+          viewAssignments: {
+            'child2': 'viewA'
           }
         }
       };
@@ -201,10 +204,12 @@ describe('FormSchemaService', () => {
       expect(duplicate.layoutConfig.columnAssignments[newChild1.id]).toBe(0);
       expect(duplicate.layoutConfig.columnAssignments[newChild2.id]).toBe(1);
       expect(duplicate.layoutConfig.tabAssignments[newChild1.id]).toBe('tabA');
+      expect(duplicate.layoutConfig.viewAssignments[newChild2.id]).toBe('viewA');
       
       // Ensure old IDs are not in the new config
       expect(duplicate.layoutConfig.columnAssignments['child1']).toBeUndefined();
       expect(duplicate.layoutConfig.tabAssignments['child1']).toBeUndefined();
+      expect(duplicate.layoutConfig.viewAssignments['child2']).toBeUndefined();
     });
 
     it('should do nothing if component not found', () => {

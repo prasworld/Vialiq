@@ -1,6 +1,6 @@
 {
   "name": "@vialiq/state-fp",
-  "version": "0.9.0",
+  "version": "0.11.1",
   "private": false,
   "publishConfig": {
     "access": "public"
@@ -30,14 +30,38 @@
   "module": "./index.js",
   "types": "./index.d.ts",
   "exports": {
-    ".": { "types": "./index.d.ts", "default": "./index.js" },
-    "./core":     { "types": "./core/index.d.ts",     "default": "./core/index.js" },
-    "./kernel":   { "types": "./kernel/index.d.ts",   "default": "./kernel/index.js" },
-    "./storage":  { "types": "./storage/index.d.ts",  "default": "./storage/index.js" },
-    "./sync":     { "types": "./sync/index.d.ts",     "default": "./sync/index.js" },
-    "./devtools": { "types": "./devtools/index.d.ts", "default": "./devtools/index.js" },
-    "./adapter":  { "types": "./adapter/index.d.ts",  "default": "./adapter/index.js" },
-    "./bus":      { "types": "./bus/index.d.ts",      "default": "./bus/index.js" }
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./core": {
+      "types": "./core/index.d.ts",
+      "default": "./core/index.js"
+    },
+    "./kernel": {
+      "types": "./kernel/index.d.ts",
+      "default": "./kernel/index.js"
+    },
+    "./storage": {
+      "types": "./storage/index.d.ts",
+      "default": "./storage/index.js"
+    },
+    "./sync": {
+      "types": "./sync/index.d.ts",
+      "default": "./sync/index.js"
+    },
+    "./devtools": {
+      "types": "./devtools/index.d.ts",
+      "default": "./devtools/index.js"
+    },
+    "./adapter": {
+      "types": "./adapter/index.d.ts",
+      "default": "./adapter/index.js"
+    },
+    "./bus": {
+      "types": "./bus/index.d.ts",
+      "default": "./bus/index.js"
+    }
   },
   "files": [
     "index.js",

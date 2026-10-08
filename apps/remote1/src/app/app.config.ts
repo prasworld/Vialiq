@@ -26,7 +26,8 @@ export const appConfig: ApplicationConfig = {
                 type: 'text',
                 section: 'CDISC Metadata',
                 weight: 10,
-                description: 'Unique identifier for CDISC ODM exports.'
+                description: 'Unique identifier for CDISC ODM exports.',
+                requiredTraits: ['isInput']
               },
               {
                 key: 'sdtmDomain',
@@ -38,14 +39,16 @@ export const appConfig: ApplicationConfig = {
                   { label: 'Demographics (DM)', value: 'DM' },
                   { label: 'Vital Signs (VS)', value: 'VS' },
                   { label: 'Adverse Events (AE)', value: 'AE' }
-                ]
+                ],
+                requiredTraits: ['isInput']
               },
               {
                 key: 'isEpro',
                 label: 'ePRO Field',
                 type: 'boolean',
                 section: 'Patient Settings',
-                weight: 5
+                weight: 5,
+                requiredTraits: ['isInput']
               }
             ];
           }

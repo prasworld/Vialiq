@@ -1,5 +1,5 @@
 <div class="settings-tab-content">
-      @for (field of tab().fields; track field) {
+      @for (field of tab().fields; track field.key) {
         @if (!field.showWhen || field.showWhen(schema())) {
           <vi-settings-field
             [field]="field"

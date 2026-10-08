@@ -2,7 +2,7 @@
     
       <!-- Component Instantiation -->
       @if (hasDescriptor()) {
-        <div [viDynamicElement]="node()"></div>
+        <div [viDynamicElement]="node()" [activeItemId]="currentActiveTabId()" (activeItemChange)="onActiveItemChange($event)"></div>
       }
     
       @if (!hasDescriptor()) {
@@ -13,22 +13,72 @@
     
       <!-- Recursive Children for Layout Components -->
       @if (isLayoutNode) {
-        <div class="layout-children-container">
-          <!-- Drop zone 0 (before first child) -->
-          <vi-canvas-drop-zone
-            [parentId]="node().id"
-            [index]="0">
-          </vi-canvas-drop-zone>
-          @for (child of getChildren(); track child.id; let i = $index) {
-            <!-- Recursive Child -->
-            <vi-canvas-node [node]="child"></vi-canvas-node>
-            <!-- Drop zone after child -->
+        @if (node().type === 'columns') {
+          <div class="layout-columns-container" [style.grid-template-columns]="'repeat(' + columnsCount + ', 1fr)'">
+            @for (col of getColumnsArray(); track col) {
+              <div class="layout-column">
+                <!-- Drop zone 0 for this column (before any children in the column) -->
+                <!-- Use the full components array length so if dropped, it's appended to the end of the global array -->
+                <vi-canvas-drop-zone
+                  [parentId]="node().id"
+                  [index]="getFirstInsertIndexForColumn(col)"
+                  [columnIndex]="col"
+                  [expandToFill]="getChildrenForColumn(col).length === 0">
+                </vi-canvas-drop-zone>
+                @for (item of getChildrenForColumn(col); track item.child.id) {
+                  <!-- Recursive Child -->
+                  <vi-canvas-node [node]="item.child"></vi-canvas-node>
+                  <!-- Drop zone after child -->
+                  <!-- The child's global index + 1 is passed so it's inserted right after this node in the schema -->
+                  <vi-canvas-drop-zone
+                    [parentId]="node().id"
+                    [index]="item.globalIndex + 1"
+                    [columnIndex]="col">
+                  </vi-canvas-drop-zone>
+                }
+              </div>
+            }
+          </div>
+        } @else if (node().type === 'tabs' || node().type === 'content-switcher') {
+          <div class="layout-children-container">
+            <!-- Drop zone 0 for this tab (before any children in the tab) -->
             <vi-canvas-drop-zone
               [parentId]="node().id"
-              [index]="i + 1">
+              [index]="getFirstInsertIndexForTab(currentActiveTabId())"
+              [tabId]="node().type === 'tabs' ? currentActiveTabId() : undefined"
+              [viewId]="node().type === 'content-switcher' ? currentActiveTabId() : undefined"
+              [expandToFill]="getChildrenForTab(currentActiveTabId()).length === 0">
             </vi-canvas-drop-zone>
-          }
-        </div>
+            @for (item of getChildrenForTab(currentActiveTabId()); track item.child.id) {
+              <!-- Recursive Child -->
+              <vi-canvas-node [node]="item.child"></vi-canvas-node>
+              <!-- Drop zone after child -->
+              <vi-canvas-drop-zone
+                [parentId]="node().id"
+                [index]="item.globalIndex + 1"
+                [tabId]="node().type === 'tabs' ? currentActiveTabId() : undefined"
+                [viewId]="node().type === 'content-switcher' ? currentActiveTabId() : undefined">
+              </vi-canvas-drop-zone>
+            }
+          </div>
+        } @else {
+          <div class="layout-children-container">
+            <!-- Drop zone 0 (before first child) -->
+            <vi-canvas-drop-zone
+              [parentId]="node().id"
+              [index]="0">
+            </vi-canvas-drop-zone>
+            @for (child of getChildren(); track child.id; let i = $index) {
+              <!-- Recursive Child -->
+              <vi-canvas-node [node]="child"></vi-canvas-node>
+              <!-- Drop zone after child -->
+              <vi-canvas-drop-zone
+                [parentId]="node().id"
+                [index]="i + 1">
+              </vi-canvas-drop-zone>
+            }
+          </div>
+        }
       }
     
     </vi-canvas-node-overlay>

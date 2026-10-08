@@ -1,4 +1,4 @@
-import { Component, ElementRef, OnDestroy, OnInit, ViewChild, CUSTOM_ELEMENTS_SCHEMA, input, signal, inject } from '@angular/core';
+import { Component, ElementRef, OnDestroy, AfterViewInit, CUSTOM_ELEMENTS_SCHEMA, input, signal, inject, viewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import type { ComponentDescriptor } from '../types';
 import { draggable } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
@@ -15,9 +15,9 @@ import type { PaletteDropData } from '../services/dnd.service';
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   templateUrl: './palette-item.component.html',
   styleUrl: './palette-item.component.scss',})
-export class PaletteItemComponent implements OnInit, OnDestroy {
+export class PaletteItemComponent implements AfterViewInit, OnDestroy {
   readonly descriptor = input.required<ComponentDescriptor>();
-  @ViewChild('dragHandle', { static: true }) dragHandle!: ElementRef<HTMLElement>;
+  readonly dragHandle = viewChild.required<ElementRef<HTMLElement>>('dragHandle');
 
   private state = inject(BuilderStateService);
   private dndService = inject(DndService);
@@ -25,9 +25,9 @@ export class PaletteItemComponent implements OnInit, OnDestroy {
   isDragging = signal(false);
   private _cleanup: (() => void) | null = null;
 
-  ngOnInit() {
+  ngAfterViewInit() {
     this._cleanup = draggable({
-      element: this.dragHandle.nativeElement,
+      element: this.dragHandle().nativeElement,
       getInitialData: (): PaletteDropData => ({
         source: 'palette',
         descriptorType: this.descriptor().type,

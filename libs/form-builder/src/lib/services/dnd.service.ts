@@ -27,6 +27,9 @@ export interface DropTargetData extends Record<string, unknown> {
   readonly parentId: string | null;
   readonly index: number;
   readonly builderId: string;
+  readonly columnIndex?: number;
+  readonly tabId?: string;
+  readonly viewId?: string;
 }
 
 export type DragSourceData = PaletteDropData | CanvasDropData;
@@ -76,11 +79,14 @@ export class DndService implements OnDestroy {
 
         const targetParentId = (targetData['parentId'] as string | null) ?? null;
         const targetIndex = targetData['index'];
+        const columnIndex = targetData['columnIndex'] as number | undefined;
+        const tabId = targetData['tabId'] as string | undefined;
+        const viewId = targetData['viewId'] as string | undefined;
 
         if (isPaletteSource(sourceData)) {
-          this.addFromPalette(sourceData.descriptorType, targetParentId, targetIndex);
+          this.addFromPalette(sourceData.descriptorType, targetParentId, targetIndex, columnIndex, tabId, viewId);
         } else if (isCanvasSource(sourceData)) {
-          this.handleCanvasMove(sourceData.nodeId, targetParentId, targetIndex);
+          this.handleCanvasMove(sourceData.nodeId, targetParentId, targetIndex, columnIndex, tabId, viewId);
         }
       },
     });
@@ -91,7 +97,7 @@ export class DndService implements OnDestroy {
     this._cleanup = null;
   }
 
-  public addFromPalette(descriptorType: string, parentId: string | null, index: number): void {
+  public addFromPalette(descriptorType: string, parentId: string | null, index: number, columnIndex?: number, tabId?: string, viewId?: string): void {
     const descriptor = this.registry.getByType(descriptorType);
     if (!descriptor) return;
 
@@ -107,11 +113,11 @@ export class DndService implements OnDestroy {
       label: descriptor.defaultSchema.label || descriptor.label,
     } as ComponentSchema;
 
-    this.formSchemaService.addComponent(parentId, index, component);
+    this.formSchemaService.addComponent(parentId, index, component, { columnIndex, tabId, viewId });
     this.state.setActiveNode(component.id);
   }
 
-  private handleCanvasMove(nodeId: string, parentId: string | null, index: number): void {
-    this.formSchemaService.moveComponent(nodeId, parentId, index);
+  private handleCanvasMove(nodeId: string, parentId: string | null, index: number, columnIndex?: number, tabId?: string, viewId?: string): void {
+    this.formSchemaService.moveComponent(nodeId, parentId, index, { columnIndex, tabId, viewId });
   }
 }

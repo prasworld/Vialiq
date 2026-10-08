@@ -18,3 +18,6 @@ export * from './lib/i18n/bridge/translation-store';
 
 // Testing
 export * from './lib/i18n/testing';
+
+// Utils
+export * from './lib/html.util';

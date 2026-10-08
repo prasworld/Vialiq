@@ -25,7 +25,12 @@ describe('Text Input Descriptors', () => {
         placeholder: 'Test Placeholder',
         value: 'test value',
         readonly: true,
-        disabled: null
+        disabled: null,
+        required: null,
+        maxlength: null,
+        autocomplete: null,
+        size: null,
+        type: 'text'
       });
     });
 
@@ -37,7 +42,12 @@ describe('Text Input Descriptors', () => {
         placeholder: null,
         value: null,
         readonly: null,
-        disabled: null
+        disabled: null,
+        required: null,
+        maxlength: null,
+        autocomplete: null,
+        size: null,
+        type: 'text'
       });
     });
   });
@@ -56,10 +66,25 @@ describe('Text Input Descriptors', () => {
   describe('PASSWORD_DESCRIPTOR', () => {
     it('should have correct type and canvas props override', () => {
       expect(PASSWORD_DESCRIPTOR.type).toBe('password');
+      expect(PASSWORD_DESCRIPTOR.supportsRepeating).toBeUndefined();
+      expect(PASSWORD_DESCRIPTOR.defaultSchema).toEqual({
+        type: 'password',
+        label: 'Password',
+        placeholder: '',
+      });
+
       const schema: InputComponentSchema = { id: '1', type: 'password', label: 'Pass' };
       const props = PASSWORD_DESCRIPTOR.canvasProps(schema);
       
       expect(props['type']).toBe('password');
+    });
+
+    it('should include maxlength and autocomplete in settings schema', () => {
+      const displayTab = PASSWORD_DESCRIPTOR.settingsSchema.tabs.find(t => t.id === 'display');
+      const fields = displayTab!.fields.map(f => f.key);
+      expect(fields).toContain('maxlength');
+      expect(fields).toContain('autocomplete');
+      expect(fields).toContain('size');
     });
   });
 

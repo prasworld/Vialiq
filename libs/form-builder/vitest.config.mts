@@ -1,10 +1,22 @@
 /// <reference types="vitest" />
 import { defineConfig } from 'vitest/config';
 import angular from '@analogjs/vite-plugin-angular';
+import { resolve } from 'path';
 
 export default defineConfig({
   root: __dirname,
-  plugins: [angular()],
+  plugins: [angular({ tsconfig: resolve(__dirname, 'tsconfig.spec.json') })],
+  css: {
+    preprocessorOptions: {
+      scss: {
+        // Vite 7 uses the modern Dart Sass API (compileStringAsync),
+        // which requires `loadPaths` — not the legacy `includePaths`.
+        // This allows `@use 'flux-ui/styles/variables'` to resolve to
+        // libs/flux-ui/styles/_variables.scss in any environment.
+        loadPaths: [resolve(__dirname, '../../libs')],
+      },
+    },
+  },
   test: {
     name: 'form-builder',
     globals: true,

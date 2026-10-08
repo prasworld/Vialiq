@@ -1,26 +1,31 @@
-import type { ComponentDescriptor } from '../types/component-descriptor';
+import type { ComponentDescriptor, SettingsTab } from '../types/component-descriptor';
 import type {
   SelectComponentSchema,
   ComboboxComponentSchema,
   CheckboxComponentSchema,
   RadioComponentSchema,
 } from '../types/component-schemas';
-import { standardSettings, displayTab, validationTab, logicTab } from './settings-helpers';
+import { standardSettings, displayTab, validationTab, logicTab, hasRequiredRule, sizeField } from './settings-helpers';
 
 export const SELECT_DESCRIPTOR: ComponentDescriptor = {
   type: 'select',
   label: 'Select',
   category: 'basic',
   group: 'Basic Info',
-  icon: 'chevron-down',
+  icon: 'chevrons-up-down',
+  traits: { isInput: true },
   weight: 70,
   canvasElement: 'vi-select',
   canvasProps: (s) => {
     const schema = s as SelectComponentSchema;
     return {
       placeholder: schema.placeholder ?? null,
-      readonly: schema.readOnly ?? null,
-      multiple: schema.multiple ?? null,
+      clearable: schema.clearable ? '' : null,
+      required: hasRequiredRule(schema) || null,
+      // NOTE: vi-select has no `readonly` or `multiple` attr.
+      // `readOnly` renders as disabled appearance only; true readonly needs a renderer wrapper.
+      // `multiple` is intentionally deferred — use combobox with mode='multi' instead.
+      disabled: schema.readOnly ? '' : null,
     };
   },
   defaultSchema: {
@@ -32,11 +37,9 @@ export const SELECT_DESCRIPTOR: ComponentDescriptor = {
     tabs: [
       displayTab([
         { key: 'placeholder', label: 'Placeholder', type: 'text', defaultValue: 'Choose an option' },
-        {
-          key: 'multiple',
-          label: 'Multiple selection',
-          type: 'boolean',
-        },
+        { key: 'clearable', label: 'Clearable', type: 'boolean' },
+        // NOTE: 'multiple' is intentionally omitted — vi-select has no multiple attr.
+        // Use a combobox with mode='multi' for multi-selection use cases.
       ]),
       {
         id: 'data',
@@ -48,7 +51,7 @@ export const SELECT_DESCRIPTOR: ComponentDescriptor = {
       },
       validationTab(),
       logicTab(),
-    ].filter(Boolean) as any[],
+    ].filter(Boolean) as SettingsTab[],
   },
   supportsRepeating: false,
   rendererRef: 'vi-renderer-select',
@@ -59,14 +62,21 @@ export const COMBOBOX_DESCRIPTOR: ComponentDescriptor = {
   label: 'Combobox',
   category: 'basic',
   group: 'Basic Info',
-  icon: 'search',
+  icon: 'square-check',
+  traits: { isInput: true },
   weight: 80,
   canvasElement: 'vi-combobox',
   canvasProps: (s) => {
     const schema = s as ComboboxComponentSchema;
+    // freeText maps to creatable mode; otherwise single.
+    const mode = schema.freeText ? 'creatable' : 'single';
     return {
       placeholder: schema.placeholder ?? null,
-      readonly: schema.readOnly ?? null,
+      mode,
+      clearable: schema.clearable ? '' : null,
+      required: hasRequiredRule(schema) || null,
+      // NOTE: vi-combobox has no `readonly` attr — use disabled for canvas preview only.
+      disabled: schema.readOnly ? '' : null,
     };
   },
   defaultSchema: {
@@ -80,6 +90,7 @@ export const COMBOBOX_DESCRIPTOR: ComponentDescriptor = {
       displayTab([
         { key: 'placeholder', label: 'Placeholder', type: 'text' },
         { key: 'freeText', label: 'Allow free-text entry', type: 'boolean' },
+        { key: 'clearable', label: 'Clearable', type: 'boolean' },
       ]),
       {
         id: 'data',
@@ -91,7 +102,7 @@ export const COMBOBOX_DESCRIPTOR: ComponentDescriptor = {
       },
       validationTab(),
       logicTab(),
-    ].filter(Boolean) as any[],
+    ].filter(Boolean) as SettingsTab[],
   },
   supportsRepeating: false,
   rendererRef: 'vi-renderer-combobox',
@@ -103,13 +114,16 @@ export const CHECKBOX_DESCRIPTOR: ComponentDescriptor = {
   category: 'basic',
   group: 'Basic Info',
   icon: 'check-circle',
+  traits: { isInput: true },
   weight: 90,
   canvasElement: 'vi-checkbox',
   canvasProps: (s) => {
     const schema = s as CheckboxComponentSchema;
     return {
-      readonly: schema.readOnly ?? null,
+      required: hasRequiredRule(schema) || null,
+      size: schema.size ?? null,
       checked: schema.defaultValue ?? null,
+      htmlContent: schema.checkboxLabel || 'Preview Option',
     };
   },
   defaultSchema: {
@@ -120,6 +134,7 @@ export const CHECKBOX_DESCRIPTOR: ComponentDescriptor = {
   },
   settingsSchema: standardSettings([
     { key: 'checkboxLabel', label: 'Checkbox label', type: 'text', hint: 'Label shown next to the checkbox itself' },
+    sizeField,
   ]),
   supportsRepeating: false,
   rendererRef: 'vi-renderer-checkbox',
@@ -131,13 +146,15 @@ export const RADIO_DESCRIPTOR: ComponentDescriptor = {
   category: 'basic',
   group: 'Basic Info',
   icon: 'check-circle',
+  traits: { isInput: true },
   weight: 100,
   canvasElement: 'vi-radio',
   canvasProps: (s) => {
     const schema = s as RadioComponentSchema;
     return {
-      readonly: schema.readOnly ?? null,
+      // NOTE: vi-radio has no `readonly` attr — omitted intentionally.
       value: schema.value ?? null,
+      htmlContent: schema.label || 'Preview Option',
     };
   },
   defaultSchema: {
@@ -157,10 +174,14 @@ export const CHECKBOX_GROUP_DESCRIPTOR: ComponentDescriptor = {
   label: 'Checkbox Group',
   category: 'advanced',
   group: 'Basic Info',
-  icon: 'task-checklist',
+  icon: 'list-checks',
+  traits: { isInput: true },
   weight: 10,
   canvasElement: 'vi-checkbox',  // Preview with first option; renderer handles the full group
-  canvasProps: () => ({}),
+  canvasProps: (_s) => ({
+    readonly: true,
+    htmlContent: 'Option 1',
+  }),
   defaultSchema: {
     type: 'checkbox-group',
     label: 'Checkbox Group',
@@ -178,7 +199,7 @@ export const CHECKBOX_GROUP_DESCRIPTOR: ComponentDescriptor = {
       },
       validationTab(),
       logicTab(),
-    ].filter(Boolean) as any[],
+    ].filter(Boolean) as SettingsTab[],
   },
   supportsRepeating: false,
   rendererRef: 'vi-renderer-checkbox-group',
@@ -189,10 +210,14 @@ export const RADIO_GROUP_DESCRIPTOR: ComponentDescriptor = {
   label: 'Radio Group',
   category: 'advanced',
   group: 'Basic Info',
-  icon: 'check-circle',
+  icon: 'circle-dot',
+  traits: { isInput: true },
   weight: 20,
-  canvasElement: 'vi-radio-group',
-  canvasProps: () => ({}),
+  canvasElement: 'vi-radio',
+  canvasProps: (_s) => ({
+    readonly: true,
+    htmlContent: 'Option 1',
+  }),
   defaultSchema: {
     type: 'radio-group',
     label: 'Radio Group',
@@ -210,7 +235,7 @@ export const RADIO_GROUP_DESCRIPTOR: ComponentDescriptor = {
       },
       validationTab(),
       logicTab(),
-    ].filter(Boolean) as any[],
+    ].filter(Boolean) as SettingsTab[],
   },
   supportsRepeating: false,
   rendererRef: 'vi-renderer-radio-group',

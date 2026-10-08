@@ -53,6 +53,14 @@ export interface RepeaterConfig {
   removeLabel?: string;
 }
 
+// ─── Content Switcher ─────────────────────────────────────────────────────────
+
+export interface ContentSwitcherConfig {
+  views: { id: string; label: string }[];
+  /** Maps nodeId → viewId */
+  viewAssignments: Record<string, string>;
+}
+
 // ─── Union ────────────────────────────────────────────────────────────────────
 
 export type LayoutConfig =
@@ -60,4 +68,5 @@ export type LayoutConfig =
   | ColumnsConfig
   | TabsConfig
   | FieldsetConfig
-  | RepeaterConfig;
+  | RepeaterConfig
+  | ContentSwitcherConfig;
