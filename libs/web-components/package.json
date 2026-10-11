@@ -376,6 +376,14 @@
       "types": "./masked-input/vi-masked-input.d.ts",
       "default": "./masked-input/vi-masked-input.js"
     },
+    "./time-picker": {
+      "types": "./time-picker/index.d.ts",
+      "default": "./time-picker/index.js"
+    },
+    "./time-picker/vi-time-picker": {
+      "types": "./time-picker/vi-time-picker.d.ts",
+      "default": "./time-picker/vi-time-picker.js"
+    },
     "./*": {
       "types": "./*.d.ts",
       "default": "./*.js"
@@ -439,7 +447,8 @@
     "menu/",
     "upload/",
     "content-switcher/",
-    "masked-input/"
+    "masked-input/",
+    "time-picker/"
   ],
   "peerDependenciesMeta": {
     "flatpickr": {

@@ -1011,8 +1011,460 @@ The `value` property can be set directly via JavaScript. The value should always
   // - week: 'YYYY-Www'
   // - range: 'YYYY-MM-DD to YYYY-MM-DD'
 </script>
+```
+
+---
+
+### Time Picker (`vi-time-picker`)
+
+The **Time Picker** (`vi-time-picker`) is a form-associated, accessible, discrete time-of-day input component. It is engineered for clinical Electronic Data Capture (EDC), laboratory information management systems (LIMS), and high-throughput enterprise forms.
+
+#### Key Capabilities
+- **WAI-ARIA Spinbutton Input Segments:** Discrete numeric input segments for hours, minutes, and optional seconds with complete keyboard accessibility (`ArrowUp`/`ArrowDown` stepping, `PageUp`/`PageDown` jumps, `Home`/`End` bounds, and `A`/`P` period toggles).
+- **Dual Interaction Architecture:** Direct in-place keyboard segment entry combined with a floating Flatpickr time scroll popup.
+- **12-Hour & 24-Hour Clocks:** Full ISO 24-hour (`14:30`) and 12-hour AM/PM (`02:30 PM`) format conversion and validation.
+- **Clinical EDC Unknown Time (CDISC SDTM):** Built-in support for capturing protocol-compliant unknown or unrecorded times (`??:??` or `??:??:??`) via `allow-unknown` without triggering invalid form states.
+- **WHATWG Form Participation:** Native form association via `ElementInternals`, standard `checkValidity()`, `reportValidity()`, and `FormData` participation.
+- **Dependency Inversion Locale Registry (`tsyringe`):** Dynamic runtime locale registration and async loader extension powered by `tsyringe` without hardcoded library dependencies.
+
+---
+
+#### Clock Variations & Extensions
+
+##### 1. 24-Hour Default Clock (HH:mm)
+```html
+<vi-time-picker label="Meeting Start" value="14:30" helper-text="Select 24h meeting time"></vi-time-picker>
+```
+
+##### 2. 12-Hour Clock with AM/PM Period Toggle
+Pressing `A` or `P` on the keyboard or clicking the AM/PM button flips the clock period instantly:
+```html
+<vi-time-picker format="12" label="Appointment Time" value="09:15 AM"></vi-time-picker>
+```
+
+##### 3. High-Precision Seconds (HH:mm:ss)
+```html
+<vi-time-picker show-seconds label="Audit Log Timestamp" value="16:45:30"></vi-time-picker>
+```
+
+##### 4. Stepped Increments & Min / Max Range Constraints
+Arrow key steps increment in 15-minute blocks and validate against operational business hours:
+```html
+<vi-time-picker
+  step="15"
+  min="08:00"
+  max="17:00"
+  label="Operating Shift"
+  helper-text="Must be between 08:00 and 17:00 (15-min increments)"
+></vi-time-picker>
+```
+
+##### 5. Clinical EDC Partial/Unknown Time (`allow-unknown` / `??:??`)
+In clinical trials, partial or unknown adverse event times are compliant with CDISC SDTM standards (`??:??`):
+```html
+<vi-time-picker
+  allow-unknown
+  label="Dose Administration Time"
+  value="??:??"
+  helper-text="Check 'Time unknown' if exact time cannot be determined"
+></vi-time-picker>
+```
+
+##### 6. Clearable & Hoisted Popups (Modal Escape)
+When rendered inside tight `overflow: hidden` parent containers or tables, enable `hoist` to position the popup with `position: fixed`:
+```html
+<div style="overflow: hidden; height: 100px;">
+  <vi-time-picker hoist clearable label="Departure Time" value="18:30"></vi-time-picker>
+</div>
+```
+
+##### 7. Instant "Now" Quick Action (`show-now`)
+Enterprise clinical CRF and workflow logs require single-click current time capture. Enabling `show-now` renders a high-visibility button, also accessible via `.setCurrentTime()` or `.now()`:
+```html
+<vi-time-picker
+  show-now
+  clearable
+  label="Medication Administration Time"
+  helper-text="Click 'Now' to timestamp with the exact system clock"
+></vi-time-picker>
+```
+
+##### 8. Multi-Site Clinical Timezone Context (`timezone`)
+Displays a site/time zone indicator badge and normalizes ISO serializations (e.g. `14:30Z` or `14:30+05:30`):
+```html
+<vi-time-picker
+  timezone="UTC"
+  value="14:30"
+  label="Adverse Event Onset"
+  helper-text="Emits isoValue: 14:30Z in change event details"
+></vi-time-picker>
+```
+
+##### 9. CDISC SDTM Segment-Level Partial Unknown Times
+In accordance with FDA / CDISC SDTM clinical specifications, subjects who remember only a partial time (e.g. hour 14 but unknown minutes: `14:??`, or minutes only: `??:30`) can record partial unknowns. The "Time unknown" checkbox reflects this state as **indeterminate** (`-`) and validation constraints bypass gracefully without failing forms:
+```html
+<vi-time-picker
+  allow-unknown
+  value="14:??"
+  label="Symptom Resolution"
+  helper-text="Checkbox displays indeterminate state for partial unknowns"
+></vi-time-picker>
+```
+
+##### 10. Intelligent Clipboard Paste Support
+Users can copy and paste time strings in any standard enterprise or military notation directly into the control:
+- 24-Hour: `"14:30"`, `"14:30:45"`
+- 12-Hour: `"02:30 PM"`, `"2:30pm"`, `"11:15 AM"`
+- Military Compact Digits: `"1430"`, `"930"`, `"143045"`
+- Clinical Wildcards: `"14:??"`, `"??:??"`
+
+##### 11. Restricted Scheduling & Blackout Times (`disabledHours` / `disabledMinutes`)
+Prevent booking or logging during blackout windows using array lists or function predicates:
+```typescript
+const picker = document.querySelector('vi-time-picker');
+// Blackout lunch hours 12:00 to 13:59
+picker.disabledHours = [12, 13];
+// Allow appointments only on 15-minute intervals
+picker.disabledMinutes = (minute: number) => minute % 15 !== 0;
+```
+
+##### 12. Independent Granular Stepping (`hour-step` / `second-step`)
+Configure arrow key navigation independently across hours, minutes, and seconds:
+```html
+<vi-time-picker
+  hour-step="2"
+  step="30"
+  second-step="10"
+  show-seconds
+  label="Telemetry Sampling Window"
+></vi-time-picker>
+```
+
+---
+
+#### Locale Registry & Dependency Inversion (`tsyringe`)
+
+To satisfy the **Dependency Inversion Principle (DIP)** and prevent hardcoded static dictionaries, `vi-time-picker` decouples localization into a singleton registry service (`ViTimePickerLocaleRegistry`) managed by `tsyringe`.
+
+High-level UI components and applications depend on the abstraction (`ITimePickerLocaleRegistry` or `TIME_PICKER_LOCALE_REGISTRY_TOKEN`), allowing applications to register new locales or custom asynchronous loaders at bootstrap.
+
+##### Architecture & Resolution Flow
+```
+┌────────────────────────────────────────────────────────┐
+│             ITimePickerLocaleRegistry (Token)          │
+└───────────────────────────▲────────────────────────────┘
+                            │ Implements & Resolves
+┌───────────────────────────┴────────────────────────────┐
+│          ViTimePickerLocaleRegistry (@singleton)       │
+│   • Built-in: 'en', 'ja', 'zh', 'fr', 'de', 'es'       │
+│   • Dynamic: registry.register('sv', {...})            │
+│   • Async: registry.registerLoader(fetchLoader)        │
+│   • Fallback: Unknown locale -> Automatic English ('en')│
+└────────────────────────────────────────────────────────┘
+```
+
+##### Registering a New Locale Synchronously
+In your application bootstrap or utility module:
+```typescript
+import 'reflect-metadata';
+import { container } from 'tsyringe';
+import { ViTimePickerLocaleRegistry } from '@vialiq/web-components/time-picker';
+
+const registry = container.resolve(ViTimePickerLocaleRegistry);
+
+// Register Swedish (sv) dynamically
+registry.register('sv', {
+  hoursPlaceholder: 'TT',
+  minutesPlaceholder: 'MM',
+  secondsPlaceholder: 'SS',
+  unknownLabel: 'Okänd tid',
+  clockAriaLabel: 'Välj tid från klocka',
+  clearAriaLabel: 'Rensa tid',
+  periodAriaLabel: 'Växla FM/EM, nu {period}',
+  requiredMessage: 'Tid är obligatorisk.',
+  invalidMessage: 'Ange en giltig tid.',
+  minMessage: 'Välj en tid efter eller vid {min}.',
+  maxMessage: 'Välj en tid före eller vid {max}.',
+});
+```
+Any `<vi-time-picker locale="sv">` across your application now immediately renders `TT` and `MM` placeholders and Swedish clinical labels!
+
+##### Registering an Asynchronous Loader (e.g. from `/assets/i18n`)
+Load JSON translation files on demand without bundling them in your main JavaScript chunk:
+```typescript
+registry.registerLoader(async (locale: string) => {
+  const response = await fetch(`/assets/i18n/time-picker/${locale}.json`);
+  if (!response.ok) return null;
+  return response.json();
+});
+```
+
+##### Overriding Registry for Unit Testing (Dependency Inversion)
+In your unit tests, you can easily substitute the registry with a mock without touching component code:
+```typescript
+import { container } from 'tsyringe';
+import { TIME_PICKER_LOCALE_REGISTRY_TOKEN } from '@vialiq/web-components/time-picker';
+
+container.register(TIME_PICKER_LOCALE_REGISTRY_TOKEN, {
+  useValue: mockRegistryInstance,
+});
+```
+
+---
+
+#### Framework Integrations
+
+##### 1. Angular Integration
+Register `CUSTOM_ELEMENTS_SCHEMA` in your standalone component or module, and bind using reactive forms or template signals:
+
+```typescript
+// app.component.ts
+import { Component, CUSTOM_ELEMENTS_SCHEMA, signal } from '@angular/core';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import '@vialiq/web-components/time-picker';
+import type { TimePickerChangeDetail } from '@vialiq/web-components/time-picker';
+
+@Component({
+  selector: 'app-time-demo',
+  standalone: true,
+  imports: [ReactiveFormsModule],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  template: `
+    <div class="form-group">
+      <vi-time-picker
+        label="Dose Administration Time"
+        format="24"
+        allow-unknown
+        clearable
+        [value]="timeControl.value"
+        (vi-time-picker-change)="onTimeChange($event)"
+      ></vi-time-picker>
+
+      <p>Current Form Value: {{ timeControl.value }}</p>
+    </div>
+  `,
+})
+export class TimeDemoComponent {
+  timeControl = new FormControl('14:30');
+
+  onTimeChange(event: CustomEvent<TimePickerChangeDetail>) {
+    this.timeControl.setValue(event.detail.value);
+  }
+}
+```
+
+##### 2. React Integration
+Use a ref to listen to custom events or wrap it in a lightweight React component:
+
+```tsx
+// TimePickerField.tsx
+import React, { useEffect, useRef } from 'react';
+import '@vialiq/web-components/time-picker';
+import type { TimePickerChangeDetail } from '@vialiq/web-components/time-picker';
+
+interface TimePickerProps {
+  label: string;
+  value?: string;
+  format?: '12' | '24';
+  allowUnknown?: boolean;
+  onChange?: (detail: TimePickerChangeDetail) => void;
+}
+
+export function TimePickerField({ label, value = '', format = '24', allowUnknown, onChange }: TimePickerProps) {
+  const pickerRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const el = pickerRef.current;
+    if (!el) return;
+
+    const handleChange = (e: CustomEvent<TimePickerChangeDetail>) => {
+      onChange?.(e.detail);
+    };
+
+    el.addEventListener('vi-time-picker-change', handleChange as EventListener);
+    return () => el.removeEventListener('vi-time-picker-change', handleChange as EventListener);
+  }, [onChange]);
+
+  return (
+    <vi-time-picker
+      ref={pickerRef}
+      label={label}
+      value={value}
+      format={format}
+      allow-unknown={allowUnknown ? '' : undefined}
+    />
+  );
+}
+```
+
+##### 3. Vue 3 Integration
+Configure custom elements in `vite.config.ts` (`compilerOptions.isCustomElement: tag => tag.startsWith('vi-')`) and bind with standard Vue template events:
+
+```vue
+<!-- TimePickerDemo.vue -->
+<script setup lang="ts">
+import { ref } from 'vue';
+import '@vialiq/web-components/time-picker';
+import type { TimePickerChangeDetail } from '@vialiq/web-components/time-picker';
+
+const eventTime = ref('09:15');
+const isUnknown = ref(false);
+
+function handleTimeChange(event: CustomEvent<TimePickerChangeDetail>) {
+  eventTime.value = event.detail.value || '';
+  isUnknown.value = event.detail.isUnknown;
+}
+</script>
+
+<template>
+  <div class="time-picker-card">
+    <vi-time-picker
+      label="Observation Time"
+      :value="eventTime"
+      format="24"
+      allow-unknown
+      clearable
+      @vi-time-picker-change="handleTimeChange"
+    ></vi-time-picker>
+
+    <div class="summary">
+      <span>Value: {{ eventTime }}</span>
+      <span v-if="isUnknown" class="badge">CDISC Unknown</span>
+    </div>
+  </div>
+</template>
+```
+
+##### 4. Vanilla JavaScript / TypeScript
+Direct programmatic control, native form participation, and event subscription:
+
+```html
+<form id="vitals-form">
+  <vi-time-picker
+    id="pulse-time"
+    name="pulseAssessmentTime"
+    label="Vitals Assessment"
+    format="12"
+    show-seconds
+    allow-unknown
+    required
+  ></vi-time-picker>
+
+  <button type="submit">Record Vitals</button>
+</form>
+
+<script type="module">
+  import '@vialiq/web-components/time-picker';
+
+  const form = document.getElementById('vitals-form');
+  const picker = document.getElementById('pulse-time');
+
+  // Programmatic value updates
+  picker.value = '10:15:30 AM';
+
+  // Event listener for commit events
+  picker.addEventListener('vi-time-picker-change', (e) => {
+    console.log('Time changed:', e.detail.value);
+    console.log('ISO normalized:', e.detail.isoValue); // "10:15:30"
+    console.log('Is unknown:', e.detail.isUnknown);
+  });
+
+  // Native HTML5 Form Submission
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const data = new FormData(form);
+    console.log('Submitted Time:', data.get('pulseAssessmentTime'));
+  });
 </script>
 ```
+
+---
+
+#### Passing Values Programmatically & Externally
+
+Developers can set or update the time picker's value at runtime through multiple mechanisms:
+
+##### 1. Direct Property Assignment (`.value`)
+Setting the `.value` property is the standard and most direct approach in JavaScript/TypeScript:
+
+```typescript
+const picker = document.querySelector('vi-time-picker') as ViTimePicker;
+
+// 24-hour time (HH:mm)
+picker.value = '14:30';
+
+// High-precision with seconds (HH:mm:ss)
+picker.value = '14:30:45';
+
+// 12-hour time with AM/PM period
+picker.value = '02:30 PM';
+
+// Clinical EDC complete unknown (CDISC SDTM)
+picker.value = '??:??';
+
+// Clinical EDC partial unknown (e.g. hour known, minute unknown)
+picker.value = '14:??';
+```
+
+> **Lifecycle & State Syncing:** When `.value` is assigned programmatically:
+> 1. In-place segmented inputs (`#hours-input`, `#minutes-input`, `#seconds-input`) are automatically synchronized.
+> 2. The underlying Flatpickr scroll wheel popup is updated in real time.
+> 3. Native WHATWG form value is updated via `_internals.setFormValue(this.value)`.
+> 4. Form constraint validations (`min`, `max`, `required`, blackout hours) are re-evaluated.
+> 5. If a partial unknown (`14:??`) is passed, the "Time unknown" checkbox automatically flips to `indeterminate`.
+
+##### 2. Cross-Format Auto-Normalization
+`vi-time-picker` intelligently parses and normalizes formats:
+- Assigning `"14:30"` to a picker with `format="12"` automatically converts and displays `"02:30 PM"`.
+- Assigning `"02:30 PM"` to a picker with `format="24"` automatically converts and displays `"14:30"`.
+- Emits normalized 24-hour ISO string (`isoValue: "14:30"`) in change details regardless of visual format.
+
+##### 3. Imperative Action Methods
+Convenience methods are exposed directly on the custom element:
+
+```typescript
+// 1. Set current system clock time (also alias: picker.now())
+picker.setCurrentTime();
+
+// 2. Clear the time and reset validation state
+picker.clear();
+
+// 3. Step segments programmatically by their configured step intervals
+picker.stepUp('minutes');    // Steps up by `step` (default: 15)
+picker.stepDown('minutes');  // Steps down by `step`
+picker.stepUp('hours');      // Steps up by `hour-step` (default: 1)
+picker.stepDown('seconds');  // Steps down by `second-step` (default: 1)
+```
+
+##### 4. Declarative Template Bindings Across Frameworks
+Because `value` is a reflected Lit property, frameworks bind to it seamlessly:
+
+```html
+<!-- HTML / Attribute -->
+<vi-time-picker value="14:30"></vi-time-picker>
+
+<!-- Lit Property Binding -->
+<vi-time-picker .value=${selectedTime}></vi-time-picker>
+
+<!-- React -->
+<vi-time-picker value={selectedTime} onvi-time-picker-change={handleTimeChange} />
+
+<!-- Angular -->
+<vi-time-picker [value]="selectedTime" (vi-time-picker-change)="handleTimeChange($event)"></vi-time-picker>
+
+<!-- Vue -->
+<vi-time-picker :value="selectedTime" @vi-time-picker-change="handleTimeChange" />
+```
+
+##### 5. Native `<form>` Reset
+When wrapped inside a standard HTML `<form>`, calling `form.reset()` automatically restores the picker to its initial value via `formResetCallback()`:
+
+```typescript
+const form = document.querySelector('form')!;
+form.reset(); // Restores vi-time-picker back to its initial value
+```
+
+> **Event Dispatch Note:** In alignment with standard HTML5 `<input>` behavior, assigning `.value` directly does **not** dispatch the user-driven `vi-time-picker-change` event. However, imperative actions like `.setCurrentTime()`, `.clear()`, and `.stepUp()` **do** dispatch `vi-time-picker-change`.
 
 ---
 

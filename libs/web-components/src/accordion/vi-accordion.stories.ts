@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
 import './index.js';
 import type { ViAccordion } from './vi-accordion.js';
+import '../alert/vi-alert.js';
 
 const meta: Meta = {
   title: 'Components/Accordion',
@@ -163,13 +164,35 @@ export const SlottedContent: Story = {
 export const EventCancellation: Story = {
   name: 'Event Cancellation (Conditional Toggle)',
   render: () => {
+    const showNotice = (msg: string) => {
+      const alertEl = document.getElementById(
+        'event-cancellation-alert',
+      ) as (HTMLElement & { open: boolean }) | null;
+      const msgEl = document.getElementById('event-cancellation-msg');
+      if (alertEl && msgEl) {
+        msgEl.textContent = msg;
+        alertEl.open = true;
+      }
+    };
+
+    const hideNotice = () => {
+      const alertEl = document.getElementById(
+        'event-cancellation-alert',
+      ) as (HTMLElement & { open: boolean }) | null;
+      if (alertEl) {
+        alertEl.open = false;
+      }
+    };
+
     const handleBeforeOpen = (e: Event) => {
       const checkbox = document.getElementById(
         'lock-open-checkbox',
       ) as HTMLInputElement;
       if (checkbox && checkbox.checked) {
         e.preventDefault();
-        alert('Opening prevented because "Lock Open" is checked!');
+        showNotice('Opening prevented because "Lock Open" is checked!');
+      } else {
+        hideNotice();
       }
     };
 
@@ -179,7 +202,9 @@ export const EventCancellation: Story = {
       ) as HTMLInputElement;
       if (checkbox && checkbox.checked) {
         e.preventDefault();
-        alert('Closing prevented because "Lock Close" is checked!');
+        showNotice('Closing prevented because "Lock Close" is checked!');
+      } else {
+        hideNotice();
       }
     };
 
@@ -203,11 +228,25 @@ export const EventCancellation: Story = {
             <strong>Lock Close</strong> (Prevents collapse)
           </label>
         </div>
+
+        <vi-alert
+          id="event-cancellation-alert"
+          variant="warning"
+          title="Toggle Blocked"
+          dismissible
+          .open=${false}
+          style="margin-bottom: 1.5rem; max-width: 600px;"
+        >
+          <span id="event-cancellation-msg"></span>
+        </vi-alert>
+
         <vi-accordion style="max-width: 600px;">
           <vi-accordion-item
             label="Conditional Accordion Section"
             @vi-accordion-before-open=${handleBeforeOpen}
             @vi-accordion-before-close=${handleBeforeClose}
+            @vi-accordion-open=${hideNotice}
+            @vi-accordion-close=${hideNotice}
           >
             <p
               style="margin: 0; line-height: 1.5; color: #4b5563; font-size: 0.875rem;"
@@ -231,6 +270,26 @@ export const CoordinatedCancellation: Story = {
     multi: false,
   },
   render: (args) => {
+    const showNotice = (msg: string) => {
+      const alertEl = document.getElementById(
+        'coordinated-cancellation-alert',
+      ) as (HTMLElement & { open: boolean }) | null;
+      const msgEl = document.getElementById('coordinated-cancellation-msg');
+      if (alertEl && msgEl) {
+        msgEl.textContent = msg;
+        alertEl.open = true;
+      }
+    };
+
+    const hideNotice = () => {
+      const alertEl = document.getElementById(
+        'coordinated-cancellation-alert',
+      ) as (HTMLElement & { open: boolean }) | null;
+      if (alertEl) {
+        alertEl.open = false;
+      }
+    };
+
     const handleBeforeCloseSection1 = (e: CustomEvent) => {
       const checkbox = document.getElementById(
         'lock-sec1-close',
@@ -247,16 +306,17 @@ export const CoordinatedCancellation: Story = {
         ) as ViAccordion | null;
         const isMulti = accordion ? accordion.multi : false;
 
-        console.log(e.detail);
         if (isDirectClose) {
           e.preventDefault();
-          alert('Section 1 close prevented!');
+          showNotice('Section 1 close prevented!');
         } else if (!isMulti) {
           e.preventDefault();
-          alert(
+          showNotice(
             'Section 1 close prevented! Opening other sections is blocked in single-open mode.',
           );
         }
+      } else {
+        hideNotice();
       }
     };
 
@@ -276,12 +336,25 @@ export const CoordinatedCancellation: Story = {
             mode)
           </label>
         </div>
+
+        <vi-alert
+          id="coordinated-cancellation-alert"
+          variant="warning"
+          title="Toggle Blocked"
+          dismissible
+          .open=${false}
+          style="margin-bottom: 1.5rem; max-width: 600px;"
+        >
+          <span id="coordinated-cancellation-msg"></span>
+        </vi-alert>
+
         <vi-accordion style="max-width: 600px;" ?multi=${args.multi}>
           <vi-accordion-item
             item-id="sec-1"
             label="Section 1: Required Form Inputs (Open by default)"
             open
             @vi-accordion-before-close=${handleBeforeCloseSection1}
+            @vi-accordion-close=${hideNotice}
           >
             <p
               style="margin: 0; line-height: 1.5; color: #4b5563; font-size: 0.875rem;"

@@ -1,0 +1,333 @@
+/**
+ * Time Picker component base styles.
+ *
+ * Provides the host-agnostic foundation for the time-picker control:
+ * control box, segmented numeric inputs, colon separators, period toggle button,
+ * action trigger buttons (clock, clear), unknown-time checkbox, and validation messages.
+ *
+ * All styling strictly adheres to the @vialiq/flux-ui design token hierarchy.
+ */
+
+@use '../styles/variables' as tokens;
+@use '../styles/functions' as func;
+
+@layer components {
+  // ---------------------------------------------------------------------------
+  // Outer Control Row (holds segments, separators, and action buttons)
+  // ---------------------------------------------------------------------------
+  .timepicker-control {
+    display: inline-flex;
+    align-items: center;
+    box-sizing: border-box;
+    height: var(
+      --vi-time-picker-sizing-min-height,
+      #{func.to-rem(36px)}
+    );
+    min-height: var(
+      --vi-time-picker-sizing-min-height,
+      #{func.to-rem(36px)}
+    );
+    border: var(--vi-time-picker-border-width, #{tokens.$border-width-thin}) solid
+      var(--vi-time-picker-border-color, #{tokens.$border-03});
+    border-radius: var(
+      --vi-time-picker-shape-border-radius,
+      #{tokens.$border-radius-lg}
+    );
+    background-color: var(
+      --vi-time-picker-background-color,
+      #{tokens.$color-background}
+    );
+    padding: 0 #{tokens.$spacing-sm};
+    gap: #{tokens.$spacing-xs};
+    transition:
+      border-color 150ms ease,
+      box-shadow 150ms ease;
+    user-select: none;
+    cursor: text;
+
+    &:hover:not(:focus-within) {
+      border-color: var(
+        --vi-time-picker-border-color-hover,
+        #{tokens.$border-04}
+      );
+    }
+
+    &:focus-within {
+      border-color: var(--vi-time-picker-focus-ring-color, #{tokens.$focus});
+      box-shadow: 0 0 0 3px
+        var(--vi-time-picker-focus-ring-glow, #{tokens.$color-blue-200});
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Segment Inputs Container
+  // ---------------------------------------------------------------------------
+  .timepicker-inputs {
+    display: inline-flex;
+    align-items: center;
+    height: 100%;
+    gap: #{func.to-rem(1px)};
+  }
+
+  // ---------------------------------------------------------------------------
+  // Numeric Input Segments (Hours, Minutes, Seconds)
+  // ---------------------------------------------------------------------------
+  .timepicker-segment {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: textfield;
+    width: var(
+      --vi-time-picker-segment-width,
+      #{func.to-rem(28px)}
+    );
+    min-width: #{func.to-rem(26px)};
+    box-sizing: border-box;
+    text-align: center;
+    border: 1px solid transparent;
+    outline: none;
+    background: transparent;
+    color: var(--vi-time-picker-text-color, #{tokens.$text-primary});
+    font-family: var(--vi-font-family-base, #{tokens.$font-family-base});
+    font-size: var(
+      --vi-time-picker-typography-font-size,
+      #{tokens.$font-size-base}
+    );
+    font-weight: #{tokens.$font-weight-medium};
+    line-height: 1.2;
+    padding: #{func.to-rem(1px)} 0;
+    border-radius: var(--vi-border-radius-sm, #{tokens.$border-radius-sm});
+    font-variant-numeric: tabular-nums;
+    transition:
+      background-color 120ms ease,
+      border-color 120ms ease;
+
+    &::-webkit-inner-spin-button,
+    &::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    &::placeholder {
+      color: var(
+        --vi-time-picker-placeholder-color,
+        #{tokens.$text-secondary}
+      );
+      opacity: 1;
+    }
+
+    &:hover:not(:focus):not(:disabled) {
+      background: var(--vi-layer-hover-01, #{tokens.$layer-hover-01});
+    }
+
+    &:focus {
+      background: var(--vi-layer-hover-01, #{tokens.$layer-hover-01});
+      border-color: var(--vi-time-picker-focus-ring-color, #{tokens.$focus});
+      box-shadow: 0 0 0 1px var(--vi-time-picker-focus-ring-color, #{tokens.$focus});
+    }
+
+    &:disabled {
+      color: var(--vi-text-disabled, #{tokens.$text-disabled});
+      cursor: not-allowed;
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Separator (:)
+  // ---------------------------------------------------------------------------
+  .timepicker-separator {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    align-self: center;
+    height: 100%;
+    color: var(--vi-time-picker-separator-color, #{tokens.$text-secondary});
+    font-weight: #{tokens.$font-weight-semibold};
+    font-size: var(
+      --vi-time-picker-typography-font-size,
+      #{tokens.$font-size-base}
+    );
+    user-select: none;
+    padding: 0 #{func.to-rem(1px)};
+    line-height: 1;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Period Toggle Button (AM / PM in 12-Hour format)
+  // ---------------------------------------------------------------------------
+  .timepicker-period-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    width: var(
+      --vi-time-picker-period-width,
+      #{func.to-rem(38px)}
+    );
+    height: #{func.to-rem(24px)};
+    padding: 0 #{func.to-rem(4px)};
+    margin-left: #{func.to-rem(2px)};
+    border: 1px solid var(--vi-border-02, #{tokens.$border-02});
+    border-radius: var(--vi-border-radius-sm, #{tokens.$border-radius-sm});
+    background: var(--vi-layer-02, #{tokens.$layer-02});
+    color: var(--vi-time-picker-text-color, #{tokens.$text-primary});
+    font-family: var(--vi-font-family-base, #{tokens.$font-family-base});
+    font-size: var(--vi-font-size-xs, #{tokens.$font-size-xs});
+    font-weight: #{tokens.$font-weight-semibold};
+    cursor: pointer;
+    user-select: none;
+    transition:
+      background-color 150ms ease,
+      border-color 150ms ease;
+
+    &:hover:not(:disabled) {
+      background: var(--vi-layer-hover-02, #{tokens.$layer-hover-02});
+      border-color: var(--vi-border-03, #{tokens.$border-03});
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--vi-focus, #{tokens.$focus});
+      outline-offset: 1px;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Action Buttons Container & Buttons (Clock popup trigger & Clear button)
+  // ---------------------------------------------------------------------------
+  .timepicker-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: #{func.to-rem(2px)};
+    margin-left: auto;
+  }
+
+  .timepicker-now-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    height: #{func.to-rem(22px)};
+    padding: 0 #{func.to-rem(6px)};
+    border: 1px solid var(--vi-border-02, #{tokens.$border-02});
+    border-radius: var(--vi-border-radius-sm, #{tokens.$border-radius-sm});
+    background: var(--vi-layer-02, #{tokens.$layer-02});
+    color: var(--vi-color-primary, #{tokens.$color-primary});
+    font-family: var(--vi-font-family-base, #{tokens.$font-family-base});
+    font-size: var(--vi-font-size-xs, #{tokens.$font-size-xs});
+    font-weight: #{tokens.$font-weight-medium};
+    cursor: pointer;
+    user-select: none;
+    transition:
+      background-color 150ms ease,
+      border-color 150ms ease,
+      color 150ms ease;
+
+    &:hover:not(:disabled) {
+      background: var(--vi-layer-hover-02, #{tokens.$layer-hover-02});
+      border-color: var(--vi-border-03, #{tokens.$border-03});
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--vi-focus, #{tokens.$focus});
+      outline-offset: 1px;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  .timepicker-timezone {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: #{func.to-rem(1px)} #{func.to-rem(4px)};
+    margin-left: #{func.to-rem(2px)};
+    border-radius: var(--vi-border-radius-sm, #{tokens.$border-radius-sm});
+    background: var(--vi-layer-02, #{tokens.$layer-02});
+    color: var(--vi-text-secondary, #{tokens.$text-secondary});
+    font-family: var(--vi-font-family-base, #{tokens.$font-family-base});
+    font-size: #{func.to-rem(10px)};
+    font-weight: #{tokens.$font-weight-semibold};
+    letter-spacing: 0.5px;
+    user-select: none;
+  }
+
+  .timepicker-clock-btn,
+  .timepicker-clear-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    width: #{func.to-rem(24px)};
+    height: #{func.to-rem(24px)};
+    padding: 0;
+    border: none;
+    background: transparent;
+    border-radius: var(--vi-border-radius-sm, #{tokens.$border-radius-sm});
+    color: var(--vi-text-secondary, #{tokens.$text-secondary});
+    cursor: pointer;
+    transition:
+      background-color 150ms ease,
+      color 150ms ease;
+
+    &:hover:not(:disabled) {
+      background: var(--vi-layer-hover-01, #{tokens.$layer-hover-01});
+      color: var(--vi-text-primary, #{tokens.$text-primary});
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--vi-focus, #{tokens.$focus});
+      outline-offset: 1px;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    svg {
+      width: #{func.to-rem(14px)};
+      height: #{func.to-rem(14px)};
+      stroke: currentColor;
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Clinical EDC: "Time unknown" Checkbox Wrapper
+  // ---------------------------------------------------------------------------
+  .timepicker-unknown-wrapper {
+    display: inline-flex;
+    align-items: center;
+    gap: #{tokens.$spacing-xs};
+    margin-top: #{tokens.$spacing-xs};
+    font-size: var(--vi-font-size-xs, #{tokens.$font-size-xs});
+    color: var(--vi-text-secondary, #{tokens.$text-secondary});
+    cursor: pointer;
+    user-select: none;
+
+    input[type='checkbox'] {
+      cursor: pointer;
+      accent-color: var(--vi-color-primary, #{tokens.$color-primary});
+    }
+
+    label {
+      cursor: pointer;
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Validation Error Message
+  // ---------------------------------------------------------------------------
+  .validity-msg {
+    display: block;
+    font-size: var(--vi-font-size-xs, #{tokens.$font-size-xs});
+    color: var(--vi-time-picker-error-color, #{tokens.$color-error});
+    margin-top: #{tokens.$spacing-xs};
+  }
+}
