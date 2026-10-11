@@ -1608,6 +1608,150 @@ describe('vi-time-picker (WDIO browser runner)', () => {
       expect(el.validityMessage).toBe('');
       expect(el.shadowRoot!.querySelector('#validation-msg')).toBeNull();
     });
+
+    it('navigates sequentially with Tab and Shift+Tab in HH/mm popup', async () => {
+      render(
+        html`<vi-time-picker value="12:00"></vi-time-picker>`,
+        container,
+      );
+      const el = container.querySelector('vi-time-picker') as ViTimePicker;
+      await waitForUpdate(el);
+
+      el.open();
+      await el.updateComplete;
+      await new Promise((r) => setTimeout(r, 60));
+
+      const fp = (el as any)._fp;
+      expect(fp).toBeTruthy();
+      const hourInput = fp.calendarContainer.querySelector('.flatpickr-hour') as HTMLInputElement;
+      const minuteInput = fp.calendarContainer.querySelector('.flatpickr-minute') as HTMLInputElement;
+
+      expect(hourInput).not.toBeNull();
+      expect(minuteInput).not.toBeNull();
+      expect(hourInput.tabIndex).toBe(0);
+      expect(minuteInput.tabIndex).toBe(0);
+
+      hourInput.focus();
+      expect(el.shadowRoot!.activeElement).toBe(hourInput);
+
+      // Press Tab on HH -> moves to mm
+      hourInput.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: 'Tab',
+          bubbles: true,
+          cancelable: true,
+          composed: true,
+        }),
+      );
+      expect(el.shadowRoot!.activeElement).toBe(minuteInput);
+
+      // Press Tab on mm -> wraps to HH
+      minuteInput.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: 'Tab',
+          bubbles: true,
+          cancelable: true,
+          composed: true,
+        }),
+      );
+      expect(el.shadowRoot!.activeElement).toBe(hourInput);
+
+      // Press Shift+Tab on HH -> wraps to mm
+      hourInput.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: 'Tab',
+          shiftKey: true,
+          bubbles: true,
+          cancelable: true,
+          composed: true,
+        }),
+      );
+      expect(el.shadowRoot!.activeElement).toBe(minuteInput);
+    });
+
+    it('navigates sequentially with Tab across HH/mm/ss in popup with showSeconds', async () => {
+      render(
+        html`<vi-time-picker show-seconds value="12:00:00"></vi-time-picker>`,
+        container,
+      );
+      const el = container.querySelector('vi-time-picker') as ViTimePicker;
+      await waitForUpdate(el);
+
+      el.open();
+      await el.updateComplete;
+      await new Promise((r) => setTimeout(r, 60));
+
+      const fp = (el as any)._fp;
+      expect(fp).toBeTruthy();
+      const hourInput = fp.calendarContainer.querySelector('.flatpickr-hour') as HTMLInputElement;
+      const minuteInput = fp.calendarContainer.querySelector('.flatpickr-minute') as HTMLInputElement;
+      const secondInput = fp.calendarContainer.querySelector('.flatpickr-second') as HTMLInputElement;
+
+      expect(hourInput).not.toBeNull();
+      expect(minuteInput).not.toBeNull();
+      expect(secondInput).not.toBeNull();
+      expect(hourInput.tabIndex).toBe(0);
+      expect(minuteInput.tabIndex).toBe(0);
+      expect(secondInput.tabIndex).toBe(0);
+
+      hourInput.focus();
+      expect(el.shadowRoot!.activeElement).toBe(hourInput);
+
+      // Tab from HH -> mm
+      hourInput.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: 'Tab',
+          bubbles: true,
+          cancelable: true,
+          composed: true,
+        }),
+      );
+      expect(el.shadowRoot!.activeElement).toBe(minuteInput);
+
+      // Tab from mm -> ss
+      minuteInput.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: 'Tab',
+          bubbles: true,
+          cancelable: true,
+          composed: true,
+        }),
+      );
+      expect(el.shadowRoot!.activeElement).toBe(secondInput);
+
+      // Tab from ss -> HH
+      secondInput.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: 'Tab',
+          bubbles: true,
+          cancelable: true,
+          composed: true,
+        }),
+      );
+      expect(el.shadowRoot!.activeElement).toBe(hourInput);
+
+      // ArrowRight advances HH -> mm
+      hourInput.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: 'ArrowRight',
+          bubbles: true,
+          cancelable: true,
+          composed: true,
+        }),
+      );
+      expect(el.shadowRoot!.activeElement).toBe(minuteInput);
+
+      // ArrowLeft moves mm -> HH
+      minuteInput.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: 'ArrowLeft',
+          bubbles: true,
+          cancelable: true,
+          composed: true,
+        }),
+      );
+      expect(el.shadowRoot!.activeElement).toBe(hourInput);
+    });
   });
 });
 

@@ -216,6 +216,7 @@ export class ViTimePicker extends ValidityMixin(FlatpickrMixin(ViElement)) {
   private accessor _floatingMenuContainer!: HTMLDivElement;
 
   private _initialValue = '';
+  private _isSyncingFromFp = false;
 
   private _floatingController = new FloatingController(this, {
     reference: () => this._controlEl,
@@ -308,8 +309,22 @@ export class ViTimePicker extends ValidityMixin(FlatpickrMixin(ViElement)) {
 
   override async firstUpdated(_changed: PropertyValues) {
     super.firstUpdated(_changed);
+    this._floatingMenuContainer.addEventListener(
+      'keydown',
+      this._handlePopupKeydown,
+      true,
+    );
     this._resolvedLocale = resolveLocale(this.locale);
     await this._setupFlatpickr();
+  }
+
+  override disconnectedCallback(): void {
+    super.disconnectedCallback();
+    this._floatingMenuContainer?.removeEventListener(
+      'keydown',
+      this._handlePopupKeydown,
+      true,
+    );
   }
 
   override async updated(changed: PropertyValues) {
@@ -388,13 +403,11 @@ export class ViTimePicker extends ValidityMixin(FlatpickrMixin(ViElement)) {
     const fpLocale = await loadLocale(this._resolvedLocale);
     await this._initFlatpickr(this._buildFpConfig(fpLocale), 'time');
     if (this._fp?.calendarContainer) {
-      this._fp.calendarContainer.addEventListener('keydown', (e: KeyboardEvent) => {
-        if (e.key === 'Escape') {
-          e.preventDefault();
-          e.stopPropagation();
-          this.close();
-        }
-      });
+      this._fp.calendarContainer.addEventListener(
+        'keydown',
+        this._handlePopupKeydown,
+        true,
+      );
     }
     this._syncFlatpickrValue();
     this.requestUpdate();
@@ -436,12 +449,12 @@ export class ViTimePicker extends ValidityMixin(FlatpickrMixin(ViElement)) {
         this._floatingController.start();
         this.requestUpdate();
         setTimeout(() => {
+          this._setupPopupFocusableElements();
           const hourInput =
             this._fp?.calendarContainer?.querySelector<HTMLInputElement>(
               '.flatpickr-hour',
             );
           if (hourInput) {
-            hourInput.tabIndex = 0;
             hourInput.focus();
             hourInput.select();
           }
@@ -456,8 +469,19 @@ export class ViTimePicker extends ValidityMixin(FlatpickrMixin(ViElement)) {
     };
   }
 
+  private _setupPopupFocusableElements(): void {
+    const calendar = this._fp?.calendarContainer || this._floatingMenuContainer;
+    if (!calendar) return;
+    const elements = calendar.querySelectorAll<HTMLElement>(
+      '.flatpickr-hour, .flatpickr-minute, .flatpickr-second, .flatpickr-am-pm',
+    );
+    elements.forEach((el) => {
+      el.tabIndex = 0;
+    });
+  }
+
   private _syncFlatpickrValue() {
-    if (!this._fp) return;
+    if (!this._fp || this._isSyncingFromFp) return;
     if (this._isUnknown || !this.value) {
       this._fp.clear(false);
       return;
@@ -893,7 +917,12 @@ export class ViTimePicker extends ValidityMixin(FlatpickrMixin(ViElement)) {
       this.status = 'default';
     }
 
-    this._commitTime();
+    this._isSyncingFromFp = true;
+    try {
+      this._commitTime();
+    } finally {
+      this._isSyncingFromFp = false;
+    }
   }
 
   private _handleUnknownToggle(e: Event) {
@@ -1395,40 +1424,87 @@ export class ViTimePicker extends ValidityMixin(FlatpickrMixin(ViElement)) {
     }
   }
 
-  private _handlePopupKeydown(e: KeyboardEvent) {
+  private _handlePopupKeydown = (e: KeyboardEvent) => {
     if (e.key === 'Escape') {
       e.preventDefault();
       e.stopPropagation();
       this.close();
       return;
     }
+
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      e.stopPropagation();
+      this.close();
+      return;
+    }
+
+    const calendar = this._fp?.calendarContainer || this._floatingMenuContainer;
+    if (!calendar) return;
+
+    const timeControls = Array.from(
+      calendar.querySelectorAll<HTMLElement>(
+        '.flatpickr-hour, .flatpickr-minute, .flatpickr-second, .flatpickr-am-pm',
+      ),
+    ).filter(
+      (el) =>
+        el.offsetParent !== null ||
+        getComputedStyle(el).display !== 'none',
+    );
+
+    if (timeControls.length === 0) return;
+
+    for (const el of timeControls) {
+      if (el.tabIndex !== 0) el.tabIndex = 0;
+    }
+
+    const active =
+      (this.shadowRoot?.activeElement as HTMLElement) ||
+      calendar.querySelector<HTMLElement>(':focus');
+    const currentIndex = active ? timeControls.indexOf(active) : -1;
+
     if (e.key === 'Tab') {
-      const focusable = Array.from(
-        this._floatingMenuContainer.querySelectorAll<HTMLElement>(
-          'input:not([disabled]), button:not([disabled]), [tabindex="0"]',
-        ),
-      ).filter(
-        (el) =>
-          el.offsetParent !== null ||
-          getComputedStyle(el).display !== 'none',
-      );
-      if (focusable.length > 0) {
-        const first = focusable[0];
-        const last = focusable[focusable.length - 1];
-        const active =
-          this.shadowRoot?.activeElement ||
-          this._fp?.calendarContainer?.querySelector(':focus') ||
-          document.activeElement;
-        if (e.shiftKey && active === first) {
-          e.preventDefault();
-          last.focus();
-        } else if (!e.shiftKey && active === last) {
-          e.preventDefault();
-          first.focus();
+      e.preventDefault();
+      e.stopPropagation();
+      const nextIndex = e.shiftKey
+        ? (currentIndex > 0 ? currentIndex - 1 : timeControls.length - 1)
+        : (currentIndex >= 0 ? (currentIndex + 1) % timeControls.length : 0);
+      const nextEl = timeControls[nextIndex];
+      if (nextEl) {
+        nextEl.focus();
+        if (nextEl instanceof HTMLInputElement) {
+          nextEl.select();
         }
       }
+      return;
     }
-  }
+
+    if (e.key === 'ArrowRight' || e.key === ':') {
+      if (currentIndex >= 0 && currentIndex < timeControls.length - 1) {
+        e.preventDefault();
+        e.stopPropagation();
+        const nextEl = timeControls[currentIndex + 1];
+        nextEl.focus();
+        if (nextEl instanceof HTMLInputElement) {
+          nextEl.select();
+        }
+      }
+      return;
+    }
+
+    if (e.key === 'ArrowLeft') {
+      if (currentIndex > 0) {
+        e.preventDefault();
+        e.stopPropagation();
+        const prevEl = timeControls[currentIndex - 1];
+        prevEl.focus();
+        if (prevEl instanceof HTMLInputElement) {
+          prevEl.select();
+        }
+      }
+      return;
+    }
+  };
 
   private _stepSegment(
     segment: 'hours' | 'minutes' | 'seconds',
