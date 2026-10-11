@@ -17,13 +17,140 @@ export function isUnknownTime(value: string | null | undefined): boolean {
 }
 
 /**
- * Returns true if the string represents a partially unknown clinical time (e.g. "14:??" or "??:30").
+ * Parses a CDISC SDTM partial unknown time string (e.g. "14:??", "??:30", "14:??:??", "02:?? PM")
+ * according to CDISC grammar and numeric range rules.
+ *
+ * Grammar:
+ * - 2-segment: (\d{1,2}|??):(\d{2}|??)( AM|PM)?
+ * - 3-segment: (\d{1,2}|??):(\d{2}|??):(\d{2}|??)( AM|PM)?
+ *
+ * Range & Wildcard Rules:
+ * - Must contain at least one wildcard '??' segment.
+ * - Must NOT be fully unknown (where all present segments are '??', e.g. "??:??" or "??:??:??").
+ * - Numeric hours with period: 1–12.
+ * - Numeric hours without period: 0–23.
+ * - Numeric minutes: 0–59.
+ * - Numeric seconds: 0–59.
+ *
+ * Returns normalized TimeComponents if valid, or null if malformed or out of range.
  */
-export function isPartialUnknownTime(value: string | null | undefined): boolean {
-  if (!value) return false;
+export function parsePartialTime(
+  value: string | null | undefined,
+  format: TimeFormat = '24',
+): TimeComponents | null {
+  if (!value) return null;
   const trimmed = value.trim();
-  if (isUnknownTime(trimmed)) return false;
-  return trimmed.includes('??');
+  if (isUnknownTime(trimmed)) return null;
+
+  const match = trimmed.match(
+    /^(\d{1,2}|\?\?):(\d{2}|\?\?)(?::(\d{2}|\?\?))?(?:\s*(AM|PM))?$/i,
+  );
+  if (!match) return null;
+
+  const rawH = match[1];
+  const rawM = match[2];
+  const rawS = match[3];
+  const rawPeriod = match[4]?.toUpperCase() as 'AM' | 'PM' | undefined;
+
+  // Must contain at least one '??' segment to be a partial unknown
+  const hasWildcard = rawH === '??' || rawM === '??' || rawS === '??';
+  if (!hasWildcard) return null;
+
+  // Must not have all segments as '??' unless period is specified (full unknown without period is handled by isUnknownTime)
+  const allWildcards =
+    rawH === '??' &&
+    rawM === '??' &&
+    (rawS === undefined || rawS === '??') &&
+    !rawPeriod;
+  if (allWildcards) return null;
+
+  // Validate minutes range if numeric
+  let minutes: number | null = null;
+  if (rawM !== '??') {
+    minutes = parseInt(rawM, 10);
+    if (minutes < 0 || minutes > 59) return null;
+  }
+
+  // Validate seconds range if present and numeric
+  let seconds: number | null | undefined = undefined;
+  if (rawS !== undefined) {
+    if (rawS === '??') {
+      seconds = null;
+    } else {
+      seconds = parseInt(rawS, 10);
+      if (seconds < 0 || seconds > 59) return null;
+    }
+  }
+
+  // Validate hours range if numeric
+  let hours: number | null = null;
+  let period = rawPeriod;
+
+  if (format === '24') {
+    period = undefined;
+  }
+
+  if (rawH !== '??') {
+    hours = parseInt(rawH, 10);
+
+    if (rawPeriod) {
+      if (hours < 1 || hours > 12) return null;
+      if (format === '24') {
+        hours = to24Hour(hours, rawPeriod);
+      }
+    } else {
+      if (hours < 0 || hours > 23) return null;
+      if (format === '12') {
+        if (hours > 12) {
+          const converted = to12Hour(hours);
+          hours = converted.hours;
+          period = converted.period;
+        } else if (hours === 0) {
+          hours = 12;
+          period = 'AM';
+        } else {
+          period = 'AM';
+        }
+      }
+    }
+  }
+
+  const rawHoursFormatted =
+    rawH === '??' ? '??' : hours !== null ? pad2(hours) : rawH;
+
+  const rawMinutesFormatted =
+    rawM === '??' ? '??' : minutes !== null ? pad2(minutes) : rawM;
+
+  const rawSecondsFormatted =
+    rawS === undefined
+      ? undefined
+      : rawS === '??'
+        ? '??'
+        : seconds !== null && seconds !== undefined
+          ? pad2(seconds)
+          : rawS;
+
+  return {
+    hours,
+    minutes,
+    seconds,
+    period,
+    rawHours: rawHoursFormatted,
+    rawMinutes: rawMinutesFormatted,
+    rawSeconds: rawSecondsFormatted,
+    isPartial: true,
+  };
+}
+
+/**
+ * Returns true if the string represents a valid partially unknown clinical time (e.g. "14:??" or "??:30")
+ * conforming to CDISC SDTM grammar and numeric ranges.
+ */
+export function isPartialUnknownTime(
+  value: string | null | undefined,
+  format: TimeFormat = '24',
+): boolean {
+  return parsePartialTime(value, format) !== null;
 }
 
 /**
@@ -64,27 +191,7 @@ export function parseTime(
 
   // Handle partial unknown time (CDISC SDTM wildcards: e.g. "14:??", "??:30", "14:??:??")
   if (trimmed.includes('??')) {
-    const parts = trimmed.split(/[:\s]+/);
-    const rawH = parts[0] || '??';
-    const rawM = parts[1] || '??';
-    const rawS = parts[2] && parts[2] !== 'AM' && parts[2] !== 'PM' ? parts[2] : undefined;
-    const periodMatch = trimmed.match(/(AM|PM)$/i);
-    const period = periodMatch ? (periodMatch[1].toUpperCase() as 'AM' | 'PM') : undefined;
-
-    const numH = rawH === '??' ? null : parseInt(rawH, 10);
-    const numM = rawM === '??' ? null : parseInt(rawM, 10);
-    const numS = rawS === undefined ? undefined : rawS === '??' ? null : parseInt(rawS, 10);
-
-    return {
-      hours: numH,
-      minutes: numM,
-      seconds: numS,
-      period,
-      rawHours: rawH,
-      rawMinutes: rawM,
-      rawSeconds: rawS,
-      isPartial: true,
-    };
+    return parsePartialTime(trimmed, format);
   }
 
   const match = trimmed.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\s*(AM|PM))?$/i);

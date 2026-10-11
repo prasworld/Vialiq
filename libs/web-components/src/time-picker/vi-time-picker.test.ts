@@ -23,6 +23,7 @@ import {
   stepSegment,
   isUnknownTime,
   isPartialUnknownTime,
+  parsePartialTime,
   parsePastedTime,
 } from './time-utils.js';
 
@@ -132,9 +133,64 @@ describe('time-utils (WDIO browser runner)', () => {
       expect(isPartialUnknownTime('??:30')).toBe(true);
       expect(isPartialUnknownTime('??:??:45')).toBe(true);
       expect(isPartialUnknownTime('14:??:??')).toBe(true);
+      expect(isPartialUnknownTime('??:30:??')).toBe(true);
+      expect(isPartialUnknownTime('02:?? PM', '12')).toBe(true);
+      expect(isPartialUnknownTime('2:?? am', '12')).toBe(true);
       expect(isPartialUnknownTime('??:??')).toBe(false);
+      expect(isPartialUnknownTime('??:??:??')).toBe(false);
       expect(isPartialUnknownTime('14:30')).toBe(false);
       expect(isPartialUnknownTime('')).toBe(false);
+      expect(isPartialUnknownTime(null)).toBe(false);
+      expect(isPartialUnknownTime(undefined)).toBe(false);
+    });
+
+    it('rejects malformed strings and out-of-range wildcard values in isPartialUnknownTime', () => {
+      // Malformed strings containing ??
+      expect(isPartialUnknownTime('foo??')).toBe(false);
+      expect(isPartialUnknownTime('??foo')).toBe(false);
+      expect(isPartialUnknownTime('14:?')).toBe(false);
+      expect(isPartialUnknownTime('14-??')).toBe(false);
+      expect(isPartialUnknownTime('??:??:??:??')).toBe(false);
+
+      // Out-of-range numeric ranges
+      expect(isPartialUnknownTime('99:??')).toBe(false);
+      expect(isPartialUnknownTime('??:99')).toBe(false);
+      expect(isPartialUnknownTime('14:??:80')).toBe(false);
+      expect(isPartialUnknownTime('15:?? PM')).toBe(false);
+      expect(isPartialUnknownTime('00:?? PM')).toBe(false);
+      expect(isPartialUnknownTime('24:??')).toBe(false);
+    });
+
+    it('parses valid and invalid partial times with parsePartialTime and parseTime', () => {
+      // Valid partial times
+      expect(parsePartialTime('14:??', '24')).toEqual({
+        hours: 14,
+        minutes: null,
+        seconds: undefined,
+        period: undefined,
+        rawHours: '14',
+        rawMinutes: '??',
+        rawSeconds: undefined,
+        isPartial: true,
+      });
+
+      expect(parseTime('14:??', '24')).toEqual({
+        hours: 14,
+        minutes: null,
+        seconds: undefined,
+        period: undefined,
+        rawHours: '14',
+        rawMinutes: '??',
+        rawSeconds: undefined,
+        isPartial: true,
+      });
+
+      // parseTime returns null for malformed or out-of-range partial values
+      expect(parseTime('foo??')).toBeNull();
+      expect(parseTime('99:??')).toBeNull();
+      expect(parseTime('??:99')).toBeNull();
+      expect(parseTime('14:??:80')).toBeNull();
+      expect(parseTime('15:?? PM')).toBeNull();
     });
   });
 
@@ -268,6 +324,48 @@ describe('vi-time-picker (WDIO browser runner)', () => {
     expect(periodBtn.textContent?.trim()).toBe('AM');
     expect(periodBtn.getAttribute('aria-pressed')).toBe('false');
     expect(el.value).toBe('02:30 AM');
+  });
+
+  it('rehydrates segment state when format changes from 24-hour to 12-hour', async () => {
+    render(
+      html`<vi-time-picker format="24" value="14:30"></vi-time-picker>`,
+      container,
+    );
+    const el = container.querySelector('vi-time-picker') as ViTimePicker;
+    await waitForUpdate(el);
+
+    const hoursInput = el.shadowRoot!.querySelector('#hours-input') as HTMLInputElement;
+    expect(hoursInput.value).toBe('14');
+    expect(hoursInput.getAttribute('aria-valuemax')).toBe('23');
+
+    // Switch format from 24 to 12
+    el.format = '12';
+    await el.updateComplete;
+
+    expect(hoursInput.value).toBe('02');
+    expect(hoursInput.getAttribute('aria-valuemax')).toBe('12');
+    const periodBtn = el.shadowRoot!.querySelector('.timepicker-period-btn') as HTMLButtonElement;
+    expect(periodBtn).toBeTruthy();
+    expect(periodBtn.textContent?.trim()).toBe('PM');
+  });
+
+  it('rehydrates seconds segment state when showSeconds is dynamically enabled', async () => {
+    render(
+      html`<vi-time-picker value="14:30"></vi-time-picker>`,
+      container,
+    );
+    const el = container.querySelector('vi-time-picker') as ViTimePicker;
+    await waitForUpdate(el);
+
+    expect(el.shadowRoot!.querySelector('#seconds-input')).toBeNull();
+
+    // Dynamically enable seconds
+    el.showSeconds = true;
+    await el.updateComplete;
+
+    const secondsInput = el.shadowRoot!.querySelector('#seconds-input') as HTMLInputElement;
+    expect(secondsInput).toBeTruthy();
+    expect(secondsInput.value).toBe('00');
   });
 
   it('supports keyboard toggling of AM/PM via A and P keys', async () => {
@@ -546,6 +644,42 @@ describe('vi-time-picker (WDIO browser runner)', () => {
     await el.updateComplete;
 
     expect(el.checkValidity()).toBe(true);
+  });
+
+  it('validates partial time grammar and sets badInput for malformed or out-of-range partial times', async () => {
+    render(html`<vi-time-picker></vi-time-picker>`, container);
+    const el = container.querySelector('vi-time-picker') as ViTimePicker;
+    await waitForUpdate(el);
+
+    // Malformed partial string with wildcard substring
+    el.value = 'foo??';
+    await el.updateComplete;
+    expect(el.checkValidity()).toBe(false);
+    expect(el.validity.badInput).toBe(true);
+
+    // Out-of-range hours wildcard
+    el.value = '99:??';
+    await el.updateComplete;
+    expect(el.checkValidity()).toBe(false);
+    expect(el.validity.badInput).toBe(true);
+
+    // Out-of-range minutes wildcard
+    el.value = '??:99';
+    await el.updateComplete;
+    expect(el.checkValidity()).toBe(false);
+    expect(el.validity.badInput).toBe(true);
+
+    // Out-of-range seconds wildcard
+    el.value = '14:??:80';
+    await el.updateComplete;
+    expect(el.checkValidity()).toBe(false);
+    expect(el.validity.badInput).toBe(true);
+
+    // Valid CDISC partial unknown time
+    el.value = '14:??';
+    await el.updateComplete;
+    expect(el.checkValidity()).toBe(true);
+    expect(el.validity.badInput).toBe(false);
   });
 
   it('participates in native form submission and reset', async () => {
@@ -1109,6 +1243,44 @@ describe('vi-time-picker (WDIO browser runner)', () => {
       expect(el.value).toBe('08:30');
     });
 
+    it('pastes fully unknown time "??:??" and commits unknown value, form state, and emits change', async () => {
+      render(
+        html`<vi-time-picker value="14:30"></vi-time-picker>`,
+        container,
+      );
+      const el = container.querySelector('vi-time-picker') as ViTimePicker;
+      await waitForUpdate(el);
+
+      expect(el.value).toBe('14:30');
+
+      let changeFired = false;
+      let changeDetail: TimePickerChangeDetail | null = null;
+      el.addEventListener('vi-time-picker-change', (e: Event) => {
+        changeFired = true;
+        changeDetail = (e as CustomEvent<TimePickerChangeDetail>).detail;
+      });
+
+      const hoursInput = el.shadowRoot!.querySelector('#hours-input') as HTMLInputElement;
+
+      const clipboardData = new DataTransfer();
+      clipboardData.setData('text/plain', '??:??');
+      const pasteEvent = new ClipboardEvent('paste', {
+        clipboardData,
+        bubbles: true,
+        cancelable: true,
+        composed: true,
+      });
+
+      hoursInput.dispatchEvent(pasteEvent);
+      await el.updateComplete;
+
+      expect(el.value).toBe('??:??');
+      expect(changeFired).toBe(true);
+      const detail = changeDetail as TimePickerChangeDetail | null;
+      expect(detail?.isUnknown).toBe(true);
+      expect(detail?.value).toBe('??:??');
+    });
+
     it('displays timezone indicator badge and includes timezone in event details', async () => {
       render(
         html`<vi-time-picker timezone="UTC" value="14:30"></vi-time-picker>`,
@@ -1134,7 +1306,7 @@ describe('vi-time-picker (WDIO browser runner)', () => {
       expect(detail!.isoValue).toContain('Z');
     });
 
-    it('supports hour-step and second-step increments', async () => {
+    it('supports hour-step and second-step increments via API and keyboard', async () => {
       render(
         html`<vi-time-picker value="10:00:00" show-seconds hour-step="2" second-step="10"></vi-time-picker>`,
         container,
@@ -1142,13 +1314,35 @@ describe('vi-time-picker (WDIO browser runner)', () => {
       const el = container.querySelector('vi-time-picker') as ViTimePicker;
       await waitForUpdate(el);
 
+      const hoursInput = el.shadowRoot!.querySelector('#hours-input') as HTMLInputElement;
+      const secondsInput = el.shadowRoot!.querySelector('#seconds-input') as HTMLInputElement;
+
+      // API stepUp
       el.stepUp('hours');
       await el.updateComplete;
-      expect((el.shadowRoot!.querySelector('#hours-input') as HTMLInputElement).value).toBe('12');
+      expect(hoursInput.value).toBe('12');
 
       el.stepUp('seconds');
       await el.updateComplete;
-      expect((el.shadowRoot!.querySelector('#seconds-input') as HTMLInputElement).value).toBe('10');
+      expect(secondsInput.value).toBe('10');
+
+      // Keyboard ArrowUp / ArrowDown on hours segment (respects hourStep=2)
+      hoursInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp' }));
+      await el.updateComplete;
+      expect(hoursInput.value).toBe('14');
+
+      hoursInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown' }));
+      await el.updateComplete;
+      expect(hoursInput.value).toBe('12');
+
+      // Keyboard ArrowUp / ArrowDown on seconds segment (respects secondStep=10)
+      secondsInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp' }));
+      await el.updateComplete;
+      expect(secondsInput.value).toBe('20');
+
+      secondsInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown' }));
+      await el.updateComplete;
+      expect(secondsInput.value).toBe('10');
     });
 
     it('handles CDISC partial unknown time and sets checkbox to indeterminate', async () => {
@@ -1217,6 +1411,51 @@ describe('vi-time-picker (WDIO browser runner)', () => {
 
       el.reportValidity();
       expect(el.status).toBe('invalid');
+    });
+
+    it('validates disabledSeconds callback and array constraints', async () => {
+      render(
+        html`<vi-time-picker show-seconds></vi-time-picker>`,
+        container,
+      );
+      const el = container.querySelector('vi-time-picker') as ViTimePicker;
+      el.disabledSeconds = [15, 30, 45];
+      el.value = '10:20:15';
+      await waitForUpdate(el);
+
+      expect(el.checkValidity()).toBe(false);
+      expect(el.validity.customError).toBe(true);
+      expect(el.validityMessage).toContain('not selectable');
+
+      el.reportValidity();
+      expect(el.status).toBe('invalid');
+
+      // Allowed seconds
+      el.value = '10:20:16';
+      await el.updateComplete;
+      expect(el.checkValidity()).toBe(true);
+
+      // Test disabledSeconds function predicate
+      el.disabledSeconds = (sec: number, min?: number, hr?: number) =>
+        hr === 10 && min === 20 && sec === 50;
+      el.value = '10:20:50';
+      await el.updateComplete;
+      expect(el.checkValidity()).toBe(false);
+      expect(el.validity.customError).toBe(true);
+
+      el.reportValidity();
+      expect(el.status).toBe('invalid');
+
+      // Allowed value
+      el.value = '10:20:51';
+      await el.updateComplete;
+      expect(el.checkValidity()).toBe(true);
+
+      // Dynamically updating disabledSeconds re-validates the element
+      el.disabledSeconds = [51];
+      await el.updateComplete;
+      expect(el.checkValidity()).toBe(false);
+      expect(el.validity.customError).toBe(true);
     });
 
     it('handles interactive digit typing without erasing intermediate values or displaying premature validation errors', async () => {

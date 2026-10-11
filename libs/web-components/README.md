@@ -1118,7 +1118,7 @@ Users can copy and paste time strings in any standard enterprise or military not
 - Military Compact Digits: `"1430"`, `"930"`, `"143045"`
 - Clinical Wildcards: `"14:??"`, `"??:??"`
 
-##### 11. Restricted Scheduling & Blackout Times (`disabledHours` / `disabledMinutes`)
+##### 11. Restricted Scheduling & Blackout Times (`disabledHours` / `disabledMinutes` / `disabledSeconds`)
 Prevent booking or logging during blackout windows using array lists or function predicates:
 ```typescript
 const picker = document.querySelector('vi-time-picker');
@@ -1126,6 +1126,8 @@ const picker = document.querySelector('vi-time-picker');
 picker.disabledHours = [12, 13];
 // Allow appointments only on 15-minute intervals
 picker.disabledMinutes = (minute: number) => minute % 15 !== 0;
+// Blackout specific seconds: [15, 30, 45] or predicate (s, m, h) => boolean
+picker.disabledSeconds = [15, 30, 45];
 ```
 
 ##### 12. Independent Granular Stepping (`hour-step` / `second-step`)

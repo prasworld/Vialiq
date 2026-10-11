@@ -14,8 +14,8 @@ export interface TimeComponents {
 }
 
 export type DisabledHoursFn = (hour: number) => boolean;
-export type DisabledMinutesFn = (minute: number, hour: number) => boolean;
-export type DisabledSecondsFn = (second: number, hour: number, minute: number) => boolean;
+export type DisabledMinutesFn = (minute: number, hour?: number) => boolean;
+export type DisabledSecondsFn = (second: number, minute?: number, hour?: number) => boolean;
 
 export interface TimePickerChangeDetail {
   /** The value string: "14:30", "02:30 PM", "??:??", or "14:??" */
@@ -79,7 +79,7 @@ export interface TimePickerI18n {
   minMessage?: string;
   /** Validation error message when time is after max constraint */
   maxMessage?: string;
-  /** Validation error message when time is disabled via disabledHours/disabledMinutes */
+  /** Validation error message when time is disabled via disabledHours/disabledMinutes/disabledSeconds */
   disabledTimeMessage?: string;
   /** Label for empty spinbutton value text (default: 'Empty') */
   emptyValueText?: string;

@@ -297,6 +297,11 @@ export class ViTimePicker extends ValidityMixin(FlatpickrMixin(ViElement)) {
         this.i18n = this._createConfigProxy(this.i18n);
       }
     }
+    if (changed.has('format') || changed.has('showSeconds')) {
+      if (this.value) {
+        this._syncStateFromValue(this.value);
+      }
+    }
   }
 
   override async firstUpdated(_changed: PropertyValues) {
@@ -313,6 +318,10 @@ export class ViTimePicker extends ValidityMixin(FlatpickrMixin(ViElement)) {
     const stepChanged = changed.has('step');
     const secondsChanged = changed.has('showSeconds');
     const minMaxChanged = changed.has('min') || changed.has('max');
+    const disabledTimesChanged =
+      changed.has('disabledHours') ||
+      changed.has('disabledMinutes') ||
+      changed.has('disabledSeconds');
     const localeChanged = changed.has('locale');
     const configChanged = changed.has('config') || changed.has('i18n');
 
@@ -335,20 +344,31 @@ export class ViTimePicker extends ValidityMixin(FlatpickrMixin(ViElement)) {
       this._syncValidity();
       const cb = this.renderRoot?.querySelector<HTMLInputElement>('#unknown-checkbox');
       if (cb) {
-        cb.indeterminate = isPartialUnknownTime(this.value);
+        cb.indeterminate = isPartialUnknownTime(this.value, this.format);
       }
     }
 
     if (formatChanged || stepChanged || secondsChanged) {
+      if (this.value) {
+        this._syncStateFromValue(this.value);
+      }
       if (this._fp) {
         await this._setupFlatpickr();
       }
+      this._syncValidity();
     }
 
     if (minMaxChanged) {
       if (this._fp) {
         this._fp.set('minTime', this.min || undefined);
         this._fp.set('maxTime', this.max || undefined);
+      }
+      this._syncValidity();
+    }
+
+    if (disabledTimesChanged) {
+      if (this._fp) {
+        await this._setupFlatpickr();
       }
       this._syncValidity();
     }
@@ -386,6 +406,10 @@ export class ViTimePicker extends ValidityMixin(FlatpickrMixin(ViElement)) {
       enableSeconds: this.showSeconds,
       minTime: this.min || undefined,
       maxTime: this.max || undefined,
+      disable: [
+        (date: Date) =>
+          this._isTimeDisabled(date.getHours(), date.getMinutes(), date.getSeconds()),
+      ],
       ...(fpLocale ? { locale: fpLocale } : {}),
       dateFormat:
         this.format === '24'
@@ -489,8 +513,8 @@ export class ViTimePicker extends ValidityMixin(FlatpickrMixin(ViElement)) {
       return { valueMissing: true };
     }
 
-    if (this.value && !this._isUnknown) {
-      if (!isPartialUnknownTime(this.value)) {
+    if (this.value && !this._isUnknown && !isUnknownTime(this.value)) {
+      if (!isPartialUnknownTime(this.value, this.format)) {
         const parsed = parseTime(this.value, this.format);
         if (!parsed) {
           this.validityMessage = this.getI18nText('invalidMessage');
@@ -537,23 +561,21 @@ export class ViTimePicker extends ValidityMixin(FlatpickrMixin(ViElement)) {
 
         // Disabled times validation:
         if (parsed.hours !== null && parsed.hours !== undefined) {
-          const h = parsed.hours;
+          const h =
+            this.format === '12' && parsed.period
+              ? to24Hour(parsed.hours, parsed.period)
+              : parsed.hours;
           const m = parsed.minutes ?? 0;
-          let isHourDisabled = false;
-          if (typeof this.disabledHours === 'function') {
-            isHourDisabled = this.disabledHours(h);
-          } else if (Array.isArray(this.disabledHours)) {
-            isHourDisabled = this.disabledHours.includes(h);
-          }
+          const s = parsed.seconds ?? 0;
+          const isHourDisabled = this._isHourDisabled(h);
+          const isMinuteDisabled = this._isMinuteDisabled(m, h);
+          const isSecondDisabled =
+            this.showSeconds &&
+            parsed.seconds !== null &&
+            parsed.seconds !== undefined &&
+            this._isSecondDisabled(s, m, h);
 
-          let isMinuteDisabled = false;
-          if (typeof this.disabledMinutes === 'function') {
-            isMinuteDisabled = this.disabledMinutes(m, h);
-          } else if (Array.isArray(this.disabledMinutes)) {
-            isMinuteDisabled = this.disabledMinutes.includes(m);
-          }
-
-          if (isHourDisabled || isMinuteDisabled) {
+          if (isHourDisabled || isMinuteDisabled || isSecondDisabled) {
             this.validityMessage = this.getI18nText('disabledTimeMessage');
             return { customError: true };
           }
@@ -563,6 +585,46 @@ export class ViTimePicker extends ValidityMixin(FlatpickrMixin(ViElement)) {
 
     this.validityMessage = '';
     return {};
+  }
+
+  private _isHourDisabled(h: number): boolean {
+    if (!this.disabledHours) return false;
+    if (typeof this.disabledHours === 'function') {
+      return this.disabledHours(h);
+    }
+    if (Array.isArray(this.disabledHours)) {
+      return this.disabledHours.includes(h);
+    }
+    return false;
+  }
+
+  private _isMinuteDisabled(m: number, h = 0): boolean {
+    if (!this.disabledMinutes) return false;
+    if (typeof this.disabledMinutes === 'function') {
+      return this.disabledMinutes(m, h);
+    }
+    if (Array.isArray(this.disabledMinutes)) {
+      return this.disabledMinutes.includes(m);
+    }
+    return false;
+  }
+
+  private _isSecondDisabled(s: number, m = 0, h = 0): boolean {
+    if (!this.disabledSeconds) return false;
+    if (typeof this.disabledSeconds === 'function') {
+      return this.disabledSeconds(s, m, h);
+    }
+    if (Array.isArray(this.disabledSeconds)) {
+      return this.disabledSeconds.includes(s);
+    }
+    return false;
+  }
+
+  private _isTimeDisabled(h: number, m: number, s = 0): boolean {
+    if (this._isHourDisabled(h)) return true;
+    if (this._isMinuteDisabled(m, h)) return true;
+    if (this.showSeconds && this._isSecondDisabled(s, m, h)) return true;
+    return false;
   }
 
   override formResetCallback() {
@@ -675,10 +737,13 @@ export class ViTimePicker extends ValidityMixin(FlatpickrMixin(ViElement)) {
       this._hours = '??';
       this._minutes = '??';
       this._seconds = this.showSeconds ? '??' : '';
+      if (this._hoursInput) this._hoursInput.value = this._hours;
+      if (this._minutesInput) this._minutesInput.value = this._minutes;
+      if (this._secondsInput) this._secondsInput.value = this._seconds;
       return;
     }
 
-    if (isPartialUnknownTime(val)) {
+    if (isPartialUnknownTime(val, this.format)) {
       this._isUnknown = false;
       const parsed = parseTime(val, this.format);
       if (parsed) {
@@ -695,6 +760,9 @@ export class ViTimePicker extends ValidityMixin(FlatpickrMixin(ViElement)) {
         if (this.format === '12' && parsed.period) {
           this._period = parsed.period;
         }
+        if (this._hoursInput) this._hoursInput.value = this._hours;
+        if (this._minutesInput) this._minutesInput.value = this._minutes;
+        if (this._secondsInput) this._secondsInput.value = this._seconds;
         return;
       }
     }
@@ -706,6 +774,9 @@ export class ViTimePicker extends ValidityMixin(FlatpickrMixin(ViElement)) {
       this._minutes = '';
       this._seconds = '';
       this._period = 'AM';
+      if (this._hoursInput) this._hoursInput.value = '';
+      if (this._minutesInput) this._minutesInput.value = '';
+      if (this._secondsInput) this._secondsInput.value = '';
       return;
     }
 
@@ -714,10 +785,17 @@ export class ViTimePicker extends ValidityMixin(FlatpickrMixin(ViElement)) {
     this._minutes =
       parsed.minutes !== null && parsed.minutes !== undefined ? pad2(parsed.minutes) : '';
     this._seconds =
-      parsed.seconds !== null && parsed.seconds !== undefined ? pad2(parsed.seconds) : '';
+      parsed.seconds !== null && parsed.seconds !== undefined
+        ? pad2(parsed.seconds)
+        : this.showSeconds
+          ? '00'
+          : '';
     if (this.format === '12') {
       this._period = parsed.period || 'AM';
     }
+    if (this._hoursInput) this._hoursInput.value = this._hours;
+    if (this._minutesInput) this._minutesInput.value = this._minutes;
+    if (this._secondsInput) this._secondsInput.value = this._seconds;
   }
 
   private _onFlatpickrChange(date: Date | undefined, _dateStr: string) {
@@ -1072,10 +1150,10 @@ export class ViTimePicker extends ValidityMixin(FlatpickrMixin(ViElement)) {
 
     if (e.key === 'ArrowUp') {
       e.preventDefault();
-      this._stepSegment('hours', 'up', 1);
+      this._stepSegment('hours', 'up');
     } else if (e.key === 'ArrowDown') {
       e.preventDefault();
-      this._stepSegment('hours', 'down', 1);
+      this._stepSegment('hours', 'down');
     } else if (e.key === 'PageUp') {
       e.preventDefault();
       this._stepSegment('hours', 'up', 5);
@@ -1123,10 +1201,10 @@ export class ViTimePicker extends ValidityMixin(FlatpickrMixin(ViElement)) {
 
     if (e.key === 'ArrowUp') {
       e.preventDefault();
-      this._stepSegment('minutes', 'up', this.step);
+      this._stepSegment('minutes', 'up');
     } else if (e.key === 'ArrowDown') {
       e.preventDefault();
-      this._stepSegment('minutes', 'down', this.step);
+      this._stepSegment('minutes', 'down');
     } else if (e.key === 'PageUp') {
       e.preventDefault();
       this._stepSegment('minutes', 'up', 15);
@@ -1182,10 +1260,10 @@ export class ViTimePicker extends ValidityMixin(FlatpickrMixin(ViElement)) {
 
     if (e.key === 'ArrowUp') {
       e.preventDefault();
-      this._stepSegment('seconds', 'up', 1);
+      this._stepSegment('seconds', 'up');
     } else if (e.key === 'ArrowDown') {
       e.preventDefault();
-      this._stepSegment('seconds', 'down', 1);
+      this._stepSegment('seconds', 'down');
     } else if (e.key === 'PageUp') {
       e.preventDefault();
       this._stepSegment('seconds', 'up', 15);
@@ -1315,7 +1393,20 @@ export class ViTimePicker extends ValidityMixin(FlatpickrMixin(ViElement)) {
   }
 
   private _commitTime() {
-    if (this._isUnknown) return;
+    if (this._isUnknown) {
+      const unknownStr = this.showSeconds ? '??:??:??' : '??:??';
+      this.value = unknownStr;
+      this._internals.setFormValue(unknownStr);
+      this._syncFlatpickrValue();
+      this._customValidityText = '';
+      this.validityMessage = '';
+      if (this.status === 'invalid') {
+        this.status = 'default';
+      }
+      this._internals.setValidity({});
+      this._emitChange();
+      return;
+    }
 
     if (!this._hours && !this._minutes && (!this.showSeconds || !this._seconds)) {
       this.value = '';
@@ -1369,7 +1460,7 @@ export class ViTimePicker extends ValidityMixin(FlatpickrMixin(ViElement)) {
   private _emitChange() {
     let components: TimeComponents | null = null;
     let isoValue: string | null = null;
-    const isPartial = isPartialUnknownTime(this.value);
+    const isPartial = isPartialUnknownTime(this.value, this.format);
 
     if (!this._isUnknown && this.value) {
       components = parseTime(this.value, this.format);
@@ -1729,7 +1820,7 @@ export class ViTimePicker extends ValidityMixin(FlatpickrMixin(ViElement)) {
                 type="checkbox"
                 aria-label="${unknownLabel}"
                 .checked="${this._isUnknown}"
-                .indeterminate="${isPartialUnknownTime(this.value)}"
+                .indeterminate="${isPartialUnknownTime(this.value, this.format)}"
                 ?disabled="${this.disabled || this.readonly}"
                 @change="${this._handleUnknownToggle}"
               />

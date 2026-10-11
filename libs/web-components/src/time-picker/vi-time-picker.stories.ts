@@ -58,6 +58,7 @@ interface TimePickerArgs {
   config?: Partial<TimePickerConfig>;
   disabledHours?: number[] | ((hour: number) => boolean);
   disabledMinutes?: number[] | ((minute: number, hour?: number) => boolean);
+  disabledSeconds?: number[] | ((second: number, minute?: number, hour?: number) => boolean);
   onViTimePickerChange?: (e: Event) => void;
 }
 
@@ -184,7 +185,11 @@ const render = (args: TimePickerArgs) => html`
       helper-text=${args.helperText ?? ''}
       format=${args.format ?? '24'}
       .step=${args.step ?? 15}
+      .hourStep=${args.hourStep ?? 1}
+      .secondStep=${args.secondStep ?? 1}
       ?show-seconds=${args.showSeconds}
+      ?show-now=${args.showNow}
+      timezone=${args.timezone ?? ''}
       min=${args.min ?? ''}
       max=${args.max ?? ''}
       ?disabled=${args.disabled}
@@ -199,6 +204,9 @@ const render = (args: TimePickerArgs) => html`
       minutes-placeholder=${args.minutesPlaceholder ?? ''}
       seconds-placeholder=${args.secondsPlaceholder ?? ''}
       .config=${args.config ?? {}}
+      .disabledHours=${args.disabledHours ?? null}
+      .disabledMinutes=${args.disabledMinutes ?? null}
+      .disabledSeconds=${args.disabledSeconds ?? null}
       @vi-time-picker-change=${(e: CustomEvent) =>
         args.onViTimePickerChange?.(e.detail)}
     ></vi-time-picker>
@@ -212,7 +220,11 @@ const defaultArgs: TimePickerArgs = {
   helperText: 'Select an event time (HH:mm)',
   format: '24',
   step: 15,
+  hourStep: 1,
+  secondStep: 1,
   showSeconds: false,
+  showNow: false,
+  timezone: '',
   min: '',
   max: '',
   disabled: false,
@@ -821,26 +833,28 @@ export const PartialUnknownCDISC: StoryObj<TimePickerArgs> = {
 };
 
 export const DisabledTimesValidation: StoryObj<TimePickerArgs> = {
-  name: 'Custom Blackout / Disabled Hours & Minutes',
+  name: 'Custom Blackout / Disabled Hours, Minutes & Seconds',
   render: () => {
     // 12:00 to 13:59 lunch break disabled
     const lunchHours = [12, 13];
     // Minutes blackout: 00, 15, 30, 45 only allowed (others disabled)
     const disabledMinutesFn = (m: number) => m % 15 !== 0;
+    // Seconds blackout: 15, 30, 45
+    const disabledSecondsList = [15, 30, 45];
 
     return html`
       <div style="display: flex; flex-direction: column; gap: 2rem; max-width: 860px; padding: 1.5rem; font-family: sans-serif;">
         <div>
-          <h2 style="margin: 0 0 0.25rem 0; font-size: 125rem; font-weight: 600; color: #0f172a;">
+          <h2 style="margin: 0 0 0.25rem 0; font-size: 1.25rem; font-weight: 600; color: #0f172a;">
             Restricted Time Windows & Blackout Validation
           </h2>
           <p style="margin: 0 0 1rem 0; font-size: 0.875rem; color: #64748b;">
-            Enforce custom scheduling blackout periods using <code>disabledHours</code> arrays or <code>disabledMinutes</code> callback predicates.
+            Enforce custom scheduling blackout periods using <code>disabledHours</code>, <code>disabledMinutes</code>, or <code>disabledSeconds</code> arrays / callback predicates.
             Invalid times trigger automated browser and accessibility error states.
           </p>
         </div>
 
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem;">
           <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.25rem;">
             <h4 style="margin: 0 0 0.5rem 0; font-size: 1rem; color: #1e293b;">Lunch Break Hours Disabled [12, 13]</h4>
             <vi-time-picker
@@ -858,6 +872,17 @@ export const DisabledTimesValidation: StoryObj<TimePickerArgs> = {
               value="10:12"
               .disabledMinutes=${disabledMinutesFn}
               helper-text="Only :00, :15, :30, :45 minutes are permitted"
+            ></vi-time-picker>
+          </div>
+
+          <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.25rem;">
+            <h4 style="margin: 0 0 0.5rem 0; font-size: 1rem; color: #1e293b;">Restricted Seconds [15, 30, 45]</h4>
+            <vi-time-picker
+              show-seconds
+              label="Telemetry Sampling Time"
+              value="10:20:15"
+              .disabledSeconds=${disabledSecondsList}
+              helper-text="Seconds :15, :30, :45 are blackout intervals"
             ></vi-time-picker>
           </div>
         </div>
