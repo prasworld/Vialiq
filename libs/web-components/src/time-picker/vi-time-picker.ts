@@ -11,7 +11,6 @@ import timePickerStyles from './vi-time-picker.scss?inline';
 import {
   resolveLocale,
   loadLocale,
-  getDefaultTimePickerI18n,
 } from './i18n.js';
 import { container } from 'tsyringe';
 import { ViTimePickerLocaleRegistry } from './vi-time-picker-locale-registry.js';
@@ -34,7 +33,6 @@ import {
   type TimeComponents,
   type TimeFormat,
   type TimePickerChangeDetail,
-  type TimePickerI18n,
   type TimePickerConfig,
   type DisabledHoursFn,
   type DisabledMinutesFn,
@@ -152,18 +150,17 @@ export class ViTimePicker extends ValidityMixin(FlatpickrMixin(ViElement)) {
     if (!target || typeof target !== 'object' || this._isProxy(target)) {
       return target;
     }
-    const self = this;
     const proxy = new Proxy(target, {
-      set(obj, prop, value, receiver) {
+      set: (obj, prop, value, receiver) => {
         const res = Reflect.set(obj, prop, value, receiver);
-        self._syncValidity();
-        self.requestUpdate();
+        this._syncValidity();
+        this.requestUpdate();
         return res;
       },
-      deleteProperty(obj, prop) {
+      deleteProperty: (obj, prop) => {
         const res = Reflect.deleteProperty(obj, prop);
-        self._syncValidity();
-        self.requestUpdate();
+        this._syncValidity();
+        this.requestUpdate();
         return res;
       },
     });

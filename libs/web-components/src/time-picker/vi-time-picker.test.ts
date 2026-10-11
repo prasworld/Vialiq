@@ -11,7 +11,6 @@ import type {
 } from './types.js';
 import {
   timePickerLocaleRegistry,
-  ViTimePickerLocaleRegistry,
   TIME_PICKER_LOCALE_REGISTRY_TOKEN,
 } from './index.js';
 import {
