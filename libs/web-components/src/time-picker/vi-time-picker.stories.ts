@@ -208,7 +208,7 @@ const render = (args: TimePickerArgs) => html`
       .disabledMinutes=${args.disabledMinutes ?? null}
       .disabledSeconds=${args.disabledSeconds ?? null}
       @vi-time-picker-change=${(e: CustomEvent) =>
-        args.onViTimePickerChange?.(e.detail)}
+        args.onViTimePickerChange?.(e)}
     ></vi-time-picker>
   </div>
 `;

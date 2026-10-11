@@ -121,5 +121,5 @@ export const TIME_PICKER_LOCALE_REGISTRY_TOKEN = Symbol(
   'TIME_PICKER_LOCALE_REGISTRY_TOKEN',
 );
 
-export { ControlStatus };
+export type { ControlStatus };
 

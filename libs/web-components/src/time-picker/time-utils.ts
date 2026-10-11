@@ -101,16 +101,9 @@ export function parsePartialTime(
     } else {
       if (hours < 0 || hours > 23) return null;
       if (format === '12') {
-        if (hours > 12) {
-          const converted = to12Hour(hours);
-          hours = converted.hours;
-          period = converted.period;
-        } else if (hours === 0) {
-          hours = 12;
-          period = 'AM';
-        } else {
-          period = 'AM';
-        }
+        const converted = to12Hour(hours);
+        hours = converted.hours;
+        period = converted.period;
       }
     }
   }
@@ -215,26 +208,19 @@ export function parseTime(
   }
 
   // No explicit period in the string:
+  if (hours < 0 || hours > 23) return null;
+
   if (format === '12') {
-    if (hours > 12) {
-      const converted = to12Hour(hours);
-      return {
-        hours: converted.hours,
-        minutes,
-        seconds,
-        period: converted.period,
-      };
-    }
+    const converted = to12Hour(hours);
     return {
-      hours: hours === 0 ? 12 : hours,
+      hours: converted.hours,
       minutes,
       seconds,
-      period: 'AM',
+      period: converted.period,
     };
   }
 
   // 24-hour format
-  if (hours < 0 || hours > 23) return null;
   return { hours, minutes, seconds };
 }
 

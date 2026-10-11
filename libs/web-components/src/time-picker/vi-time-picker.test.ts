@@ -76,6 +76,10 @@ describe('time-utils (WDIO browser runner)', () => {
       expect(parseTime('', '24')).toBeNull();
       expect(parseTime('invalid', '24')).toBeNull();
       expect(parseTime('??:??', '24')).toBeNull();
+      expect(parseTime('99:00', '12')).toBeNull();
+      expect(parseTime('24:00', '12')).toBeNull();
+      expect(parseTime('99:00', '24')).toBeNull();
+      expect(parseTime('24:00', '24')).toBeNull();
     });
   });
 
@@ -326,7 +330,7 @@ describe('vi-time-picker (WDIO browser runner)', () => {
     expect(el.value).toBe('02:30 AM');
   });
 
-  it('rehydrates segment state when format changes from 24-hour to 12-hour', async () => {
+  it('rehydrates segment state and normalizes value when format changes', async () => {
     render(
       html`<vi-time-picker format="24" value="14:30"></vi-time-picker>`,
       container,
@@ -337,6 +341,7 @@ describe('vi-time-picker (WDIO browser runner)', () => {
     const hoursInput = el.shadowRoot!.querySelector('#hours-input') as HTMLInputElement;
     expect(hoursInput.value).toBe('14');
     expect(hoursInput.getAttribute('aria-valuemax')).toBe('23');
+    expect(el.value).toBe('14:30');
 
     // Switch format from 24 to 12
     el.format = '12';
@@ -347,9 +352,50 @@ describe('vi-time-picker (WDIO browser runner)', () => {
     const periodBtn = el.shadowRoot!.querySelector('.timepicker-period-btn') as HTMLButtonElement;
     expect(periodBtn).toBeTruthy();
     expect(periodBtn.textContent?.trim()).toBe('PM');
+    expect(el.value).toBe('02:30 PM');
+
+    // Switch format back from 12 to 24
+    el.format = '24';
+    await el.updateComplete;
+
+    expect(hoursInput.value).toBe('14');
+    expect(hoursInput.getAttribute('aria-valuemax')).toBe('23');
+    expect(el.value).toBe('14:30');
   });
 
-  it('rehydrates seconds segment state when showSeconds is dynamically enabled', async () => {
+  it('normalizes form value and public value when format changes in a form', async () => {
+    const form = document.createElement('form');
+    container.appendChild(form);
+
+    render(
+      html`<vi-time-picker name="testTime" format="24" value="14:30"></vi-time-picker>`,
+      form,
+    );
+    const el = form.querySelector('vi-time-picker') as ViTimePicker;
+    await waitForUpdate(el);
+
+    let formData = new FormData(form);
+    expect(formData.get('testTime')).toBe('14:30');
+    expect(el.value).toBe('14:30');
+
+    // Switch format from 24 to 12
+    el.format = '12';
+    await el.updateComplete;
+
+    formData = new FormData(form);
+    expect(formData.get('testTime')).toBe('02:30 PM');
+    expect(el.value).toBe('02:30 PM');
+
+    // Switch format back from 12 to 24
+    el.format = '24';
+    await el.updateComplete;
+
+    formData = new FormData(form);
+    expect(formData.get('testTime')).toBe('14:30');
+    expect(el.value).toBe('14:30');
+  });
+
+  it('rehydrates seconds segment state and normalizes value when showSeconds is dynamically toggled', async () => {
     render(
       html`<vi-time-picker value="14:30"></vi-time-picker>`,
       container,
@@ -358,6 +404,7 @@ describe('vi-time-picker (WDIO browser runner)', () => {
     await waitForUpdate(el);
 
     expect(el.shadowRoot!.querySelector('#seconds-input')).toBeNull();
+    expect(el.value).toBe('14:30');
 
     // Dynamically enable seconds
     el.showSeconds = true;
@@ -366,6 +413,14 @@ describe('vi-time-picker (WDIO browser runner)', () => {
     const secondsInput = el.shadowRoot!.querySelector('#seconds-input') as HTMLInputElement;
     expect(secondsInput).toBeTruthy();
     expect(secondsInput.value).toBe('00');
+    expect(el.value).toBe('14:30:00');
+
+    // Dynamically disable seconds
+    el.showSeconds = false;
+    await el.updateComplete;
+
+    expect(el.shadowRoot!.querySelector('#seconds-input')).toBeNull();
+    expect(el.value).toBe('14:30');
   });
 
   it('supports keyboard toggling of AM/PM via A and P keys', async () => {
@@ -396,6 +451,24 @@ describe('vi-time-picker (WDIO browser runner)', () => {
 
     expect(periodBtn.textContent?.trim()).toBe('AM');
     expect(el.value).toBe('08:00 AM');
+  });
+
+  it('selects segment input text on focus within shadow root', async () => {
+    render(
+      html`<vi-time-picker value="14:30"></vi-time-picker>`,
+      container,
+    );
+    const el = container.querySelector('vi-time-picker') as ViTimePicker;
+    await waitForUpdate(el);
+
+    const hoursInput = el.shadowRoot!.querySelector(
+      '#hours-input',
+    ) as HTMLInputElement;
+    hoursInput.focus();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    expect(hoursInput.selectionStart).toBe(0);
+    expect(hoursInput.selectionEnd).toBe(hoursInput.value.length);
   });
 
   it('renders seconds segment when show-seconds is enabled', async () => {

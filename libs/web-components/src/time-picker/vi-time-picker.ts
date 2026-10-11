@@ -274,10 +274,11 @@ export class ViTimePicker extends ValidityMixin(FlatpickrMixin(ViElement)) {
       this.i18n = this._createConfigProxy(this.i18n);
     }
     this._resolvedLocale = resolveLocale(this.locale);
+    this._syncStateFromValue(this.value);
+    this._normalizeCurrentValue();
     if (!this.hasUpdated) {
       this._initialValue = this.value;
     }
-    this._syncStateFromValue(this.value);
 
     if (this.hasUpdated && !this._fp) {
       this._setupFlatpickr();
@@ -300,6 +301,7 @@ export class ViTimePicker extends ValidityMixin(FlatpickrMixin(ViElement)) {
     if (changed.has('format') || changed.has('showSeconds')) {
       if (this.value) {
         this._syncStateFromValue(this.value);
+        this._normalizeCurrentValue();
       }
     }
   }
@@ -351,6 +353,7 @@ export class ViTimePicker extends ValidityMixin(FlatpickrMixin(ViElement)) {
     if (formatChanged || stepChanged || secondsChanged) {
       if (this.value) {
         this._syncStateFromValue(this.value);
+        this._normalizeCurrentValue();
       }
       if (this._fp) {
         await this._setupFlatpickr();
@@ -631,6 +634,7 @@ export class ViTimePicker extends ValidityMixin(FlatpickrMixin(ViElement)) {
     super.formResetCallback();
     this.value = this._initialValue;
     this._syncStateFromValue(this.value);
+    this._normalizeCurrentValue();
     this._internals.setFormValue(this.value);
     this._syncFlatpickrValue();
     this._customValidityText = '';
@@ -798,6 +802,72 @@ export class ViTimePicker extends ValidityMixin(FlatpickrMixin(ViElement)) {
     if (this._secondsInput) this._secondsInput.value = this._seconds;
   }
 
+  /**
+   * Normalizes this.value and the form value to match this.format and this.showSeconds,
+   * enforcing a single source of truth between displayed segments and public value.
+   */
+  private _normalizeCurrentValue(): void {
+    if (!this.value) return;
+
+    if (this._isUnknown || isUnknownTime(this.value)) {
+      const unknownStr = this.showSeconds ? '??:??:??' : '??:??';
+      if (this.value !== unknownStr) {
+        this.value = unknownStr;
+        this._internals.setFormValue(unknownStr);
+        this._syncFlatpickrValue();
+      }
+      return;
+    }
+
+    const isPartial =
+      this._hours === '??' ||
+      this._minutes === '??' ||
+      (this.showSeconds && this._seconds === '??');
+
+    if (isPartial) {
+      const hStr = this._hours || '??';
+      const mStr = this._minutes || '??';
+      const sStr = this.showSeconds ? this._seconds || '??' : '';
+      let formatted = `${hStr}:${mStr}`;
+      if (this.showSeconds) formatted = `${formatted}:${sStr}`;
+      if (this.format === '12') formatted = `${formatted} ${this._period}`;
+      if (this.value !== formatted) {
+        this.value = formatted;
+        this._internals.setFormValue(this.value);
+      }
+      return;
+    }
+
+    if (!this._hours || !this._minutes || (this.showSeconds && !this._seconds)) {
+      return;
+    }
+
+    const h = parseInt(this._hours, 10);
+    const m = parseInt(this._minutes, 10);
+    const s = this.showSeconds ? parseInt(this._seconds, 10) : undefined;
+
+    if (Number.isNaN(h) || Number.isNaN(m) || (s !== undefined && Number.isNaN(s))) {
+      return;
+    }
+
+    const components: TimeComponents = {
+      hours: h,
+      minutes: m,
+      seconds: s,
+      rawHours: this._hours,
+      rawMinutes: this._minutes,
+      rawSeconds: this._seconds,
+      ...(this.format === '12' ? { period: this._period } : {}),
+    };
+
+    const formatted = formatTime(components, this.format, this.showSeconds);
+    if (this.value !== formatted) {
+      this.value = formatted;
+      this._internals.setFormValue(this.value);
+      this._syncFlatpickrValue();
+    }
+  }
+
   private _onFlatpickrChange(date: Date | undefined, _dateStr: string) {
     if (!date) return;
     const hours24 = date.getHours();
@@ -908,7 +978,8 @@ export class ViTimePicker extends ValidityMixin(FlatpickrMixin(ViElement)) {
   private _handleSegmentFocus(e: FocusEvent) {
     const input = e.target as HTMLInputElement;
     setTimeout(() => {
-      if (document.activeElement === input) {
+      const activeEl = this.shadowRoot?.activeElement ?? document.activeElement;
+      if (activeEl === input || input.matches(':focus')) {
         input.select();
       }
     }, 0);
