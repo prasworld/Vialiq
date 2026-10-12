@@ -118,3 +118,5 @@ export {
 } from './content-switcher/vi-content-switcher.js';
 export type { ContentSwitcherSize } from './content-switcher/vi-content-switcher.js';
 export * from './masked-input/index.js';
+export * from './float-button/index.js';
+export * from './divider/index.js';

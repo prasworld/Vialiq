@@ -1,0 +1,116 @@
+/**
+ * Divider component base styles.
+ *
+ * Shared foundation styles for vi-divider.
+ * Adheres strictly to the 3-level token cascade.
+ */
+
+@use '../styles/variables' as tokens;
+@use '../styles/functions' as func;
+
+@layer components {
+  .divider {
+    box-sizing: border-box;
+    color: var(--vi-divider-text-color, #{tokens.$text-primary});
+    font-size: var(--vi-divider-font-size, #{tokens.$font-size-base});
+    line-height: #{tokens.$line-height-normal};
+    list-style: none;
+
+    // Horizontal default
+    &--horizontal {
+      display: flex;
+      align-items: center;
+      margin-block: var(--vi-divider-margin-block, #{tokens.$spacing-md});
+      margin-inline: 0;
+      clear: both;
+      width: 100%;
+      min-width: 100%;
+
+      &.divider--dashed {
+        --vi-divider-style: dashed;
+      }
+
+      &.divider--plain .divider__text {
+        font-weight: var(
+          --vi-divider-plain-font-weight,
+          #{tokens.$font-weight-normal}
+        );
+        color: var(
+          --vi-divider-text-plain-color,
+          #{tokens.$text-secondary}
+        );
+      }
+    }
+
+    // Line segments
+    &__line-start,
+    &__line-end {
+      position: relative;
+      flex-grow: 1;
+      border-top: var(--vi-divider-width, #{tokens.$border-width-thin})
+        var(--vi-divider-style, solid)
+        var(--vi-divider-color, #{tokens.$border-03});
+      transform: translateY(50%);
+    }
+
+    // Text placement
+    &--placement-center {
+      .divider__line-start,
+      .divider__line-end {
+        flex-grow: 1;
+      }
+    }
+
+    &--placement-left {
+      .divider__line-start {
+        flex-grow: 0;
+        flex-basis: var(--vi-divider-text-margin, 24px);
+        width: var(--vi-divider-text-margin, 24px);
+      }
+      .divider__line-end {
+        flex-grow: 1;
+      }
+    }
+
+    &--placement-right {
+      .divider__line-start {
+        flex-grow: 1;
+      }
+      .divider__line-end {
+        flex-grow: 0;
+        flex-basis: var(--vi-divider-text-margin, 24px);
+        width: var(--vi-divider-text-margin, 24px);
+      }
+    }
+
+    &__text {
+      display: inline-block;
+      padding-inline: var(--vi-divider-text-padding, #{tokens.$spacing-sm});
+      white-space: nowrap;
+      text-align: center;
+      font-weight: var(
+        --vi-divider-font-weight,
+        #{tokens.$font-weight-medium}
+      );
+    }
+
+    // Vertical orientation
+    &--vertical {
+      position: relative;
+      top: -0.06em;
+      display: inline-block;
+      height: var(--vi-divider-height, 0.9em);
+      margin-inline: var(--vi-divider-margin-inline, #{tokens.$spacing-xs});
+      margin-block: 0;
+      vertical-align: middle;
+      border-top: 0;
+      border-inline-start: var(--vi-divider-width, #{tokens.$border-width-thin})
+        var(--vi-divider-style, solid)
+        var(--vi-divider-color, #{tokens.$border-03});
+
+      &.divider--dashed {
+        border-inline-start-style: dashed;
+      }
+    }
+  }
+}

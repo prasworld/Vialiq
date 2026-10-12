@@ -35,6 +35,8 @@ This document is the authoritative reference for every CSS custom property expos
    - [vi-date-picker](#vi-date-picker-css-api)
    - [vi-time-picker](#vi-time-picker-css-api)
    - [vi-signature](#vi-signature-css-api)
+   - [vi-float-button](#vi-float-button-css-api)
+   - [vi-divider](#vi-divider-css-api)
 9. [CSS Parts (`::part()`)](#9-css-parts-part)
 10. [Focus Ring System](#10-focus-ring-system)
 11. [Reduced Motion](#11-reduced-motion)
@@ -731,6 +733,52 @@ vi-checkbox[status="invalid"] { --vi-checkbox-border-color: var(--vi-color-error
 
 ---
 
+### `vi-float-button` CSS API
+
+| Property | Default | Description |
+|----------|---------|-------------|
+| `--vi-float-button-size` | `48px` | Diameter / box dimension (default size) |
+| `--vi-float-button-size-sm` | `40px` | Diameter / box dimension (sm size) |
+| `--vi-float-button-bg` | `tokens.$layer-01` | Default button surface background |
+| `--vi-float-button-bg-primary` | `tokens.$color-primary` | Primary button surface background |
+| `--vi-float-button-color` | `tokens.$text-primary` | Default button text & icon colour |
+| `--vi-float-button-color-primary` | `tokens.$text-primary-inverse` | Primary button text & icon colour |
+| `--vi-float-button-border-color` | `tokens.$border-02` | Outer border colour |
+| `--vi-float-button-border-radius` | `tokens.$border-radius-full` | Radius for circle shape (`9999px`) |
+| `--vi-float-button-border-radius-square` | `tokens.$border-radius-lg` | Radius for square shape (`8px`) |
+| `--vi-float-button-shadow` | `tokens.$shadow-lg` | Default resting elevation shadow |
+| `--vi-float-button-shadow-hover` | `tokens.$shadow-xl` | Hover / active elevation shadow |
+| `--vi-float-button-hover-bg` | `tokens.$layer-hover-01` | Hover state background (default) |
+| `--vi-float-button-hover-bg-primary` | `tokens.$color-blue-800` | Hover state background (primary) |
+| `--vi-float-button-focus-ring-color` | `tokens.$focus` | Focus-visible ring colour |
+| `--vi-float-button-font-size` | `tokens.$font-size-xs` | Description text size |
+| `--vi-float-button-inset-inline-end` | `24px` | Distance from right edge (LTR) |
+| `--vi-float-button-inset-block-end` | `48px` | Distance from bottom edge |
+| `--vi-float-button-z-index` | `1030` | Viewport fixed layer z-index |
+| `--vi-float-button-group-gap` | `tokens.$spacing-xs` | Gap between buttons in speed dial |
+| `--vi-float-button-transition-duration` | `200ms` | Smooth hover/pop transition time |
+
+---
+
+### `vi-divider` CSS API
+
+| Property | Default | Description |
+|----------|---------|-------------|
+| `--vi-divider-color` | `tokens.$border-03` | Separator line colour |
+| `--vi-divider-width` | `tokens.$border-width-thin` | Thickness of the rule (`1px`) |
+| `--vi-divider-style` | `solid` | Stroke style (`solid` or `dashed`) |
+| `--vi-divider-margin-block` | `tokens.$spacing-md` | Vertical block margin for horizontal dividers |
+| `--vi-divider-margin-inline` | `tokens.$spacing-xs` | Horizontal inline margin for vertical dividers |
+| `--vi-divider-height` | `0.9em` | Height of vertical separator rule |
+| `--vi-divider-text-padding` | `tokens.$spacing-sm` | Horizontal padding between line segments and text |
+| `--vi-divider-text-color` | `tokens.$text-primary` | Text label colour (standard title mode) |
+| `--vi-divider-text-plain-color` | `tokens.$text-secondary` | Text label colour when `plain` is true |
+| `--vi-divider-font-size` | `tokens.$font-size-base` | Text label font size |
+| `--vi-divider-font-weight` | `tokens.$font-weight-medium` | Text label font weight (bold/medium) |
+| `--vi-divider-plain-font-weight` | `tokens.$font-weight-normal` | Text label font weight when `plain` is true |
+
+---
+
 ## 9. CSS Parts (`::part()`)
 
 Every interactive web component exposes named `part` attributes for external styling. This is the **recommended way to style internals** from outside a shadow DOM, and is preferred over `:host` overrides for structural changes.
@@ -788,6 +836,18 @@ Every interactive web component exposes named `part` attributes for external sty
 | `vi-time-picker` | `validation` | Validation error message |
 | `vi-signature` | `canvas` | Drawing canvas |
 | `vi-signature` | `actions` | Clear/confirm buttons area |
+| `vi-float-button` | `control` | Host wrapper container |
+| `vi-float-button` | `button` | Inner `<button>` or `<a>` element |
+| `vi-float-button` | `icon` | Icon slot wrapper |
+| `vi-float-button` | `description` | Description text label |
+| `vi-float-button` | `badge` | Badge indicator wrapper |
+| `vi-float-button-group` | `group` | Host group container |
+| `vi-float-button-group` | `trigger` | Main toggle trigger button |
+| `vi-float-button-group` | `menu` | Floating speed dial menu list |
+| `vi-divider` | `divider` | Host separator container |
+| `vi-divider` | `line-start` | Line segment preceding text |
+| `vi-divider` | `line-end` | Line segment following text |
+| `vi-divider` | `text` | Slotted text container |
 
 **Usage example:**
 ```css

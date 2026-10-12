@@ -1,0 +1,31 @@
+/**
+ * vi-divider host and shadow styles.
+ *
+ * Implements the 3-level token cascade for visual separators.
+ */
+
+@use '@vialiq/flux-ui/styles/variables' as tokens;
+@use '@vialiq/flux-ui/styles/functions' as func;
+@use '@vialiq/flux-ui/components/divider';
+
+:host {
+  display: block;
+  box-sizing: border-box;
+}
+
+:host([direction='vertical']) {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+:host([hidden]) {
+  display: none !important;
+}
+
+.divider {
+  box-sizing: border-box;
+}
+
+.divider__text[hidden] {
+  display: none !important;
+}

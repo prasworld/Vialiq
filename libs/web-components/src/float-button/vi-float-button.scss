@@ -1,0 +1,176 @@
+/**
+ * vi-float-button and vi-float-button-group host & shadow styles.
+ *
+ * Implements the 3-level token cascade for floating action buttons.
+ */
+
+@use '@vialiq/flux-ui/styles/variables' as tokens;
+@use '@vialiq/flux-ui/styles/functions' as func;
+@use '@vialiq/flux-ui/components/float-button';
+
+:host {
+  display: inline-block;
+  box-sizing: border-box;
+}
+
+// When standalone (not inside a vi-float-button-group), anchor to viewport bottom-right
+:host(:not([in-group])) {
+  position: fixed;
+  inset-inline-end: var(--vi-float-button-inset-inline-end, 24px);
+  inset-block-end: var(--vi-float-button-inset-block-end, 48px);
+  z-index: var(--vi-float-button-z-index, 1030);
+}
+
+// Back-top visibility transitions
+:host([back-top][hidden-back-top]) {
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.6);
+  visibility: hidden;
+  transition:
+    opacity var(--vi-float-button-transition-duration, 200ms) cubic-bezier(0.4, 0, 0.2, 1),
+    transform var(--vi-float-button-transition-duration, 200ms) cubic-bezier(0.4, 0, 0.2, 1),
+    visibility var(--vi-float-button-transition-duration, 200ms);
+}
+
+:host([back-top]:not([hidden-back-top])) {
+  opacity: 1;
+  pointer-events: auto;
+  transform: scale(1);
+  visibility: visible;
+  transition:
+    opacity var(--vi-float-button-transition-duration, 200ms) cubic-bezier(0.4, 0, 0.2, 1),
+    transform var(--vi-float-button-transition-duration, 200ms) cubic-bezier(0.4, 0, 0.2, 1),
+    visibility var(--vi-float-button-transition-duration, 200ms);
+}
+
+.float-button__control {
+  position: relative;
+  display: inline-flex;
+}
+
+// Badge styles
+.float-button__badge {
+  position: absolute;
+  top: -4px;
+  inset-inline-end: -4px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.badge-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: #{tokens.$border-radius-full};
+  background-color: var(--vi-badge-danger-bg, #{tokens.$bg-error});
+  border: 1.5px solid var(--vi-float-button-bg, #{tokens.$layer-01});
+  box-sizing: content-box;
+}
+
+.badge-count {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: #{tokens.$border-radius-full};
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 18px;
+  text-align: center;
+  background-color: var(--vi-badge-danger-color, #{tokens.$color-red-500});
+  color: var(--vi-text-primary-inverse, #{tokens.$text-primary-inverse});
+  border: 1.5px solid var(--vi-float-button-bg, #{tokens.$layer-01});
+  box-sizing: border-box;
+  white-space: nowrap;
+}
+
+// Badge status colors
+:host([badge-status='primary']) .badge-dot,
+:host([badge-status='primary']) .badge-count {
+  background-color: var(--vi-color-primary, #{tokens.$color-primary});
+}
+
+:host([badge-status='success']) .badge-dot,
+:host([badge-status='success']) .badge-count {
+  background-color: var(--vi-color-success, #{tokens.$color-green-500});
+}
+
+:host([badge-status='warning']) .badge-dot,
+:host([badge-status='warning']) .badge-count {
+  background-color: var(--vi-color-warning, #{tokens.$color-yellow-500});
+  color: var(--vi-text-primary, #{tokens.$text-primary});
+}
+
+:host([badge-status='info']) .badge-dot,
+:host([badge-status='info']) .badge-count {
+  background-color: var(--vi-color-info, #{tokens.$color-blue-500});
+}
+
+:host([badge-status='neutral']) .badge-dot,
+:host([badge-status='neutral']) .badge-count {
+  background-color: var(--vi-badge-neutral-color, #{tokens.$color-grey-600});
+}
+
+// Default back-top icon styling
+.default-icon {
+  display: block;
+  width: func.to-rem(20px);
+  height: func.to-rem(20px);
+  fill: currentColor;
+}
+
+:host([size='sm']) .default-icon {
+  width: func.to-rem(16px);
+  height: func.to-rem(16px);
+}
+
+// Group styles
+:host-context(vi-float-button-group) {
+  position: static;
+  inset-inline-end: auto;
+  inset-block-end: auto;
+}
+
+// Float button group host
+:host(vi-float-button-group) {
+  position: fixed;
+  inset-inline-end: var(--vi-float-button-inset-inline-end, 24px);
+  inset-block-end: var(--vi-float-button-inset-block-end, 48px);
+  z-index: var(--vi-float-button-z-index, 1030);
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.float-button-group__menu {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--vi-float-button-group-gap, #{tokens.$spacing-xs});
+  margin-bottom: var(--vi-float-button-group-gap, #{tokens.$spacing-xs});
+  transition:
+    opacity var(--vi-float-button-transition-duration, 200ms) cubic-bezier(0.4, 0, 0.2, 1),
+    transform var(--vi-float-button-transition-duration, 200ms) cubic-bezier(0.4, 0, 0.2, 1),
+    visibility var(--vi-float-button-transition-duration, 200ms);
+}
+
+:host(vi-float-button-group:not([open])) .float-button-group__menu {
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+  transform: translateY(12px) scale(0.9);
+}
+
+:host(vi-float-button-group[open]) .float-button-group__menu {
+  opacity: 1;
+  pointer-events: auto;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .float-button,
+  .float-button-group__menu,
+  :host([back-top]) {
+    transition: none !important;
+  }
+}

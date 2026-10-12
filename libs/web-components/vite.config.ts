@@ -320,6 +320,26 @@ export default defineConfig({
           __dirname,
           'src/masked-input/index.ts',
         ),
+        'float-button/vi-float-button': path.resolve(
+          __dirname,
+          'src/float-button/vi-float-button.ts',
+        ),
+        'float-button/vi-float-button-group': path.resolve(
+          __dirname,
+          'src/float-button/vi-float-button-group.ts',
+        ),
+        'float-button/index': path.resolve(
+          __dirname,
+          'src/float-button/index.ts',
+        ),
+        'divider/vi-divider': path.resolve(
+          __dirname,
+          'src/divider/vi-divider.ts',
+        ),
+        'divider/index': path.resolve(
+          __dirname,
+          'src/divider/index.ts',
+        ),
       },
       formats: ['es'],
     },
