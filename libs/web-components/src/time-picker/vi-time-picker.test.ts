@@ -395,6 +395,37 @@ describe('vi-time-picker (WDIO browser runner)', () => {
     expect(el.value).toBe('14:30');
   });
 
+  it('normalizes dynamically assigned value on connected picker matching its format', async () => {
+    const form = document.createElement('form');
+    container.appendChild(form);
+
+    render(
+      html`<vi-time-picker name="testTime" format="12"></vi-time-picker>`,
+      form,
+    );
+    const el = form.querySelector('vi-time-picker') as ViTimePicker;
+    await waitForUpdate(el);
+
+    // Dynamically assign 24h string to 12h picker after connection
+    el.value = '14:30';
+    await el.updateComplete;
+
+    expect(el.value).toBe('02:30 PM');
+    let formData = new FormData(form);
+    expect(formData.get('testTime')).toBe('02:30 PM');
+
+    // Switch to 24-hour format and dynamically assign 12h string
+    el.format = '24';
+    await el.updateComplete;
+    expect(el.value).toBe('14:30');
+
+    el.value = '09:15 AM';
+    await el.updateComplete;
+    expect(el.value).toBe('09:15');
+    formData = new FormData(form);
+    expect(formData.get('testTime')).toBe('09:15');
+  });
+
   it('rehydrates seconds segment state and normalizes value when showSeconds is dynamically toggled', async () => {
     render(
       html`<vi-time-picker value="14:30"></vi-time-picker>`,
@@ -1433,6 +1464,81 @@ describe('vi-time-picker (WDIO browser runner)', () => {
       expect(hours.value).toBe('14');
       expect(minutes.value).toBe('??');
       expect(checkbox.indeterminate).toBe(true);
+    });
+
+    it('safely steps partial unknown segments without corrupting value to NaN', async () => {
+      render(
+        html`<vi-time-picker allow-unknown step="1" value="14:??"></vi-time-picker>`,
+        container,
+      );
+      const el = container.querySelector('vi-time-picker') as ViTimePicker;
+      await waitForUpdate(el);
+
+      const minutesInput = el.shadowRoot!.querySelector('#minutes-input') as HTMLInputElement;
+
+      // ArrowUp on unknown minutes should step from 0 to 01 instead of producing NaN
+      minutesInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp' }));
+      await el.updateComplete;
+
+      expect(minutesInput.value).toBe('01');
+      expect(el.value).toBe('14:01');
+      expect(el.value).not.toContain('NaN');
+
+      // ArrowDown on unknown minutes should wrap from baseline 0 to 59
+      el.value = '14:??';
+      await el.updateComplete;
+      expect(minutesInput.value).toBe('??');
+      minutesInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown' }));
+      await el.updateComplete;
+      expect(minutesInput.value).toBe('59');
+      expect(el.value).toBe('14:59');
+      expect(el.value).not.toContain('NaN');
+
+      // stepUp('minutes') on unknown minutes
+      el.value = '14:??';
+      await el.updateComplete;
+      el.stepUp('minutes');
+      await el.updateComplete;
+      expect(minutesInput.value).toBe('01');
+      expect(el.value).toBe('14:01');
+      expect(el.value).not.toContain('NaN');
+
+      // Test stepping unknown hours on "??:30"
+      el.value = '??:30';
+      await el.updateComplete;
+
+      const hoursInput = el.shadowRoot!.querySelector('#hours-input') as HTMLInputElement;
+      expect(hoursInput.value).toBe('??');
+
+      hoursInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp' }));
+      await el.updateComplete;
+
+      expect(hoursInput.value).toBe('01');
+      expect(el.value).toBe('01:30');
+      expect(el.value).not.toContain('NaN');
+
+      // Test stepUp and stepDown on seconds with partial unknown
+      el.showSeconds = true;
+      el.value = '14:30:??';
+      await el.updateComplete;
+
+      const secondsInput = el.shadowRoot!.querySelector('#seconds-input') as HTMLInputElement;
+      expect(secondsInput.value).toBe('??');
+
+      el.stepUp('seconds');
+      await el.updateComplete;
+
+      expect(secondsInput.value).toBe('01');
+      expect(el.value).toBe('14:30:01');
+      expect(el.value).not.toContain('NaN');
+
+      el.value = '14:30:??';
+      await el.updateComplete;
+      el.stepDown('seconds');
+      await el.updateComplete;
+      expect(secondsInput.value).toBe('59');
+      expect(el.value).toBe('14:30:59');
+      expect(el.value).not.toContain('NaN');
     });
 
     it('allows typing ? in hour/minute input to set partial unknown', async () => {

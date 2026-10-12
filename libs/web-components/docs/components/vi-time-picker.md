@@ -2,7 +2,7 @@
 
 **Package:** `@vialiq/web-components/time-picker`  
 **Element:** `<vi-time-picker>`  
-**Status:** 🏗️ In Planning & Implementation  
+**Status:** ✅ Implemented & Production-Ready  
 **Flux UI base:** `libs/flux-ui/components/_time-picker.scss` & `libs/flux-ui/styles/_flatpickr.scss` (shared tokens)  
 **Engine:** [flatpickr](https://flatpickr.js.org/) — `enableTime: true`, `noCalendar: true` (MIT, zero-runtime-dependencies)  
 **Reference Standards:** [`CSS-DESIGN-SYSTEM.md`](../CSS-DESIGN-SYSTEM.md), [`vi-date-picker.md`](./vi-date-picker.md), CDISC SDTM Clinical EDC Standards
@@ -196,7 +196,7 @@ vi-time-picker (Shadow DOM)
 
 | Property | Attribute | Type | Default | Reflects | Description |
 |---|---|---|---|---|---|
-| `value` | `value` | `string` | `''` | ✅ | `HH:mm` or `HH:mm:ss`, `hh:mm A`, or `??:??` when unknown |
+| `value` | `value` | `string` | `''` | ✅ | `HH:mm` or `HH:mm:ss`, `hh:mm A`, or `??:??` / `14:??` when unknown |
 | `name` | `name` | `string` | `''` | — | Form field name for native form submission |
 | `format` | `format` | `'12' \| '24'` | `'24'` | ✅ | 12-hour or 24-hour time clock |
 | `step` | `step` | `number` | `15` | — | Minute step increment (`1`, `5`, `10`, `15`, `30`) |
@@ -204,9 +204,12 @@ vi-time-picker (Shadow DOM)
 | `secondStep` | `second-step` | `number` | `1` | — | Second step increment (`1`, `5`, `10`) |
 | `showSeconds` | `show-seconds` | `boolean` | `false` | — | Enables seconds segment (`HH:mm:ss` / `hh:mm:ss A`) |
 | `showNow` | `show-now` | `boolean` | `false` | — | Displays quick "Now" current timestamp action button |
+| `clearable` | `clearable` | `boolean` | `false` | — | Displays a clear button ("×") when a value is present |
 | `timezone` | `timezone` | `string` | `''` | ✅ | Timezone context badge and ISO offset indicator (e.g. `'UTC'`, `'EST'`, `'+05:30'`) |
 | `min` | `min` | `string` | `''` | — | Minimum selectable time (`HH:mm` or `HH:mm:ss`) |
 | `max` | `max` | `string` | `''` | — | Maximum selectable time (`HH:mm` or `HH:mm:ss`) |
+| `label` | `label` | `string` | `''` | — | Accessible text label displayed above the control |
+| `helperText` | `helper-text` | `string` | `''` | — | Subordinate helper text displayed beneath the control |
 | `disabled` | `disabled` | `boolean` | `false` | ✅ | Disables all interactions |
 | `disabledHours`| — | `number[] \| DisabledHoursFn` | `null` | — | Blackout hours list or predicate function `(h: number) => boolean` |
 | `disabledMinutes`| — | `number[] \| DisabledMinutesFn` | `null` | — | Blackout minutes list or predicate function `(m: number, h?: number) => boolean` |
@@ -218,6 +221,9 @@ vi-time-picker (Shadow DOM)
 | `status` | `status` | `ControlStatus` | `'default'` | ✅ | Visual validation status (`default`, `valid`, `invalid`) |
 | `validityMessage` | `validity-message`| `string` | `''` | — | Error or validation feedback message |
 | `locale` | `locale` | `string \| null` | `null` | — | BCP 47 locale tag (e.g. `'fr'`, `'de'`, `'es'`) for localized flatpickr and defaults |
+| `hoursPlaceholder` | `hours-placeholder` | `string` | `''` | — | Custom placeholder for hours segment |
+| `minutesPlaceholder` | `minutes-placeholder` | `string` | `''` | — | Custom placeholder for minutes segment |
+| `secondsPlaceholder` | `seconds-placeholder` | `string` | `''` | — | Custom placeholder for seconds segment |
 | `config` | `config` | `Partial<TimePickerConfig>` | `{}` | — | Unified configuration object for placeholders, labels, and messages (reactive with Proxy watching) |
 | `i18n` | `i18n` | `Partial<TimePickerI18n>` | `{}` | — | Alias for `config`, supporting internationalization terminology |
 
@@ -247,20 +253,24 @@ export type DisabledMinutesFn = (minute: number, hour?: number) => boolean;
 export type DisabledSecondsFn = (second: number, minute?: number, hour?: number) => boolean;
 
 export interface TimePickerChangeDetail {
-  /** The value string: "14:30", "02:30 PM", or "??:??" */
+  /** The value string: "14:30", "02:30 PM", "??:??", or "14:??" */
   value: string | null;
-  /** Normalized 24-hour string: "14:30" or "14:30:00" */
+  /** Normalized 24-hour string: "14:30", "14:30:00", or with timezone offset */
   isoValue: string | null;
-  /** Parsed numeric hours (0-23 in 24h, 1-12 in 12h) */
+  /** Parsed numeric hours (0-23 in 24h, 1-12 in 12h, or null when unknown) */
   hours: number | null;
-  /** Parsed numeric minutes (0-59) */
+  /** Parsed numeric minutes (0-59, or null when unknown) */
   minutes: number | null;
-  /** Parsed numeric seconds (0-59, if enabled) */
+  /** Parsed numeric seconds (0-59, if enabled, or null when unknown) */
   seconds?: number | null;
   /** Active period in 12-hour format ('AM' | 'PM' | null) */
   period?: 'AM' | 'PM' | null;
-  /** True when marked as unknown ("??:??") */
+  /** True when marked as completely unknown ("??:??") */
   isUnknown: boolean;
+  /** True when partially known (e.g., "14:??" or "??:30") per CDISC SDTM */
+  isPartialUnknown?: boolean;
+  /** Active timezone label or offset (if specified) */
+  timezone?: string;
   /** Localized display string */
   formattedValue: string;
 }
@@ -281,8 +291,10 @@ export interface TimePickerChangeDetail {
 - `clear()`: Clears the value, resets Flatpickr, and dispatches change events.
 - `open()`: Programmatically opens the Flatpickr scroll popup.
 - `close()`: Programmatically closes the Flatpickr scroll popup.
-- `stepUp(segment?: 'hours' | 'minutes' | 'seconds')`: Increments the specified segment by its step.
-- `stepDown(segment?: 'hours' | 'minutes' | 'seconds')`: Decrements the specified segment by its step.
+- `setCurrentTime()` / `now()`: Sets the time picker to the current system clock time and commits changes.
+- `stepUp(segment?: 'hours' | 'minutes' | 'seconds')`: Increments the specified segment by its configured step. Treats partial unknown segments (`??`) as a defined numeric baseline (0 for minutes/seconds, 12/0 for hours), preventing `NaN` corruption.
+- `stepDown(segment?: 'hours' | 'minutes' | 'seconds')`: Decrements the specified segment by its configured step. Treats partial unknown segments (`??`) as a defined numeric baseline with wrap-around, preventing `NaN` corruption.
+- `setConfig(updates: Partial<TimePickerConfig>)`: Merges partial configuration updates into the reactive configuration object.
 - `checkValidity()`: Returns `true` if valid; does not alter visual state.
 - `reportValidity()`: Validates, updates visual `status`, and triggers native validation feedback.
 - `setCustomValidity(message: string)`: Sets a custom validation error message.
@@ -485,24 +497,44 @@ To ensure the popup matches the rest of the Vialiq design system, `_flatpickr.sc
 
 ## 8. Keyboard Interactions & Accessibility (a11y)
 
-### 8.1 Keyboard Mapping
+### 8.1 Keyboard Mapping (In-Place Segment Inputs)
 
 | Key | Focused Element | Action |
 |---|---|---|
 | `Tab` | `hours-input` | Advances to `minutes-input` |
 | `Tab` | `minutes-input` | Advances to `seconds-input` (if visible) or `period-btn` / next focusable |
 | `Shift + Tab` | Any segment | Moves to previous segment |
+| `ArrowRight` | Any segment | Advances focus to adjacent segment to the right |
+| `ArrowLeft` | Any segment | Moves focus to adjacent segment to the left |
 | `:` | `hours-input` | Immediately advances focus to `minutes-input` |
 | `:` | `minutes-input` | Immediately advances focus to `seconds-input` (if visible) |
 | `Backspace` | Empty `minutes-input` | Moves focus back to `hours-input` |
-| `ArrowUp` | Any segment | Increments value by step (wraps around: 23→0 or 12→1, 59→0) |
-| `ArrowDown` | Any segment | Decrements value by step (wraps around: 0→23 or 1→12, 0→59) |
+| `ArrowUp` | Any segment | Increments value by step (wraps around: 23→0 or 12→1, 59→0). Safely steps from baseline `0` (or `12`) if segment is currently `??`. |
+| `ArrowDown` | Any segment | Decrements value by step (wraps around: 0→23 or 1→12, 0→59). Safely steps from baseline `0` (or `12`) with wrap if segment is `??`. |
+| `PageUp` | Any segment | Major increment jump (+5 for hours, +15 for minutes and seconds) |
+| `PageDown` | Any segment | Major decrement jump (-5 for hours, -15 for minutes and seconds) |
+| `Home` | Any segment | Sets segment to its minimum bound (`00` / `01`) |
+| `End` | Any segment | Sets segment to its maximum bound (`23` / `12` / `59`) |
 | `A` / `a` | `hours-input` or `period-btn` (12h) | Switches period to `AM` |
 | `P` / `p` | `hours-input` or `period-btn` (12h) | Switches period to `PM` |
 | `Space` / `Enter` | `period-btn` (12h) | Toggles between `AM` and `PM` |
 | `Space` / `Enter` | `clock-btn` | Toggles Flatpickr scroll popup |
+| `Alt + ArrowDown` | Any segment | Opens Flatpickr scroll popup |
 | `Escape` | Popup open | Closes popup and returns focus to `clock-btn` |
-| `?` | Any segment (if `allow-unknown`)| Sets value to `??:??` and checks "Time unknown" |
+| `?` | Any segment (if `allow-unknown`)| Sets segment to `??`. If all segments are `??`, marks full unknown; if only some segments are `??`, marks partial unknown. |
+
+### 8.1.1 Popup Keyboard Navigation
+
+When the Flatpickr scroll popup is open, all popup inputs (`.flatpickr-hour`, `.flatpickr-minute`, `.flatpickr-second`, `.flatpickr-am-pm`) participate in sequential focus:
+
+| Key | Focused Element in Popup | Action |
+|---|---|---|
+| `Tab` | Any popup input | Advances focus sequentially: `Hour` &rarr; `Minute` &rarr; `Second` (if visible) &rarr; `AM/PM` (if 12h) &rarr; wraps back to `Hour` |
+| `Shift + Tab` | Any popup input | Moves focus backward sequentially through popup controls |
+| `ArrowRight` / `ArrowLeft` | Any popup input | Navigates between adjacent segment spinbuttons in popup |
+| `ArrowUp` / `ArrowDown` | Any popup input | Increments / decrements the currently focused popup segment |
+| `Enter` | Any popup input | Commits selected popup time, closes popup, and restores focus to `clock-btn` |
+| `Escape` | Any popup input | Cancels popup without changes, closes popup, and restores focus to `clock-btn` |
 
 ### 8.2 ARIA Semantics
 - Each segment receives explicit accessible labels:
@@ -519,14 +551,28 @@ To ensure the popup matches the rest of the Vialiq design system, `_flatpickr.sc
 
 Clinical EDC workflows require capturing when a time is deliberately unknown.
 When `allow-unknown` is enabled:
+
+### 9.1 Complete Unknown Time (`??:??` / `??:??:??`)
 1. A slotted or internal checkbox `<input id="unknown-checkbox" type="checkbox">` labeled "Time unknown" is presented.
 2. Checking the box:
    - Sets `value = '??:??'` (or `??:??:??` if seconds enabled).
-   - Disables direct segment inputs.
    - Clears Flatpickr.
-   - Emits `vi-time-picker-change` with `isUnknown: true`.
-3. Typing `?` into any segment activates the unknown state automatically.
+   - Emits `vi-time-picker-change` with `isUnknown: true` and `isPartialUnknown: false`.
+3. Typing `?` across all segments activates the unknown state automatically.
 4. Form submission transmits `name=??:??`, which conforms to CDISC SDTM format for unknown times.
+
+### 9.2 CDISC SDTM Partial Unknown Times (`14:??` / `??:30`)
+1. When subjects recall only a partial time (e.g. adverse event onset known only to the hour `14:??`, or minutes only `??:30`):
+   - The checkbox is set to the **indeterminate state** (`-`, `checkbox.indeterminate = true`).
+   - The change event detail emits `isUnknown: false` and `isPartialUnknown: true`.
+   - Numeric form constraint validation (`min`, `max`, blackout times) passes gracefully without flagging errors for the unknown segment.
+2. **Safe Wildcard Stepping (No `NaN` Corruption):**
+   - When a segment contains a wildcard (such as minutes `??` in `14:??`), pressing `ArrowUp` or calling `stepUp('minutes')` treats the wildcard as baseline `0` and steps to `14:01` (or `14:15`).
+   - Pressing `ArrowDown` or calling `stepDown('minutes')` steps down and wraps from baseline `0` to `59` (`14:59`).
+   - Hours safely step from `0` (or `12` in 12h format).
+   - This baseline fallback prevents `parseInt('??', 10)` from evaluating to `NaN` and writing literal `"NaN"` strings.
+3. **Interactive Wildcard Typing:**
+   - Typing `?` into any segment immediately formats that segment as `??` and auto-advances focus to the next segment.
 
 ---
 
@@ -637,17 +683,22 @@ graph TD
   - Clinical EDC Unknown Time (`allow-unknown`)
   - Form validation states (`default`, `valid`, `invalid`)
 
-### Phase 6: Automated Testing & Validation
+### Phase 6: Automated Testing & Validation (73 Tests Passing)
 - **File:** `libs/web-components/src/time-picker/vi-time-picker.test.ts`:
   - Rendering and Flatpickr initialization (`noCalendar: true`, `enableTime: true`).
   - 12h vs 24h format behavior and AM/PM toggle button / keyboard shortcuts (`A`/`P`).
   - Segment input typing and auto-advancing from hours to minutes.
-  - Arrow key stepping for hours and minutes.
+  - Arrow key stepping for hours, minutes, and seconds.
   - Clock button opening and closing the FloatingController popup.
   - Value synchronization between Flatpickr and segment inputs.
+  - Sequential popup keyboard navigation (<kbd>Tab</kbd>, <kbd>Shift+Tab</kbd>, <kbd>ArrowRight</kbd>, <kbd>ArrowLeft</kbd>, <kbd>Enter</kbd>, <kbd>Escape</kbd>).
+  - Dynamic cross-format normalization on connected pickers (`value = '14:30'` &rarr; `'02:30 PM'`).
   - Form participation: `ElementInternals.setFormValue()`, form submission, and form reset.
   - Constraint validation: `required`, `min`, `max`, and custom validity messages.
-  - Clinical EDC unknown time (`??:??`) verification.
+  - Clinical EDC complete unknown time (`??:??`, `??:??:??`) verification.
+  - Clinical EDC partial unknown time (`14:??`, `??:30`) with indeterminate checkbox state.
+  - Safe wildcard stepping: <kbd>ArrowUp</kbd>, <kbd>ArrowDown</kbd>, `stepUp()`, and `stepDown()` on partial unknowns cleanly transition segments from baseline without `NaN` corruption.
+  - Full axe-core accessibility audit compliance.
 
 ### Phase 7: Locale Registry & Dependency Inversion (tsyringe)
 - **File:** `libs/web-components/src/time-picker/types.ts`:

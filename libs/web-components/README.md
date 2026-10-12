@@ -1015,17 +1015,114 @@ The `value` property can be set directly via JavaScript. The value should always
 
 ---
 
-### Time Picker (`vi-time-picker`)
+### Time Picker ([vi-time-picker](./src/time-picker/vi-time-picker.ts))
 
-The **Time Picker** (`vi-time-picker`) is a form-associated, accessible, discrete time-of-day input component. It is engineered for clinical Electronic Data Capture (EDC), laboratory information management systems (LIMS), and high-throughput enterprise forms.
+The **Time Picker** ([ViTimePicker](./src/time-picker/vi-time-picker.ts)) is a form-associated, accessible, discrete time-of-day input component. It is engineered for clinical Electronic Data Capture (EDC), laboratory information management systems (LIMS), and high-throughput enterprise forms.
 
 #### Key Capabilities
 - **WAI-ARIA Spinbutton Input Segments:** Discrete numeric input segments for hours, minutes, and optional seconds with complete keyboard accessibility (`ArrowUp`/`ArrowDown` stepping, `PageUp`/`PageDown` jumps, `Home`/`End` bounds, and `A`/`P` period toggles).
 - **Dual Interaction Architecture:** Direct in-place keyboard segment entry combined with a floating Flatpickr time scroll popup.
-- **12-Hour & 24-Hour Clocks:** Full ISO 24-hour (`14:30`) and 12-hour AM/PM (`02:30 PM`) format conversion and validation.
-- **Clinical EDC Unknown Time (CDISC SDTM):** Built-in support for capturing protocol-compliant unknown or unrecorded times (`??:??` or `??:??:??`) via `allow-unknown` without triggering invalid form states.
+- **12-Hour & 24-Hour Clocks:** Full ISO 24-hour (`14:30`) and 12-hour AM/PM (`02:30 PM`) format conversion, normalization, and validation.
+- **Clinical EDC Unknown Time (CDISC SDTM):** Built-in support for capturing protocol-compliant unknown or unrecorded times (`??:??` or `??:??:??`) and partial unknowns (`14:??`, `??:30`) via `allow-unknown` without triggering invalid form states.
+- **Safe Baseline Stepping:** Stepping on partial unknowns treats wildcards (`??`) as numeric baselines (0 for minutes/seconds, 12/0 for hours), stepping cleanly without producing `NaN` or corrupting strings to `"14:NaN"`.
+- **Sequential Popup Keyboard Navigation:** Full <kbd>Tab</kbd> and <kbd>Shift+Tab</kbd> cyclic focus traversal within Flatpickr popup inputs.
 - **WHATWG Form Participation:** Native form association via `ElementInternals`, standard `checkValidity()`, `reportValidity()`, and `FormData` participation.
 - **Dependency Inversion Locale Registry (`tsyringe`):** Dynamic runtime locale registration and async loader extension powered by `tsyringe` without hardcoded library dependencies.
+
+#### Properties & Attributes
+
+| Attribute | Property | Type | Default | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `value` | `value` | `string` | `''` | Formatted time string (`'14:30'`, `'02:30 PM'`, `'??:??'`, or `'14:??'`). |
+| `name` | `name` | `string` | `''` | Form field identifier for native form submission. |
+| `format` | `format` | `'12' \| '24'` | `'24'` | 12-hour (with AM/PM button) or 24-hour time clock. |
+| `step` | `step` | `number` | `15` | Minute step increment (`1`, `5`, `10`, `15`, `30`). |
+| `hour-step` | `hourStep` | `number` | `1` | Hour step increment (`1`, `2`, `4`). |
+| `second-step` | `secondStep` | `number` | `1` | Second step increment (`1`, `5`, `10`). |
+| `show-seconds` | `showSeconds` | `boolean` | `false` | Enables seconds segment (`HH:mm:ss` or `hh:mm:ss A`). |
+| `show-now` | `showNow` | `boolean` | `false` | Renders a "Now" button for single-click system clock capture. |
+| `clearable` | `clearable` | `boolean` | `false` | Displays a clear ("×") button when a value is present. |
+| `timezone` | `timezone` | `string` | `''` | Timezone context badge and ISO offset indicator (e.g. `'UTC'`, `'EST'`). |
+| `min` | `min` | `string` | `''` | Minimum allowable time (`HH:mm` or `HH:mm:ss`). |
+| `max` | `max` | `string` | `''` | Maximum allowable time (`HH:mm` or `HH:mm:ss`). |
+| `label` | `label` | `string` | `''` | Text label rendered above the control. |
+| `helper-text` | `helperText` | `string` | `''` | Subordinate helper text displayed beneath the control. |
+| `disabled` | `disabled` | `boolean` | `false` | Disables all user interactions. |
+| `disabledHours` | `disabledHours` | `number[] \| DisabledHoursFn` | `null` | Blackout hours list or predicate function `(h: number) => boolean`. |
+| `disabledMinutes` | `disabledMinutes` | `number[] \| DisabledMinutesFn` | `null` | Blackout minutes list or predicate function `(m: number, h?: number) => boolean`. |
+| `disabledSeconds` | `disabledSeconds` | `number[] \| DisabledSecondsFn` | `null` | Blackout seconds list or predicate function `(s: number, m?: number, h?: number) => boolean`. |
+| `required` | `required` | `boolean` | `false` | Marks field validation as mandatory. |
+| `readonly` | `readonly` | `boolean` | `false` | Prevents value editing while participating in form submission. |
+| `allow-unknown` | `allowUnknown` | `boolean` | `false` | Enables clinical "Time unknown" (`??:??` / `14:??`) CDISC SDTM mode. |
+| `hoist` | `hoist` | `boolean` | `false` | Hoists popup via fixed positioning to escape clipping parents. |
+| `status` | `status` | `'default' \| 'valid' \| 'invalid'` | `'default'` | Controls validation visual presentation. |
+| `validity-message`| `validityMessage`| `string` | `''` | Custom or native validation error message. |
+| `locale` | `locale` | `string \| null` | `null` | BCP 47 locale tag (`'sv'`, `'fr'`, `'de'`, etc.). |
+| `config` | `config` | `Partial<TimePickerConfig>` | `{}` | Reactive configuration object for placeholders, labels, and messages. |
+| `i18n` | `i18n` | `Partial<TimePickerI18n>` | `{}` | Alias for `config`. |
+
+#### Slots
+
+- **`label` Slot**: Location to insert a custom label element above the control.
+- **`helper` Slot**: Location to insert custom helper description text below the control.
+
+#### CSS Parts
+
+- `control`: The outer flex container wrapping segment inputs and buttons.
+- `hours-input`: The hours numeric input field.
+- `minutes-input`: The minutes numeric input field.
+- `seconds-input`: The seconds numeric input field (when `show-seconds` is enabled).
+- `separator`: The colon (`:`) separator spans.
+- `period-btn`: The interactive AM/PM toggle button (12-hour format).
+- `now-btn`: The quick "Now" current timestamp button (when `show-now` is enabled).
+- `clear-btn`: The clear ("×") button (when `clearable` is enabled).
+- `clock-btn`: The clock popup trigger button.
+- `timezone-badge`: The timezone indicator badge (when `timezone` is set).
+- `unknown-wrapper`: The container wrapping the "Time unknown" checkbox and label.
+- `unknown-checkbox`: The "Time unknown" checkbox input.
+- `label`: The rendered label text.
+- `helper`: The rendered helper text.
+- `validation`: The validation error message span.
+
+#### Events
+
+- `vi-time-picker-change`: Fires when a time value is committed. Detail: `TimePickerChangeDetail` (`{ value, isoValue, hours, minutes, seconds, period, isUnknown, isPartialUnknown, timezone, formattedValue }`).
+- `vialiq-change`: Legacy event alias for backwards compatibility. Detail: `TimePickerChangeDetail`.
+- `vialiq-clear`: Fires when the clear button is clicked.
+- `invalid`: Native HTML5 validation failed event.
+
+#### Imperative Methods
+
+- `focus(options?: FocusOptions)`: Focuses the hours input segment.
+- `clear()`: Clears the value, resets Flatpickr, and dispatches change events.
+- `open()`: Programmatically opens the Flatpickr scroll popup.
+- `close()`: Programmatically closes the Flatpickr scroll popup.
+- `setCurrentTime()` / `now()`: Sets the control to current system clock time and commits changes.
+- `stepUp(segment = 'minutes')`: Increments the specified segment by its configured step. Treats partial unknowns as defined numeric baselines without producing `NaN`.
+- `stepDown(segment = 'minutes')`: Decrements the specified segment by its configured step. Treats partial unknowns as defined numeric baselines with wrap-around without producing `NaN`.
+- `setConfig(updates)`: Merges partial updates into the reactive configuration object.
+- `checkValidity()`: Returns boolean validity without updating visual status.
+- `reportValidity()`: Validates, reflects visual status (`valid`/`invalid`), and shows error message.
+- `setCustomValidity(message)`: Sets a custom validation error message.
+
+#### Keyboard Navigation
+
+- **Segment Inputs:**
+  - <kbd>Tab</kbd> / <kbd>:</kbd>: Auto-advances to the next segment (`hours` &rarr; `minutes` &rarr; `seconds` &rarr; `period-btn`).
+  - <kbd>Shift + Tab</kbd> / <kbd>Backspace</kbd> (in empty input): Moves focus to previous segment.
+  - <kbd>ArrowLeft</kbd> / <kbd>ArrowRight</kbd>: Steps focus left/right across segments.
+  - <kbd>ArrowUp</kbd> / <kbd>ArrowDown</kbd>: Increments / decrements the segment (wraps around; safely steps wildcards from baseline 0/12).
+  - <kbd>PageUp</kbd> / <kbd>PageDown</kbd>: Major jumps (+5 for hours, +15 for minutes/seconds).
+  - <kbd>Home</kbd> / <kbd>End</kbd>: Sets segment to its minimum or maximum bound.
+  - <kbd>A</kbd> / <kbd>P</kbd>: Toggles between `AM` and `PM` in 12-hour format.
+  - <kbd>Alt + ArrowDown</kbd>: Opens the time scroll popup.
+  - <kbd>?</kbd>: Types CDISC wildcard (`??`) into the segment.
+- **Popup Navigation:**
+  - <kbd>Tab</kbd> / <kbd>Shift + Tab</kbd>: Sequentially navigates through popup inputs (`Hour` &rarr; `Minute` &rarr; `Second` &rarr; `AM/PM` &rarr; wrap).
+  - <kbd>ArrowLeft</kbd> / <kbd>ArrowRight</kbd>: Navigates adjacent spinbuttons in popup.
+  - <kbd>ArrowUp</kbd> / <kbd>ArrowDown</kbd>: Adjusts time values within popup.
+  - <kbd>Enter</kbd>: Commits selected popup time, closes popup, and restores focus to `clock-btn`.
+  - <kbd>Escape</kbd>: Closes popup and restores focus to `clock-btn`.
 
 ---
 

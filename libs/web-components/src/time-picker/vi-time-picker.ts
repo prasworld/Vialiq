@@ -299,7 +299,7 @@ export class ViTimePicker extends ValidityMixin(FlatpickrMixin(ViElement)) {
         this.i18n = this._createConfigProxy(this.i18n);
       }
     }
-    if (changed.has('format') || changed.has('showSeconds')) {
+    if (changed.has('format') || changed.has('showSeconds') || changed.has('value')) {
       if (this.value) {
         this._syncStateFromValue(this.value);
         this._normalizeCurrentValue();
@@ -356,6 +356,7 @@ export class ViTimePicker extends ValidityMixin(FlatpickrMixin(ViElement)) {
 
     if (valueChanged) {
       this._syncStateFromValue(this.value);
+      this._normalizeCurrentValue();
       this._internals.setFormValue(this.value);
       this._syncFlatpickrValue();
       this._syncValidity();
@@ -1263,10 +1264,12 @@ export class ViTimePicker extends ValidityMixin(FlatpickrMixin(ViElement)) {
     } else if (e.key === 'Home') {
       e.preventDefault();
       this._hours = pad2(this.format === '12' ? 1 : 0);
+      if (this._hoursInput) this._hoursInput.value = this._hours;
       this._commitTime();
     } else if (e.key === 'End') {
       e.preventDefault();
       this._hours = pad2(this.format === '12' ? 12 : 23);
+      if (this._hoursInput) this._hoursInput.value = this._hours;
       this._commitTime();
     } else if (e.key === 'ArrowRight' || e.key === ':' || e.key === 'Enter') {
       e.preventDefault();
@@ -1511,27 +1514,40 @@ export class ViTimePicker extends ValidityMixin(FlatpickrMixin(ViElement)) {
     direction: 'up' | 'down',
     delta?: number,
   ) {
+    if (this._isUnknown) {
+      this._isUnknown = false;
+    }
+
     if (segment === 'hours') {
       const step = delta ?? this.hourStep;
       const minH = this.format === '12' ? 1 : 0;
       const maxH = this.format === '12' ? 12 : 23;
-      const current = parseInt(this._hours || (this.format === '12' ? '12' : '0'), 10);
+      const parsed = parseInt(this._hours, 10);
+      const current = Number.isNaN(parsed)
+        ? (this.format === '12' ? 12 : 0)
+        : parsed;
       const stepped = stepSegment(current, step, minH, maxH, direction);
       this._hours = pad2(stepped);
+      if (this._hoursInput) this._hoursInput.value = this._hours;
       if (!this._minutes) this._minutes = '00';
       if (this.showSeconds && !this._seconds) this._seconds = '00';
     } else if (segment === 'minutes') {
       const step = delta ?? this.step;
-      const current = parseInt(this._minutes || '0', 10);
+      const parsed = parseInt(this._minutes, 10);
+      const current = Number.isNaN(parsed) ? 0 : parsed;
       const stepped = stepSegment(current, step, 0, 59, direction);
       this._minutes = pad2(stepped);
+      if (this._minutesInput) this._minutesInput.value = this._minutes;
       if (!this._hours) this._hours = this.format === '12' ? '12' : '00';
       if (this.showSeconds && !this._seconds) this._seconds = '00';
     } else if (segment === 'seconds') {
+      if (!this.showSeconds) return;
       const step = delta ?? this.secondStep;
-      const current = parseInt(this._seconds || '0', 10);
+      const parsed = parseInt(this._seconds, 10);
+      const current = Number.isNaN(parsed) ? 0 : parsed;
       const stepped = stepSegment(current, step, 0, 59, direction);
       this._seconds = pad2(stepped);
+      if (this._secondsInput) this._secondsInput.value = this._seconds;
       if (!this._hours) this._hours = this.format === '12' ? '12' : '00';
       if (!this._minutes) this._minutes = '00';
     }
