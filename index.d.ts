@@ -48,6 +48,8 @@ export { ViComboboxItem } from './combobox/vi-combobox-item.js';
 export { ViDatePicker, VI_DATE_PICKER_CHANGE, } from './date-picker/vi-date-picker.js';
 export { ViDatePickerInput } from './date-picker/vi-date-picker-input.js';
 export type { DatePickerMode, DatePickerChangeDetail, } from './date-picker/types.js';
+export { ViTimePicker, VI_TIME_PICKER_CHANGE, } from './time-picker/vi-time-picker.js';
+export type { TimeFormat, TimeComponents, TimePickerChangeDetail, } from './time-picker/types.js';
 export { ViLabel } from './label/vi-label.js';
 export type { LabelSize } from './label/vi-label.js';
 export { ViLink } from './link/index.js';

@@ -18,7 +18,7 @@ export declare class FlatpickrMixinInterface {
      * Initialises flatpickr. Loads locale, mode plugin, and the flatpickr module
      * in parallel, then mounts it on the hidden input.
      */
-    protected _initFlatpickr(config: Partial<Options>, mode?: DatePickerMode, resolvedLocale?: string): Promise<void>;
+    protected _initFlatpickr(config: Partial<Options>, mode?: DatePickerMode | 'time', resolvedLocale?: string): Promise<void>;
     /** Destroys the current flatpickr instance cleanly. */
     protected _destroyFlatpickr(): void;
 }
