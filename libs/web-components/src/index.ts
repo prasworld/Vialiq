@@ -77,6 +77,15 @@ export type {
   DatePickerMode,
   DatePickerChangeDetail,
 } from './date-picker/types.js';
+export {
+  ViTimePicker,
+  VI_TIME_PICKER_CHANGE,
+} from './time-picker/vi-time-picker.js';
+export type {
+  TimeFormat,
+  TimeComponents,
+  TimePickerChangeDetail,
+} from './time-picker/types.js';
 
 export { ViLabel } from './label/vi-label.js';
 export type { LabelSize } from './label/vi-label.js';

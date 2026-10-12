@@ -1,4 +1,5 @@
 @use './variables' as tokens;
+@use './functions' as func;
 @use './flatpickr-core';
 
 /**
@@ -430,5 +431,165 @@
 
   &:hover {
     background: var(--vi-layer-hover-01, tokens.$layer-hover-01);
+  }
+}
+
+// ----------------------------------------------------------------------------
+// Time Mode Styles (.flatpickr-time)
+// ----------------------------------------------------------------------------
+
+.flatpickr-calendar.hasTime.noCalendar {
+  display: block !important;
+  width: max-content !important;
+  min-width: #{func.to-rem(140px)} !important;
+  box-sizing: border-box !important;
+  background: var(--vi-time-picker-popup-bg, tokens.$layer-01);
+  box-shadow: var(--vi-time-picker-popup-shadow, tokens.$shadow-lg);
+  border: 1px solid var(--vi-time-picker-popup-border, tokens.$border-03);
+  border-radius: var(--vi-border-radius-lg, tokens.$border-radius-lg);
+  padding: var(--vi-spacing-xs, tokens.$spacing-xs) var(--vi-spacing-sm, tokens.$spacing-sm);
+  z-index: 99999;
+}
+
+.flatpickr-calendar.hasTime {
+  .flatpickr-time {
+    height: #{func.to-rem(42px)} !important;
+    max-height: #{func.to-rem(42px)} !important;
+    line-height: #{func.to-rem(42px)} !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    min-width: #{func.to-rem(130px)} !important;
+    box-sizing: border-box !important;
+    border-top: none !important;
+    gap: #{func.to-rem(4px)} !important;
+
+    .numInputWrapper {
+      flex: 0 0 #{func.to-rem(46px)} !important;
+      width: #{func.to-rem(46px)} !important;
+      min-width: #{func.to-rem(44px)} !important;
+      height: #{func.to-rem(36px)} !important;
+      position: relative !important;
+      border-radius: var(--vi-border-radius-md, tokens.$border-radius-md);
+      box-sizing: border-box !important;
+
+      input.numInput {
+        width: 100% !important;
+        height: 100% !important;
+        color: var(--vi-time-picker-text-color, tokens.$text-primary) !important;
+        font-size: var(--vi-font-size-base, tokens.$font-size-base) !important;
+        font-family: var(--vi-font-family-base, tokens.$font-family-base) !important;
+        font-weight: tokens.$font-weight-semibold !important;
+        background: var(--vi-layer-02, tokens.$layer-02) !important;
+        border: 1px solid var(--vi-border-02, tokens.$border-02) !important;
+        border-radius: var(--vi-border-radius-md, tokens.$border-radius-md) !important;
+        text-align: center !important;
+        padding: 0 #{func.to-rem(14px)} 0 #{func.to-rem(2px)} !important;
+        box-sizing: border-box !important;
+        outline: none !important;
+
+        &:hover {
+          background: var(--vi-layer-hover-02, tokens.$layer-hover-02) !important;
+          border-color: var(--vi-border-03, tokens.$border-03) !important;
+        }
+
+        &:focus {
+          background: var(--vi-layer-hover-02, tokens.$layer-hover-02) !important;
+          border-color: var(--vi-focus, tokens.$focus) !important;
+          box-shadow: 0 0 0 2px var(--vi-focus-ring-glow, rgba(0, 94, 184, 0.2)) !important;
+        }
+      }
+
+      span.arrowUp,
+      span.arrowDown {
+        position: absolute !important;
+        right: #{func.to-rem(2px)} !important;
+        width: #{func.to-rem(14px)} !important;
+        height: 50% !important;
+        box-sizing: border-box !important;
+        cursor: pointer !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        opacity: 0.7;
+
+        &:hover {
+          opacity: 1;
+        }
+
+        &:after {
+          content: '';
+          display: block;
+          width: 0;
+          height: 0;
+          border-left: #{func.to-rem(4px)} solid transparent;
+          border-right: #{func.to-rem(4px)} solid transparent;
+        }
+      }
+
+      span.arrowUp {
+        top: #{func.to-rem(2px)} !important;
+        &:after {
+          border-bottom: #{func.to-rem(5px)} solid var(--vi-text-secondary, tokens.$text-secondary);
+        }
+      }
+
+      span.arrowDown {
+        bottom: #{func.to-rem(2px)} !important;
+        &:after {
+          border-top: #{func.to-rem(5px)} solid var(--vi-text-secondary, tokens.$text-secondary);
+        }
+      }
+    }
+
+    .flatpickr-time-separator {
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      align-self: center !important;
+      height: #{func.to-rem(36px)} !important;
+      line-height: 1 !important;
+      flex: 0 0 auto !important;
+      width: auto !important;
+      float: none !important;
+      color: var(--vi-time-picker-separator-color, tokens.$text-secondary) !important;
+      font-weight: tokens.$font-weight-bold !important;
+      font-size: var(--vi-font-size-base, tokens.$font-size-base) !important;
+      padding: 0 #{func.to-rem(2px)} !important;
+      user-select: none !important;
+    }
+
+    .flatpickr-am-pm {
+      flex: 0 0 auto !important;
+      width: #{func.to-rem(48px)} !important;
+      height: #{func.to-rem(36px)} !important;
+      line-height: #{func.to-rem(36px)} !important;
+      text-align: center !important;
+      border-radius: var(--vi-border-radius-md, tokens.$border-radius-md) !important;
+      background: var(--vi-layer-02, tokens.$layer-02) !important;
+      border: 1px solid var(--vi-border-02, tokens.$border-02) !important;
+      color: var(--vi-time-picker-text-color, tokens.$text-primary) !important;
+      font-family: var(--vi-font-family-base, tokens.$font-family-base) !important;
+      font-weight: tokens.$font-weight-semibold !important;
+      font-size: var(--vi-font-size-sm, tokens.$font-size-sm) !important;
+      cursor: pointer !important;
+      margin-left: #{func.to-rem(4px)} !important;
+      box-sizing: border-box !important;
+      user-select: none !important;
+      outline: none !important;
+      float: none !important;
+
+      &:hover {
+        background: var(--vi-layer-hover-02, tokens.$layer-hover-02) !important;
+        border-color: var(--vi-border-03, tokens.$border-03) !important;
+      }
+
+      &:focus {
+        border-color: var(--vi-focus, tokens.$focus) !important;
+        box-shadow: 0 0 0 2px var(--vi-focus-ring-glow, rgba(0, 94, 184, 0.2)) !important;
+      }
+    }
   }
 }

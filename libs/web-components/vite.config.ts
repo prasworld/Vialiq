@@ -205,6 +205,14 @@ export default defineConfig({
           __dirname,
           'src/date-picker/index.ts',
         ),
+        'time-picker/vi-time-picker': path.resolve(
+          __dirname,
+          'src/time-picker/vi-time-picker.ts',
+        ),
+        'time-picker/index': path.resolve(
+          __dirname,
+          'src/time-picker/index.ts',
+        ),
         'label/vi-label': path.resolve(__dirname, 'src/label/vi-label.ts'),
         'label/index': path.resolve(__dirname, 'src/label/index.ts'),
         'link/vi-link': path.resolve(__dirname, 'src/link/vi-link.ts'),

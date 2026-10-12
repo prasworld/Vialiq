@@ -33,6 +33,7 @@ This document is the authoritative reference for every CSS custom property expos
    - [vi-tooltip](#vi-tooltip-css-api)
    - [vi-modal](#vi-modal-css-api)
    - [vi-date-picker](#vi-date-picker-css-api)
+   - [vi-time-picker](#vi-time-picker-css-api)
    - [vi-signature](#vi-signature-css-api)
 9. [CSS Parts (`::part()`)](#9-css-parts-part)
 10. [Focus Ring System](#10-focus-ring-system)
@@ -691,6 +692,29 @@ vi-checkbox[status="invalid"] { --vi-checkbox-border-color: var(--vi-color-error
 
 ---
 
+### `vi-time-picker` CSS API
+
+| Property | Default | Description |
+|----------|---------|-------------|
+| `--vi-time-picker-border-color` | `tokens.$border-03` | Input resting border |
+| `--vi-time-picker-border-color-hover` | `tokens.$border-04` | Input hover border |
+| `--vi-time-picker-focus-ring-color` | `tokens.$focus` | Focus outline ring |
+| `--vi-time-picker-focus-ring-glow` | `tokens.$color-blue-200` | Focus glow shadow |
+| `--vi-time-picker-background-color` | `tokens.$color-background` | Field background |
+| `--vi-time-picker-text-color` | `tokens.$text-primary` | Typed segment text |
+| `--vi-time-picker-placeholder-color` | `tokens.$text-secondary` | Segment placeholder |
+| `--vi-time-picker-separator-color` | `tokens.$text-secondary` | Colon `:` separator |
+| `--vi-time-picker-error-color` | `tokens.$color-error` | Error border & text |
+| `--vi-time-picker-success-color` | `tokens.$color-success` | Success border |
+| `--vi-time-picker-shape-border-radius` | `tokens.$border-radius-lg` | Field corner radius |
+| `--vi-time-picker-segment-width` | `36px` | Width per numeric segment |
+| `--vi-time-picker-period-width` | `52px` | Width for AM/PM button |
+| `--vi-time-picker-popup-bg` | `tokens.$layer-01` | Time popup background |
+| `--vi-time-picker-popup-shadow` | `tokens.$shadow-lg` | Time popup shadow |
+| `--vi-time-picker-popup-border` | `tokens.$border-03` | Time popup border |
+
+---
+
 ### `vi-signature` CSS API
 
 | Property | Default | Description |
@@ -749,6 +773,19 @@ Every interactive web component exposes named `part` attributes for external sty
 | `vi-tooltip` | `tooltip` | Tooltip popup |
 | `vi-date-picker` | `input` | Text input field |
 | `vi-date-picker` | `calendar` | Calendar popup |
+| `vi-time-picker` | `control` | Outer control row |
+| `vi-time-picker` | `hours-input` | Hours input field |
+| `vi-time-picker` | `minutes-input` | Minutes input field |
+| `vi-time-picker` | `seconds-input` | Seconds input field |
+| `vi-time-picker` | `separator` | Separator element |
+| `vi-time-picker` | `period-btn` | AM/PM toggle button |
+| `vi-time-picker` | `clock-btn` | Clock trigger button |
+| `vi-time-picker` | `clear-btn` | Clear button |
+| `vi-time-picker` | `popup` | Popup container |
+| `vi-time-picker` | `unknown-wrapper` | Unknown time wrapper |
+| `vi-time-picker` | `unknown-checkbox` | Unknown checkbox |
+| `vi-time-picker` | `helper` | Slotted helper wrapper |
+| `vi-time-picker` | `validation` | Validation error message |
 | `vi-signature` | `canvas` | Drawing canvas |
 | `vi-signature` | `actions` | Clear/confirm buttons area |
 

@@ -34,7 +34,7 @@ export declare class FlatpickrMixinInterface {
    */
   protected _initFlatpickr(
     config: Partial<Options>,
-    mode?: DatePickerMode,
+    mode?: DatePickerMode | 'time',
     resolvedLocale?: string,
   ): Promise<void>;
 
@@ -89,7 +89,7 @@ export function FlatpickrMixin<T extends Constructor<LitElement>>(Base: T) {
      */
     protected async _initFlatpickr(
       config: Partial<Options>,
-      mode: DatePickerMode = 'date',
+      mode: DatePickerMode | 'time' = 'date',
       resolvedLocale: string = resolveLocale(null),
     ): Promise<void> {
       const currentGen = ++this._initGeneration;
@@ -101,7 +101,7 @@ export function FlatpickrMixin<T extends Constructor<LitElement>>(Base: T) {
       const [{ default: flatpickr }, locale, modePlugin] = await Promise.all([
         import('flatpickr') as Promise<{ default: FlatpickrFn }>,
         loadLocale(resolvedLocale),
-        loadModePlugin(mode, this._getModePluginConfig()),
+        loadModePlugin(mode as DatePickerMode, this._getModePluginConfig()),
       ]);
 
       // Abort if another init was called, or if disconnected during loading
