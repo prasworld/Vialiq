@@ -44,9 +44,46 @@
     visibility var(--vi-float-button-transition-duration, 200ms);
 }
 
+// Host-level active & pressed state reflection
+:host(:active) .float-button:not([disabled]),
+:host([aria-pressed='true']) .float-button {
+  background-color: var(
+    --vi-float-button-active-bg,
+    #{tokens.$layer-hover-02}
+  );
+  border-color: var(
+    --vi-float-button-active-border-color,
+    #{tokens.$border-03}
+  );
+  box-shadow: var(
+    --vi-float-button-shadow-active,
+    inset 0 2px 4px rgba(0, 0, 0, 0.12),
+    #{tokens.$shadow-sm}
+  );
+  transform: translateY(1px) scale(0.97);
+}
+
+:host([type='primary']:active) .float-button:not([disabled]),
+:host([type='primary'][aria-pressed='true']) .float-button {
+  background-color: var(
+    --vi-float-button-active-bg-primary,
+    #{tokens.$color-blue-900}
+  );
+  box-shadow: var(
+    --vi-float-button-shadow-active-primary,
+    inset 0 2px 4px rgba(0, 0, 0, 0.25),
+    #{tokens.$shadow-sm}
+  );
+  transform: translateY(1px) scale(0.97);
+}
+
 .float-button__control {
   position: relative;
   display: inline-flex;
+
+  vi-tooltip {
+    display: inline-flex;
+  }
 }
 
 // Badge styles

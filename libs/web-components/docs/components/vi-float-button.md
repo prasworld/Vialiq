@@ -218,6 +218,7 @@ background-color: var(--vi-float-button-bg, #{tokens.$layer-01});
 ### 4. Back-to-Top Scroller
 
 ```html
+<!-- Default window scrolling -->
 <vi-float-button
   back-top
   visibility-height="300"
@@ -225,6 +226,20 @@ background-color: var(--vi-float-button-bg, #{tokens.$layer-01});
   aria-label="Scroll to Top"
 >
   <vi-icon slot="icon" name="arrow-up"></vi-icon>
+</vi-float-button>
+
+<!-- Custom scroll container targeting by bare ID or CSS selector -->
+<div id="scrollable-panel" style="overflow-y: auto; max-height: 400px;">
+  <!-- Long content... -->
+</div>
+<vi-float-button
+  back-top
+  scroll-target="scrollable-panel"
+  visibility-height="200"
+  duration="450"
+  tooltip="Scroll panel to Top"
+  aria-label="Scroll panel to Top"
+>
 </vi-float-button>
 ```
 
@@ -259,6 +274,7 @@ background-color: var(--vi-float-button-bg, #{tokens.$layer-01});
     <vi-float-button
       back-top
       [visibilityHeight]="400"
+      [duration]="450"
       (vi-float-button-back-top)="onScrolledToTop()"
     >
       <vi-icon slot="icon" name="chevron-up"></vi-icon>

@@ -1,6 +1,11 @@
 export { ViElement } from './base/vi-element.js';
 export type { ViSize, ViStatus } from './base/vi-element.js';
 export type { ControlStatus } from './base/validity-mixin.js';
+export {
+  sanitizeUrl,
+  isSafeUrl,
+  ALLOWED_URL_SCHEMES,
+} from './base/sanitize-url.js';
 export { ViButton } from './button/vi-button.js';
 export { ViCard } from './card/vi-card.js';
 export type {

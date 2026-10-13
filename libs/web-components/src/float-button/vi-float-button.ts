@@ -9,6 +9,7 @@ import {
 import { customElement, property, state } from 'lit/decorators.js';
 import { FocusableMixin } from '../base/focusable-mixin.js';
 import { ViElement } from '../base/vi-element.js';
+import { sanitizeUrl } from '../base/sanitize-url.js';
 import '../tooltip/vi-tooltip.js';
 import '../icons/vi-icon.js';
 import { registerIcons } from '../icons/registry.js';
@@ -40,12 +41,14 @@ export type BadgeStatus =
  * @attr tooltip - Text tooltip displayed on hover/focus
  * @attr href - Optional URL to navigate to (renders <a> when provided)
  * @attr target - Anchor target (_blank, _self, etc.)
+ * @attr rel - Relationship attribute for anchor link (automatically includes noopener noreferrer for _blank)
  * @attr badge - Numeric count or text badge
  * @attr badge-dot - Show a status dot badge
  * @attr badge-status - Badge status semantic color: neutral | primary | success | warning | danger | info
  * @attr back-top - Enable back-to-top scroll behavior
  * @attr visibility-height - Scroll threshold (px) before backTop button appears (default: 400)
  * @attr scroll-target - CSS selector or element ID for custom scroll container
+ * @attr duration - Scroll animation duration in milliseconds (default: 450)
  * @attr disabled - Disables interactions
  *
  * @slot icon - Custom icon element
@@ -62,6 +65,15 @@ export type BadgeStatus =
  * @fires vi-float-button-click - Dispatched when button is clicked
  * @fires vi-float-button-back-top - Dispatched when back-top triggers scrolling
  */
+
+/**
+ * Cubic ease-in-out easing function.
+ * @param t Normalized progress from 0 to 1.
+ */
+function easeInOutCubic(t: number): number {
+  return t < 0.5 ? 4 * t * t * t : (t - 1) * (2 * t - 2) * (2 * t - 2) + 1;
+}
+
 @customElement('vi-float-button')
 export class ViFloatButton extends FocusableMixin(ViElement) {
   static override styles = css`
@@ -104,6 +116,23 @@ export class ViFloatButton extends FocusableMixin(ViElement) {
   @property({ type: String, reflect: true })
   accessor target: string | undefined = undefined;
 
+  /** Relationship attribute for anchor link. Enforces noopener noreferrer when target is _blank. */
+  @property({ type: String, reflect: true })
+  accessor rel: string | undefined = undefined;
+
+  protected get _effectiveRel(): string | typeof nothing {
+    const isBlank = this.target === '_blank';
+    if (!isBlank && !this.rel) {
+      return nothing;
+    }
+    const rels = new Set((this.rel || '').split(' ').filter(Boolean));
+    if (isBlank) {
+      rels.add('noopener');
+      rels.add('noreferrer');
+    }
+    return rels.size > 0 ? Array.from(rels).join(' ') : nothing;
+  }
+
   /** Badge count or string label. */
   @property({ reflect: true })
   accessor badge: number | string | undefined = undefined;
@@ -124,13 +153,21 @@ export class ViFloatButton extends FocusableMixin(ViElement) {
   @property({ type: Number, reflect: true, attribute: 'visibility-height' })
   accessor visibilityHeight = 400;
 
-  /** Target scrollable container selector. */
+  /** Target scrollable container CSS selector or element ID. */
   @property({ type: String, attribute: 'scroll-target' })
   accessor scrollTarget: string | undefined = undefined;
+
+  /** Scroll animation duration in milliseconds. */
+  @property({ type: Number })
+  accessor duration = 450;
 
   /** Disabled state. */
   @property({ type: Boolean, reflect: true })
   accessor disabled = false;
+
+  /** Whether the button participates in sequential tab navigation. Used for roving tabindex in groups. */
+  @property({ type: Boolean })
+  accessor tabbable = true;
 
   /** Reflects if the button is placed inside a <vi-float-button-group>. */
   @property({ type: Boolean, reflect: true, attribute: 'in-group' })
@@ -140,6 +177,18 @@ export class ViFloatButton extends FocusableMixin(ViElement) {
   @property({ attribute: 'aria-label' })
   override accessor ariaLabel: string | null = null;
 
+  /** Pressed state for toggle button functionality. */
+  @property({ attribute: 'aria-pressed', reflect: true })
+  accessor ariaPressed: string | null = null;
+
+  /** Popup type (e.g. 'menu', 'dialog') forwarded to inner native button. */
+  @property({ attribute: 'aria-haspopup', reflect: true })
+  accessor ariaHasPopup: string | null = null;
+
+  /** Expanded state forwarded to inner native button. */
+  @property({ attribute: 'aria-expanded', reflect: true })
+  accessor ariaExpanded: string | null = null;
+
   /** Internal state tracking back-top visibility below threshold. */
   @property({ type: Boolean, reflect: true, attribute: 'hidden-back-top' })
   accessor hiddenBackTop = false;
@@ -147,9 +196,14 @@ export class ViFloatButton extends FocusableMixin(ViElement) {
   @state() private accessor _hasSlottedIcon = false;
   private _scrollHandlerBound?: () => void;
   private _currentScrollContainer?: HTMLElement | Window;
+  private _scrollTargetObserver?: MutationObserver;
+  private _scrollAnimationId?: number;
 
   override connectedCallback(): void {
     super.connectedCallback();
+    if (!this.tabbable || this.disabled) {
+      this._setHostFocusable(false);
+    }
     if (this.backTop) {
       this._setupScrollListener();
     }
@@ -157,14 +211,18 @@ export class ViFloatButton extends FocusableMixin(ViElement) {
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
+    this._cancelScrollAnimation();
     this._teardownScrollListener();
   }
 
   override updated(changedProperties: PropertyValues): void {
     super.updated(changedProperties);
 
-    if (changedProperties.has('disabled')) {
-      this._setHostFocusable(!this.disabled);
+    if (
+      changedProperties.has('disabled') ||
+      changedProperties.has('tabbable')
+    ) {
+      this._setHostFocusable(!this.disabled && this.tabbable);
     }
 
     if (
@@ -182,12 +240,63 @@ export class ViFloatButton extends FocusableMixin(ViElement) {
   }
 
   private _resolveScrollContainer(): HTMLElement | Window {
-    if (this.scrollTarget) {
-      const container = document.querySelector(
-        this.scrollTarget,
-      ) as HTMLElement | null;
-      if (container) return container;
+    if (!this.scrollTarget) {
+      return window;
     }
+
+    const target = this.scrollTarget.trim();
+    if (!target) {
+      return window;
+    }
+
+    const rootNode = (this.getRootNode() as Document | ShadowRoot) ?? document;
+
+    // 1. Direct ID lookup (handles bare IDs without '#')
+    if (
+      'getElementById' in rootNode &&
+      typeof rootNode.getElementById === 'function'
+    ) {
+      const byId = rootNode.getElementById(target);
+      if (byId) return byId;
+    }
+    const docById = document.getElementById(target);
+    if (docById) return docById;
+
+    // If target has a leading '#', also try getElementById with '#' stripped
+    if (target.startsWith('#')) {
+      const rawId = target.slice(1);
+      if (
+        'getElementById' in rootNode &&
+        typeof rootNode.getElementById === 'function'
+      ) {
+        const byId = rootNode.getElementById(rawId);
+        if (byId) return byId;
+      }
+      const docById = document.getElementById(rawId);
+      if (docById) return docById;
+    }
+
+    // 2. Query selector lookup (CSS selector or ID with '#')
+    try {
+      const el = (rootNode.querySelector(target) ??
+        document.querySelector(target)) as HTMLElement | null;
+      if (el) return el;
+    } catch {
+      // Ignore syntax errors from invalid selector strings
+    }
+
+    // 3. Fallback: if bare ID didn't match a selector, attempt escaping ID as selector
+    if (!/^([#.[:>])/.test(target)) {
+      try {
+        const escapedSelector = `#${CSS.escape(target)}`;
+        const el = (rootNode.querySelector(escapedSelector) ??
+          document.querySelector(escapedSelector)) as HTMLElement | null;
+        if (el) return el;
+      } catch {
+        // Ignore escaping errors
+      }
+    }
+
     return window;
   }
 
@@ -205,9 +314,64 @@ export class ViFloatButton extends FocusableMixin(ViElement) {
 
     // Initial check
     this._handleScroll();
+
+    // If a custom scrollTarget was configured but resolved to window,
+    // observe the DOM to retry resolving when the target is inserted late.
+    if (this.scrollTarget && this._currentScrollContainer instanceof Window) {
+      this._observeForScrollTarget();
+    }
+  }
+
+  private _observeForScrollTarget(): void {
+    this._disconnectScrollTargetObserver();
+
+    const rootNode = (this.getRootNode() as Document | ShadowRoot) ?? document;
+    const targetsToObserve: Node[] = [];
+
+    if (rootNode instanceof Document) {
+      if (rootNode.documentElement) targetsToObserve.push(rootNode.documentElement);
+    } else if (rootNode instanceof ShadowRoot) {
+      targetsToObserve.push(rootNode);
+      if (document.documentElement) targetsToObserve.push(document.documentElement);
+    } else {
+      if (document.documentElement) targetsToObserve.push(document.documentElement);
+    }
+
+    if (!targetsToObserve.length) return;
+
+    this._scrollTargetObserver = new MutationObserver(() => {
+      const container = this._resolveScrollContainer();
+      if (!(container instanceof Window)) {
+        this._disconnectScrollTargetObserver();
+        this._setupScrollListener();
+      }
+    });
+
+    for (const node of targetsToObserve) {
+      this._scrollTargetObserver.observe(node, {
+        childList: true,
+        subtree: true,
+      });
+    }
+  }
+
+  private _disconnectScrollTargetObserver(): void {
+    if (this._scrollTargetObserver) {
+      this._scrollTargetObserver.disconnect();
+      this._scrollTargetObserver = undefined;
+    }
+  }
+
+  private _cancelScrollAnimation(): void {
+    if (this._scrollAnimationId !== undefined) {
+      cancelAnimationFrame(this._scrollAnimationId);
+      this._scrollAnimationId = undefined;
+    }
   }
 
   private _teardownScrollListener(): void {
+    this._cancelScrollAnimation();
+    this._disconnectScrollTargetObserver();
     if (this._currentScrollContainer && this._scrollHandlerBound) {
       this._currentScrollContainer.removeEventListener(
         'scroll',
@@ -220,6 +384,16 @@ export class ViFloatButton extends FocusableMixin(ViElement) {
 
   private _handleScroll(): void {
     if (!this.backTop) return;
+
+    // If configured scrollTarget was previously unresolved, check if it's now available
+    if (this.scrollTarget && this._currentScrollContainer instanceof Window) {
+      const resolved = this._resolveScrollContainer();
+      if (!(resolved instanceof Window)) {
+        this._disconnectScrollTargetObserver();
+        this._setupScrollListener();
+        return;
+      }
+    }
 
     const container = this._currentScrollContainer ?? window;
     let scrollTop = 0;
@@ -268,12 +442,72 @@ export class ViFloatButton extends FocusableMixin(ViElement) {
     const prefersReducedMotion = window.matchMedia(
       '(prefers-reduced-motion: reduce)',
     ).matches;
-    const behavior: ScrollBehavior = prefersReducedMotion ? 'auto' : 'smooth';
+    const duration =
+      typeof this.duration === 'number' && !isNaN(this.duration)
+        ? Math.max(0, this.duration)
+        : 450;
+    const behavior: ScrollBehavior =
+      prefersReducedMotion || duration === 0 ? 'auto' : 'smooth';
+
+    this._cancelScrollAnimation();
 
     if (container instanceof Window) {
       window.scrollTo({ top: 0, behavior });
+      if (document.documentElement) {
+        document.documentElement.scrollTop = 0;
+      }
+      if (document.body) {
+        document.body.scrollTop = 0;
+      }
     } else {
-      container.scrollTo({ top: 0, behavior });
+      const startTop = container.scrollTop ?? 0;
+
+      if (prefersReducedMotion || duration === 0 || startTop <= 0) {
+        if (typeof container.scrollTo === 'function') {
+          try {
+            container.scrollTo({ top: 0, behavior: 'auto' });
+          } catch {
+            // Ignore
+          }
+        }
+        container.scrollTop = 0;
+      } else {
+        const startTime = performance.now();
+        const step = (currentTime: number): void => {
+          const elapsed = currentTime - startTime;
+          const progress = Math.min(elapsed / duration, 1);
+          const easedProgress = easeInOutCubic(progress);
+          const currentTop = Math.max(
+            0,
+            Math.round(startTop * (1 - easedProgress)),
+          );
+
+          if (typeof container.scrollTo === 'function') {
+            try {
+              container.scrollTo({ top: currentTop, behavior: 'auto' });
+            } catch {
+              // Ignore
+            }
+          }
+          container.scrollTop = currentTop;
+
+          if (progress < 1) {
+            this._scrollAnimationId = requestAnimationFrame(step);
+          } else {
+            this._scrollAnimationId = undefined;
+            if (typeof container.scrollTo === 'function') {
+              try {
+                container.scrollTo({ top: 0, behavior: 'auto' });
+              } catch {
+                // Ignore
+              }
+            }
+            container.scrollTop = 0;
+          }
+        };
+
+        this._scrollAnimationId = requestAnimationFrame(step);
+      }
     }
 
     this.dispatchEvent(
@@ -340,17 +574,33 @@ export class ViFloatButton extends FocusableMixin(ViElement) {
             ? this.description
             : undefined);
 
-    if (this.href) {
+    const safeHref = sanitizeUrl(this.href);
+
+    const effectiveAriaHasPopup =
+      this.ariaHasPopup !== null && this.ariaHasPopup !== undefined
+        ? String(this.ariaHasPopup)
+        : nothing;
+
+    const effectiveAriaExpanded =
+      this.ariaExpanded !== null && this.ariaExpanded !== undefined
+        ? String(this.ariaExpanded)
+        : nothing;
+
+    if (safeHref) {
       return html`
         <a
           class="${classes}"
           part="button"
-          href="${this.href}"
+          href="${this.disabled ? nothing : safeHref}"
           target="${this.target ?? nothing}"
-          tabindex="${this.disabled ? -1 : 0}"
-          role="${this.inGroup ? 'menuitem' : nothing}"
+          rel="${this._effectiveRel}"
+          tabindex="${this.disabled ? -1 : this.tabbable ? 0 : -1}"
+          role="${this.inGroup && !this.ariaHasPopup ? 'menuitem' : nothing}"
           aria-label="${accessibleLabel ?? nothing}"
+          aria-pressed="${this.ariaPressed ?? nothing}"
           aria-disabled="${this.disabled ? 'true' : nothing}"
+          aria-haspopup="${effectiveAriaHasPopup}"
+          aria-expanded="${effectiveAriaExpanded}"
           @click="${this._handleClick}"
         >
           ${this._renderBadge()} ${this._renderIcon()}
@@ -372,9 +622,13 @@ export class ViFloatButton extends FocusableMixin(ViElement) {
         part="button"
         type="button"
         ?disabled="${this.disabled}"
-        tabindex="${this.disabled ? -1 : 0}"
-        role="${this.inGroup ? 'menuitem' : nothing}"
+        tabindex="${this.disabled ? -1 : this.tabbable ? 0 : -1}"
+        role="${this.inGroup && !this.ariaHasPopup ? 'menuitem' : nothing}"
         aria-label="${accessibleLabel ?? nothing}"
+        aria-pressed="${this.ariaPressed ?? nothing}"
+        aria-disabled="${this.disabled ? 'true' : nothing}"
+        aria-haspopup="${effectiveAriaHasPopup}"
+        aria-expanded="${effectiveAriaExpanded}"
         @click="${this._handleClick}"
       >
         ${this._renderBadge()} ${this._renderIcon()}
@@ -391,21 +645,22 @@ export class ViFloatButton extends FocusableMixin(ViElement) {
   }
 
   override render(): TemplateResult {
-    const inner = html`
+    const buttonContent = this._renderButtonContent();
+
+    const inner =
+      this.tooltip && !this.disabled
+        ? html`
+            <vi-tooltip content="${this.tooltip}" placement="left">
+              ${buttonContent}
+            </vi-tooltip>
+          `
+        : buttonContent;
+
+    return html`
       <div class="float-button__control" part="control">
-        ${this._renderButtonContent()}
+        ${inner}
       </div>
     `;
-
-    if (this.tooltip && !this.disabled) {
-      return html`
-        <vi-tooltip content="${this.tooltip}" placement="left">
-          ${inner}
-        </vi-tooltip>
-      `;
-    }
-
-    return inner;
   }
 }
 

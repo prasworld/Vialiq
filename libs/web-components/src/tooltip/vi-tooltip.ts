@@ -386,7 +386,15 @@ export class ViTooltip extends ViElement {
 
   private _onKeyDown(event: KeyboardEvent): void {
     if (event.key === 'Escape') {
-      event.stopPropagation();
+      const rootNode = this.getRootNode();
+      const host = rootNode instanceof ShadowRoot ? rootNode.host : null;
+      const isInsideSpeedDial =
+        Boolean(host?.hasAttribute('in-group')) ||
+        Boolean(this.closest('vi-float-button-group'));
+
+      if (!isInsideSpeedDial) {
+        event.stopPropagation();
+      }
       this.hide(true);
     }
   }

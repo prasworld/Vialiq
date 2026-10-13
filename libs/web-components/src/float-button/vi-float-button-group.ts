@@ -57,6 +57,10 @@ export class ViFloatButtonGroup extends ViElement {
   @property({ type: Boolean, reflect: true })
   accessor open = false;
 
+  /** Icon displayed on the trigger button when expanded. */
+  @property({ type: String, reflect: true, attribute: 'close-icon' })
+  accessor closeIcon = 'x';
+
   /** Accessible label for the group. */
   @property({ attribute: 'aria-label' })
   override accessor ariaLabel: string | null = null;
@@ -66,25 +70,29 @@ export class ViFloatButtonGroup extends ViElement {
 
   override connectedCallback(): void {
     super.connectedCallback();
-    this.addEventListener('keydown', this._handleKeyDown);
+    this.addEventListener('keydown', this._handleKeyDown, true);
   }
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
-    this.removeEventListener('keydown', this._handleKeyDown);
+    this.removeEventListener('keydown', this._handleKeyDown, true);
   }
 
   override updated(changedProperties: PropertyValues): void {
     super.updated(changedProperties);
 
     if (changedProperties.has('open')) {
-      this.dispatchEvent(
-        new CustomEvent('vi-float-button-open-change', {
-          bubbles: true,
-          composed: true,
-          detail: { open: this.open },
-        }),
-      );
+      this._updateTabbableItems();
+      const oldOpen = changedProperties.get('open');
+      if (oldOpen !== undefined && oldOpen !== this.open) {
+        this.dispatchEvent(
+          new CustomEvent('vi-float-button-open-change', {
+            bubbles: true,
+            composed: true,
+            detail: { open: this.open },
+          }),
+        );
+      }
     }
 
     if (changedProperties.has('shape')) {
@@ -93,16 +101,17 @@ export class ViFloatButtonGroup extends ViElement {
   }
 
   private _syncChildrenProps(): void {
-    const items = this._getMenuItems();
+    const items = this._getAllMenuItems();
     items.forEach((item) => {
       item.inGroup = true;
       if (!item.hasAttribute('shape')) {
         item.shape = this.shape;
       }
     });
+    this._updateTabbableItems();
   }
 
-  private _getMenuItems(): ViFloatButton[] {
+  private _getAllMenuItems(): ViFloatButton[] {
     const slot = this.shadowRoot?.querySelector(
       '.float-button-group__menu slot:not([name])',
     ) as HTMLSlotElement | null;
@@ -113,19 +122,84 @@ export class ViFloatButtonGroup extends ViElement {
       .filter((el): el is ViFloatButton => el instanceof ViFloatButton);
   }
 
+  private _getMenuItems(): ViFloatButton[] {
+    return this._getAllMenuItems().filter((el) => !el.disabled);
+  }
+
+  private _updateTabbableItems(): void {
+    const allItems = this._getAllMenuItems();
+    if (!this.open) {
+      allItems.forEach((item) => {
+        item.tabbable = false;
+        item.tabIndex = -1;
+      });
+      return;
+    }
+
+    const enabledItems = this._getMenuItems();
+    if (!enabledItems.length) {
+      allItems.forEach((item) => {
+        item.tabbable = false;
+        item.tabIndex = -1;
+      });
+      return;
+    }
+
+    const focusedItem = enabledItems.find((item) =>
+      item.matches(':focus-within'),
+    );
+    const activeItem = focusedItem ?? enabledItems[enabledItems.length - 1];
+    this._setActiveItem(activeItem);
+  }
+
+  private _setActiveItem(activeItem?: ViFloatButton): void {
+    const allItems = this._getAllMenuItems();
+    allItems.forEach((item) => {
+      const isTabbable = this.open && item === activeItem && !item.disabled;
+      item.tabbable = isTabbable;
+      item.tabIndex = isTabbable ? 0 : -1;
+    });
+  }
+
+  private _handleFocusIn = (event: FocusEvent): void => {
+    if (!this.open) return;
+    const path = event.composedPath();
+    const item = path.find(
+      (el): el is ViFloatButton => el instanceof ViFloatButton,
+    );
+    const triggerBtn = this.shadowRoot?.querySelector(
+      '.float-button-group__trigger',
+    );
+    if (item && item !== triggerBtn && !item.disabled) {
+      this._setActiveItem(item);
+    }
+  };
+
   private _handleSlotChange(): void {
     this._syncChildrenProps();
   }
 
   private _handleTriggerClick(event: CustomEvent): void {
-    if (this.trigger === 'click') {
+    const originalEvent = (
+      event.detail as { originalEvent?: UIEvent } | undefined
+    )?.originalEvent;
+    const isKeyboard =
+      !originalEvent ||
+      originalEvent instanceof KeyboardEvent ||
+      originalEvent.detail === 0;
+
+    if (this.trigger === 'click' || isKeyboard) {
       event.stopPropagation();
       this.open = !this.open;
       if (this.open) {
-        requestAnimationFrame(() => {
-          const items = this._getMenuItems();
-          items[items.length - 1]?.focus();
-        });
+        const items = this._getMenuItems();
+        const activeItem = items[items.length - 1];
+        this._setActiveItem(activeItem);
+        if (isKeyboard) {
+          requestAnimationFrame(() => {
+            activeItem?.focus();
+          });
+        }
       }
     }
   }
@@ -153,19 +227,53 @@ export class ViFloatButtonGroup extends ViElement {
       return;
     }
 
+    if (!this.open) {
+      if (
+        event.key === 'Enter' ||
+        event.key === ' ' ||
+        event.key === 'ArrowUp' ||
+        event.key === 'ArrowDown'
+      ) {
+        const triggerBtn = this.shadowRoot?.querySelector(
+          '.float-button-group__trigger',
+        ) as ViFloatButton | null;
+        const isTrigger =
+          event.target === this ||
+          event.target === triggerBtn ||
+          triggerBtn?.matches(':focus-within');
+
+        if (isTrigger) {
+          event.preventDefault();
+          this.open = true;
+          requestAnimationFrame(() => {
+            const items = this._getMenuItems();
+            const activeItem = items[items.length - 1];
+            this._setActiveItem(activeItem);
+            activeItem?.focus();
+          });
+          return;
+        }
+      }
+      return;
+    }
+
     if (this.open) {
       const items = this._getMenuItems();
       if (!items.length) return;
 
       if (event.key === 'Home') {
         event.preventDefault();
-        items[0]?.focus();
+        const nextItem = items[0];
+        this._setActiveItem(nextItem);
+        nextItem?.focus();
         return;
       }
 
       if (event.key === 'End') {
         event.preventDefault();
-        items[items.length - 1]?.focus();
+        const nextItem = items[items.length - 1];
+        this._setActiveItem(nextItem);
+        nextItem?.focus();
         return;
       }
 
@@ -186,7 +294,9 @@ export class ViFloatButtonGroup extends ViElement {
               : activeIndex + 1;
         }
 
-        items[nextIndex]?.focus();
+        const nextItem = items[nextIndex];
+        this._setActiveItem(nextItem);
+        nextItem?.focus();
       }
     }
   };
@@ -203,6 +313,7 @@ export class ViFloatButtonGroup extends ViElement {
 
   private _renderTriggerIcon(): TemplateResult {
     if (this.open) {
+      const closeIconName = this.closeIcon?.trim() || 'x';
       return html`
         <slot
           name="close-icon"
@@ -210,7 +321,7 @@ export class ViFloatButtonGroup extends ViElement {
           @slotchange="${this._handleCloseIconSlotChange}"
         >
           ${!this._hasSlottedCloseIcon
-            ? html`<vi-icon name="x" class="default-icon"></vi-icon>`
+            ? html`<vi-icon name="${closeIconName}" class="default-icon"></vi-icon>`
             : nothing}
         </slot>
       `;
@@ -244,6 +355,7 @@ export class ViFloatButtonGroup extends ViElement {
           part="menu"
           role="menu"
           aria-hidden="${!this.open}"
+          @focusin="${this._handleFocusIn}"
         >
           <slot @slotchange="${this._handleSlotChange}"></slot>
         </div>
@@ -255,6 +367,9 @@ export class ViFloatButtonGroup extends ViElement {
           in-group
           aria-haspopup="menu"
           aria-expanded="${this.open}"
+          .ariaHasPopup="${'menu'}"
+          .ariaExpanded="${this.open ? 'true' : 'false'}"
+          aria-label="${this.ariaLabel ?? 'Speed dial actions'}"
           @vi-float-button-click="${this._handleTriggerClick}"
         >
           ${this._renderTriggerIcon()}

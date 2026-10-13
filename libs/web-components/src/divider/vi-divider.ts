@@ -119,8 +119,6 @@ export class ViDivider extends ViElement {
         <div
           class=${classMap(classes)}
           part="divider"
-          role="separator"
-          aria-orientation="vertical"
         ></div>
       `;
     }
@@ -129,8 +127,6 @@ export class ViDivider extends ViElement {
       <div
         class=${classMap(classes)}
         part="divider"
-        role="separator"
-        aria-orientation="horizontal"
         style=${styleMap(this._getTextMarginStyle())}
       >
         <span class="divider__line-start" part="line-start"></span>

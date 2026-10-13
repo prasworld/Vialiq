@@ -31,6 +31,21 @@ describe('vi-divider', () => {
     expect(inner).toBeTruthy();
     expect(inner?.classList.contains('divider--horizontal')).toBe(true);
     expect(inner?.classList.contains('divider--vertical')).toBe(false);
+    expect(inner?.hasAttribute('role')).toBe(false);
+    expect(inner?.hasAttribute('aria-orientation')).toBe(false);
+  });
+
+  it('exposes role="separator" on the host element only and not on the inner shadow DOM container', async () => {
+    render(html`<vi-divider id="d-single-role"></vi-divider>`, container);
+    const divider = container.querySelector('#d-single-role') as ViDivider;
+    await divider.updateComplete;
+
+    expect(divider.getAttribute('role')).toBe('separator');
+    expect(divider.getAttribute('aria-orientation')).toBe('horizontal');
+
+    const inner = divider.shadowRoot?.querySelector('.divider');
+    expect(inner?.hasAttribute('role')).toBe(false);
+    expect(inner?.hasAttribute('aria-orientation')).toBe(false);
   });
 
   it('renders vertical divider and updates orientation attributes', async () => {
