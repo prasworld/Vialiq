@@ -190,6 +190,44 @@ describe('vi-float-button', () => {
     const descEl = btn.shadowRoot?.querySelector('.float-button__description');
     expect(descEl).toBeTruthy();
     expect(descEl?.textContent?.trim()).toBe('Help');
+    expect(descEl?.hasAttribute('hidden')).toBe(false);
+  });
+
+  it('wraps slotted description in .float-button__description with part="description"', async () => {
+    render(
+      html`
+        <vi-float-button id="btn-slotted-desc">
+          <span slot="description">Slotted Help</span>
+        </vi-float-button>
+      `,
+      container,
+    );
+    const btn = container.querySelector('#btn-slotted-desc') as ViFloatButton;
+    await btn.updateComplete;
+
+    const descEl = btn.shadowRoot?.querySelector('.float-button__description');
+    expect(descEl).toBeTruthy();
+    expect(descEl?.hasAttribute('hidden')).toBe(false);
+    expect(descEl?.getAttribute('part')).toBe('description');
+
+    const slot = descEl?.querySelector(
+      'slot[name="description"]',
+    ) as HTMLSlotElement;
+    expect(slot).toBeTruthy();
+    expect(slot.assignedElements()[0]?.textContent?.trim()).toBe('Slotted Help');
+  });
+
+  it('hides description wrapper when neither description property nor slot is provided', async () => {
+    render(
+      html`<vi-float-button id="btn-no-desc"></vi-float-button>`,
+      container,
+    );
+    const btn = container.querySelector('#btn-no-desc') as ViFloatButton;
+    await btn.updateComplete;
+
+    const descEl = btn.shadowRoot?.querySelector('.float-button__description');
+    expect(descEl).toBeTruthy();
+    expect(descEl?.hasAttribute('hidden')).toBe(true);
   });
 
   it('dispatches vi-float-button-click event on activation', async () => {
@@ -667,6 +705,118 @@ describe('vi-float-button-group', () => {
     nativeTrigger?.click();
     await group.updateComplete;
     expect(group.open).toBe(false);
+  });
+
+  it('closes on document outside click when open and trigger="click"', async () => {
+    render(
+      html`
+        <vi-float-button-group id="group-outside" trigger="click">
+          <vi-float-button id="item-outside"></vi-float-button>
+        </vi-float-button-group>
+      `,
+      container,
+    );
+    const group = container.querySelector(
+      '#group-outside',
+    ) as ViFloatButtonGroup;
+    await group.updateComplete;
+
+    const triggerBtn = group.shadowRoot?.querySelector(
+      '.float-button-group__trigger',
+    ) as ViFloatButton;
+    const nativeTrigger = triggerBtn.shadowRoot?.querySelector('button');
+
+    // Open group
+    nativeTrigger?.click();
+    await group.updateComplete;
+    expect(group.open).toBe(true);
+
+    // Outside click on document
+    document.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    await group.updateComplete;
+    expect(group.open).toBe(false);
+  });
+
+  it('closes speed dial menu on child menu item click when closeOnSelect is true', async () => {
+    render(
+      html`
+        <vi-float-button-group id="group-select" trigger="click">
+          <vi-float-button id="action-item"></vi-float-button>
+        </vi-float-button-group>
+      `,
+      container,
+    );
+    const group = container.querySelector(
+      '#group-select',
+    ) as ViFloatButtonGroup;
+    const actionItem = container.querySelector(
+      '#action-item',
+    ) as ViFloatButton;
+    await group.updateComplete;
+    await actionItem.updateComplete;
+
+    const triggerBtn = group.shadowRoot?.querySelector(
+      '.float-button-group__trigger',
+    ) as ViFloatButton;
+    const nativeTrigger = triggerBtn.shadowRoot?.querySelector('button');
+
+    // Open group
+    nativeTrigger?.click();
+    await group.updateComplete;
+    expect(group.open).toBe(true);
+
+    let actionClicked = false;
+    actionItem.addEventListener('vi-float-button-click', () => {
+      actionClicked = true;
+    });
+
+    // Click child menu item
+    const childNative = actionItem.shadowRoot?.querySelector('button');
+    childNative?.click();
+    await group.updateComplete;
+
+    expect(actionClicked).toBe(true);
+    expect(group.open).toBe(false);
+  });
+
+  it('does not close speed dial menu on child click when close-on-select is false', async () => {
+    render(
+      html`
+        <vi-float-button-group
+          id="group-no-close"
+          trigger="click"
+          close-on-select="false"
+        >
+          <vi-float-button id="persist-item"></vi-float-button>
+        </vi-float-button-group>
+      `,
+      container,
+    );
+    const group = container.querySelector(
+      '#group-no-close',
+    ) as ViFloatButtonGroup;
+    const actionItem = container.querySelector(
+      '#persist-item',
+    ) as ViFloatButton;
+    await group.updateComplete;
+    await actionItem.updateComplete;
+
+    const triggerBtn = group.shadowRoot?.querySelector(
+      '.float-button-group__trigger',
+    ) as ViFloatButton;
+    const nativeTrigger = triggerBtn.shadowRoot?.querySelector('button');
+
+    // Open group
+    nativeTrigger?.click();
+    await group.updateComplete;
+    expect(group.open).toBe(true);
+
+    // Click child menu item
+    const childNative = actionItem.shadowRoot?.querySelector('button');
+    childNative?.click();
+    await group.updateComplete;
+
+    expect(group.open).toBe(true);
   });
 
   it('does not dispatch vi-float-button-open-change on initial render', async () => {

@@ -2352,12 +2352,13 @@ The [ViFloatButton](./src/float-button/vi-float-button.ts) component provides a 
 
 #### `<vi-float-button-group>` Properties & Attributes
 
-| Attribute    | Property    | Type                   | Default    | Description                                          |
-| :----------- | :---------- | :--------------------- | :--------- | :--------------------------------------------------- |
-| `shape`      | `shape`     | `'circle' \| 'square'` | `'circle'` | Geometry inherited by child buttons.                 |
-| `trigger`    | `trigger`   | `'click' \| 'hover'`   | `'hover'`  | Interaction mode to expand the speed dial menu.      |
-| `open`       | `open`      | `boolean`              | `false`    | Expanded menu state.                                 |
-| `close-icon` | `closeIcon` | `string`               | `'x'`      | Icon displayed on the trigger button when expanded. |
+| Attribute         | Property        | Type                   | Default    | Description                                                          |
+| :---------------- | :-------------- | :--------------------- | :--------- | :------------------------------------------------------------------- |
+| `shape`           | `shape`         | `'circle' \| 'square'` | `'circle'` | Geometry inherited by child buttons.                                 |
+| `trigger`         | `trigger`       | `'click' \| 'hover'`   | `'hover'`  | Interaction mode to expand the speed dial menu.                      |
+| `open`            | `open`          | `boolean`              | `false`    | Expanded menu state.                                                 |
+| `close-icon`      | `closeIcon`     | `string`               | `'x'`      | Icon displayed on the trigger button when expanded.                 |
+| `close-on-select` | `closeOnSelect` | `boolean`              | `true`     | Whether clicking a child action button collapses the speed dial menu |
 
 #### Slots
 

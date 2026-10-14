@@ -2,7 +2,7 @@
 
 **Package:** `@vialiq/web-components/float-button`  
 **Elements:** `<vi-float-button>`, `<vi-float-button-group>`  
-**Status:** 🔲 Planned — Phase 4 (Tier 4)  
+**Status:** ✅ Implemented  
 **Flux UI base:** `libs/flux-ui/components/_float-button.scss`  
 
 ---
@@ -61,6 +61,7 @@ type BadgeStatus = 'neutral' | 'primary' | 'success' | 'warning' | 'danger' | 'i
 | `trigger` | `trigger` | `'click' \| 'hover'` | `'hover'` | ✅ | Interaction mode to expand the menu |
 | `open` | `open` | `boolean` | `false` | ✅ | Expanded state of the speed dial menu |
 | `closeIcon` | `close-icon` | `string` | `'x'` | ✅ | Icon displayed on the trigger when expanded |
+| `closeOnSelect` | `close-on-select` | `boolean` | `true` | ✅ | Whether clicking a child action button collapses the speed dial menu |
 
 ---
 
@@ -157,13 +158,15 @@ background-color: var(--vi-float-button-bg, #{tokens.$layer-01});
 
 ## Keyboard Interactions
 
-| Key | Context | Behaviour |
-|-----|---------|-----------|
+| Key / Action | Context | Behaviour |
+|---|---|---|
 | `Tab` / `Shift+Tab` | Pinned or Speed Dial | Move focus to/from the float button or group trigger |
 | `Enter` / `Space` | `<vi-float-button>` | Activate button click or back-to-top action |
 | `Enter` / `Space` | `<vi-float-button-group>` | Toggle expanded menu state (when `trigger="click"`) |
 | `Escape` | `<vi-float-button-group>` | Collapse expanded speed dial menu and return focus to trigger |
 | `ArrowUp` / `ArrowDown` | `<vi-float-button-group>` | Move focus between speed dial menu items |
+| Outside click | `<vi-float-button-group>` | Dismiss open speed dial menu when `trigger="click"` |
+| Menu item click | `<vi-float-button-group>` | Activates item and collapses speed dial (when `close-on-select` is true) |
 
 ---
 

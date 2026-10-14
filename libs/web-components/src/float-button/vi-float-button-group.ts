@@ -61,6 +61,15 @@ export class ViFloatButtonGroup extends ViElement {
   @property({ type: String, reflect: true, attribute: 'close-icon' })
   accessor closeIcon = 'x';
 
+  /** Whether clicking a menu action item closes the speed dial menu. */
+  @property({
+    attribute: 'close-on-select',
+    converter: {
+      fromAttribute: (v: string | null) => v !== null && v !== 'false',
+    },
+  })
+  accessor closeOnSelect = true;
+
   /** Accessible label for the group. */
   @property({ attribute: 'aria-label' })
   override accessor ariaLabel: string | null = null;
@@ -89,9 +98,24 @@ export class ViFloatButtonGroup extends ViElement {
     item.tabIndex = item.disabled ? -1 : 0;
   }
 
+  private _handleDocumentClick = (event: MouseEvent): void => {
+    if (!this.open) return;
+    const path = event.composedPath();
+    if (!path.includes(this)) {
+      this.open = false;
+    }
+  };
+
+  private _handleMenuItemClick = (): void => {
+    if (this.open && this.closeOnSelect) {
+      this.open = false;
+    }
+  };
+
   override connectedCallback(): void {
     super.connectedCallback();
     this.addEventListener('keydown', this._handleKeyDown, true);
+    document.addEventListener('click', this._handleDocumentClick);
     if (this.hasUpdated) {
       this._syncChildrenProps();
     }
@@ -100,6 +124,7 @@ export class ViFloatButtonGroup extends ViElement {
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     this.removeEventListener('keydown', this._handleKeyDown, true);
+    document.removeEventListener('click', this._handleDocumentClick);
     this._previousMenuItems.forEach((item) => {
       this._restoreChild(item);
     });
@@ -135,7 +160,7 @@ export class ViFloatButtonGroup extends ViElement {
           void (async () => {
             await activeItem.updateComplete;
             if (!this.open) return;
-            activeItem.focus({ focusVisible: true });
+            activeItem.focus({ focusVisible: true } as FocusOptions);
           })();
         }
       }
@@ -411,6 +436,7 @@ export class ViFloatButtonGroup extends ViElement {
           role="menu"
           aria-hidden="${!this.open}"
           @focusin="${this._handleFocusIn}"
+          @vi-float-button-click="${this._handleMenuItemClick}"
         >
           <slot @slotchange="${this._handleSlotChange}"></slot>
         </div>

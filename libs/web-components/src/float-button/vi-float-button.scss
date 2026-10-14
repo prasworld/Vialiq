@@ -100,6 +100,10 @@
   outline-offset: 2px;
 }
 
+.float-button__description[hidden] {
+  display: none !important;
+}
+
 // Badge styles
 .float-button__badge {
   display: inline-flex;

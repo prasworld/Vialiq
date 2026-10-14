@@ -195,6 +195,7 @@ export class ViFloatButton extends FocusableMixin(ViElement) {
 
   @state() private accessor _hasSlottedIcon = false;
   @state() private accessor _hasSlottedTooltip = false;
+  @state() private accessor _hasSlottedDescription = false;
   private _scrollHandlerBound?: () => void;
   private _currentScrollContainer?: HTMLElement | Window;
   private _scrollTargetObserver?: MutationObserver;
@@ -211,6 +212,24 @@ export class ViFloatButton extends FocusableMixin(ViElement) {
     const slot = event.target as HTMLSlotElement;
     const nodes = slot.assignedNodes({ flatten: true });
     this._hasSlottedTooltip = nodes.some(
+      (node) =>
+        node.nodeType === Node.ELEMENT_NODE ||
+        (node.nodeType === Node.TEXT_NODE &&
+          (node.textContent ?? '').trim() !== ''),
+    );
+  }
+
+  private get _hasSlottedDescriptionContent(): boolean {
+    if (this._hasSlottedDescription) return true;
+    return Array.from(this.children).some(
+      (child) => child.getAttribute('slot') === 'description',
+    );
+  }
+
+  private _handleDescriptionSlotChange(event: Event): void {
+    const slot = event.target as HTMLSlotElement;
+    const nodes = slot.assignedNodes({ flatten: true });
+    this._hasSlottedDescription = nodes.some(
       (node) =>
         node.nodeType === Node.ELEMENT_NODE ||
         (node.nodeType === Node.TEXT_NODE &&
@@ -582,6 +601,24 @@ export class ViFloatButton extends FocusableMixin(ViElement) {
     `;
   }
 
+  private _renderDescription(): TemplateResult {
+    const hasDescription =
+      Boolean(this.description) || this._hasSlottedDescriptionContent;
+
+    return html`
+      <span
+        class="float-button__description"
+        part="description"
+        ?hidden="${!hasDescription}"
+      >
+        <slot
+          name="description"
+          @slotchange="${this._handleDescriptionSlotChange}"
+        >${this.description ?? ''}</slot>
+      </span>
+    `;
+  }
+
   private _renderButtonContent(): TemplateResult {
     const isSquare = this.shape === 'square';
     const isSm = this.size === 'sm';
@@ -636,13 +673,7 @@ export class ViFloatButton extends FocusableMixin(ViElement) {
           @click="${this._handleClick}"
         >
           ${this._renderBadge()} ${this._renderIcon()}
-          ${this.description
-            ? html`
-                <span class="float-button__description" part="description">
-                  <slot name="description">${this.description}</slot>
-                </span>
-              `
-            : html`<slot name="description"></slot>`}
+          ${this._renderDescription()}
           <slot></slot>
         </a>
       `;
@@ -664,13 +695,7 @@ export class ViFloatButton extends FocusableMixin(ViElement) {
         @click="${this._handleClick}"
       >
         ${this._renderBadge()} ${this._renderIcon()}
-        ${this.description
-          ? html`
-              <span class="float-button__description" part="description">
-                <slot name="description">${this.description}</slot>
-              </span>
-            `
-          : html`<slot name="description"></slot>`}
+        ${this._renderDescription()}
         <slot></slot>
       </button>
     `;
