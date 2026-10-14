@@ -1,4 +1,4 @@
-,# @vialiq/web-components
+# @vialiq/web-components
 
 Buildable and publishable Lit web component library for the Vi design system.
 
@@ -2262,6 +2262,177 @@ For highly complex rules (like matching a specific Regex or handling Credit Card
     }
   }}>
 </vi-masked-input>
+```
+
+---
+
+### Divider ([vi-divider](./src/divider/vi-divider.ts))
+
+The [ViDivider](./src/divider/vi-divider.ts) component provides a visual separator rule used to segment blocks of content, form sections, or inline items. It supports horizontal separation with optional embedded titles/labels, as well as vertical separation between inline controls (such as toolbars, headers, and breadcrumb segments).
+
+#### Properties & Attributes
+
+| Attribute        | Property        | Type                            | Default        | Description                                              |
+| :--------------- | :-------------- | :------------------------------ | :------------- | :------------------------------------------------------- |
+| `direction`      | `direction`     | `'horizontal' \| 'vertical'`    | `'horizontal'` | Separator orientation.                                   |
+| `text-placement` | `textPlacement` | `'left' \| 'center' \| 'right'` | `'center'`     | Text label alignment (horizontal only).                  |
+| `text-margin`    | `textMargin`    | `string \| number`              | `undefined`    | Margin offset from edge for `left` or `right` placement. |
+| `dashed`         | `dashed`        | `boolean`                       | `false`        | Renders line with a dashed stroke.                       |
+| `plain`          | `plain`         | `boolean`                       | `false`        | Renders text with regular weight and secondary colour.   |
+
+#### Slots
+
+- **Default Slot**: Text title or content embedded within a horizontal divider (ignored when `direction="vertical"`).
+
+#### CSS Parts
+
+- `divider`: The root separator container.
+- `line-start`: Line segment preceding the text label.
+- `text`: Text label wrapper container.
+- `line-end`: Line segment following the text label.
+
+#### Snippets
+
+**Basic Horizontal & Vertical Separators:**
+
+```html
+<!-- Horizontal section break -->
+<p>Top section content...</p>
+<vi-divider></vi-divider>
+<p>Bottom section content...</p>
+
+<!-- Vertical inline separator between toolbar actions -->
+<div style="display: flex; align-items: center; gap: 8px;">
+  <span>Item 1</span>
+  <vi-divider direction="vertical"></vi-divider>
+  <span>Item 2</span>
+  <vi-divider direction="vertical"></vi-divider>
+  <span>Item 3</span>
+</div>
+```
+
+**Divider with Titles & Custom Placements:**
+
+```html
+<!-- Centered title (default) -->
+<vi-divider>Section Title</vi-divider>
+
+<!-- Left-aligned title with margin offset -->
+<vi-divider text-placement="left" text-margin="24px">Demographic Details</vi-divider>
+
+<!-- Right-aligned plain text with dashed rule -->
+<vi-divider text-placement="right" dashed plain>Last updated: Today</vi-divider>
+```
+
+---
+
+### Float Button & Float Button Group ([vi-float-button](./src/float-button/vi-float-button.ts), [vi-float-button-group](./src/float-button/vi-float-button-group.ts))
+
+The [ViFloatButton](./src/float-button/vi-float-button.ts) component provides a floating action button positioned fixed over page content (typically bottom-right). It provides persistent access to high-frequency actions, back-to-top navigation, and expandable speed-dial menus via [ViFloatButtonGroup](./src/float-button/vi-float-button-group.ts).
+
+#### `<vi-float-button>` Properties & Attributes
+
+| Attribute           | Property           | Type                                                                       | Default     | Description                                                     |
+| :------------------ | :----------------- | :------------------------------------------------------------------------- | :---------- | :-------------------------------------------------------------- |
+| `shape`             | `shape`            | `'circle' \| 'square'`                                                     | `'circle'`  | Button geometry.                                                |
+| `type`              | `type`             | `'default' \| 'primary'`                                                   | `'default'` | Visual prominence type.                                         |
+| `size`              | `size`             | `'default' \| 'sm'`                                                        | `'default'` | Size scale: `default` (48px) or `sm` (40px).                    |
+| `description`       | `description`      | `string`                                                                   | `undefined` | Text description label under the icon.                          |
+| `tooltip`           | `tooltip`          | `string`                                                                   | `undefined` | Text tooltip displayed on hover/focus.                          |
+| `href`              | `href`             | `string`                                                                   | `undefined` | URL to navigate to (renders native `<a>` anchor when provided). |
+| `target`            | `target`           | `string`                                                                   | `undefined` | Anchor link target (`_blank`, `_self`, etc.).                  |
+| `badge`             | `badge`            | `number \| string`                                                         | `undefined` | Numeric count or text badge.                                    |
+| `badge-dot`         | `badgeDot`         | `boolean`                                                                  | `false`     | Displays a dot badge indicator.                                 |
+| `badge-status`      | `badgeStatus`      | `'neutral'\|'primary'\|'success'\|'warning'\|'danger'\|'info'`             | `'danger'`  | Badge semantic colour.                                          |
+| `back-top`          | `backTop`          | `boolean`                                                                  | `false`     | Enables smooth back-to-top scrolling mode.                      |
+| `visibility-height` | `visibilityHeight` | `number`                                                                   | `400`       | Scroll threshold (px) before backTop button appears.            |
+| `scroll-target`     | `scrollTarget`     | `string`                                                                   | `undefined` | CSS selector or element ID for custom scroll container.         |
+| `duration`          | `duration`         | `number`                                                                   | `450`       | Scroll animation duration in milliseconds.                      |
+| `disabled`          | `disabled`         | `boolean`                                                                  | `false`     | Disables button interactions.                                   |
+
+#### `<vi-float-button-group>` Properties & Attributes
+
+| Attribute         | Property        | Type                   | Default    | Description                                                          |
+| :---------------- | :-------------- | :--------------------- | :--------- | :------------------------------------------------------------------- |
+| `shape`           | `shape`         | `'circle' \| 'square'` | `'circle'` | Geometry inherited by child buttons.                                 |
+| `trigger`         | `trigger`       | `'click' \| 'hover'`   | `'hover'`  | Interaction mode to expand the speed dial menu.                      |
+| `open`            | `open`          | `boolean`              | `false`    | Expanded menu state.                                                 |
+| `close-icon`      | `closeIcon`     | `string`               | `'x'`      | Icon displayed on the trigger button when expanded.                 |
+| `close-on-select` | `closeOnSelect` | `boolean`              | `true`     | Whether clicking a child action button collapses the speed dial menu |
+
+#### Slots
+
+- **`<vi-float-button>`**:
+  - `icon`: Custom icon element (e.g. `<vi-icon name="...">`).
+  - `description`: Custom slotted description content underneath the icon.
+  - `tooltip`: Custom slotted rich tooltip content.
+  - Default slot: Fallback content.
+- **`<vi-float-button-group>`**:
+  - Default slot: Slotted child `<vi-float-button>` action items.
+  - `icon`: Main trigger button icon (when collapsed).
+  - `close-icon`: Custom close icon when expanded.
+  - `description`: Main trigger button description label.
+
+#### Events
+
+- `vi-float-button-click`: Dispatched by `<vi-float-button>` when activated. Detail: `{ originalEvent: MouseEvent }`.
+- `vi-float-button-back-top`: Dispatched by `<vi-float-button>` when back-top triggers scrolling. Detail: `{ scrollTarget: HTMLElement \| Window }`.
+- `vi-float-button-open-change`: Dispatched by `<vi-float-button-group>` when open state changes. Detail: `{ open: boolean }`.
+
+#### CSS Parts
+
+- **`<vi-float-button>`**: `control`, `button`, `icon`, `description`, `badge`
+- **`<vi-float-button-group>`**: `group`, `trigger`, `menu`
+
+#### Snippets
+
+**Basic Floating Action Button with Tooltip:**
+
+```html
+<vi-float-button tooltip="Help & Support" aria-label="Help">
+  <vi-icon slot="icon" name="help-circle"></vi-icon>
+</vi-float-button>
+```
+
+**Back-to-Top Button:**
+
+```html
+<!-- Window scroll back-to-top with threshold -->
+<vi-float-button
+  back-top
+  visibility-height="300"
+  tooltip="Back to Top"
+  aria-label="Back to Top"
+>
+</vi-float-button>
+
+<!-- Custom scroll container back-to-top -->
+<vi-float-button
+  back-top
+  scroll-target="#main-scroll-container"
+  visibility-height="200"
+  duration="450"
+  tooltip="Scroll to Top"
+>
+</vi-float-button>
+```
+
+**Speed Dial Action Group:**
+
+```html
+<vi-float-button-group trigger="click" aria-label="Quick Actions">
+  <vi-icon slot="icon" name="plus"></vi-icon>
+
+  <vi-float-button tooltip="Add Adverse Event">
+    <vi-icon slot="icon" name="alert-triangle"></vi-icon>
+  </vi-float-button>
+  <vi-float-button tooltip="Add Medication">
+    <vi-icon slot="icon" name="activity"></vi-icon>
+  </vi-float-button>
+  <vi-float-button tooltip="Print Report">
+    <vi-icon slot="icon" name="printer"></vi-icon>
+  </vi-float-button>
+</vi-float-button-group>
 ```
 
 ---

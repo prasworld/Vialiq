@@ -1,6 +1,13 @@
 export { ViElement } from './base/vi-element.js';
 export type { ViSize, ViStatus } from './base/vi-element.js';
 export type { ControlStatus } from './base/validity-mixin.js';
+export {
+  sanitizeUrl,
+  isSafeUrl,
+  ALLOWED_URL_SCHEMES,
+  getAllowedUrlSchemes,
+  isAllowedUrlScheme,
+} from './base/sanitize-url.js';
 export { ViButton } from './button/vi-button.js';
 export { ViCard } from './card/vi-card.js';
 export type {
@@ -118,3 +125,5 @@ export {
 } from './content-switcher/vi-content-switcher.js';
 export type { ContentSwitcherSize } from './content-switcher/vi-content-switcher.js';
 export * from './masked-input/index.js';
+export * from './float-button/index.js';
+export * from './divider/index.js';

@@ -1,5 +1,19 @@
+import type { PropertyValues } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { ViInput } from '../input/vi-input.js';
+
+interface MaskedInputInstance {
+  value: string;
+  unmaskedValue: string;
+  updateOptions(options: unknown): void;
+  destroy(): void;
+  on(event: string, handler: () => void): void;
+}
+
+type IMaskFactory = (
+  el: HTMLInputElement,
+  options: unknown,
+) => MaskedInputInstance;
 
 /**
  * vi-masked-input
@@ -29,7 +43,7 @@ export class ViMaskedInput extends ViInput {
    * Takes precedence over the string \`mask\` property.
    * @prop {any} maskOptions
    */
-  @property({ attribute: false }) accessor maskOptions: any = null;
+  @property({ attribute: false }) accessor maskOptions: Record<string, unknown> | null = null;
 
   /**
    * The unmasked, raw underlying value.
@@ -37,7 +51,7 @@ export class ViMaskedInput extends ViInput {
    */
   @property({ type: String, attribute: 'raw-value', reflect: true }) accessor rawValue = '';
 
-  private _maskInstance: any = null;
+  private _maskInstance: MaskedInputInstance | null = null;
 
   override async connectedCallback() {
     super.connectedCallback();
@@ -48,7 +62,7 @@ export class ViMaskedInput extends ViInput {
     // Lazy load IMask only if a mask/maskOptions is provided and component is mounted
     if ((this.mask || this.maskOptions) && !this._maskInstance) {
       const { default: IMask } = await import('imask');
-      this._initMask(IMask);
+      this._initMask(IMask as unknown as IMaskFactory);
     }
   }
 
@@ -60,7 +74,7 @@ export class ViMaskedInput extends ViInput {
     }
   }
 
-  override updated(changedProperties: Map<string, any>) {
+  override updated(changedProperties: PropertyValues) {
     super.updated(changedProperties);
 
     // If mask pattern or options change dynamically, update, init, or destroy IMask
@@ -73,7 +87,7 @@ export class ViMaskedInput extends ViInput {
         } else {
           import('imask').then(({ default: IMask }) => {
             if ((this.mask || this.maskOptions) && !this._maskInstance) {
-              this._initMask(IMask);
+              this._initMask(IMask as unknown as IMaskFactory);
             }
           });
         }
@@ -94,28 +108,29 @@ export class ViMaskedInput extends ViInput {
     }
   }
 
-  private _initMask(IMask: any) {
+  private _initMask(IMask: IMaskFactory) {
     const inputEl = this.shadowRoot?.querySelector('input');
     if (!inputEl) return;
 
     const options = this.maskOptions || { mask: this.mask };
 
-    this._maskInstance = IMask(inputEl, options);
+    const maskInstance = IMask(inputEl, options);
+    this._maskInstance = maskInstance;
 
     if (this.rawValue) {
-      this._maskInstance.unmaskedValue = this.rawValue;
-      this.value = this._maskInstance.value;
+      maskInstance.unmaskedValue = this.rawValue;
+      this.value = maskInstance.value;
     } else if (this.value) {
-      this._maskInstance.value = this.value;
-      this.rawValue = this._maskInstance.unmaskedValue;
+      maskInstance.value = this.value;
+      this.rawValue = maskInstance.unmaskedValue;
     }
 
     // Handle cut/paste/type
-    this._maskInstance.on('accept', () => {
+    maskInstance.on('accept', () => {
       // Suppress the native events of ViInput when masked so we don't fire twice
       // We do this by keeping internal states in sync before native handlers fire
-      this.value = this._maskInstance.value;
-      this.rawValue = this._maskInstance.unmaskedValue;
+      this.value = maskInstance.value;
+      this.rawValue = maskInstance.unmaskedValue;
 
       this.dispatchEvent(
         new CustomEvent('vi-masked-input-input', {

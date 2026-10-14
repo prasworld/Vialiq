@@ -384,6 +384,26 @@
       "types": "./time-picker/vi-time-picker.d.ts",
       "default": "./time-picker/vi-time-picker.js"
     },
+    "./float-button": {
+      "types": "./float-button/index.d.ts",
+      "default": "./float-button/index.js"
+    },
+    "./float-button/vi-float-button": {
+      "types": "./float-button/vi-float-button.d.ts",
+      "default": "./float-button/vi-float-button.js"
+    },
+    "./float-button/vi-float-button-group": {
+      "types": "./float-button/vi-float-button-group.d.ts",
+      "default": "./float-button/vi-float-button-group.js"
+    },
+    "./divider": {
+      "types": "./divider/index.d.ts",
+      "default": "./divider/index.js"
+    },
+    "./divider/vi-divider": {
+      "types": "./divider/vi-divider.d.ts",
+      "default": "./divider/vi-divider.js"
+    },
     "./*": {
       "types": "./*.d.ts",
       "default": "./*.js"
@@ -448,7 +468,9 @@
     "upload/",
     "content-switcher/",
     "masked-input/",
-    "time-picker/"
+    "time-picker/",
+    "float-button/",
+    "divider/"
   ],
   "peerDependenciesMeta": {
     "flatpickr": {
