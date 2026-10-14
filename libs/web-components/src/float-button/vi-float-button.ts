@@ -48,7 +48,7 @@ export type BadgeStatus =
  * @attr back-top - Enable back-to-top scroll behavior
  * @attr visibility-height - Scroll threshold (px) before backTop button appears (default: 400)
  * @attr scroll-target - CSS selector or element ID for custom scroll container
- * @attr duration - Scroll animation duration in milliseconds (default: 450)
+ * @attr duration - Scroll animation duration in milliseconds for window and custom containers (default: 450, 0 for instant)
  * @attr disabled - Disables interactions
  *
  * @slot icon - Custom icon element
@@ -157,7 +157,7 @@ export class ViFloatButton extends FocusableMixin(ViElement) {
   @property({ type: String, attribute: 'scroll-target' })
   accessor scrollTarget: string | undefined = undefined;
 
-  /** Scroll animation duration in milliseconds. */
+  /** Scroll animation duration in milliseconds (applies to both window and custom scroll targets; 0 for instant). */
   @property({ type: Number })
   accessor duration = 450;
 
@@ -194,10 +194,29 @@ export class ViFloatButton extends FocusableMixin(ViElement) {
   accessor hiddenBackTop = false;
 
   @state() private accessor _hasSlottedIcon = false;
+  @state() private accessor _hasSlottedTooltip = false;
   private _scrollHandlerBound?: () => void;
   private _currentScrollContainer?: HTMLElement | Window;
   private _scrollTargetObserver?: MutationObserver;
   private _scrollAnimationId?: number;
+
+  private get _hasSlottedTooltipContent(): boolean {
+    if (this._hasSlottedTooltip) return true;
+    return Array.from(this.children).some(
+      (child) => child.getAttribute('slot') === 'tooltip',
+    );
+  }
+
+  private _handleTooltipSlotChange(event: Event): void {
+    const slot = event.target as HTMLSlotElement;
+    const nodes = slot.assignedNodes({ flatten: true });
+    this._hasSlottedTooltip = nodes.some(
+      (node) =>
+        node.nodeType === Node.ELEMENT_NODE ||
+        (node.nodeType === Node.TEXT_NODE &&
+          (node.textContent ?? '').trim() !== ''),
+    );
+  }
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -439,6 +458,7 @@ export class ViFloatButton extends FocusableMixin(ViElement) {
 
   private _scrollToTop(): void {
     const container = this._resolveScrollContainer();
+    const isWindow = container instanceof Window;
     const prefersReducedMotion = window.matchMedia(
       '(prefers-reduced-motion: reduce)',
     ).matches;
@@ -446,68 +466,80 @@ export class ViFloatButton extends FocusableMixin(ViElement) {
       typeof this.duration === 'number' && !isNaN(this.duration)
         ? Math.max(0, this.duration)
         : 450;
-    const behavior: ScrollBehavior =
-      prefersReducedMotion || duration === 0 ? 'auto' : 'smooth';
 
     this._cancelScrollAnimation();
 
-    if (container instanceof Window) {
-      window.scrollTo({ top: 0, behavior });
-      if (document.documentElement) {
-        document.documentElement.scrollTop = 0;
+    const getScrollTop = (): number => {
+      if (isWindow) {
+        return (
+          window.scrollY ??
+          window.pageYOffset ??
+          document.documentElement?.scrollTop ??
+          document.body?.scrollTop ??
+          0
+        );
       }
-      if (document.body) {
-        document.body.scrollTop = 0;
-      }
-    } else {
-      const startTop = container.scrollTop ?? 0;
+      return (container as HTMLElement).scrollTop ?? 0;
+    };
 
-      if (prefersReducedMotion || duration === 0 || startTop <= 0) {
-        if (typeof container.scrollTo === 'function') {
+    const setScrollTop = (top: number): void => {
+      if (isWindow) {
+        if (typeof window.scrollTo === 'function') {
           try {
-            container.scrollTo({ top: 0, behavior: 'auto' });
+            window.scrollTo({ top, behavior: 'auto' });
           } catch {
-            // Ignore
-          }
-        }
-        container.scrollTop = 0;
-      } else {
-        const startTime = performance.now();
-        const step = (currentTime: number): void => {
-          const elapsed = currentTime - startTime;
-          const progress = Math.min(elapsed / duration, 1);
-          const easedProgress = easeInOutCubic(progress);
-          const currentTop = Math.max(
-            0,
-            Math.round(startTop * (1 - easedProgress)),
-          );
-
-          if (typeof container.scrollTo === 'function') {
             try {
-              container.scrollTo({ top: currentTop, behavior: 'auto' });
+              window.scrollTo(0, top);
             } catch {
               // Ignore
             }
           }
-          container.scrollTop = currentTop;
-
-          if (progress < 1) {
-            this._scrollAnimationId = requestAnimationFrame(step);
-          } else {
-            this._scrollAnimationId = undefined;
-            if (typeof container.scrollTo === 'function') {
-              try {
-                container.scrollTo({ top: 0, behavior: 'auto' });
-              } catch {
-                // Ignore
-              }
-            }
-            container.scrollTop = 0;
+        }
+        if (document.documentElement) {
+          document.documentElement.scrollTop = top;
+        }
+        if (document.body) {
+          document.body.scrollTop = top;
+        }
+      } else {
+        const el = container as HTMLElement;
+        if (typeof el.scrollTo === 'function') {
+          try {
+            el.scrollTo({ top, behavior: 'auto' });
+          } catch {
+            // Ignore
           }
-        };
-
-        this._scrollAnimationId = requestAnimationFrame(step);
+        }
+        el.scrollTop = top;
       }
+    };
+
+    const startTop = getScrollTop();
+
+    if (prefersReducedMotion || duration === 0 || startTop <= 0) {
+      setScrollTop(0);
+    } else {
+      const startTime = performance.now();
+      const step = (currentTime: number): void => {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const easedProgress = easeInOutCubic(progress);
+        const currentTop = Math.max(
+          0,
+          Math.round(startTop * (1 - easedProgress)),
+        );
+
+        setScrollTop(currentTop);
+
+        if (progress < 1) {
+          this._scrollAnimationId = requestAnimationFrame(step);
+        } else {
+          this._scrollAnimationId = undefined;
+          setScrollTop(0);
+        }
+      };
+
+      this._scrollAnimationId = requestAnimationFrame(step);
     }
 
     this.dispatchEvent(
@@ -646,15 +678,30 @@ export class ViFloatButton extends FocusableMixin(ViElement) {
 
   override render(): TemplateResult {
     const buttonContent = this._renderButtonContent();
+    const hasTooltip =
+      (Boolean(this.tooltip) || this._hasSlottedTooltipContent) &&
+      !this.disabled;
 
-    const inner =
-      this.tooltip && !this.disabled
-        ? html`
-            <vi-tooltip content="${this.tooltip}" placement="left">
-              ${buttonContent}
-            </vi-tooltip>
-          `
-        : buttonContent;
+    const inner = hasTooltip
+      ? html`
+          <vi-tooltip placement="left" .content="${this.tooltip || ''}">
+            ${buttonContent}
+            <slot
+              name="tooltip"
+              slot="content"
+              @slotchange="${this._handleTooltipSlotChange}"
+            >${this.tooltip ?? nothing}</slot>
+          </vi-tooltip>
+        `
+      : html`
+          ${buttonContent}
+          <div hidden style="display: none;">
+            <slot
+              name="tooltip"
+              @slotchange="${this._handleTooltipSlotChange}"
+            ></slot>
+          </div>
+        `;
 
     return html`
       <div class="float-button__control" part="control">

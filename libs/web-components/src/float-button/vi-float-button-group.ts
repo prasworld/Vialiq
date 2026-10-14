@@ -68,21 +68,78 @@ export class ViFloatButtonGroup extends ViElement {
   @state() private accessor _hasSlottedIcon = false;
   @state() private accessor _hasSlottedCloseIcon = false;
 
+  /**
+   * When true, the next `updated()` cycle will focus the first menu item.
+   * This avoids calling focus() before Lit has reflected the [open] attribute
+   * (which controls CSS visibility).
+   */
+  private _pendingFocusOnOpen = false;
+
+  /**
+   * Tracks previously assigned menu items so that when a child is removed from the
+   * group (or on group teardown), its standalone state can be restored.
+   */
+  private _previousMenuItems: ViFloatButton[] = [];
+
+  private _restoreChild(item: ViFloatButton): void {
+    item.inGroup = false;
+    item.tabbable = true;
+    (item as unknown as { _savedTabIndex?: number })._savedTabIndex =
+      item.disabled ? -1 : 0;
+    item.tabIndex = item.disabled ? -1 : 0;
+  }
+
   override connectedCallback(): void {
     super.connectedCallback();
     this.addEventListener('keydown', this._handleKeyDown, true);
+    if (this.hasUpdated) {
+      this._syncChildrenProps();
+    }
   }
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     this.removeEventListener('keydown', this._handleKeyDown, true);
+    this._previousMenuItems.forEach((item) => {
+      this._restoreChild(item);
+    });
+    this._previousMenuItems = [];
   }
 
   override updated(changedProperties: PropertyValues): void {
     super.updated(changedProperties);
 
     if (changedProperties.has('open')) {
+      // On close: return focus to trigger if it was inside a menu item
+      if (
+        !this.open &&
+        this._getAllMenuItems().some((item) => item.matches(':focus-within'))
+      ) {
+        const triggerBtn = this.shadowRoot?.querySelector(
+          '.float-button-group__trigger',
+        ) as ViFloatButton | null;
+        triggerBtn?.focus();
+      }
+
       this._updateTabbableItems();
+
+      // On open: focus the first item above trigger once the child has rendered.
+      // visibility flips instantly (no CSS transition), so we only need
+      // the child's inner <button> to have tabindex="0" before calling focus().
+      if (this.open && this._pendingFocusOnOpen) {
+        this._pendingFocusOnOpen = false;
+        const items = this._getMenuItems();
+        const activeItem = items[items.length - 1];
+        if (activeItem) {
+          this._setActiveItem(activeItem);
+          void (async () => {
+            await activeItem.updateComplete;
+            if (!this.open) return;
+            activeItem.focus({ focusVisible: true });
+          })();
+        }
+      }
+
       const oldOpen = changedProperties.get('open');
       if (oldOpen !== undefined && oldOpen !== this.open) {
         this.dispatchEvent(
@@ -101,13 +158,24 @@ export class ViFloatButtonGroup extends ViElement {
   }
 
   private _syncChildrenProps(): void {
-    const items = this._getAllMenuItems();
-    items.forEach((item) => {
+    const currentItems = this._getAllMenuItems();
+
+    // Restore standalone state on children removed from the group
+    const removedItems = this._previousMenuItems.filter(
+      (prev) => !currentItems.includes(prev),
+    );
+    removedItems.forEach((item) => {
+      this._restoreChild(item);
+    });
+
+    currentItems.forEach((item) => {
       item.inGroup = true;
       if (!item.hasAttribute('shape')) {
         item.shape = this.shape;
       }
     });
+
+    this._previousMenuItems = [...currentItems];
     this._updateTabbableItems();
   }
 
@@ -192,20 +260,14 @@ export class ViFloatButtonGroup extends ViElement {
       event.stopPropagation();
       this.open = !this.open;
       if (this.open) {
-        const items = this._getMenuItems();
-        const activeItem = items[items.length - 1];
-        this._setActiveItem(activeItem);
-        if (isKeyboard) {
-          requestAnimationFrame(() => {
-            activeItem?.focus();
-          });
-        }
+        this._pendingFocusOnOpen = true;
       }
     }
   }
 
   private _handleMouseEnter(): void {
-    if (this.trigger === 'hover') {
+    if (this.trigger === 'hover' && !this.open) {
+      this._pendingFocusOnOpen = true;
       this.open = true;
     }
   }
@@ -244,13 +306,8 @@ export class ViFloatButtonGroup extends ViElement {
 
         if (isTrigger) {
           event.preventDefault();
+          this._pendingFocusOnOpen = true;
           this.open = true;
-          requestAnimationFrame(() => {
-            const items = this._getMenuItems();
-            const activeItem = items[items.length - 1];
-            this._setActiveItem(activeItem);
-            activeItem?.focus();
-          });
           return;
         }
       }
@@ -285,8 +342,7 @@ export class ViFloatButtonGroup extends ViElement {
         let nextIndex = 0;
 
         if (event.key === 'ArrowUp') {
-          nextIndex =
-            activeIndex <= 0 ? items.length - 1 : activeIndex - 1;
+          nextIndex = activeIndex <= 0 ? items.length - 1 : activeIndex - 1;
         } else {
           nextIndex =
             activeIndex >= items.length - 1 || activeIndex === -1
@@ -321,18 +377,17 @@ export class ViFloatButtonGroup extends ViElement {
           @slotchange="${this._handleCloseIconSlotChange}"
         >
           ${!this._hasSlottedCloseIcon
-            ? html`<vi-icon name="${closeIconName}" class="default-icon"></vi-icon>`
+            ? html`<vi-icon
+                name="${closeIconName}"
+                class="default-icon"
+              ></vi-icon>`
             : nothing}
         </slot>
       `;
     }
 
     return html`
-      <slot
-        name="icon"
-        slot="icon"
-        @slotchange="${this._handleIconSlotChange}"
-      >
+      <slot name="icon" slot="icon" @slotchange="${this._handleIconSlotChange}">
         ${!this._hasSlottedIcon
           ? html`<vi-icon name="plus" class="default-icon"></vi-icon>`
           : nothing}

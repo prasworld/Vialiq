@@ -1,13 +1,68 @@
 /**
- * Safe schemes allowed for navigation.
- * All other schemes (e.g. javascript:, data:, vbscript:, file:, blob:) are rejected.
+ * Private policy set used for URL validation.
+ * Internal to this module to prevent external callers from mutating component URL policies.
  */
-export const ALLOWED_URL_SCHEMES = new Set([
+const INTERNAL_ALLOWED_URL_SCHEMES: ReadonlySet<string> = new Set([
   'http:',
   'https:',
   'mailto:',
   'tel:',
 ]);
+
+class ReadonlySetSnapshot<T> extends Set<T> {
+  private _frozen = false;
+
+  constructor(iterable?: Iterable<T> | null) {
+    super(iterable);
+    this._frozen = true;
+  }
+
+  override add(): this {
+    if (!this._frozen) {
+      return super.add(...(arguments as unknown as [T]));
+    }
+    throw new TypeError('Cannot mutate read-only ALLOWED_URL_SCHEMES set');
+  }
+  override delete(): boolean {
+    if (!this._frozen) {
+      return super.delete(...(arguments as unknown as [T]));
+    }
+    throw new TypeError('Cannot mutate read-only ALLOWED_URL_SCHEMES set');
+  }
+  override clear(): void {
+    if (!this._frozen) {
+      super.clear();
+      return;
+    }
+    throw new TypeError('Cannot mutate read-only ALLOWED_URL_SCHEMES set');
+  }
+}
+
+/**
+ * Read-only snapshot of safe URL schemes allowed for navigation.
+ * All other schemes (e.g. javascript:, data:, vbscript:, file:, blob:) are rejected.
+ */
+export const ALLOWED_URL_SCHEMES: ReadonlySet<string> = Object.freeze(
+  new ReadonlySetSnapshot(INTERNAL_ALLOWED_URL_SCHEMES),
+);
+
+/**
+ * Returns a fresh read-only snapshot set of the allowed URL schemes.
+ */
+export function getAllowedUrlSchemes(): ReadonlySet<string> {
+  return new Set(INTERNAL_ALLOWED_URL_SCHEMES);
+}
+
+/**
+ * Checks whether the given URL scheme (e.g. 'https:' or 'https') is allowed.
+ */
+export function isAllowedUrlScheme(scheme: string): boolean {
+  if (typeof scheme !== 'string') return false;
+  const normalized = scheme.endsWith(':')
+    ? scheme.toLowerCase()
+    : `${scheme.toLowerCase()}:`;
+  return INTERNAL_ALLOWED_URL_SCHEMES.has(normalized);
+}
 
 /**
  * Regex matching dangerous and executable URI schemes.
@@ -83,7 +138,7 @@ export function sanitizeUrl(url?: string | null): string | undefined {
   // Check using WHATWG URL parsing with an internal dummy base
   try {
     const parsed = new URL(sanitized, 'https://vialiq.internal');
-    if (!ALLOWED_URL_SCHEMES.has(parsed.protocol)) {
+    if (!INTERNAL_ALLOWED_URL_SCHEMES.has(parsed.protocol)) {
       return undefined;
     }
     return sanitized;

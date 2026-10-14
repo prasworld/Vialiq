@@ -45,8 +45,8 @@
 }
 
 // Host-level active & pressed state reflection
-:host(:active) .float-button:not([disabled]),
-:host([aria-pressed='true']) .float-button {
+:host(:active) .float-button:not([disabled]):not([aria-disabled='true']),
+:host([aria-pressed='true']) .float-button:not([disabled]):not([aria-disabled='true']) {
   background-color: var(
     --vi-float-button-active-bg,
     #{tokens.$layer-hover-02}
@@ -63,8 +63,8 @@
   transform: translateY(1px) scale(0.97);
 }
 
-:host([type='primary']:active) .float-button:not([disabled]),
-:host([type='primary'][aria-pressed='true']) .float-button {
+:host([type='primary']:active) .float-button:not([disabled]):not([aria-disabled='true']),
+:host([type='primary'][aria-pressed='true']) .float-button:not([disabled]):not([aria-disabled='true']) {
   background-color: var(
     --vi-float-button-active-bg-primary,
     #{tokens.$color-blue-900}
@@ -86,8 +86,25 @@
   }
 }
 
+.float-button__icon,
+.default-icon {
+  pointer-events: none;
+}
+
+// Ensure speed dial menu items show the focus ring on :focus as well,
+// since programmatic focus after mouse interactions does not match :focus-visible.
+:host([in-group]:not(.float-button-group__trigger)) .float-button:focus,
+:host([in-group]:not(.float-button-group__trigger)) .float-button:focus-visible {
+  outline: var(--vi-border-width-base, 2px) solid
+    var(--vi-float-button-focus-ring-color, #{tokens.$focus});
+  outline-offset: 2px;
+}
+
 // Badge styles
 .float-button__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   position: absolute;
   top: -4px;
   inset-inline-end: -4px;
@@ -186,8 +203,7 @@
   margin-bottom: var(--vi-float-button-group-gap, #{tokens.$spacing-xs});
   transition:
     opacity var(--vi-float-button-transition-duration, 200ms) cubic-bezier(0.4, 0, 0.2, 1),
-    transform var(--vi-float-button-transition-duration, 200ms) cubic-bezier(0.4, 0, 0.2, 1),
-    visibility var(--vi-float-button-transition-duration, 200ms);
+    transform var(--vi-float-button-transition-duration, 200ms) cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 :host(vi-float-button-group:not([open])) .float-button-group__menu {

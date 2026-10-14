@@ -40,7 +40,7 @@ Wraps a native `<button>` or `<a>` element in Shadow DOM with full keyboard acce
 | `backTop` | `back-top` | `boolean` | `false` | ✅ | Enables smooth back-to-top scrolling mode |
 | `visibilityHeight` | `visibility-height` | `number` | `400` | ✅ | Scroll threshold (px) before backTop button appears |
 | `scrollTarget` | `scroll-target` | `string` | `undefined` | — | CSS selector or ID of scrollable container (defaults to `window`) |
-| `duration` | `duration` | `number` | `450` | — | Scroll animation duration (ms) |
+| `duration` | `duration` | `number` | `450` | — | Scroll animation duration (ms) for window and custom scroll targets (0 for instant) |
 | `disabled` | `disabled` | `boolean` | `false` | ✅ | Disables interactions |
 
 #### Types
@@ -72,7 +72,7 @@ type BadgeStatus = 'neutral' | 'primary' | 'success' | 'warning' | 'danger' | 'i
 |------|-------------|
 | `icon` | Icon element (e.g. `<vi-icon name="...">`) |
 | `description` | Slotted description content underneath icon |
-| `tooltip` | Slotted custom tooltip content (e.g. rich `<vi-tooltip>`) |
+| `tooltip` | Slotted custom tooltip content (rendered inside `vi-tooltip`'s content slot) |
 | *(default)* | Fallback button content |
 
 #### `<vi-float-button-group>` Slots

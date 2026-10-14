@@ -256,26 +256,60 @@ describe('vi-float-button', () => {
 
       expect(backTopFired).toBe(true);
 
-      const prefersReducedMotion = window.matchMedia(
-        '(prefers-reduced-motion: reduce)',
-      ).matches;
-      const expectedBehavior = prefersReducedMotion ? 'auto' : 'smooth';
-
       expect(scrollToSpy.calledOnce).toBe(true);
       expect(
         scrollToSpy.calledWith(
           sinon.match({
             top: 0,
-            behavior: expectedBehavior,
+            behavior: 'auto',
           }),
         ),
       ).toBe(true);
       expect(scrollToSpy.firstCall.args[0]).toEqual({
         top: 0,
-        behavior: expectedBehavior,
+        behavior: 'auto',
       });
     } finally {
       scrollToSpy.restore();
+    }
+  });
+
+  it('animates window scroll to top over configured duration', async () => {
+    const spacer = document.createElement('div');
+    spacer.id = 'tall-window-spacer';
+    spacer.style.height = '3000px';
+    document.body.appendChild(spacer);
+    window.scrollTo(0, 800);
+
+    const scrollToSpy = sinon.spy(window, 'scrollTo');
+
+    try {
+      render(
+        html`<vi-float-button
+          id="btn-window-dur"
+          back-top
+          duration="100"
+        ></vi-float-button>`,
+        container,
+      );
+      const btn = container.querySelector('#btn-window-dur') as ViFloatButton;
+      await btn.updateComplete;
+
+      const nativeBtn = btn.shadowRoot?.querySelector('button');
+      nativeBtn?.click();
+
+      // Wait for animation duration to complete
+      await new Promise((resolve) => setTimeout(resolve, 180));
+
+      // Window scroll was initiated with timed step frames and reached top 0
+      expect(scrollToSpy.called).toBe(true);
+      const lastCall = scrollToSpy.lastCall.args[0] as ScrollToOptions;
+      expect(lastCall.top).toBe(0);
+      expect(lastCall.behavior).toBe('auto');
+    } finally {
+      scrollToSpy.restore();
+      spacer.remove();
+      window.scrollTo(0, 0);
     }
   });
 
@@ -386,7 +420,9 @@ describe('vi-float-button', () => {
     await btn.updateComplete;
     expect(btn.duration).toBe(600);
 
-    const defaultBtn = document.createElement('vi-float-button') as ViFloatButton;
+    const defaultBtn = document.createElement(
+      'vi-float-button',
+    ) as ViFloatButton;
     expect(defaultBtn.duration).toBe(450);
   });
 
@@ -463,7 +499,9 @@ describe('vi-float-button', () => {
     const btn = container.querySelector('#btn-tooltip-label') as ViFloatButton;
     await btn.updateComplete;
 
-    const controlWrapper = btn.shadowRoot?.querySelector('.float-button__control');
+    const controlWrapper = btn.shadowRoot?.querySelector(
+      '.float-button__control',
+    );
     const nativeBtn = btn.shadowRoot?.querySelector('button');
     const tooltipEl = btn.shadowRoot?.querySelector('vi-tooltip');
 
@@ -486,6 +524,77 @@ describe('vi-float-button', () => {
 
     const tooltipPanel = tooltipEl?.shadowRoot?.querySelector('.tooltip-panel');
     expect(tooltipPanel?.id).toBe(describedBy);
+  });
+
+  it('supports custom slotted tooltip content without string tooltip property', async () => {
+    render(
+      html`
+        <vi-float-button id="btn-slotted-tooltip">
+          <span slot="tooltip" id="custom-tt-node">Custom Rich Tooltip Content</span>
+        </vi-float-button>
+      `,
+      container,
+    );
+    const btn = container.querySelector(
+      '#btn-slotted-tooltip',
+    ) as ViFloatButton;
+    await btn.updateComplete;
+
+    const tooltipEl = btn.shadowRoot?.querySelector('vi-tooltip');
+    expect(tooltipEl).toBeTruthy();
+    await tooltipEl?.updateComplete;
+
+    // Allow microtask in vi-tooltip firstUpdated to complete
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    const tooltipSlot = tooltipEl?.querySelector(
+      'slot[name="tooltip"]',
+    ) as HTMLSlotElement;
+    expect(tooltipSlot).toBeTruthy();
+    const customNode = container.querySelector('#custom-tt-node');
+    expect(tooltipSlot.assignedElements()).toContain(customNode!);
+
+    const nativeBtn = btn.shadowRoot?.querySelector('button');
+    expect(nativeBtn?.hasAttribute('aria-describedby')).toBe(true);
+    const describedBy = nativeBtn?.getAttribute('aria-describedby');
+    const tooltipPanel = tooltipEl?.shadowRoot?.querySelector('.tooltip-panel');
+    expect(tooltipPanel?.id).toBe(describedBy);
+  });
+
+  it('does not render vi-tooltip when neither tooltip property nor slotted tooltip is provided', async () => {
+    render(
+      html`<vi-float-button id="btn-no-tooltip"></vi-float-button>`,
+      container,
+    );
+    const btn = container.querySelector('#btn-no-tooltip') as ViFloatButton;
+    await btn.updateComplete;
+
+    const tooltipEl = btn.shadowRoot?.querySelector('vi-tooltip');
+    expect(tooltipEl).toBeNull();
+  });
+
+  it('prefers slotted tooltip content over string fallback when both are provided', async () => {
+    render(
+      html`
+        <vi-float-button id="btn-both-tooltip" tooltip="Fallback String">
+          <span slot="tooltip" id="override-tt">Overriding Slotted Tooltip</span>
+        </vi-float-button>
+      `,
+      container,
+    );
+    const btn = container.querySelector('#btn-both-tooltip') as ViFloatButton;
+    await btn.updateComplete;
+
+    const tooltipEl = btn.shadowRoot?.querySelector('vi-tooltip');
+    expect(tooltipEl).toBeTruthy();
+    await tooltipEl?.updateComplete;
+
+    const tooltipSlot = tooltipEl?.querySelector(
+      'slot[name="tooltip"]',
+    ) as HTMLSlotElement;
+    expect(tooltipSlot).toBeTruthy();
+    const overrideNode = container.querySelector('#override-tt');
+    expect(tooltipSlot.assignedElements()).toContain(overrideNode!);
   });
 });
 
@@ -562,7 +671,9 @@ describe('vi-float-button-group', () => {
 
   it('does not dispatch vi-float-button-open-change on initial render', async () => {
     let callCount = 0;
-    const group = document.createElement('vi-float-button-group') as ViFloatButtonGroup;
+    const group = document.createElement(
+      'vi-float-button-group',
+    ) as ViFloatButtonGroup;
     group.addEventListener('vi-float-button-open-change', () => {
       callCount++;
     });
@@ -606,12 +717,17 @@ describe('vi-float-button-group', () => {
     render(
       html`
         <vi-float-button-group id="group-tooltip-esc" trigger="click" open>
-          <vi-float-button id="item-tooltip-esc" tooltip="Quick Action"></vi-float-button>
+          <vi-float-button
+            id="item-tooltip-esc"
+            tooltip="Quick Action"
+          ></vi-float-button>
         </vi-float-button-group>
       `,
       container,
     );
-    const group = container.querySelector('#group-tooltip-esc') as ViFloatButtonGroup;
+    const group = container.querySelector(
+      '#group-tooltip-esc',
+    ) as ViFloatButtonGroup;
     const item = container.querySelector('#item-tooltip-esc') as ViFloatButton;
     await group.updateComplete;
     await item.updateComplete;
@@ -622,7 +738,11 @@ describe('vi-float-button-group', () => {
     expect(nativeBtn).toBeTruthy();
 
     nativeBtn?.dispatchEvent(
-      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, composed: true }),
+      new KeyboardEvent('keydown', {
+        key: 'Escape',
+        bubbles: true,
+        composed: true,
+      }),
     );
     await group.updateComplete;
 
@@ -760,20 +880,36 @@ describe('vi-float-button-group', () => {
     await nav3.updateComplete;
 
     // Home key focuses first item
-    group.dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', bubbles: true }));
-    expect(document.activeElement === nav1 || nav1.matches(':focus-within')).toBe(true);
+    group.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Home', bubbles: true }),
+    );
+    expect(
+      document.activeElement === nav1 || nav1.matches(':focus-within'),
+    ).toBe(true);
 
     // End key focuses last item
-    group.dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true }));
-    expect(document.activeElement === nav3 || nav3.matches(':focus-within')).toBe(true);
+    group.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'End', bubbles: true }),
+    );
+    expect(
+      document.activeElement === nav3 || nav3.matches(':focus-within'),
+    ).toBe(true);
 
     // ArrowUp from last item moves to second item
-    group.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
-    expect(document.activeElement === nav2 || nav2.matches(':focus-within')).toBe(true);
+    group.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }),
+    );
+    expect(
+      document.activeElement === nav2 || nav2.matches(':focus-within'),
+    ).toBe(true);
 
     // ArrowDown from second item moves to third item
-    group.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
-    expect(document.activeElement === nav3 || nav3.matches(':focus-within')).toBe(true);
+    group.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }),
+    );
+    expect(
+      document.activeElement === nav3 || nav3.matches(':focus-within'),
+    ).toBe(true);
   });
 
   it('skips disabled buttons during keyboard navigation in group', async () => {
@@ -781,7 +917,11 @@ describe('vi-float-button-group', () => {
       html`
         <vi-float-button-group id="group-skip-disabled" trigger="click" open>
           <vi-float-button id="item-d1" description="First"></vi-float-button>
-          <vi-float-button id="item-d2" description="Second" disabled></vi-float-button>
+          <vi-float-button
+            id="item-d2"
+            description="Second"
+            disabled
+          ></vi-float-button>
           <vi-float-button id="item-d3" description="Third"></vi-float-button>
         </vi-float-button-group>
       `,
@@ -802,19 +942,25 @@ describe('vi-float-button-group', () => {
     group.dispatchEvent(
       new KeyboardEvent('keydown', { key: 'Home', bubbles: true }),
     );
-    expect(document.activeElement === item1 || item1.matches(':focus-within')).toBe(true);
+    expect(
+      document.activeElement === item1 || item1.matches(':focus-within'),
+    ).toBe(true);
 
     // ArrowDown from item1 skips item2 (disabled) and focuses item3
     group.dispatchEvent(
       new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }),
     );
-    expect(document.activeElement === item3 || item3.matches(':focus-within')).toBe(true);
+    expect(
+      document.activeElement === item3 || item3.matches(':focus-within'),
+    ).toBe(true);
 
     // ArrowUp from item3 skips item2 (disabled) and focuses item1
     group.dispatchEvent(
       new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }),
     );
-    expect(document.activeElement === item1 || item1.matches(':focus-within')).toBe(true);
+    expect(
+      document.activeElement === item1 || item1.matches(':focus-within'),
+    ).toBe(true);
   });
 
   it('removes href and sets aria-disabled on anchor when disabled', async () => {
@@ -826,9 +972,7 @@ describe('vi-float-button-group', () => {
       ></vi-float-button>`,
       container,
     );
-    const btn = container.querySelector(
-      '#btn-link-disabled',
-    ) as ViFloatButton;
+    const btn = container.querySelector('#btn-link-disabled') as ViFloatButton;
     await btn.updateComplete;
 
     const anchor = btn.shadowRoot?.querySelector('a');
@@ -836,6 +980,33 @@ describe('vi-float-button-group', () => {
     expect(anchor?.hasAttribute('href')).toBe(false);
     expect(anchor?.getAttribute('tabindex')).toBe('-1');
     expect(anchor?.getAttribute('aria-disabled')).toBe('true');
+    expect(anchor?.hasAttribute('disabled')).toBe(false);
+  });
+
+  it('applies disabled styles to anchor with aria-disabled="true" and excludes it from active state', async () => {
+    render(
+      html`<vi-float-button
+        id="btn-link-disabled-active"
+        href="https://example.com"
+        disabled
+        aria-pressed="true"
+      ></vi-float-button>`,
+      container,
+    );
+    const btn = container.querySelector(
+      '#btn-link-disabled-active',
+    ) as ViFloatButton;
+    await btn.updateComplete;
+
+    const anchor = btn.shadowRoot?.querySelector('a') as HTMLAnchorElement;
+    expect(anchor).toBeTruthy();
+    expect(anchor.getAttribute('aria-disabled')).toBe('true');
+    expect(anchor.hasAttribute('disabled')).toBe(false);
+
+    const computed = window.getComputedStyle(anchor);
+    expect(computed.pointerEvents).toBe('none');
+    expect(computed.cursor).toBe('not-allowed');
+    expect(parseFloat(computed.opacity)).toBeCloseTo(0.5, 1);
   });
 
   it('reflects correct aria attributes on trigger and menu', async () => {
@@ -852,7 +1023,9 @@ describe('vi-float-button-group', () => {
     await group.updateComplete;
     await item.updateComplete;
 
-    const triggerBtn = group.shadowRoot?.querySelector('.float-button-group__trigger') as ViFloatButton;
+    const triggerBtn = group.shadowRoot?.querySelector(
+      '.float-button-group__trigger',
+    ) as ViFloatButton;
     expect(triggerBtn.getAttribute('aria-haspopup')).toBe('menu');
     expect(triggerBtn.getAttribute('aria-expanded')).toBe('false');
     expect(triggerBtn.getAttribute('aria-label')).toBe('Quick tools');
@@ -888,14 +1061,20 @@ describe('vi-float-button-group', () => {
       `,
       container,
     );
-    const group = container.querySelector('#group-default-aria') as ViFloatButtonGroup;
+    const group = container.querySelector(
+      '#group-default-aria',
+    ) as ViFloatButtonGroup;
     await group.updateComplete;
 
-    const triggerBtn = group.shadowRoot?.querySelector('.float-button-group__trigger') as ViFloatButton;
+    const triggerBtn = group.shadowRoot?.querySelector(
+      '.float-button-group__trigger',
+    ) as ViFloatButton;
     expect(triggerBtn.getAttribute('aria-label')).toBe('Speed dial actions');
 
     const triggerNative = triggerBtn.shadowRoot?.querySelector('button');
-    expect(triggerNative?.getAttribute('aria-label')).toBe('Speed dial actions');
+    expect(triggerNative?.getAttribute('aria-label')).toBe(
+      'Speed dial actions',
+    );
   });
 
   it('removes inactive menu items from sequential tab order and keeps active item tabbable', async () => {
@@ -903,7 +1082,10 @@ describe('vi-float-button-group', () => {
       html`
         <vi-float-button-group id="group-roving" trigger="click">
           <vi-float-button id="rov-item1" description="First"></vi-float-button>
-          <vi-float-button id="rov-item2" description="Second"></vi-float-button>
+          <vi-float-button
+            id="rov-item2"
+            description="Second"
+          ></vi-float-button>
           <vi-float-button id="rov-item3" description="Third"></vi-float-button>
         </vi-float-button-group>
       `,
@@ -1051,14 +1233,18 @@ describe('vi-float-button-group', () => {
     await item3.updateComplete;
 
     // Focus must land on item3 (the first item above trigger, not item2)
-    expect(document.activeElement === item3 || item3.matches(':focus-within')).toBe(true);
+    expect(
+      document.activeElement === item3 || item3.matches(':focus-within'),
+    ).toBe(true);
 
     // Subsequent ArrowUp keypress moves to item2
     group.dispatchEvent(
       new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }),
     );
     await item2.updateComplete;
-    expect(document.activeElement === item2 || item2.matches(':focus-within')).toBe(true);
+    expect(
+      document.activeElement === item2 || item2.matches(':focus-within'),
+    ).toBe(true);
   });
 
   it('renders default x close icon when open and uses configured close-icon attribute', async () => {
@@ -1079,13 +1265,19 @@ describe('vi-float-button-group', () => {
     const defaultTrigger = defaultGroup.shadowRoot?.querySelector(
       '.float-button-group__trigger',
     ) as ViFloatButton;
-    const defaultCloseIcon = defaultTrigger.querySelector('vi-icon.default-icon');
+    const defaultCloseIcon = defaultTrigger.querySelector(
+      'vi-icon.default-icon',
+    );
     expect(defaultCloseIcon?.getAttribute('name')).toBe('x');
 
     // Custom close-icon attribute
     render(
       html`
-        <vi-float-button-group id="group-close-custom" close-icon="chevron-down" open>
+        <vi-float-button-group
+          id="group-close-custom"
+          close-icon="chevron-down"
+          open
+        >
           <vi-float-button id="item-c2"></vi-float-button>
         </vi-float-button-group>
       `,
@@ -1106,7 +1298,90 @@ describe('vi-float-button-group', () => {
     // Update closeIcon property dynamically
     customGroup.closeIcon = 'minus';
     await customGroup.updateComplete;
-    const dynamicCloseIcon = customTrigger.querySelector('vi-icon.default-icon');
+    const dynamicCloseIcon = customTrigger.querySelector(
+      'vi-icon.default-icon',
+    );
     expect(dynamicCloseIcon?.getAttribute('name')).toBe('minus');
+  });
+
+  it('restores child standalone state when removed from the group', async () => {
+    render(
+      html`
+        <vi-float-button-group id="group-removal" trigger="click">
+          <vi-float-button id="item-removable"></vi-float-button>
+          <vi-float-button id="item-staying"></vi-float-button>
+        </vi-float-button-group>
+      `,
+      container,
+    );
+    const group = container.querySelector(
+      '#group-removal',
+    ) as ViFloatButtonGroup;
+    const removable = container.querySelector(
+      '#item-removable',
+    ) as ViFloatButton;
+    await group.updateComplete;
+    await removable.updateComplete;
+
+    expect(removable.inGroup).toBe(true);
+    expect(removable.hasAttribute('in-group')).toBe(true);
+    expect(removable.tabbable).toBe(false);
+    expect(removable.tabIndex).toBe(-1);
+
+    // Remove item from group and place in container as standalone
+    removable.remove();
+    container.appendChild(removable);
+
+    // Wait for slotchange and Lit updates
+    await new Promise((r) => setTimeout(r, 50));
+    await group.updateComplete;
+    await removable.updateComplete;
+
+    expect(removable.inGroup).toBe(false);
+    expect(removable.hasAttribute('in-group')).toBe(false);
+    expect(removable.tabbable).toBe(true);
+    expect(removable.tabIndex).toBe(0);
+
+    const innerBtn = removable.shadowRoot?.querySelector('button');
+    expect(innerBtn?.getAttribute('tabindex')).toBe('0');
+  });
+
+  it('restores standalone state for all children on group teardown', async () => {
+    render(
+      html`
+        <vi-float-button-group id="group-teardown" trigger="click">
+          <vi-float-button id="td-item1"></vi-float-button>
+          <vi-float-button id="td-item2"></vi-float-button>
+        </vi-float-button-group>
+      `,
+      container,
+    );
+    const group = container.querySelector(
+      '#group-teardown',
+    ) as ViFloatButtonGroup;
+    const item1 = container.querySelector('#td-item1') as ViFloatButton;
+    const item2 = container.querySelector('#td-item2') as ViFloatButton;
+    await group.updateComplete;
+    await item1.updateComplete;
+    await item2.updateComplete;
+
+    expect(item1.inGroup).toBe(true);
+    expect(item2.inGroup).toBe(true);
+
+    // Teardown group
+    group.remove();
+
+    await item1.updateComplete;
+    await item2.updateComplete;
+
+    expect(item1.inGroup).toBe(false);
+    expect(item1.hasAttribute('in-group')).toBe(false);
+    expect(item1.tabbable).toBe(true);
+    expect(item1.tabIndex).toBe(0);
+
+    expect(item2.inGroup).toBe(false);
+    expect(item2.hasAttribute('in-group')).toBe(false);
+    expect(item2.tabbable).toBe(true);
+    expect(item2.tabIndex).toBe(0);
   });
 });

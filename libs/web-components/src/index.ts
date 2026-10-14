@@ -5,6 +5,8 @@ export {
   sanitizeUrl,
   isSafeUrl,
   ALLOWED_URL_SCHEMES,
+  getAllowedUrlSchemes,
+  isAllowedUrlScheme,
 } from './base/sanitize-url.js';
 export { ViButton } from './button/vi-button.js';
 export { ViCard } from './card/vi-card.js';

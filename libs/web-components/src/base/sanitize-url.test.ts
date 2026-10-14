@@ -3,6 +3,8 @@ import {
   sanitizeUrl,
   isSafeUrl,
   ALLOWED_URL_SCHEMES,
+  getAllowedUrlSchemes,
+  isAllowedUrlScheme,
 } from './sanitize-url.js';
 
 describe('sanitize-url utility', () => {
@@ -103,12 +105,46 @@ describe('sanitize-url utility', () => {
       expect(isSafeUrl(undefined)).toBe(false);
     });
 
-    it('exposes ALLOWED_URL_SCHEMES set', () => {
+    it('exposes ALLOWED_URL_SCHEMES read-only snapshot set', () => {
       expect(ALLOWED_URL_SCHEMES.has('https:')).toBe(true);
       expect(ALLOWED_URL_SCHEMES.has('http:')).toBe(true);
       expect(ALLOWED_URL_SCHEMES.has('mailto:')).toBe(true);
       expect(ALLOWED_URL_SCHEMES.has('tel:')).toBe(true);
       expect(ALLOWED_URL_SCHEMES.has('javascript:')).toBe(false);
+    });
+
+    it('prevents callers from mutating ALLOWED_URL_SCHEMES snapshot', () => {
+      const mutableRef = ALLOWED_URL_SCHEMES as unknown as Set<string>;
+      expect(() => mutableRef.add('ftp:')).toThrow();
+      expect(() => mutableRef.delete('https:')).toThrow();
+      expect(() => mutableRef.clear()).toThrow();
+      expect(ALLOWED_URL_SCHEMES.has('ftp:')).toBe(false);
+      expect(ALLOWED_URL_SCHEMES.has('https:')).toBe(true);
+    });
+
+    it('keeps validation policy intact regardless of caller actions', () => {
+      // Even if callers create their own sets or attempt mutation
+      expect(sanitizeUrl('ftp://example.com')).toBeUndefined();
+      expect(sanitizeUrl('https://example.com')).toBe('https://example.com');
+    });
+
+    it('provides getAllowedUrlSchemes snapshot query', () => {
+      const schemes = getAllowedUrlSchemes();
+      expect(schemes.has('https:')).toBe(true);
+      expect(schemes.has('http:')).toBe(true);
+      expect(schemes.has('mailto:')).toBe(true);
+      expect(schemes.has('tel:')).toBe(true);
+      expect(schemes.size).toBe(4);
+    });
+
+    it('provides isAllowedUrlScheme query function', () => {
+      expect(isAllowedUrlScheme('https:')).toBe(true);
+      expect(isAllowedUrlScheme('https')).toBe(true);
+      expect(isAllowedUrlScheme('http:')).toBe(true);
+      expect(isAllowedUrlScheme('mailto:')).toBe(true);
+      expect(isAllowedUrlScheme('tel:')).toBe(true);
+      expect(isAllowedUrlScheme('ftp:')).toBe(false);
+      expect(isAllowedUrlScheme('javascript:')).toBe(false);
     });
   });
 });
