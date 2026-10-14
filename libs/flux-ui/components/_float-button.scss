@@ -46,7 +46,7 @@
       opacity var(--vi-float-button-transition-duration, 200ms)
         cubic-bezier(0.4, 0, 0.2, 1);
 
-    &:hover:not([disabled]) {
+    &:hover:not([disabled]):not([aria-disabled='true']) {
       background-color: var(
         --vi-float-button-hover-bg,
         #{tokens.$layer-hover-01}
@@ -55,9 +55,22 @@
       transform: translateY(-2px);
     }
 
-    &:active:not([disabled]) {
-      transform: translateY(0);
-      box-shadow: var(--vi-float-button-shadow, #{tokens.$shadow-lg});
+    &:active:not([disabled]):not([aria-disabled='true']),
+    &[aria-pressed='true']:not([disabled]):not([aria-disabled='true']) {
+      background-color: var(
+        --vi-float-button-active-bg,
+        #{tokens.$layer-hover-02}
+      );
+      border-color: var(
+        --vi-float-button-active-border-color,
+        #{tokens.$border-03}
+      );
+      box-shadow: var(
+        --vi-float-button-shadow-active,
+        inset 0 2px 4px rgba(0, 0, 0, 0.12),
+        #{tokens.$shadow-sm}
+      );
+      transform: translateY(1px) scale(0.97);
     }
 
     &:focus-visible {
@@ -66,7 +79,8 @@
       outline-offset: 2px;
     }
 
-    &[disabled] {
+    &[disabled],
+    &[aria-disabled='true'] {
       cursor: not-allowed;
       opacity: 0.5;
       pointer-events: none;
@@ -103,11 +117,25 @@
       );
       border-color: transparent;
 
-      &:hover:not([disabled]) {
+      &:hover:not([disabled]):not([aria-disabled='true']) {
         background-color: var(
           --vi-float-button-hover-bg-primary,
           #{tokens.$color-blue-800}
         );
+      }
+
+      &:active:not([disabled]):not([aria-disabled='true']),
+      &[aria-pressed='true']:not([disabled]):not([aria-disabled='true']) {
+        background-color: var(
+          --vi-float-button-active-bg-primary,
+          #{tokens.$color-blue-900}
+        );
+        box-shadow: var(
+          --vi-float-button-shadow-active-primary,
+          inset 0 2px 4px rgba(0, 0, 0, 0.25),
+          #{tokens.$shadow-sm}
+        );
+        transform: translateY(1px) scale(0.97);
       }
     }
   }
@@ -144,9 +172,16 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     padding-inline: 2px;
+
+    &[hidden] {
+      display: none !important;
+    }
   }
 
   .float-button__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     position: absolute;
     top: -4px;
     inset-inline-end: -4px;
