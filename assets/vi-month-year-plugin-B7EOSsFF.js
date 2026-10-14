@@ -1,0 +1,203 @@
+import './vi-select-BUoxCYmj.js';
+import './iframe-CAlTdKca.js';
+import './preload-helper-D5QYaGzd.js';
+import './vi-element-ButrvmGI.js';
+import './state-D3xGmeOh.js';
+import './query-CHb9Ft_d.js';
+import './base-Cl6v8-BZ.js';
+import './focusable-mixin-DkKvOjpm.js';
+import './validity-mixin-CVJUebmn.js';
+import './if-non-empty-CODUDztj.js';
+import './if-defined-Bh0HzCWc.js';
+import './vi-icon-B4CPO8Cl.js';
+import './directive-BKuZRRPO.js';
+import './registry-CeXOZkT9.js';
+import './chevron-down-BU8Kh4z3.js';
+import './x-3JmBhc9n.js';
+import './floating-controller-d7XvEPSf.js';
+import './floating-ui.dom-Dsl7AwNm.js';
+import './overlay-manager-DiQwTjfQ.js';
+import './keyboard-controller-DwAzd1K9.js';
+import './check-D9SDO18H.js';
+
+function ViMonthYearPlugin(config = {}) {
+    return function(fp) {
+        let headerContainer;
+        let prevBtn;
+        let nextBtn;
+        let monthToggleBtn;
+        let yearSelect; // vi-select
+        let monthGridContainer;
+        function createHeader() {
+            headerContainer = document.createElement('div');
+            headerContainer.className = 'vi-calendar-header';
+            prevBtn = document.createElement('button');
+            prevBtn.type = 'button';
+            prevBtn.className = 'vi-calendar-nav-btn vi-calendar-prev';
+            if (config.ariaLabels?.prevMonth) {
+                prevBtn.setAttribute('aria-label', config.ariaLabels.prevMonth);
+            }
+            const parser = new DOMParser();
+            const prevDoc = parser.parseFromString(`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>`, 'image/svg+xml');
+            prevBtn.appendChild(prevDoc.documentElement);
+            prevBtn.addEventListener('click', (e)=>{
+                e.preventDefault();
+                fp.changeMonth(-1);
+            });
+            nextBtn = document.createElement('button');
+            nextBtn.type = 'button';
+            nextBtn.className = 'vi-calendar-nav-btn vi-calendar-next';
+            if (config.ariaLabels?.nextMonth) {
+                nextBtn.setAttribute('aria-label', config.ariaLabels.nextMonth);
+            }
+            const nextDoc = parser.parseFromString(`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>`, 'image/svg+xml');
+            nextBtn.appendChild(nextDoc.documentElement);
+            nextBtn.addEventListener('click', (e)=>{
+                e.preventDefault();
+                fp.changeMonth(1);
+            });
+            const selectorsContainer = document.createElement('div');
+            selectorsContainer.className = 'vi-calendar-selectors';
+            monthToggleBtn = document.createElement('button');
+            monthToggleBtn.type = 'button';
+            monthToggleBtn.className = 'vi-calendar-month-toggle';
+            monthToggleBtn.setAttribute('aria-label', config.ariaLabels?.selectMonth ?? fp.l10n.monthAriaLabel ?? 'Select month');
+            monthToggleBtn.addEventListener('click', (e)=>{
+                e.preventDefault();
+                toggleMonthGrid();
+            });
+            yearSelect = document.createElement('vi-select');
+            yearSelect.className = 'vi-calendar-year-select';
+            yearSelect.setAttribute('size', 'sm');
+            yearSelect.setAttribute('aria-label', config.ariaLabels?.selectYear ?? fp.l10n.yearAriaLabel ?? 'Select year');
+            // Use createElement and assign .value directly so vi-select can synchronously read the value
+            // even before Lit has fully upgraded the custom elements in the browser.
+            const currentYear = new Date().getFullYear();
+            for(let y = currentYear - 50; y <= currentYear + 50; y++){
+                const opt = document.createElement('vi-select-option');
+                opt.value = y.toString();
+                opt.textContent = y.toString();
+                yearSelect.appendChild(opt);
+            }
+            yearSelect.addEventListener('vi-select-change', (e)=>{
+                e.stopPropagation(); // prevent it from bubbling up to Storybook
+                const selectedYear = parseInt(e.detail.value, 10);
+                if (!isNaN(selectedYear)) {
+                    fp.changeYear(selectedYear);
+                }
+            });
+            selectorsContainer.appendChild(monthToggleBtn);
+            selectorsContainer.appendChild(yearSelect);
+            headerContainer.appendChild(prevBtn);
+            headerContainer.appendChild(selectorsContainer);
+            headerContainer.appendChild(nextBtn);
+            // Stop ALL click/pointer events from bubbling out of the header!
+            // This is the CRITICAL fix that prevents Flatpickr from closing the calendar
+            // when you click the year select. Because vi-select uses Shadow DOM, Flatpickr
+            // gets confused and thinks you clicked outside the calendar.
+            const stopPropagation = (e)=>e.stopPropagation();
+            headerContainer.addEventListener('mousedown', stopPropagation);
+            headerContainer.addEventListener('click', stopPropagation);
+            headerContainer.addEventListener('touchstart', stopPropagation);
+            return headerContainer;
+        }
+        function createMonthGrid() {
+            monthGridContainer = document.createElement('div');
+            monthGridContainer.className = 'vi-calendar-month-grid';
+            monthGridContainer.style.display = 'none';
+            const months = fp.l10n.months.shorthand;
+            months.forEach((monthName, index)=>{
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'vi-calendar-month-btn';
+                btn.textContent = monthName;
+                btn.dataset.month = index.toString();
+                btn.addEventListener('click', (e)=>{
+                    e.preventDefault();
+                    if (config.hideDays) {
+                        // In month-only mode, clicking a month selects it and closes the picker
+                        const newDate = new Date(fp.currentYear, index, 1);
+                        fp.setDate(newDate, true);
+                        fp.close();
+                    } else {
+                        // Normal mode: just change the calendar view to that month
+                        fp.changeMonth(index, false);
+                        toggleMonthGrid(false);
+                    }
+                });
+                monthGridContainer.appendChild(btn);
+            });
+            return monthGridContainer;
+        }
+        function toggleMonthGrid(force) {
+            const isCurrentlyVisible = monthGridContainer.style.display === 'grid';
+            const shouldShow = force !== undefined ? force : !isCurrentlyVisible;
+            monthGridContainer.style.display = shouldShow ? 'grid' : 'none';
+            if (shouldShow) {
+                const monthBtns = monthGridContainer.querySelectorAll('.vi-calendar-month-btn');
+                monthBtns.forEach((btn)=>{
+                    if (parseInt(btn.dataset.month || '', 10) === fp.currentMonth) {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                });
+            }
+        }
+        function updateHeaderValues() {
+            if (!monthToggleBtn || !yearSelect) return;
+            monthToggleBtn.textContent = fp.l10n.months.longhand[fp.currentMonth];
+            yearSelect.value = fp.currentYear.toString();
+            if (prevBtn && !config.ariaLabels?.prevMonth) {
+                const prevMonthIndex = fp.currentMonth === 0 ? 11 : fp.currentMonth - 1;
+                prevBtn.setAttribute('aria-label', fp.l10n.months.longhand[prevMonthIndex]);
+            }
+            if (nextBtn && !config.ariaLabels?.nextMonth) {
+                const nextMonthIndex = fp.currentMonth === 11 ? 0 : fp.currentMonth + 1;
+                nextBtn.setAttribute('aria-label', fp.l10n.months.longhand[nextMonthIndex]);
+            }
+        }
+        function applyHideDaysConfig() {
+            if (!config.hideDays) return;
+            fp.calendarContainer.classList.add('vi-month-mode');
+            const innerContainer = fp.calendarContainer.querySelector('.flatpickr-innerContainer');
+            if (innerContainer) innerContainer.style.display = 'none';
+            // Permanently show the month grid
+            toggleMonthGrid(true);
+            // Also hide the month toggle button since it's permanently showing the grid anyway
+            if (monthToggleBtn) {
+                monthToggleBtn.style.display = 'none';
+            }
+        }
+        return {
+            onReady: ()=>{
+                if (fp.monthNav) {
+                    fp.monthNav.style.display = 'none';
+                }
+                const header = createHeader();
+                fp.calendarContainer.insertBefore(header, fp.calendarContainer.firstChild);
+                const grid = createMonthGrid();
+                fp.calendarContainer.appendChild(grid);
+                // Tell Flatpickr not to close when these custom elements are clicked
+                if (!fp.config.ignoredFocusElements) {
+                    fp.config.ignoredFocusElements = [];
+                }
+                fp.config.ignoredFocusElements.push(header, grid);
+                updateHeaderValues();
+                applyHideDaysConfig();
+            },
+            onMonthChange: ()=>{
+                updateHeaderValues();
+            },
+            onYearChange: ()=>{
+                updateHeaderValues();
+            },
+            onDestroy: ()=>{
+                headerContainer?.remove();
+                monthGridContainer?.remove();
+            }
+        };
+    };
+}
+
+export { ViMonthYearPlugin };
