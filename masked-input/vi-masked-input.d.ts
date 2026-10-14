@@ -1,3 +1,4 @@
+import { PropertyValues } from 'lit';
 import { ViInput } from '../input/vi-input.js';
 /**
  * vi-masked-input
@@ -25,7 +26,7 @@ export declare class ViMaskedInput extends ViInput {
      * Takes precedence over the string \`mask\` property.
      * @prop {any} maskOptions
      */
-    accessor maskOptions: any;
+    accessor maskOptions: Record<string, unknown> | null;
     /**
      * The unmasked, raw underlying value.
      * @attr rawValue
@@ -34,7 +35,7 @@ export declare class ViMaskedInput extends ViInput {
     private _maskInstance;
     connectedCallback(): Promise<void>;
     disconnectedCallback(): void;
-    updated(changedProperties: Map<string, any>): void;
+    updated(changedProperties: PropertyValues): void;
     private _initMask;
     protected _onInput(e: Event): void;
     protected _onChange(e: Event): void;
