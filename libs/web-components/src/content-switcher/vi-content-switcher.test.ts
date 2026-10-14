@@ -122,7 +122,6 @@ describe('vi-content-switcher', () => {
         changeFired = true;
       });
 
-      const secondItem = await $('#second');
       await browser.execute(() => {
         document.getElementById('second')?.click();
       });
@@ -154,7 +153,6 @@ describe('vi-content-switcher', () => {
         changeFired = true;
       });
 
-      const secondItem = await $('#second');
       await browser.execute(() => {
         document.getElementById('second')?.click();
       });

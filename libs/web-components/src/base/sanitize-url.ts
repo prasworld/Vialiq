@@ -17,15 +17,15 @@ class ReadonlySetSnapshot<T> extends Set<T> {
     this._frozen = true;
   }
 
-  override add(): this {
+  override add(value: T): this {
     if (!this._frozen) {
-      return super.add(...(arguments as unknown as [T]));
+      return super.add(value);
     }
     throw new TypeError('Cannot mutate read-only ALLOWED_URL_SCHEMES set');
   }
-  override delete(): boolean {
+  override delete(value: T): boolean {
     if (!this._frozen) {
-      return super.delete(...(arguments as unknown as [T]));
+      return super.delete(value);
     }
     throw new TypeError('Cannot mutate read-only ALLOWED_URL_SCHEMES set');
   }

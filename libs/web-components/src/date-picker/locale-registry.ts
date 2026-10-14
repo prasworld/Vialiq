@@ -3,9 +3,8 @@ import type { CustomLocale } from 'flatpickr/dist/types/locale';
 /** Loader function type — returns the module namespace object */
 type LocaleLoader = () => Promise<CustomLocale | null>;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function loadL10n(
-  importer: () => Promise<any>,
+  importer: () => Promise<Record<string, unknown>>,
 ): Promise<CustomLocale | null> {
   const mod = await importer();
 

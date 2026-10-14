@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/web-components';
 import { html } from 'lit';
-import { ifDefined } from 'lit/directives/if-defined.js';
+import type { ViUpload } from './vi-upload.js';
 import './vi-upload.js';
 
 const meta: Meta = {
@@ -160,7 +160,7 @@ export const FormIntegration: Story = {
 export const ControlledUpload: Story = {
   render: () => {
     const handleUploadChange = (e: Event) => {
-      const uploadEl = e.target as any;
+      const uploadEl = e.target as ViUpload;
       const files = (e as CustomEvent).detail as File[];
 
       // Simulate an async upload for each file

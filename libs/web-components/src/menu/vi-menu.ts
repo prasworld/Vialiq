@@ -1,6 +1,7 @@
 import { css, html, unsafeCSS } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { ViElement } from '../base/vi-element.js';
+import { ViMenuItem } from './vi-menu-item.js';
 import menuStyles from './vi-menu.scss?inline';
 
 /**
@@ -26,14 +27,14 @@ export class ViMenu extends ViElement {
     const items = this._getItems();
     items.forEach((item, index) => {
       // Make only the first non-disabled item tabbable
-      (item as any).tabbable = index === 0;
+      item.tabbable = index === 0;
     });
   }
 
-  private _getItems() {
+  private _getItems(): ViMenuItem[] {
     return Array.from(
       this.querySelectorAll('vi-menu-item:not([disabled])'),
-    ) as HTMLElement[];
+    ) as ViMenuItem[];
   }
 
   private _handleKeyDown = (e: KeyboardEvent) => {
@@ -45,12 +46,12 @@ export class ViMenu extends ViElement {
 
     const activeItem = document.activeElement?.closest(
       'vi-menu-item',
-    ) as HTMLElement;
+    ) as ViMenuItem | null;
     const currentIndex = activeItem ? items.indexOf(activeItem) : -1;
 
     e.preventDefault();
 
-    let newlyFocused: HTMLElement | undefined;
+    let newlyFocused: ViMenuItem | undefined;
 
     if (e.key === 'ArrowDown') {
       const nextIndex = currentIndex < items.length - 1 ? currentIndex + 1 : 0;
@@ -66,16 +67,16 @@ export class ViMenu extends ViElement {
 
     if (newlyFocused) {
       newlyFocused.focus();
-      items.forEach((item) => ((item as any).tabbable = false));
-      (newlyFocused as any).tabbable = true;
+      items.forEach((item) => (item.tabbable = false));
+      newlyFocused.tabbable = true;
     }
   };
 
   private _handleFocusIn = (e: FocusEvent) => {
     const target = e.target as HTMLElement;
-    const item = target.closest('vi-menu-item') as any;
+    const item = target.closest('vi-menu-item') as ViMenuItem | null;
     if (item && !item.disabled) {
-      this._getItems().forEach((i) => ((i as any).tabbable = false));
+      this._getItems().forEach((i) => (i.tabbable = false));
       item.tabbable = true;
     }
   };
