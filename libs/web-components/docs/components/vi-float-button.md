@@ -3,7 +3,7 @@
 **Package:** `@vialiq/web-components/float-button`  
 **Elements:** `<vi-float-button>`, `<vi-float-button-group>`  
 **Status:** ✅ Implemented  
-**Flux UI base:** `libs/flux-ui/components/_float-button.scss`  
+**Flux UI base:** `libs/flux-ui/components/_float-button.scss`
 
 ---
 
@@ -14,6 +14,7 @@ A floating action button positioned fixed over page content (typically bottom-ri
 Wraps a native `<button>` or `<a>` element in Shadow DOM with full keyboard accessibility, badges, and tooltip integration.
 
 ### Clinical EDC & Enterprise Use Cases
+
 - **Back-to-Top Navigation:** Smooth scroll to the top of long Case Report Forms (CRFs), medical audit logs, and multi-visit schedules.
 - **Quick Action Launcher:** Float a persistent button to "Raise Query", "Report Adverse Event (AE)", or "Add Concomitant Medication" without scrolling back to specific sections.
 - **Speed Dial Menu:** Expand a cluster of contextual actions (e.g., Export PDF, Lock CRF, Print Subject Summary).
@@ -25,25 +26,26 @@ Wraps a native `<button>` or `<a>` element in Shadow DOM with full keyboard acce
 
 ### `<vi-float-button>` Properties / Attributes
 
-| Property | Attribute | Type | Default | Reflects | Description |
-|----------|-----------|------|---------|---------|-------------|
-| `shape` | `shape` | `'circle' \| 'square'` | `'circle'` | ✅ | Button geometry |
-| `type` | `type` | `'default' \| 'primary'` | `'default'` | ✅ | Visual importance |
-| `size` | `size` | `'default' \| 'sm'` | `'default'` | ✅ | Size: default (48px) or sm (40px) |
-| `description` | `description` | `string` | `undefined` | ✅ | Text label under icon (especially in square shape) |
-| `tooltip` | `tooltip` | `string` | `undefined` | — | Text tooltip displayed on hover/focus |
-| `href` | `href` | `string` | `undefined` | ✅ | URL to navigate to (renders `<a>` when present) |
-| `target` | `target` | `string` | `undefined` | ✅ | Anchor link target (`_blank`, `_self`, etc.) |
-| `badge` | `badge` | `number \| string` | `undefined` | ✅ | Numeric count or text badge |
-| `badgeDot` | `badge-dot` | `boolean` | `false` | ✅ | Show a dot badge indicator |
-| `badgeStatus` | `badge-status` | `BadgeStatus` | `'danger'` | ✅ | Badge semantic color |
-| `backTop` | `back-top` | `boolean` | `false` | ✅ | Enables smooth back-to-top scrolling mode |
-| `visibilityHeight` | `visibility-height` | `number` | `400` | ✅ | Scroll threshold (px) before backTop button appears |
-| `scrollTarget` | `scroll-target` | `string` | `undefined` | — | CSS selector or ID of scrollable container (defaults to `window`) |
-| `duration` | `duration` | `number` | `450` | — | Scroll animation duration (ms) for window and custom scroll targets (0 for instant) |
-| `disabled` | `disabled` | `boolean` | `false` | ✅ | Disables interactions |
+| Property           | Attribute           | Type                     | Default     | Reflects | Description                                                                         |
+| ------------------ | ------------------- | ------------------------ | ----------- | -------- | ----------------------------------------------------------------------------------- |
+| `shape`            | `shape`             | `'circle' \| 'square'`   | `'circle'`  | ✅       | Button geometry                                                                     |
+| `type`             | `type`              | `'default' \| 'primary'` | `'default'` | ✅       | Visual importance                                                                   |
+| `size`             | `size`              | `'default' \| 'sm'`      | `'default'` | ✅       | Size: default (48px) or sm (40px)                                                   |
+| `description`      | `description`       | `string`                 | `undefined` | ✅       | Text label under icon (especially in square shape)                                  |
+| `tooltip`          | `tooltip`           | `string`                 | `undefined` | —        | Text tooltip displayed on hover/focus                                               |
+| `href`             | `href`              | `string`                 | `undefined` | ✅       | URL to navigate to (renders `<a>` when present)                                     |
+| `target`           | `target`            | `string`                 | `undefined` | ✅       | Anchor link target (`_blank`, `_self`, etc.)                                        |
+| `badge`            | `badge`             | `number \| string`       | `undefined` | ✅       | Numeric count or text badge                                                         |
+| `badgeDot`         | `badge-dot`         | `boolean`                | `false`     | ✅       | Show a dot badge indicator                                                          |
+| `badgeStatus`      | `badge-status`      | `BadgeStatus`            | `'danger'`  | ✅       | Badge semantic color                                                                |
+| `backTop`          | `back-top`          | `boolean`                | `false`     | ✅       | Enables smooth back-to-top scrolling mode                                           |
+| `visibilityHeight` | `visibility-height` | `number`                 | `400`       | ✅       | Scroll threshold (px) before backTop button appears                                 |
+| `scrollTarget`     | `scroll-target`     | `string`                 | `undefined` | —        | CSS selector or ID of scrollable container (defaults to `window`)                   |
+| `duration`         | `duration`          | `number`                 | `450`       | —        | Scroll animation duration (ms) for window and custom scroll targets (0 for instant) |
+| `disabled`         | `disabled`          | `boolean`                | `false`     | ✅       | Disables interactions                                                               |
 
 #### Types
+
 ```typescript
 type FloatButtonShape = 'circle' | 'square';
 type FloatButtonType = 'default' | 'primary';
@@ -55,13 +57,13 @@ type BadgeStatus = 'neutral' | 'primary' | 'success' | 'warning' | 'danger' | 'i
 
 ### `<vi-float-button-group>` Properties / Attributes
 
-| Property | Attribute | Type | Default | Reflects | Description |
-|----------|-----------|------|---------|---------|-------------|
-| `shape` | `shape` | `'circle' \| 'square'` | `'circle'` | ✅ | Geometry inherited by child buttons |
-| `trigger` | `trigger` | `'click' \| 'hover'` | `'hover'` | ✅ | Interaction mode to expand the menu |
-| `open` | `open` | `boolean` | `false` | ✅ | Expanded state of the speed dial menu |
-| `closeIcon` | `close-icon` | `string` | `'x'` | ✅ | Icon displayed on the trigger when expanded |
-| `closeOnSelect` | `close-on-select` | `boolean` | `true` | ✅ | Whether clicking a child action button collapses the speed dial menu |
+| Property        | Attribute         | Type                   | Default    | Reflects | Description                                                          |
+| --------------- | ----------------- | ---------------------- | ---------- | -------- | -------------------------------------------------------------------- |
+| `shape`         | `shape`           | `'circle' \| 'square'` | `'circle'` | ✅       | Geometry inherited by child buttons                                  |
+| `trigger`       | `trigger`         | `'click' \| 'hover'`   | `'hover'`  | ✅       | Interaction mode to expand the menu                                  |
+| `open`          | `open`            | `boolean`              | `false`    | ✅       | Expanded state of the speed dial menu                                |
+| `closeIcon`     | `close-icon`      | `string`               | `'x'`      | ✅       | Icon displayed on the trigger when expanded                          |
+| `closeOnSelect` | `close-on-select` | `boolean`              | `true`     | ✅       | Whether clicking a child action button collapses the speed dial menu |
 
 ---
 
@@ -69,33 +71,33 @@ type BadgeStatus = 'neutral' | 'primary' | 'success' | 'warning' | 'danger' | 'i
 
 #### `<vi-float-button>` Slots
 
-| Slot | Description |
-|------|-------------|
-| `icon` | Icon element (e.g. `<vi-icon name="...">`) |
-| `description` | Slotted description content underneath icon |
-| `tooltip` | Slotted custom tooltip content (rendered inside `vi-tooltip`'s content slot) |
-| *(default)* | Fallback button content |
+| Slot          | Description                                                                  |
+| ------------- | ---------------------------------------------------------------------------- |
+| `icon`        | Icon element (e.g. `<vi-icon name="...">`)                                   |
+| `description` | Slotted description content underneath icon                                  |
+| `tooltip`     | Slotted custom tooltip content (rendered inside `vi-tooltip`'s content slot) |
+| _(default)_   | Fallback button content                                                      |
 
 #### `<vi-float-button-group>` Slots
 
-| Slot | Description |
-|------|-------------|
-| *(default)* | Slotted child `<vi-float-button>` elements |
-| `icon` | Main trigger button icon (when collapsed) |
-| `close-icon` | Custom icon element when group is expanded |
-| `description` | Slotted trigger button description |
+| Slot          | Description                                |
+| ------------- | ------------------------------------------ |
+| _(default)_   | Slotted child `<vi-float-button>` elements |
+| `icon`        | Main trigger button icon (when collapsed)  |
+| `close-icon`  | Custom icon element when group is expanded |
+| `description` | Slotted trigger button description         |
 
 ---
 
 ### Events
 
-All custom events follow the repository standard `vi-[component-type]-[event-name]` convention (see [.agents/rules/web-component-events.md](file:///Users/prashantgupta/code/nx/.agents/rules/web-component-events.md)):
+All custom events follow the repository standard `vi-[component-type]-[event-name]` convention (see [`.agents/rules/web-component-events.md`](../../../../.agents/rules/web-component-events.md)):
 
-| Event | Target | Detail | Description |
-|-------|--------|--------|-------------|
-| `vi-float-button-click` | `<vi-float-button>` | `{ originalEvent: MouseEvent \| KeyboardEvent }` | Dispatched when a floating button is clicked/activated |
-| `vi-float-button-back-top` | `<vi-float-button>` | `{ scrollTarget: HTMLElement \| Window }` | Dispatched when back-top triggers scrolling |
-| `vi-float-button-open-change` | `<vi-float-button-group>` | `{ open: boolean }` | Dispatched when group menu expands or collapses |
+| Event                         | Target                    | Detail                                           | Description                                            |
+| ----------------------------- | ------------------------- | ------------------------------------------------ | ------------------------------------------------------ |
+| `vi-float-button-click`       | `<vi-float-button>`       | `{ originalEvent: MouseEvent \| KeyboardEvent }` | Dispatched when a floating button is clicked/activated |
+| `vi-float-button-back-top`    | `<vi-float-button>`       | `{ scrollTarget: HTMLElement \| Window }`        | Dispatched when back-top triggers scrolling            |
+| `vi-float-button-open-change` | `<vi-float-button-group>` | `{ open: boolean }`                              | Dispatched when group menu expands or collapses        |
 
 ---
 
@@ -103,27 +105,27 @@ All custom events follow the repository standard `vi-[component-type]-[event-nam
 
 #### `<vi-float-button>` Parts
 
-| Part | Element | Purpose |
-|------|---------|---------|
-| `control` | Host wrapper | Outer container (handles fixed/absolute positioning) |
-| `button` | `<button>` or `<a>` | Interactive button core |
-| `icon` | `<span>` | Icon slot wrapper |
-| `description` | `<span>` | Description label wrapper |
-| `badge` | `<span>` / `<vi-badge>` | Badge indicator |
+| Part          | Element                 | Purpose                                              |
+| ------------- | ----------------------- | ---------------------------------------------------- |
+| `control`     | Host wrapper            | Outer container (handles fixed/absolute positioning) |
+| `button`      | `<button>` or `<a>`     | Interactive button core                              |
+| `icon`        | `<span>`                | Icon slot wrapper                                    |
+| `description` | `<span>`                | Description label wrapper                            |
+| `badge`       | `<span>` / `<vi-badge>` | Badge indicator                                      |
 
 #### `<vi-float-button-group>` Parts
 
-| Part | Element | Purpose |
-|------|---------|---------|
-| `group` | Host wrapper | Group container |
-| `trigger` | `<vi-float-button>` | The main toggle trigger button |
-| `menu` | `<div>` | Floating container for speed dial child buttons |
+| Part      | Element             | Purpose                                         |
+| --------- | ------------------- | ----------------------------------------------- |
+| `group`   | Host wrapper        | Group container                                 |
+| `trigger` | `<vi-float-button>` | The main toggle trigger button                  |
+| `menu`    | `<div>`             | Floating container for speed dial child buttons |
 
 ---
 
 ### CSS Custom Properties
 
-Following the 3-level cascade token pattern (see [.agents/rules/semantic-colors.md](file:///Users/prashantgupta/code/nx/.agents/rules/semantic-colors.md)):
+Following the 3-level cascade token pattern (see [`.agents/rules/semantic-colors.md`](../../../../.agents/rules/semantic-colors.md)):
 
 ```scss
 // Level 1: Consumer override
@@ -131,54 +133,54 @@ Following the 3-level cascade token pattern (see [.agents/rules/semantic-colors.
 background-color: var(--vi-float-button-bg, #{tokens.$layer-01});
 ```
 
-| Property | Default | Description |
-|----------|---------|-------------|
-| `--vi-float-button-size` | `48px` | Diameter / box dimension (default size) |
-| `--vi-float-button-size-sm` | `40px` | Diameter / box dimension (sm size) |
-| `--vi-float-button-bg` | `tokens.$layer-01` | Default button surface background |
-| `--vi-float-button-bg-primary` | `tokens.$color-primary` | Primary button surface background |
-| `--vi-float-button-color` | `tokens.$text-primary` | Default button text & icon colour |
-| `--vi-float-button-color-primary` | `tokens.$text-primary-inverse` | Primary button text & icon colour |
-| `--vi-float-button-border-color` | `tokens.$border-02` | Outer border colour |
-| `--vi-float-button-border-radius` | `tokens.$border-radius-full` | Radius for circle shape (`9999px`) |
-| `--vi-float-button-border-radius-square` | `tokens.$border-radius-lg` | Radius for square shape (`8px`) |
-| `--vi-float-button-shadow` | `tokens.$shadow-lg` | Default resting elevation shadow |
-| `--vi-float-button-shadow-hover` | `tokens.$shadow-xl` | Hover / active elevation shadow |
-| `--vi-float-button-hover-bg` | `tokens.$layer-hover-01` | Hover state background (default) |
-| `--vi-float-button-hover-bg-primary` | `tokens.$color-blue-800` | Hover state background (primary) |
-| `--vi-float-button-focus-ring-color` | `tokens.$focus` | Focus-visible ring colour |
-| `--vi-float-button-font-size` | `tokens.$font-size-xs` | Description text size |
-| `--vi-float-button-inset-inline-end` | `24px` | Distance from right edge (LTR) |
-| `--vi-float-button-inset-block-end` | `48px` | Distance from bottom edge |
-| `--vi-float-button-z-index` | `1030` | Viewport fixed layer z-index |
-| `--vi-float-button-group-gap` | `tokens.$spacing-xs` | Gap between buttons in speed dial |
-| `--vi-float-button-transition-duration` | `200ms` | Smooth hover/pop transition time |
+| Property                                 | Default                        | Description                             |
+| ---------------------------------------- | ------------------------------ | --------------------------------------- |
+| `--vi-float-button-size`                 | `48px`                         | Diameter / box dimension (default size) |
+| `--vi-float-button-size-sm`              | `40px`                         | Diameter / box dimension (sm size)      |
+| `--vi-float-button-bg`                   | `tokens.$layer-01`             | Default button surface background       |
+| `--vi-float-button-bg-primary`           | `tokens.$color-primary`        | Primary button surface background       |
+| `--vi-float-button-color`                | `tokens.$text-primary`         | Default button text & icon colour       |
+| `--vi-float-button-color-primary`        | `tokens.$text-primary-inverse` | Primary button text & icon colour       |
+| `--vi-float-button-border-color`         | `tokens.$border-02`            | Outer border colour                     |
+| `--vi-float-button-border-radius`        | `tokens.$border-radius-full`   | Radius for circle shape (`9999px`)      |
+| `--vi-float-button-border-radius-square` | `tokens.$border-radius-lg`     | Radius for square shape (`8px`)         |
+| `--vi-float-button-shadow`               | `tokens.$shadow-lg`            | Default resting elevation shadow        |
+| `--vi-float-button-shadow-hover`         | `tokens.$shadow-xl`            | Hover / active elevation shadow         |
+| `--vi-float-button-hover-bg`             | `tokens.$layer-hover-01`       | Hover state background (default)        |
+| `--vi-float-button-hover-bg-primary`     | `tokens.$color-blue-800`       | Hover state background (primary)        |
+| `--vi-float-button-focus-ring-color`     | `tokens.$focus`                | Focus-visible ring colour               |
+| `--vi-float-button-font-size`            | `tokens.$font-size-xs`         | Description text size                   |
+| `--vi-float-button-inset-inline-end`     | `24px`                         | Distance from right edge (LTR)          |
+| `--vi-float-button-inset-block-end`      | `48px`                         | Distance from bottom edge               |
+| `--vi-float-button-z-index`              | `1030`                         | Viewport fixed layer z-index            |
+| `--vi-float-button-group-gap`            | `tokens.$spacing-xs`           | Gap between buttons in speed dial       |
+| `--vi-float-button-transition-duration`  | `200ms`                        | Smooth hover/pop transition time        |
 
 ---
 
 ## Keyboard Interactions
 
-| Key / Action | Context | Behaviour |
-|---|---|---|
-| `Tab` / `Shift+Tab` | Pinned or Speed Dial | Move focus to/from the float button or group trigger |
-| `Enter` / `Space` | `<vi-float-button>` | Activate button click or back-to-top action |
-| `Enter` / `Space` | `<vi-float-button-group>` | Toggle expanded menu state (when `trigger="click"`) |
-| `Escape` | `<vi-float-button-group>` | Collapse expanded speed dial menu and return focus to trigger |
-| `ArrowUp` / `ArrowDown` | `<vi-float-button-group>` | Move focus between speed dial menu items |
-| Outside click | `<vi-float-button-group>` | Dismiss open speed dial menu when `trigger="click"` |
-| Menu item click | `<vi-float-button-group>` | Activates item and collapses speed dial (when `close-on-select` is true) |
+| Key / Action            | Context                   | Behaviour                                                                |
+| ----------------------- | ------------------------- | ------------------------------------------------------------------------ |
+| `Tab` / `Shift+Tab`     | Pinned or Speed Dial      | Move focus to/from the float button or group trigger                     |
+| `Enter` / `Space`       | `<vi-float-button>`       | Activate button click or back-to-top action                              |
+| `Enter` / `Space`       | `<vi-float-button-group>` | Toggle expanded menu state (when `trigger="click"`)                      |
+| `Escape`                | `<vi-float-button-group>` | Collapse expanded speed dial menu and return focus to trigger            |
+| `ArrowUp` / `ArrowDown` | `<vi-float-button-group>` | Move focus between speed dial menu items                                 |
+| Outside click           | `<vi-float-button-group>` | Dismiss open speed dial menu when `trigger="click"`                      |
+| Menu item click         | `<vi-float-button-group>` | Activates item and collapses speed dial (when `close-on-select` is true) |
 
 ---
 
 ## Accessibility (a11y)
 
-| Requirement | Implementation |
-|-------------|----------------|
-| Role | Native `<button>` (`role="button"`) or native `<a>` (`role="link"`) |
-| Accessible Name | Inherited from `aria-label`, slotted description, or `tooltip` |
-| Group Menu State | Trigger button exposes `aria-haspopup="menu"` and `aria-expanded="true|false"` |
+| Requirement       | Implementation                                                               |
+| ----------------- | ---------------------------------------------------------------------------- | ------- |
+| Role              | Native `<button>` (`role="button"`) or native `<a>` (`role="link"`)          |
+| Accessible Name   | Inherited from `aria-label`, slotted description, or `tooltip`               |
+| Group Menu State  | Trigger button exposes `aria-haspopup="menu"` and `aria-expanded="true       | false"` |
 | Back-to-Top State | Smooth scrolling with `prefers-reduced-motion` fallback (`behavior: 'auto'`) |
-| Focus Ring | Standard `@mixin vi-focus-ring` on inner button `:focus-visible` |
+| Focus Ring        | Standard `@mixin vi-focus-ring` on inner button `:focus-visible`             |
 
 ---
 
@@ -195,13 +197,7 @@ background-color: var(--vi-float-button-bg, #{tokens.$layer-01});
 ### 2. Primary Button with Badge
 
 ```html
-<vi-float-button
-  type="primary"
-  badge="3"
-  badge-status="danger"
-  tooltip="3 Open Queries"
-  aria-label="3 Open Queries"
->
+<vi-float-button type="primary" badge="3" badge-status="danger" tooltip="3 Open Queries" aria-label="3 Open Queries">
   <vi-icon slot="icon" name="message-square"></vi-icon>
 </vi-float-button>
 ```
@@ -209,11 +205,7 @@ background-color: var(--vi-float-button-bg, #{tokens.$layer-01});
 ### 3. Square Button with Description
 
 ```html
-<vi-float-button
-  shape="square"
-  description="Audit"
-  tooltip="Audit Trail"
->
+<vi-float-button shape="square" description="Audit" tooltip="Audit Trail">
   <vi-icon slot="icon" name="file-text"></vi-icon>
 </vi-float-button>
 ```
@@ -222,12 +214,7 @@ background-color: var(--vi-float-button-bg, #{tokens.$layer-01});
 
 ```html
 <!-- Default window scrolling -->
-<vi-float-button
-  back-top
-  visibility-height="300"
-  tooltip="Scroll to Top"
-  aria-label="Scroll to Top"
->
+<vi-float-button back-top visibility-height="300" tooltip="Scroll to Top" aria-label="Scroll to Top">
   <vi-icon slot="icon" name="arrow-up"></vi-icon>
 </vi-float-button>
 
@@ -235,15 +222,7 @@ background-color: var(--vi-float-button-bg, #{tokens.$layer-01});
 <div id="scrollable-panel" style="overflow-y: auto; max-height: 400px;">
   <!-- Long content... -->
 </div>
-<vi-float-button
-  back-top
-  scroll-target="scrollable-panel"
-  visibility-height="200"
-  duration="450"
-  tooltip="Scroll panel to Top"
-  aria-label="Scroll panel to Top"
->
-</vi-float-button>
+<vi-float-button back-top scroll-target="scrollable-panel" visibility-height="200" duration="450" tooltip="Scroll panel to Top" aria-label="Scroll panel to Top"> </vi-float-button>
 ```
 
 ### 5. Expandable Speed Dial Group
@@ -274,31 +253,18 @@ background-color: var(--vi-float-button-bg, #{tokens.$layer-01});
   selector: 'app-crf-page',
   template: `
     <!-- Pinned back-to-top button -->
-    <vi-float-button
-      back-top
-      [visibilityHeight]="400"
-      [duration]="450"
-      (vi-float-button-back-top)="onScrolledToTop()"
-    >
+    <vi-float-button back-top [visibilityHeight]="400" [duration]="450" (vi-float-button-back-top)="onScrolledToTop()">
       <vi-icon slot="icon" name="chevron-up"></vi-icon>
     </vi-float-button>
 
     <!-- Speed dial for query actions -->
-    <vi-float-button-group
-      trigger="click"
-      [attr.open]="isMenuOpen ? '' : null"
-      (vi-float-button-open-change)="onMenuChange($event)"
-    >
+    <vi-float-button-group trigger="click" [attr.open]="isMenuOpen ? '' : null" (vi-float-button-open-change)="onMenuChange($event)">
       <vi-icon slot="icon" name="more-vertical"></vi-icon>
-      <vi-float-button
-        type="primary"
-        [badge]="pendingQueriesCount"
-        (vi-float-button-click)="openQueryModal()"
-      >
+      <vi-float-button type="primary" [badge]="pendingQueriesCount" (vi-float-button-click)="openQueryModal()">
         <vi-icon slot="icon" name="help-circle"></vi-icon>
       </vi-float-button>
     </vi-float-button-group>
-  `
+  `,
 })
 export class CrfPageComponent {
   pendingQueriesCount = 4;

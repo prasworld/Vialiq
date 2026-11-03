@@ -82,9 +82,8 @@ export class ViFloatButton extends FocusableMixin(ViElement) {
 
   protected override get _focusableElement(): HTMLElement | null {
     return (
-      (this.shadowRoot?.querySelector(
-        '.float-button',
-      ) as HTMLElement | null) ?? null
+      (this.shadowRoot?.querySelector('.float-button') as HTMLElement | null) ??
+      null
     );
   }
 
@@ -367,12 +366,15 @@ export class ViFloatButton extends FocusableMixin(ViElement) {
     const targetsToObserve: Node[] = [];
 
     if (rootNode instanceof Document) {
-      if (rootNode.documentElement) targetsToObserve.push(rootNode.documentElement);
+      if (rootNode.documentElement)
+        targetsToObserve.push(rootNode.documentElement);
     } else if (rootNode instanceof ShadowRoot) {
       targetsToObserve.push(rootNode);
-      if (document.documentElement) targetsToObserve.push(document.documentElement);
+      if (document.documentElement)
+        targetsToObserve.push(document.documentElement);
     } else {
-      if (document.documentElement) targetsToObserve.push(document.documentElement);
+      if (document.documentElement)
+        targetsToObserve.push(document.documentElement);
     }
 
     if (!targetsToObserve.length) return;
@@ -614,7 +616,8 @@ export class ViFloatButton extends FocusableMixin(ViElement) {
         <slot
           name="description"
           @slotchange="${this._handleDescriptionSlotChange}"
-        >${this.description ?? ''}</slot>
+          >${this.description ?? ''}</slot
+        >
       </span>
     `;
   }
@@ -715,7 +718,8 @@ export class ViFloatButton extends FocusableMixin(ViElement) {
               name="tooltip"
               slot="content"
               @slotchange="${this._handleTooltipSlotChange}"
-            >${this.tooltip ?? nothing}</slot>
+              >${this.tooltip ?? nothing}</slot
+            >
           </vi-tooltip>
         `
       : html`
@@ -729,9 +733,7 @@ export class ViFloatButton extends FocusableMixin(ViElement) {
         `;
 
     return html`
-      <div class="float-button__control" part="control">
-        ${inner}
-      </div>
+      <div class="float-button__control" part="control">${inner}</div>
     `;
   }
 }
