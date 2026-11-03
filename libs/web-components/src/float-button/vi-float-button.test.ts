@@ -214,7 +214,9 @@ describe('vi-float-button', () => {
       'slot[name="description"]',
     ) as HTMLSlotElement;
     expect(slot).toBeTruthy();
-    expect(slot.assignedElements()[0]?.textContent?.trim()).toBe('Slotted Help');
+    expect(slot.assignedElements()[0]?.textContent?.trim()).toBe(
+      'Slotted Help',
+    );
   });
 
   it('hides description wrapper when neither description property nor slot is provided', async () => {
@@ -568,7 +570,9 @@ describe('vi-float-button', () => {
     render(
       html`
         <vi-float-button id="btn-slotted-tooltip">
-          <span slot="tooltip" id="custom-tt-node">Custom Rich Tooltip Content</span>
+          <span slot="tooltip" id="custom-tt-node"
+            >Custom Rich Tooltip Content</span
+          >
         </vi-float-button>
       `,
       container,
@@ -615,7 +619,9 @@ describe('vi-float-button', () => {
     render(
       html`
         <vi-float-button id="btn-both-tooltip" tooltip="Fallback String">
-          <span slot="tooltip" id="override-tt">Overriding Slotted Tooltip</span>
+          <span slot="tooltip" id="override-tt"
+            >Overriding Slotted Tooltip</span
+          >
         </vi-float-button>
       `,
       container,
@@ -749,9 +755,7 @@ describe('vi-float-button-group', () => {
     const group = container.querySelector(
       '#group-select',
     ) as ViFloatButtonGroup;
-    const actionItem = container.querySelector(
-      '#action-item',
-    ) as ViFloatButton;
+    const actionItem = container.querySelector('#action-item') as ViFloatButton;
     await group.updateComplete;
     await actionItem.updateComplete;
 

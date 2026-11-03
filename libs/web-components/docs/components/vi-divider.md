@@ -70,7 +70,7 @@ type DividerTextPlacement = 'left' | 'center' | 'right';
 
 ### CSS Custom Properties
 
-Following the 3-level cascade token pattern (see [.agents/rules/semantic-colors.md](file:///Users/prashantgupta/code/nx/.agents/rules/semantic-colors.md)):
+Following the 3-level cascade token pattern (see [`.agents/rules/semantic-colors.md`](../../../../.agents/rules/semantic-colors.md)):
 
 ```scss
 // Level 1: Consumer override
