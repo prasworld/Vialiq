@@ -1,6 +1,6 @@
 # Accessibility (a11y) Audit Report: `<vi-float-button>` & `<vi-float-button-group>`
 
-**Component:** [`ViFloatButton`](../../src/float-button/vi-float-button.ts), [`ViFloatButtonGroup`](../../src/float-button/vi-float-button-group.ts)  
+**Component:** [`ViFloatButton`](../../../src/float-button/vi-float-button.ts), [`ViFloatButtonGroup`](../../../src/float-button/vi-float-button-group.ts)  
 **Package:** `@vialiq/web-components/float-button`  
 **Reference Standards:** WCAG 2.1 & 2.2 Level AA, W3C WAI-ARIA Authoring Practices Guide (APG) for Button, Menu Button, and Speed Dial Navigation, Section 508 Standards  
 **Status:** ✅ **Fully Compliant — All Accessibility Requirements Met**
@@ -55,7 +55,7 @@ The components successfully meet all WCAG 2.1/2.2 AA success criteria and W3C WA
 
 ### 3.1 Accessible Name Calculation
 
-Floating action buttons frequently rely on icons rather than visible text labels. To prevent accessibility regressions, [`ViFloatButton`](../../src/float-button/vi-float-button.ts) enforces a strict hierarchy:
+Floating action buttons frequently rely on icons rather than visible text labels. To prevent accessibility regressions, [`ViFloatButton`](../../../src/float-button/vi-float-button.ts) enforces a strict hierarchy:
 
 ```typescript
 const accessibleLabel =
@@ -77,7 +77,7 @@ const accessibleLabel =
 
 ### 3.2 Speed Dial Menu & Roving Focus Pattern
 
-In [`ViFloatButtonGroup`](../../src/float-button/vi-float-button-group.ts), child buttons stack upwards above the primary trigger button:
+In [`ViFloatButtonGroup`](../../../src/float-button/vi-float-button-group.ts), child buttons stack upwards above the primary trigger button:
 
 ```
        ┌────────────────────────┐
