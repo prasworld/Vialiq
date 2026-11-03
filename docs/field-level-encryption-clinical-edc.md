@@ -133,7 +133,7 @@ THREAT 4: Log/Diagnostic Leakage
   Without FLE: PHI appears in application logs, APM traces, Sentry
   With FLE:    Only ciphertext in logs (string starting with "enc:v1:")
 
-THREAT 5: Cross-Tenant Data Leak (Model B — shared cluster)
+THREAT 5: Cross-Tenant Data Leak (Shared Multi-Tenant Mode)
   Scenario: Bug causes one tenant's documents to be read by another tenant
   Without FLE: PHI exposed cross-tenant
   With FLE:    Each tenant has their own DEK. Even if the raw document is
