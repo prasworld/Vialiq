@@ -174,13 +174,13 @@ background-color: var(--vi-float-button-bg, #{tokens.$layer-01});
 
 ## Accessibility (a11y)
 
-| Requirement       | Implementation                                                               |
-| ----------------- | ---------------------------------------------------------------------------- | ------- |
-| Role              | Native `<button>` (`role="button"`) or native `<a>` (`role="link"`)          |
-| Accessible Name   | Inherited from `aria-label`, slotted description, or `tooltip`               |
-| Group Menu State  | Trigger button exposes `aria-haspopup="menu"` and `aria-expanded="true       | false"` |
-| Back-to-Top State | Smooth scrolling with `prefers-reduced-motion` fallback (`behavior: 'auto'`) |
-| Focus Ring        | Standard `@mixin vi-focus-ring` on inner button `:focus-visible`             |
+| Requirement       | Implementation                                                                    |
+| ----------------- | --------------------------------------------------------------------------------- |
+| Role              | Native `<button>` (`role="button"`) or native `<a>` (`role="link"`)               |
+| Accessible Name   | Inherited from `aria-label`, slotted description, or `tooltip`                    |
+| Group Menu State  | Trigger button exposes `aria-haspopup="menu"` and `aria-expanded="true \| false"` |
+| Back-to-Top State | Smooth scrolling with `prefers-reduced-motion` fallback (`behavior: 'auto'`)      |
+| Focus Ring        | Standard `@mixin vi-focus-ring` on inner button `:focus-visible`                  |
 
 ---
 
