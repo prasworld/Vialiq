@@ -411,14 +411,14 @@ Niche enterprise utilities, interactive guides, and visual accents.
   - [ ] Establish zero-downtime forward migration patterns for live studies without exclusive database locks.
 
 ### 11.4 CDC Pipeline & Normalized SQL Server Reporting Warehouse (SDTM/SAS)
-*Area: `tools/kafka`, `backend/cdc`, SQL Server 2022+*
+*Area: `backend/cdc` (`Vialiq.CdcWorker`), SQL Server 2022+*
 
-- [ ] **Debezium / Kafka CDC Connector Pipeline**
-  - [ ] Configure MongoDB Change Streams to tail replica set Oplogs for all active study clusters.
-  - [ ] Implement the Regional Ingress Boundary Filter (ADR 004):
-    - [ ] Hard-drop all `SiteIdentifier` fields (Name, MRN, National ID, Address) at regional border.
+- [ ] **`.NET 9 Vialiq.CdcWorker` Native Change-Stream Pipeline (ADR 004)**
+  - [ ] Configure MongoDB Change Streams (`readConcern: "majority"`) to tail replica set Oplogs for all active study clusters with zero intermediate Kafka/Debezium brokers.
+  - [ ] Implement the In-Memory Regional CSFLE Boundary Filter (`Vialiq.CdcWorker`):
+    - [ ] Hard-drop all `SiteIdentifier` fields (Name, MRN, National ID, Address) inside the regional VPC before cross-border egress.
     - [ ] Mask `BlindedRTSM` fields (Treatment Arm, Randomization Code) as `"BLINDED"`.
-    - [ ] Stream sanitized research data (`ClinicalResearch`) to central Kafka cluster.
+    - [ ] Stream sanitized research data (`ClinicalResearch`) directly over TLS 1.3 to the Central SQL Server reporting warehouse.
 - [ ] **SQL Server 2022+ Normalized SDTM Schema**
   - [ ] Implement CDISC SDTM target tables with Clustered Columnstore Indexes:
     - [ ] `DM` (Demographics: Age, Sex, Race, Ethnic, Country)
@@ -426,7 +426,7 @@ Niche enterprise utilities, interactive guides, and visual accents.
     - [ ] `AE` (Adverse Events: MedDRA Preferred Term, Severity, Serious Flag, Causality)
     - [ ] `LB` (Laboratory Tests: Test Name, Category, Numeric Result, Reference Ranges)
     - [ ] `CM` (Concomitant Medications: WHODrug ATC codes, Dose, Frequency, Route)
-  - [ ] Stream Kafka events directly into SQL Server columnstore tables for real-time SAS / R statistical analysis.
+  - [ ] Upsert (`MERGE` / `SqlBulkCopy`) sanitized CDC batches directly into SQL Server columnstore tables for real-time SAS / R statistical analysis.
 
 ### 11.5 Operational Resilience, Backup SLAs & 25-Year FDA Archival Engine
 *Area: SRE, Cloud Infrastructure, Disaster Recovery*

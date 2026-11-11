@@ -53,7 +53,7 @@ MongoDB's **document polymorphism**, **Change Streams**, and high-throughput **`
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│ APPLICATION WORKER TIER (Stateless Containers: Node.js BullMQ / .NET Hangfire / Temporal)              │
+│ APPLICATION WORKER TIER (Stateless .NET 9 Workers: Change Streams / Hangfire / RabbitMQ / Temporal)     │
 │                                                                                                        │
 │  ┌─────────────────────────┐   ┌─────────────────────────┐   ┌─────────────────────────┐               │
 │  │ Study Versioning Worker │   │ Protocol Migration      │   │ Auto-Query & Validation │               │
@@ -158,7 +158,7 @@ VISIT 2 COLLECTION (study_oncology101_prod.casebook_visits)
 └────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-* **Downtime:** **0 seconds.**
+* **System Downtime:** **0 seconds** (platform stays live across all other studies; the single amended study enters a brief per-study `UpversioningMaintenance` lock during Stage 4 cutover & CRA validation per [ADR 008](../../critical-problems-and-adrs/008-protocol-amendment-cache-invalidation-and-epoch-rotation-adr.md)).
 * **Historical Integrity:** Patient records collected under Protocol v1.0.0 remain mathematically preserved exactly as signed by the investigator.
 
 ---
@@ -457,6 +457,6 @@ To satisfy GAMP 5 validation and 21 CFR Part 11 electronic record accountability
 ## 9. Conclusion
 
 By pairing **MongoDB 7.0+ with a Decoupled Distributed Worker Tier**, the Vialiq EDC platform achieves:
-1. **Zero-Downtime Protocol Amendments:** Clinical trials can deploy amendments instantly without interrupting active investigator data entry.
+1. **Zero System-Wide Downtime on Protocol Amendments:** Platform clusters remain 100% online (`0s` system outage) while the amended study takes only a brief, isolated per-study `UpversioningMaintenance` lock until retrospective checks & CRA validation complete ([ADR 008](../../critical-problems-and-adrs/008-protocol-amendment-cache-invalidation-and-epoch-rotation-adr.md)).
 2. **Deterministic, High-Speed Auto-Queries:** Thousands of subject visits can be retrospectively evaluated and discrepancy-flagged in seconds using streaming cursors and unordered bulk writes.
 3. **Guaranteed GAMP 5 & 21 CFR Part 11 Compliance:** Decoupling compute from storage ensures that heavy migration workloads never degrade live transactional performance, while maintaining end-to-end auditability and cryptographic traceability.

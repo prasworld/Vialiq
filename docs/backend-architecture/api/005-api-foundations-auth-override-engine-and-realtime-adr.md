@@ -31,7 +31,7 @@ Pillar 1: Context Resolution     Pillar 2: GxP Override Engine    Pillar 3: Real
 
 1. **Pillar 1 — Hybrid Security & Context Resolution**: Combines cryptographically signed **JWT Claims** (identity, roles, tenant boundary) with explicit **Operational HTTP Headers** (`X-Tenant-Id`, `X-Study-Id`, `X-Environment`, `X-Correlation-Id`). This eliminates brittle, deeply nested route hierarchies (`/tenants/{id}/studies/{id}/...`) in favor of clean RESTful resource URIs while preventing cross-tenant data leakage.
 2. **Pillar 2 — The Regulatory GxP "Override Engine"**: Replaces binary allow/deny authorizations with a standardized **HTTP 428 Precondition Required Challenge-Response Protocol**. When an action requires clinical justification, electronic re-authentication (21 CFR Part 11 § 11.200), protocol deviation clearance, or dual-authorization ("Four-Eyes Principle"), the API issues an `OverrideChallengeDto`. The Angular UI intercepts this response and mounts the corresponding Sidepanel drawer dynamically.
-3. **Pillar 3 — Unified Real-Time Foundation (ASP.NET Core SignalR)**: Deploys a minimal, zero-infrastructure in-memory real-time hub today that scales into a distributed multi-pod event grid tomorrow. It supports active field-level Optimistic Concurrency Control (OCC) leases, real-time clinical discrepancy alerts, long-running CDISC export notifications, and hospital firewall bypass via automated transport fallback (WebSockets $\rightarrow$ Server-Sent Events $\rightarrow$ Long Polling).
+3. **Pillar 3 — Unified Real-Time Foundation (ASP.NET Core SignalR)**: Deploys a minimal, zero-infrastructure in-memory real-time hub today that scales into a distributed multi-pod event grid tomorrow. It supports real-time clinical discrepancy alerts, long-running CDISC export notifications, future form-level lock state change broadcasts (`FormLockStateChanged` per [ADR 003](../../critical-problems-and-adrs/003-realtime-signalr-reconnection-and-field-lease-reconciliation-adr.md)), and hospital firewall bypass via automated transport fallback (WebSockets $\rightarrow$ Server-Sent Events $\rightarrow$ Long Polling).
 
 ---
 
@@ -71,17 +71,21 @@ X-Client-Platform: Web
 Content-Type: application/json
 ```
 
-### 2.3 JWT Claims Specification
+### 2.3 JWT Claims Specification (Keycloak Realm-per-Tenant)
 
-Every JWT issued by our OpenID Connect (OIDC) Identity Provider (Keycloak / Entra ID) contains the following validated claims:
+Every JWT issued by our OpenID Connect (OIDC) Identity Provider (**Keycloak Realm-per-Tenant**, federated with sponsor Entra ID / Okta / Active Directory LDAP, local Email+Password, or Vialiq's cross-sponsor PI Identity Broker per `study_registry.identityConfig`; exact multi-tenant login UX/flow to be finalized at implementation) uses `https://auth.vialiq.cloud/realms/{tenant_slug}` and contains the following validated claims:
 
 ```json
 {
-  "iss": "https://auth.vialiq.io/realms/vialiq",
+  "iss": "https://auth.vialiq.cloud/realms/novartis-global",
   "sub": "usr_9b2e4f1a-8c3d-4e5a-9f1b-2c3d4e5f6a7b",
   "aud": "vialiq-edc-api",
+  "jti": "tok_7f1e9c2a-3b4d-4e5f-a1b2-c3d4e5f6a7b8",
   "exp": 1792464000,
   "nbf": 1792460400,
+  "auth_time": 1792463750,
+  "acr": "step-up",
+  "mfa_verified": true,
   "tenant_id": "ten_novartis_global",
   "email": "dr.smith@oncology-center.org",
   "given_name": "Eleanor",
@@ -91,10 +95,6 @@ Every JWT issued by our OpenID Connect (OIDC) Identity Provider (Keycloak / Entr
     "PrincipalInvestigator",
     "ClinicalStudyCoordinator"
   ],
-  "permitted_studies": [
-    "std_onco101",
-    "std_cardio202"
-  ],
   "allowed_environments": [
     "dev",
     "prod"
@@ -102,13 +102,17 @@ Every JWT issued by our OpenID Connect (OIDC) Identity Provider (Keycloak / Entr
 }
 ```
 
+> [!IMPORTANT]
+> **Dynamic Per-Request Auth & Study Policy Checks (Zero Stale-JWT Risk):**  
+> Study membership is **not** locked solely inside static JWT claims (which cannot be revoked until token expiry). Instead, the API validates JWT signatures locally via **1-hour Redis-cached JWKS**, matches `tenant_id` & `X-Study-Id`, enforces the target study's `vialiq_control_plane.study_registry.identityConfig` policy (`authMode`, `mfaEnforcement`, `stepUpSigningRequired`, `idleTimeoutMinutes` — non-secret Vault refs only), and checks **Redis-cached `user_study_access`** (`5–15 min` TTL, pushed instantaneously on revocation via Control-Plane Outbox for `MultiRegionGeoPartitioned` studies or directly on Regional Redis for `Single` studies). API readiness probes (`/health/ready`) **never** call Keycloak `/health/ready`, preventing transient IdP restarts from taking down active clinical sessions.
+
 ### 2.4 HTTP Header Contracts & Enforcement Matrix
 
 | Header Name | Type | Mandatory? | Validation Rule | Purpose |
 |---|---|---|---|---|
-| `Authorization` | String | Yes | Valid Bearer JWT signed by trusted OIDC JWKS. | Security perimeter authentication. |
-| `X-Tenant-Id` | String | Yes | Must match `tenant_id` claim in JWT. | Multi-tenant isolation; prevents cross-tenant injection. |
-| `X-Study-Id` | String | Yes | Must exist in `permitted_studies` claim array. | Determines specific study database context. |
+| `Authorization` | String | Yes | Valid Bearer JWT signed by trusted Keycloak tenant-realm JWKS (`https://auth.vialiq.cloud/realms/{tenant}`). | Security perimeter authentication. |
+| `X-Tenant-Id` | String | Yes | Must match `tenant_id` claim in JWT and resolved realm issuer. | Multi-tenant isolation; prevents cross-tenant injection. |
+| `X-Study-Id` | String | Yes | Must be authorized in Redis-cached `user_study_access` and satisfy `study_registry.identityConfig` MFA/session rules. | Determines specific study database context & revokes access immediately. |
 | `X-Environment` | String | Yes | Must be `"dev"` or `"prod"`, and exist in `allowed_environments`. | Directs database factory to Layer 2 (`27027`) vs Layer 3 (`27037`). |
 | `X-Api-Version` | String | Yes | SemVer format (e.g., `"1.0"`). | Contract versioning and deprecation handling. |
 | `X-Correlation-Id` | UUID | Yes | Client-generated or injected by gateway if missing. | End-to-end distributed tracing across Angular $\rightarrow$ API $\rightarrow$ MongoDB $\rightarrow$ Audit. |
@@ -169,16 +173,17 @@ public sealed class TenantContextResolutionMiddleware
             throw new ForbiddenTenantAccessException("Token tenant does not match requested tenant boundary.");
         }
 
-        // 3. Extract and Validate Study Context
+        // 3. Extract and Validate Study Context & Study Identity/MFA Policy
         if (!context.Request.Headers.TryGetValue("X-Study-Id", out var studyHeader) || string.IsNullOrWhiteSpace(studyHeader))
         {
             throw new MissingRequiredHeaderException("Header 'X-Study-Id' is required.");
         }
 
-        var permittedStudies = user.FindAll("permitted_studies").Select(c => c.Value).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        if (!permittedStudies.Contains(studyHeader.ToString()))
+        // Verify live user_study_access (Regional Redis -> Control Plane fallback; supports instant revocation)
+        // and enforce study_registry.identityConfig (authMode, mfaEnforcement, idleTimeout)
+        if (!await _studyAccessGuard.HasAuthorizedAccessAsync(claimTenant!, user, studyHeader.ToString(), context.RequestAborted))
         {
-            throw new ForbiddenStudyAccessException($"User does not have access permissions for study '{studyHeader}'.");
+            throw new ForbiddenStudyAccessException($"User does not have active authorized access or required MFA level for study '{studyHeader}'.");
         }
 
         // 4. Extract and Validate Environment Context (Cluster Target)
@@ -188,12 +193,15 @@ public sealed class TenantContextResolutionMiddleware
             throw new InvalidHeaderValueException("Header 'X-Environment' must be 'dev' or 'prod'.");
         }
 
-        // 5. Correlation ID Management
+        // 5. Distributed Trace & Correlation Continuity (Maps Ingress X-Request-ID / X-Correlation-Id / W3C traceparent)
         var correlationId = context.Request.Headers.TryGetValue("X-Correlation-Id", out var corrHeader) && !string.IsNullOrWhiteSpace(corrHeader)
             ? corrHeader.ToString()
-            : Guid.NewGuid().ToString("N");
+            : context.Request.Headers.TryGetValue("X-Request-ID", out var reqIdHeader) && !string.IsNullOrWhiteSpace(reqIdHeader)
+                ? reqIdHeader.ToString()
+                : System.Diagnostics.Activity.Current?.TraceId.ToString() ?? Guid.NewGuid().ToString("N");
         
         context.Response.Headers["X-Correlation-Id"] = correlationId;
+        // Structured logging allow-list attaches ONLY TenantId, StudyId, UserId, CorrelationId, & TraceId (never clinical payloads/PHI/RTSM)
 
         // 6. Bind Scoped Context Accessor for downstream Services and Repositories
         contextAccessor.CurrentContext = new TenantStudyContext(
@@ -259,7 +267,7 @@ public sealed class MongoDatabaseFactory : IMongoDatabaseFactory
     public IMongoDatabase GetAdminDatabase()
     {
         // Layer 1 Admin Cluster (rs-admin:27017)
-        return _poolManager.GetAdminClusterClient().GetDatabase("vialiq_admin_control");
+        return _poolManager.GetAdminClusterClient().GetDatabase("vialiq_control_plane");
     }
 }
 ```
@@ -560,7 +568,7 @@ export class OverrideChallengeInterceptor implements HttpInterceptor {
 
 ### 4.1 Evaluation & Technology Selection
 For clinical trial operations, real-time communication spans two primary requirements:
-1. **Interactive Form Collaboration**: Field-level OCC locking ("Coordinator Smith is currently editing Systolic BP").
+1. **Interactive Workspace Collaboration & Query Alerts**: Real-time clinical query badges and `[FUTURE TO-DO]` form-level lock state announcements (`FormLockStateChanged` per [ADR 003](../../critical-problems-and-adrs/003-realtime-signalr-reconnection-and-field-lease-reconciliation-adr.md); form locking itself executes via REST/Dual-Write `IStudyLockService`, not per-field SignalR leases).
 2. **Asynchronous Notification Streaming**: Alerts for query discrepancies, adverse events, session inactivity, and batch CDISC exports.
 
 | Feature | Raw WebSockets (`ws://`) | Server-Sent Events (SSE) | ASP.NET Core SignalR |
@@ -581,11 +589,11 @@ For clinical trial operations, real-time communication spans two primary require
          ┌─────────────────────────────────┴─────────────────────────────────┐
          ▼                                                                   ▼
 1. EdcCollaborationHub (`/hubs/edc`)                       2. PlatformNotificationHub (`/hubs/notifications`)
-   • Active CRF Form Editing Session                          • User-level & Site-level Async Stream
+   • Active CRF Workspace Room Updates                        • User-level & Site-level Async Stream
    • Rooms: `study:{id}:subject:{id}:form:{id}`               • Rooms: `user:{userId}`, `site:{siteId}`
-   • Field-level OCC Lock Leases                              • Long-running CDISC Export Progress
-   • Real-time Concurrency Avoidance                          • Safety / ePRO Adverse Event Broadcasts
-   • Active User Presence Indicators                          • 21 CFR Part 11 Inactivity Warning Sweeps
+   • Form-Level Lock State Events (`[FUTURE TO-DO]`)          • Long-running CDISC Export Progress
+   • Real-Time Query / Discrepancy Badges                     • Safety / ePRO Adverse Event Broadcasts
+   • Active Observer Presence Indicators                      • 21 CFR Part 11 Inactivity Warning Sweeps
 ```
 
 ### 4.3 Implementation: `EdcCollaborationHub`
@@ -595,12 +603,11 @@ namespace Vialiq.Api.Hubs;
 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
-using Vialiq.Core.Interfaces;
 
 public interface IEdcCollaborationClient
 {
-    Task FieldLockAcquired(FieldLockEventDto evt);
-    Task FieldLockReleased(FieldLockEventDto evt);
+    // [FUTURE TO-DO] Broadcast form-level lock/unlock/break transitions (ADR 003)
+    Task FormLockStateChanged(FormLockStateEventDto evt);
     Task UserJoinedForm(UserPresenceDto user);
     Task UserLeftForm(UserPresenceDto user);
     Task FormSoftFrozen(FormFreezeEventDto evt);
@@ -609,12 +616,10 @@ public interface IEdcCollaborationClient
 [Authorize]
 public sealed class EdcCollaborationHub : Hub<IEdcCollaborationClient>
 {
-    private readonly IFieldLockManager _lockManager;
     private readonly ILogger<EdcCollaborationHub> _logger;
 
-    public EdcCollaborationHub(IFieldLockManager lockManager, ILogger<EdcCollaborationHub> logger)
+    public EdcCollaborationHub(ILogger<EdcCollaborationHub> logger)
     {
-        _lockManager = lockManager;
         _logger = logger;
     }
 
@@ -634,58 +639,6 @@ public sealed class EdcCollaborationHub : Hub<IEdcCollaborationClient>
 
         var user = GetUserPresence();
         await Clients.OthersInGroup(groupName).UserLeftForm(user);
-
-        // Release any active locks held by this connection
-        var releasedLocks = await _lockManager.ReleaseAllLocksForConnectionAsync(Context.ConnectionId);
-        foreach (var lk in releasedLocks)
-        {
-            await Clients.OthersInGroup(groupName).FieldLockReleased(lk);
-        }
-    }
-
-    public async Task<bool> AcquireFieldLock(string studyId, string subjectId, string formId, string fieldKey)
-    {
-        var groupName = BuildGroupName(studyId, subjectId, formId);
-        var user = GetUserPresence();
-
-        var acquired = await _lockManager.TryAcquireLockAsync(
-            studyId, subjectId, formId, fieldKey, user.UserId, user.DisplayName, Context.ConnectionId, TimeSpan.FromSeconds(30));
-
-        if (acquired)
-        {
-            await Clients.OthersInGroup(groupName).FieldLockAcquired(new FieldLockEventDto(
-                FieldKey: fieldKey,
-                HeldByUserId: user.UserId,
-                HeldByDisplayName: user.DisplayName,
-                AcquiredAtUtc: DateTime.UtcNow,
-                LeaseDurationSeconds: 30
-            ));
-        }
-
-        return acquired;
-    }
-
-    public async Task ReleaseFieldLock(string studyId, string subjectId, string formId, string fieldKey)
-    {
-        var groupName = BuildGroupName(studyId, subjectId, formId);
-        var user = GetUserPresence();
-
-        await _lockManager.ReleaseLockAsync(studyId, subjectId, formId, fieldKey, user.UserId);
-
-        await Clients.OthersInGroup(groupName).FieldLockReleased(new FieldLockEventDto(
-            FieldKey: fieldKey,
-            HeldByUserId: user.UserId,
-            HeldByDisplayName: user.DisplayName,
-            AcquiredAtUtc: DateTime.UtcNow,
-            LeaseDurationSeconds: 0
-        ));
-    }
-
-    public override async Task OnDisconnectedAsync(Exception? exception)
-    {
-        // Cleanup all leases held by disconnected client
-        await _lockManager.ReleaseAllLocksForConnectionAsync(Context.ConnectionId);
-        await base.OnDisconnectedAsync(exception);
     }
 
     private static string BuildGroupName(string studyId, string subjectId, string formId) =>
@@ -699,7 +652,7 @@ public sealed class EdcCollaborationHub : Hub<IEdcCollaborationClient>
         );
 }
 
-public record FieldLockEventDto(string FieldKey, string HeldByUserId, string HeldByDisplayName, DateTime AcquiredAtUtc, int LeaseDurationSeconds);
+public record FormLockStateEventDto(string CrfId, string Status, string? HeldByUserId, string? HeldByDisplayName, DateTime? ExpiresAtUtc);
 public record UserPresenceDto(string UserId, string DisplayName, string Role);
 public record FormFreezeEventDto(string FormId, string Reason, string FrozenByDisplayName);
 ```
@@ -790,20 +743,21 @@ In `libs/form-renderer` / `apps/shell`:
 import { Injectable, signal, computed } from '@angular/core';
 import * as signalR from '@microsoft/signalr';
 
-export interface FieldLock {
-  fieldKey: string;
-  heldByUserId: string;
-  heldByDisplayName: string;
-  acquiredAtUtc: string;
+export interface FormLockStateEvent {
+  crfId: string;
+  status: 'ACTIVE' | 'RELEASED' | 'BROKEN';
+  heldByUserId?: string;
+  heldByDisplayName?: string;
+  expiresAtUtc?: string;
 }
 
 @Injectable({ providedIn: 'root' })
 export class EdcRealtimeService {
   private hubConnection: signalR.HubConnection | null = null;
-  private readonly activeLocks = signal<Map<string, FieldLock>>(new Map());
+  private readonly formLockStates = signal<Map<string, FormLockStateEvent>>(new Map());
 
-  // Public readonly signal for UI binding
-  public readonly locks = computed(() => this.activeLocks());
+  // Public readonly signal for workspace lock badge updates ([FUTURE TO-DO] per ADR 003)
+  public readonly locks = computed(() => this.formLockStates());
 
   public async connectToForm(studyId: string, subjectId: string, formId: string, authToken: string): Promise<void> {
     this.hubConnection = new signalR.HubConnectionBuilder()
@@ -823,41 +777,24 @@ export class EdcRealtimeService {
   private registerEventHandlers(): void {
     if (!this.hubConnection) return;
 
-    this.hubConnection.on('FieldLockAcquired', (evt: FieldLock) => {
-      this.activeLocks.update((current) => {
+    this.hubConnection.on('FormLockStateChanged', (evt: FormLockStateEvent) => {
+      this.formLockStates.update((current) => {
         const next = new Map(current);
-        next.set(evt.fieldKey, evt);
+        if (evt.status === 'RELEASED') {
+          next.delete(evt.crfId);
+        } else {
+          next.set(evt.crfId, evt);
+        }
         return next;
       });
     });
-
-    this.hubConnection.on('FieldLockReleased', (evt: { fieldKey: string }) => {
-      this.activeLocks.update((current) => {
-        const next = new Map(current);
-        next.delete(evt.fieldKey);
-        return next;
-      });
-    });
-  }
-
-  public async acquireFieldLock(studyId: string, subjectId: string, formId: string, fieldKey: string): Promise<boolean> {
-    if (!this.hubConnection || this.hubConnection.state !== signalR.HubConnectionState.Connected) {
-      return false;
-    }
-    return await this.hubConnection.invoke<boolean>('AcquireFieldLock', studyId, subjectId, formId, fieldKey);
-  }
-
-  public async releaseFieldLock(studyId: string, subjectId: string, formId: string, fieldKey: string): Promise<void> {
-    if (this.hubConnection?.state === signalR.HubConnectionState.Connected) {
-      await this.hubConnection.invoke('ReleaseFieldLock', studyId, subjectId, formId, fieldKey);
-    }
   }
 
   public async disconnect(studyId: string, subjectId: string, formId: string): Promise<void> {
     if (this.hubConnection) {
       await this.hubConnection.invoke('LeaveFormSession', studyId, subjectId, formId);
       await this.hubConnection.stop();
-      this.activeLocks.set(new Map());
+      this.formLockStates.set(new Map());
       this.hubConnection = null;
     }
   }
@@ -884,8 +821,8 @@ Dynamic UI Dispatch      SidepanelDrawer via 428      Decouples backend rules fr
                                                       generic metadata drives UI form layout.
 Real-Time Protocol       ASP.NET Core SignalR         In-memory hub on Day 1; 1-line Redis scale
                                                       on Day 2; automatic firewall fallback.
-OCC Field Concurrency    Lease-based EdcCollaborationHub Eliminates clinical coordinator overwrite
-                                                      collisions during live monitoring.
+Form Concurrency         Single-Editor Lock (ADR 003) Synchronous MongoDB + Redis 15m form locks via
+                                                      IStudyLockService; future hub status alerts.
 Async Event Grid         PlatformNotificationHub      Instant push for batch CDISC exports, ePRO
                                                       safety alerts, and 15-min timeout warnings.
 ========================================================================================

@@ -30,24 +30,27 @@ The established, gold-standard pattern across enterprise clinical platforms (Med
 
 ```
 =============================================================================================================
-VIALIQ SINGLE-EDITOR FORM CONCURRENCY ARCHITECTURE
+VIALIQ SINGLE-EDITOR FORM CONCURRENCY & LEASE ARCHITECTURE
 =============================================================================================================
 Core Decision                      Technical Specification                   Clinical & Operational Benefit
 -------------------------------------------------------------------------------------------------------------
 1. Single-Editor / Multi-Reader    1 active writer in Edit Mode;             Zero race conditions, zero field
                                    all other users render Read-Only.         collisions, zero diff merge drawers.
 -------------------------------------------------------------------------------------------------------------
-2. Judicious Redis Lifecycle       1 key per active CRF; 15-min TTL          Ultra-low overhead: < 150 KB RAM
-                                   (aligned with Part 11 inactivity timer).  for 100k subjects across 500 sites.
+2. Composite User Identity &       Key: {Tenant}:{Study}:{User}:{Session}    Guarantees study-scoped permissions;
+   Multi-Session Configuration     Study setting: AllowConcurrentSessions    supports clinic tablet/PC handover.
 -------------------------------------------------------------------------------------------------------------
-3. Deterministic Lock Cleanup      Explicit release on Save, Close, or       Locks freed immediately; no zombie
-                                   Logout; automatic eviction on TTL.        keys left in Redis.
+3. 4 Natural Release Triggers &    Save/Cancel, Logout, Session Expiry (15m) Eliminates ghost locks and prevents
+   Atomic Compare-And-Delete (CAD) Server Timeout; Lua script CAD release    accidental deletion of peer locks.
 -------------------------------------------------------------------------------------------------------------
-4. Clinical Emergency Override     Authorized Investigator "Break Lock"      Prevents workflow deadlocks if staff
-                                   with required Part 11 audit reason.       leaves browser open and goes home.
+4. Clinical Breakout Scenario      Role permission 'CanUnlockForms' with     Prevents trial gridlock if staff leaves
+   (Admin-Assigned Permission)     mandatory Part 11 audit reason dialog.    abruptly; immutable legal audit trail.
 -------------------------------------------------------------------------------------------------------------
-5. [FUTURE TO-DO] SignalR Refresh  Lightweight `FormLockStateChanged`        Workspace form deck updates lock
-                                   event broadcasts lock/unlock status.      icons dynamically without polling.
+5. Active Lease Inspection         GetCurrentLockAsync dynamically returns   Renders real-time countdown banner
+   & Countdown Banner              TTL seconds (KeyTimeToLiveAsync).         in UI without active polling.
+-------------------------------------------------------------------------------------------------------------
+6. Dual-Tier Authority Model       Tier 1: MongoDB (Canonical Source)        Guarantees 21 CFR Part 11 audit safety
+                                   Tier 2: Redis (Fast-Path & Notifications) even if cache tier restarts or fails.
 =============================================================================================================
 ```
 
@@ -55,258 +58,263 @@ Core Decision                      Technical Specification                   Cli
 
 ### Decision 1: Single-Editor, Multi-Reader Form Access
 
-When a user navigates to a CRF in the Clinical Workspace:
-* **Case A: Form is Free**:
-  * User acquires the exclusive **Form Edit Lock**.
-  * Form inputs are interactive; changes can be made and saved.
-* **Case B: Form is Being Edited by Another User**:
-  * Form automatically mounts in **Read-Only Mode**.
-  * All input fields are disabled.
-  * A persistent top banner informs the user:
-    > *"Currently being edited by Dr. Sarah Smith (CRC) since 10:14 AM. Viewing in Read-Only Mode."*
+When a clinical user navigates to a Case Report Form (CRF) in the Clinical Workspace:
+* **Case A: Form is Unlocked (Available)**:
+  * The user acquires the exclusive **Form Edit Lock**.
+  * Input fields, repeat sections, and medical codelists are interactive; mutations can be saved.
+* **Case B: Form is Currently Locked by Another User**:
+  * The form mounts in **Read-Only Mode**.
+  * All input fields and action buttons are disabled (grayed out).
+  * A persistent top amber banner displays the active lease status and countdown:
+    > *"🔒 Currently being edited by Dr. Sarah Smith (CRC) since 10:14 AM (Expires in 11m 42s). Viewing in Read-Only Mode."*
 
 ```
                            COORDINATOR OPENS CRF
                                      │
                     ┌────────────────┴────────────────┐
                     ▼                                 ▼
-          Is Form Free in Redis?            Is Form Currently Locked?
+          Is Form Free in DB/Redis?         Is Form Currently Locked?
                     │                                 │
                    YES                               NO
                     ▼                                 ▼
           ACQUIRE EDIT LOCK                  RENDER READ-ONLY
           • Full Edit Mode                   • Inputs disabled (grayed out)
-          • Form inputs enabled              • Amber banner: "Currently being 
-          • Lock stored in Redis               edited by Dr. Rao. Read-Only mode."
+          • Form inputs interactive          • Amber banner with live countdown
+          • Stored in DB & Redis             • Observer can view data safely
 ```
 
 ---
 
-### Decision 2: Judicious Redis Storage & Key Pattern
+### Decision 2: Composite User Identity & Multi-Session Configuration
 
-Across 100,000 subjects and 500 sites, peak concurrent editors typing at any single minute is **500 to 1,000 users globally**. 
+In clinical trials, a user is **never** a flat, global identity. A single investigator often participates across multiple clinical protocols with completely different regulatory roles:
+* Dr. Sarah Rao may be a **Principal Investigator (Full Write & Override Authority)** on `Study-ONCO-101`.
+* The same Dr. Sarah Rao may be an **Independent Medical Monitor (Read-Only Observer)** on `Study-CARD-202`.
 
-Redis holds only **~1,000 small keys** total across the entire enterprise:
-
+#### 1. The Composite Lock Key Structure
+To guarantee study-level isolation and prevent cross-study lock contamination, all lock holders and tracking keys use a composite structure:
 ```
-Key Pattern: `edc:form_lock:{studyId}:{crfId}`
-Value (JSON):
+Lock Target Key:  edc:form_lock:{studyId}:{crfId}
+User Session Key: edc:user_locks:{studyId}:{userId}:{sessionId}
+```
+
+Lock metadata payload stored in both MongoDB and Redis:
+```json
 {
-  "userId": "USR-101",
-  "displayName": "Dr. Sarah Smith",
-  "role": "ClinicalCoordinator",
-  "acquiredAtUtc": "2026-10-26T10:14:00Z"
+  "tenantId": "pharma-novis",
+  "studyId": "STUDY-ONCO-101",
+  "userId": "USR-8821",
+  "sessionId": "SES-9941a7b2",
+  "lockToken": "7f9a2b8e-4c1d-4a3b-9e2f-1a8b7c6d5e4f",
+  "displayName": "Dr. Sarah Rao",
+  "role": "PrincipalInvestigator",
+  "acquiredAtUtc": "2026-11-04T10:14:00Z",
+  "expiresAtUtc": "2026-11-04T10:29:00Z"
 }
-TTL: 900 seconds (15 Minutes)
 ```
 
-#### Key Sizing & Reliability Benefits:
-* **Memory Footprint**: 1,000 keys $\times$ ~150 bytes = **~150 Kilobytes!** (Negligible RAM usage).
-* **Zero Heartbeat Traffic**: Eliminates continuous 10s WebSocket pings. The key TTL is simply extended whenever the user triggers a standard auto-save or form navigation.
-* **Hospital Elevator Immunity**: Because the TTL is **15 minutes** (aligned with the FDA 21 CFR Part 11 inactivity logout requirement), an investigator stepping into an elevator or dead zone for 45 seconds **does not lose their lock**. They exit the elevator and continue editing with zero disruption.
+#### 2. Configurable Multi-Session Policy (`AllowConcurrentSessions`)
+Clinical users move frequently between the **nurse's station desktop PC** and a **bedside examination tablet (iPad / Surface)**. However, sponsor security mandates vary widely:
+
+* **Policy A: Strict Single Session (`AllowConcurrentSessions: false`)**:
+  * Mandated by conservative sponsors to prevent shared credential abuse (e.g. two clinic staff members sharing a single doctor's login on two computers simultaneously).
+  * Logging into Device B automatically revokes the session on Device A and clears associated edit locks.
+* **Policy B: Flexible Mobile Clinic Workflow (`AllowConcurrentSessions: true`)**:
+  * Enabled for clinical environments where investigators carry mobile tablets between exam rooms.
+  * If Dr. Rao opens a form on her clinic desktop while it is already open on her bedside tablet, the system uses the composite `SessionId` to detect the difference and offers a smooth, intentional handover:
+    > *"⚠️ You currently have this form open on another device (iPad - Exam Room 3).  
+    > [ Transfer Edit Session to This Desktop ]   [ Continue in Read-Only Mode ]"*
+  * Clicking **Transfer** safely moves the lock token to the desktop session without data loss.
 
 ---
 
-### Decision 3: Deterministic Lock Cleanup Lifecycle
+### Decision 3: The 4 Natural Release Triggers & Atomic Compare-And-Delete (CAD)
 
-Locks are deterministically cleaned up across 4 standard lifecycle events:
+Rather than maintaining fragile real-time WebSocket heartbeats, a form lock is deterministically tied to the active editing session and **can only ever be released in one of four natural ways**:
 
 ```
 ┌───────────────────────────────────────┬────────────────────────────────────────────────────────┐
-│ Event Trigger                         │ Action & Redis Operation                               │
+│ Release Trigger                       │ System Action & Concurrency Safeguard                  │
 ├───────────────────────────────────────┼────────────────────────────────────────────────────────┤
-│ 1. User Clicks "Save" or "Close"      │ Immediate release: `DEL edc:form_lock:{study}:{crf}`.  │
-│                                       │ Form is instantly available for others to edit.        │
+│ a. User Saves or Cancels              │ Normal exit. Form editing is complete. System executes  │
+│                                       │ an atomic release. Lock is immediately available.      │
 ├───────────────────────────────────────┼────────────────────────────────────────────────────────┤
-│ 2. Explicit User Logout               │ `POST /api/v1/auth/logout` scans user's active locks   │
-│                                       │ (`user:locks:{userId}`) and deletes them in a batch.   │
+│ b. Explicit User Logout               │ Intentional departure. `POST /api/v1/auth/logout`      │
+│                                       │ safely cleans up all active locks tied to that user.   │
 ├───────────────────────────────────────┼────────────────────────────────────────────────────────┤
-│ 3. Abandoned Tab / Closed Laptop      │ If the user leaves their desk without logging out,     │
-│                                       │ Redis automatic TTL eviction purges the lock at 15m.   │
+│ c. Session Inactivity Expiration      │ Inactivity timeout (15 min per 21 CFR Part 11 § 11.10).│
+│                                       │ User walked away; session terminates and frees locks.  │
 ├───────────────────────────────────────┼────────────────────────────────────────────────────────┤
-│ 4. 21 CFR Part 11 Session Inactivity  │ Front-end and API enforce 15-minute inactivity logout. │
-│                                       │ Client session terminates; locks are automatically freed│
+│ d. Abrupt Termination (Dead Client)   │ Laptop closed, browser crashed, Wi-Fi lost. Server TTL │
+│                                       │ naturally expires the lock after 15 minutes.           │
 └───────────────────────────────────────┴────────────────────────────────────────────────────────┘
 ```
 
+#### The Elimination of Blind Deletions (Atomic CAD):
+In distributed caching, calling raw `DEL` or `KeyDeleteAsync(lockKey)` creates a fatal race condition:
+1. User A's 15-minute lease expires at 10:15:00 AM.
+2. User B opens the form at 10:15:01 AM and acquires a fresh lock.
+3. User A's browser, delayed by network latency, arrives at 10:15:02 AM with an old `ReleaseLock` request.
+4. **If raw `DEL` is used, User A destroys User B's brand new active lock!**
+
+To eliminate this vulnerability permanently, all releases execute an **Atomic Compare-And-Delete (CAD)** Lua script directly in Redis:
+```lua
+-- Atomic Compare-And-Delete (CAD)
+local val = redis.call('get', KEYS[1])
+if val then
+    local data = cjson.decode(val)
+    -- Verify User Association AND LockToken match
+    if data and data.UserId == ARGV[1] and (ARGV[2] == '' or data.LockToken == ARGV[2]) then
+        redis.call('del', KEYS[1])
+        return 1
+    end
+end
+return 0 -- Mismatch: Expired or owned by another user -> Safe No-Op!
+```
+
+#### Safe End-of-Day Logout Cleanup:
+When a coordinator logs out at 5:00 PM, `edc:user_locks:{userId}` contains keys from forms touched throughout the entire workday. The logout routine **never blindly deletes these keys**. It iterates through them using the CAD script:
+* Any key whose 15-minute lease expired hours ago and was subsequently locked by a colleague will fail the CAD ownership check and be **left 100% untouched**.
+* Only locks genuinely held by the logging-out user are released.
+
 ---
 
-### Decision 4: Clinical Emergency Override ("Break Lock" Safety Valve)
+### Decision 4: Clinical Breakout Scenario (`CanUnlockForms` Role Permission)
 
-If a study coordinator enters data, locks a form, and is unexpectedly called away to an emergency without saving or closing the tab, the form must not remain blocked if an Investigator urgently needs to complete visit documentation:
+If a study coordinator enters vitals, locks a form, and is unexpectedly called away to an emergency room without saving or logging out, the form must not remain inaccessible if a Principal Investigator urgently needs to complete patient discharge documentation or protocol drug administration.
+
+#### 1. Study Admin Role Configuration
+The unlock capability is **not hardcoded** to any single role. Instead, the Study Administrator configures an explicit permission:
+* **Permission Flag:** `CanUnlockForms` (Emergency Form Unlock).
+* **Assignment:** Typically granted only to senior, legally accountable site roles (Principal Investigator, Sub-Investigator, Site Admin).
+
+#### 2. The 21 CFR Part 11 Audit Override Workflow
+When an authorized user with `CanUnlockForms` encounters a locked form:
+1. They see an explicit action in the banner: **`[ ⚡ Unlock Form & Take Over ]`**.
+2. Clicking the button opens a mandatory **Part 11 Electronic Signature Dialog**:
+   * **Mandatory Reason for Unlock** (e.g., *"Coordinator called away to ICU; immediate protocol drug administration required"*).
+   * **Credential Re-authentication** (Password / PIN entry).
+3. The server executes `BreakLockAsync`:
+   * Atomically overwrites the active lock with the new user's identity and a **brand-new `LockToken`**.
+   * Logs an immutable legal event in the MongoDB audit collection (`ClinicalAuditRecordEntity`):
+     ```json
+     {
+       "eventType": "FORM_LOCK_OVERRIDE",
+       "studyId": "STUDY-ONCO-101",
+       "crfId": "CRF-9021",
+       "previousLockHolder": "USR-1044 (Nurse Patel)",
+       "overriddenBy": "USR-8821 (Dr. Rao - PI)",
+       "auditReason": "Emergency ICU admission documentation",
+       "timestampUtc": "2026-11-04T10:28:14Z"
+     }
+     ```
+   * Publishes a `LockBroken` notification over Redis PubSub, immediately converting the previous user's browser to Read-Only mode with an alert notification.
+
+---
+
+### Decision 5: Active Lease Inspection & Read-Only Banner Countdown (`GetCurrentLockAsync`)
+
+When an observer or monitor opens a locked form:
+1. The endpoint `GetCurrentLockAsync` queries Redis for the active lock payload.
+2. It dynamically calculates the remaining lease seconds via `KeyTimeToLiveAsync(lockKey)`.
+3. The client renders the form in **Read-Only Mode** and initializes a live client-side countdown timer:
+   ```
+   ┌────────────────────────────────────────────────────────────────────────────────────────┐
+   │ 🔒 FORM LOCKED BY DR. SARAH RAO (Expires in 11m 42s)                                   │
+   │ You are viewing this CRF in Read-Only mode. Inputs are disabled to prevent overwrites. │
+   │                                                                                        │
+   │ [ View Read-Only Audit History ]          [ ⚡ Unlock Form & Take Over (PI Only) ]     │
+   └────────────────────────────────────────────────────────────────────────────────────────┘
+   ```
+4. Observers can review, inspect, and verify clinical data without blocking or interfering with the primary editor.
+
+---
+
+### Decision 6: The 2-Tier Canonical Authority Model (MongoDB + Redis)
+
+In clinical software validation (GAMP 5 / FDA 21 CFR Part 11), an in-memory cache **cannot be the sole legal authority** for data integrity. Redis is the distributed performance and real-time notification backplane paired synchronously with MongoDB (`ADR 007-A` Decision 3.1).
+
+The locking engine operates as a **Dual-Write Synchronous System (DB + Cache)**:
 
 ```
-┌────────────────────────────────────────────────────────────────────────────────────────┐
-│ ⚠️ FORM CURRENTLY LOCKED                                                               │
-│ This CRF is locked by Nurse A. Patel (locked at 10:14 AM).                             │
-│                                                                                        │
-│ [ View in Read-Only Mode ]          [ ⚡ Break Lock & Take Over (Investigator Only) ]   │
-└────────────────────────────────────────────────────────────────────────────────────────┘
+                       [ CLIENT FORM REQUEST ]
+                                  │
+                                  ▼
+┌───────────────────────────────────────────────────────────────────┐
+│ TIER 2: REDIS FAST-PATH INGRESS (< 0.5 ms)                        │
+│ • Checks Regulatory Freeze/DBL (`vialiq:locks:{studyId}`) FIRST;  │
+│   returns HTTP 423 Locked immediately if frozen/hard-locked.      │
+│ • Checks active form edit lease (`edc:form_lock:{studyId}:{crfId}`)│
+│   and rejects concurrent editors for observers without DB reads.  │
+└─────────────────────────────────┬─────────────────────────────────┘
+                                  │ (If open, free or owned by caller, or 0.001% total HA outage bypass)
+                                  ▼
+┌───────────────────────────────────────────────────────────────────┐
+│ TIER 1: MONGODB CANONICAL AUTHORITY (Source of Truth)             │
+│ • Verifies governance `study_locks` (no active freeze/DBL).       │
+│ • Upserts 15m edit lease in `study_{id}_prod.study_edit_leases`   │
+│   (partial unique index `{ studyId: 1, targetCrfId: 1 }` on active).│
+│ • MongoDB Primary is the legal timestamp and ACID authority.      │
+└─────────────────────────────────┬─────────────────────────────────┘
+                                  │ (Once DB commits successfully)
+                                  ▼
+┌───────────────────────────────────────────────────────────────────┐
+│ SYNCHRONOUS CACHE COMPLETION (Strict DB + Cache Consistency)      │
+│ • Updates/evicts key with 15-minute TTL before returning 200 OK.  │
+│ • Transient sync failure when Redis is active throws HTTP 503     │
+│   (`CacheSynchronizationException`) — never serves stale cache.   │
+│ • Total Redis HA outage (~0.001%): single session circuit-breaker │
+│   check redirects directly to canonical MongoDB until recovery.   │
+└───────────────────────────────────────────────────────────────────┘
 ```
 
-#### Regulatory & Audit Requirements for Lock Break:
-* Only users with authorized roles (Principal Investigator, Sub-Investigator, Site Admin) have override permissions.
-* Clicking **"Break Lock & Take Over"** prompts for a mandatory **21 CFR Part 11 Audit Reason** (e.g., *"Coordinator called away to ICU; immediate protocol drug administration required"*).
-* The previous lock is overwritten in Redis, and an immutable entry is logged in `ClinicalAuditEvent`:
-  ```json
-  {
-    "eventType": "FORM_LOCK_OVERRIDE",
-    "crfId": "CRF-9021",
-    "previousLockHolder": "A. Patel (Nurse)",
-    "overriddenBy": "Dr. R. Gupta (PI)",
-    "reason": "Emergency patient discharge documentation required",
-    "timestampUtc": "2026-10-26T10:28:14Z"
-  }
-  ```
+> **Authoritative Service Contract (`IStudyLockService` / `StudyLockService`):**  
+> Lock operations follow `IStudyLockService` (`AcquireFormLockAsync`, `ReleaseFormLockAsync`, `BreakFormLockAsync`, `ReleaseAllLocksForSessionAsync`, and `GetCurrentLockAsync`), verifying governance `study_locks` (`HTTP 423` gate) before persisting 15-minute UI edit leases in MongoDB `study_edit_leases` and synchronizing Redis key `edc:form_lock:{studyId}:{crfId}` atomically via `SET`/CAD Lua before acknowledging completion.
 
 ---
 
-### Decision 5: [FUTURE TO-DO] Single SignalR Event for Workspace Form List Refresh
+## 3. Concrete Implementation Specifications (`IStudyLockService`)
 
-To ensure the modern Clinical Workspace ([ADR 001](./001-subject-matrix-virtualization-and-modern-workspace-adr.md)) reflects real-time lock statuses without expensive HTTP polling:
+> Aligned with `API ADR 006`, `ADR 007-A`, and `ADR 007-B`, `IStudyLockService` supersedes legacy field-lock prototypes and enforces **Single-Editor / Multi-Reader Form Locking** backed by MongoDB (`study_edit_leases`, gated by governance `study_locks`) + synchronous Redis coordination.
 
-#### Specification for Future Implementation:
-* When a form lock is acquired, released, or broken, the backend emits a single, lightweight SignalR notification to the subject session room (`subject:{subjectId}`):
-  ```csharp
-  // Future SignalR Notification Contract
-  public record FormLockStateChangedNotification(
-      string FormId, 
-      bool IsLocked, 
-      string? LockedByUserId, 
-      string? LockedByDisplayName, 
-      DateTime? LockedAtUtc);
-  ```
-* **Frontend Reaction**:
-  * Users viewing the patient's **Longitudinal Journey Ribbon** or **Form Card Deck** see the form's lock icon update instantly (`🔒 Locked by Dr. Rao` $\rightarrow$ `🔓 Available`).
-  * If a user is viewing the form in Read-Only mode and the editor saves/closes, the Read-Only banner updates:  
-    `"Dr. Rao finished editing. [Click to Switch to Edit Mode]"`.
-
----
-
-## 3. Concrete Implementation Specifications
-
-### 3.1 C# Redis Form Lock Manager (`IFormLockManager.cs`)
+### 3.1 Form Concurrency Service Contract (`IStudyLockService.cs`)
 
 ```csharp
-namespace Vialiq.Core.Interfaces;
+namespace Vialiq.Caching.Abstractions;
 
-public interface IFormLockManager
+public interface IStudyLockService
 {
-    Task<FormLockResult> TryAcquireLockAsync(string studyId, string crfId, UserProfile user, CancellationToken ct = default);
-    Task<bool> ReleaseLockAsync(string studyId, string crfId, string userId, CancellationToken ct = default);
-    Task<bool> BreakLockAsync(string studyId, string crfId, UserProfile overridingUser, string reason, CancellationToken ct = default);
-    Task ReleaseAllLocksForUserAsync(string userId, CancellationToken ct = default);
+    Task<LockResult> AcquireFormLockAsync(string studyId, string crfId, UserContext user, CancellationToken ct = default);
+    Task ReleaseFormLockAsync(string studyId, string crfId, UserContext user, string? lockToken = null, CancellationToken ct = default);
+    Task ReleaseAllLocksForSessionAsync(string studyId, string userId, string sessionId, CancellationToken ct = default);
+    Task BreakFormLockAsync(string studyId, string crfId, string auditReason, UserContext user, CancellationToken ct = default);
     Task<FormLockInfo?> GetCurrentLockAsync(string studyId, string crfId, CancellationToken ct = default);
 }
-
-public record FormLockResult(bool Acquired, FormLockInfo? ExistingLock);
-
-public record FormLockInfo(
-    string UserId,
-    string DisplayName,
-    string Role,
-    DateTime AcquiredAtUtc,
-    int ExpiresInSeconds);
 ```
 
-### 3.2 Redis Implementation (`RedisFormLockManager.cs`)
+### 3.2 Atomic CAD Release, Logout Sweep & Dual-Write Mechanics
 
-```csharp
-namespace Vialiq.Infrastructure.Services;
-
-using StackExchange.Redis;
-using System.Text.Json;
-using Vialiq.Core.Interfaces;
-
-public sealed class RedisFormLockManager : IFormLockManager
-{
-    private readonly IDatabase _redis;
-    private static readonly TimeSpan DefaultTtl = TimeSpan.FromMinutes(15);
-
-    public RedisFormLockManager(IConnectionMultiplexer redis)
-    {
-        _redis = redis.GetDatabase();
-    }
-
-    public async Task<FormLockResult> TryAcquireLockAsync(
-        string studyId, string crfId, UserProfile user, CancellationToken ct = default)
-    {
-        var lockKey = BuildKey(studyId, crfId);
-        var userLocksKey = $"edc:user_locks:{user.UserId}";
-
-        var lockData = new FormLockInfo(
-            UserId: user.UserId,
-            DisplayName: user.DisplayName,
-            Role: user.Role,
-            AcquiredAtUtc: DateTime.UtcNow,
-            ExpiresInSeconds: (int)DefaultTtl.TotalSeconds);
-
-        var payload = JsonSerializer.Serialize(lockData);
-
-        // Redis SETNX: Set key only if it does not already exist, with 15m expiration
-        bool acquired = await _redis.StringSetAsync(lockKey, payload, DefaultTtl, When.NotExists);
-
-        if (acquired)
-        {
-            // Track lock in user's active set for instant logout cleanup
-            await _redis.SetAddAsync(userLocksKey, lockKey);
-            await _redis.KeyExpireAsync(userLocksKey, DefaultTtl);
-            return new FormLockResult(true, null);
-        }
-
-        // Lock already exists -> Retrieve current holder details
-        var existingPayload = await _redis.StringGetAsync(lockKey);
-        if (existingPayload.HasValue)
-        {
-            var existingLock = JsonSerializer.Deserialize<FormLockInfo>(existingPayload.ToString());
-            
-            // Re-entrant: Same user already holds the lock
-            if (existingLock?.UserId == user.UserId)
-            {
-                await _redis.KeyExpireAsync(lockKey, DefaultTtl);
-                return new FormLockResult(true, null);
-            }
-
-            return new FormLockResult(false, existingLock);
-        }
-
-        return new FormLockResult(false, null);
-    }
-
-    public async Task<bool> ReleaseLockAsync(string studyId, string crfId, string userId, CancellationToken ct = default)
-    {
-        var lockKey = BuildKey(studyId, crfId);
-        var existingPayload = await _redis.StringGetAsync(lockKey);
-
-        if (!existingPayload.HasValue) return true;
-
-        var existingLock = JsonSerializer.Deserialize<FormLockInfo>(existingPayload.ToString());
-        if (existingLock?.UserId == userId)
-        {
-            await _redis.KeyDeleteAsync(lockKey);
-            await _redis.SetRemoveAsync($"edc:user_locks:{userId}", lockKey);
-            return true;
-        }
-
-        return false;
-    }
-
-    public async Task ReleaseAllLocksForUserAsync(string userId, CancellationToken ct = default)
-    {
-        var userLocksKey = $"edc:user_locks:{userId}";
-        var locks = await _redis.SetMembersAsync(userLocksKey);
-
-        foreach (var lockKey in locks)
-        {
-            await _redis.KeyDeleteAsync(lockKey.ToString());
-        }
-
-        await _redis.KeyDeleteAsync(userLocksKey);
-    }
-
-    private static string BuildKey(string studyId, string crfId) => $"edc:form_lock:{studyId}:{crfId}";
-}
-```
+1. **Redis Key Structure (`15-Minute` TTL):**
+   - Form lock key: `edc:form_lock:{studyId}:{crfId}` storing serialized `{ TenantId, StudyId, UserId, FullName, SessionId, LockToken, AcquiredAtUtc, ExpiresAtUtc }`.
+   - Session tracking set: `edc:user_locks:{studyId}:{userId}:{sessionId}` tracking active form keys for deterministic logout cleanup.
+2. **Atomic Compare-And-Delete (CAD) Lua Script:**
+   - Every normal release (`ReleaseFormLockAsync`) and logout cleanup (`ReleaseAllLocksForSessionAsync`) verifies `UserId` + `LockToken` inside Redis before deleting `edc:form_lock:{studyId}:{crfId}`, guaranteeing a stale network request or logout sweep never deletes a colleague's newly acquired lock:
+   ```lua
+   -- Atomic Compare-And-Delete (CAD)
+   local val = redis.call('get', KEYS[1])
+   if val then
+       local data = cjson.decode(val)
+       if data and data.UserId == ARGV[1] and (ARGV[2] == '' or data.LockToken == ARGV[2]) then
+           redis.call('del', KEYS[1])
+           return 1
+       end
+   end
+   return 0
+   ```
+3. **Dual-Write Synchronous Completion (`ADR 007-A Decision 3.1`) & Total-Outage Redirect:**
+   - **Normal HA Operation:** Lock acquisition (verifying regulatory `study_locks` `HTTP 423` gate first, then `FindOneAndUpdateAsync` in MongoDB `study_edit_leases` + synchronous `StringSetAsync` in Redis), release (`Status = Released` + Atomic CAD delete), and break-lock override (`Status = Broken` + immutable Part 11 audit log + synchronous Redis replacement/eviction + `vialiq:pubsub:locks` notification) must complete synchronously across **DB + Cache** before returning success.
+   - **0.001% Total Redis HA Outage (Primary + Replica Both Down):** A single session circuit-breaker check bypasses Redis and queries/updates canonical MongoDB (`study_locks` + `study_edit_leases`) directly until Sentinel restores Redis HA.
+   - *(Detailed C# implementation blueprint is maintained alongside `ScopedCacheService` in [ADR 007-B](./007-b-high-availability-redis-cluster-and-scaling-guide.md#43-form-concurrency-lock-service-studylockservicecs).)*
 
 ---
 
@@ -332,13 +340,14 @@ Elevator / Network Disconnect  Zero Stale Drops              100% Retained (15m 
 ## 5. Decision Consequences
 
 ### Positive Consequences:
-1. **Extreme Architectural Simplicity**: Eliminates hundreds of lines of fragile WebSocket heartbeat loops, Lua scripts, and client-side merge drawers.
+1. **Extreme Architectural Simplicity**: Eliminates high-frequency WebSocket heartbeat chatter and complex client-side diff-merge drawers, replacing them with a deterministic 15-minute key lease and an atomic Compare-And-Delete (CAD) Lua script.
 2. **Rock-Solid at Mega-Scale**: Works flawlessly for 100,000 subjects across 500 sites because total active Redis state is capped by active human editors (~1,000 keys), not total subjects or fields.
 3. **Elevator & Dead Zone Resilience**: The 15-minute TTL guarantees that entering an elevator, radiology basement, or Wi-Fi dead zone for a few minutes never drops an in-progress editing session.
 4. **Clean Regulatory Lineage**: One legal author per edit session guarantees 100% compliance with FDA 21 CFR Part 11 § 11.10(e) audit trail standards.
+5. **Study-Scoped Multi-Session Safety**: Composite keys `{Tenant}:{Study}:{User}:{Session}` ensure multi-device clinic workflows (iPad $\leftrightarrow$ Desktop) transition smoothly without cross-study lock contamination.
 
 ### Trade-offs & Mitigations:
 1. **Simultaneous Co-Editing Not Supported**: Two people cannot edit the same form at the same time.
    * *Mitigation:* In clinical research, simultaneous co-authoring is neither standard nor compliant with GCP roles. Read-only mode allows others to review data without risk of conflicting updates.
 2. **Staff Forgetting to Save / Close**:
-   * *Mitigation:* Redis automatically evicts locks after 15 minutes of inactivity, and authorized Investigators have the explicit "Break Lock" override with an audit trail reason.
+   * *Mitigation:* Redis automatically evicts locks after 15 minutes of inactivity, and staff with the admin-configured `CanUnlockForms` role permission can execute an authorized Break Lock with a mandatory 21 CFR Part 11 audit reason.

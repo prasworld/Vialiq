@@ -1,12 +1,16 @@
-# Scaling Architecture: Database Horizontal Scale-Out, Sharding, and Storage Lifecycle
+# Scaling Architecture: Database Horizontal Scale-Out, Cluster Farm Architecture, and Storage Lifecycle
 
 > **Document ID:** `VIALIQ-SCALE-001`  
 > **Domain:** Platform Scalability — Data Tier & Storage Infrastructure  
-> **Status:** Accepted  
-> **Date:** October 22, 2026  
+> **Status:** Accepted / Active Architecture Standard  
+> **Date:** November 2026  
 > **Author:** Architecture Team / Prashant Gupta  
-> **Target Systems:** MongoDB 7.0+ (Replica Sets & Sharded Clusters), Microsoft SQL Server 2022+ (Reporting Warehouse), Azure Cosmos DB / AWS DocumentDB compatibility  
+> **Target Systems:** MongoDB 7.0+ (Replica Sets & Cluster Farm), Microsoft SQL Server 2022+ (Reporting Warehouse)  
+> **Regulatory Standards:** FDA 21 CFR Part 11, EU CTR 536/2014, ICH GCP E6(R3), GAMP 5 Category 4  
 > **Related Documents:**
+> - [ADR 009: Distributed Clock Skew & Part 11 Audit Timestamp Integrity](../critical-problems-and-adrs/009-distributed-clock-skew-and-part-11-audit-timestamp-integrity-adr.md)
+> - [Scale 005: Database Cluster Farm & Throughput Scaling](./005-database-cluster-farm-regional-compliance-and-throughput-scaling.md)
+> - [Scale 005-A: Multilingual Global Studies & Site-Group Partitioning](./005-a-multilingual-study-db-per-site-group-and-reporting-guide.md)
 > - [Database Spec 002: 3-Cluster & Flexible Tenancy Architecture](../backend-architecture/database/002-3-cluster-and-flexible-tenancy-architecture.md)
 > - [Database Spec 005: Operational Pillars, Backup, Locking & Archival](../backend-architecture/database/005-database-operational-pillars-backup-locking-dictionaries-and-archival.md)
 > - [API ADR 007: Polyglot Database Migration & Seeding](../backend-architecture/api/007-polyglot-database-migration-and-seeding-adr.md)
@@ -15,24 +19,26 @@
 
 ## 1. Executive Summary & Problem Statement
 
-As the Vialiq Clinical EDC platform scales from dozens of Phase 1 trials to hundreds of multi-center Phase 3 global studies across multiple enterprise sponsors (Novartis, Roche, Pfizer), the data tier faces two distinct scaling pressures:
+As the Vialiq Clinical EDC platform scales from dozens of Phase 1 trials to hundreds of multi-center Phase 3 global pivotal studies across multiple enterprise sponsors (Novartis, Roche, Pfizer), the data tier faces two distinct scaling challenges:
 
-1. **Space Exhaustion (Data Volume Growth)**:
-   - A single Phase 3 oncology trial with 5,000 subjects over 3 years generates ~150 visits per subject, ~40 forms per visit, and ~50 audit trail events per form mutation, generating over **1.2 billion documents** and **1.8 TB of data** per mega-trial.
-   - Operating hundreds of studies on a single database server inevitably exhausts local NVMe disk limits (typically 16 TB per volume) and degrades WiredTiger memory cache hit ratios.
-2. **Throughput Bottlenecks (Concurrent IOPS & Write Locks)**:
-   - Burst clinical events (e.g. 5,000 clinic visits happening between 09:00 and 11:00 AM across global clinical sites) saturate IOPS and trigger storage write lock contention on a single replica set.
+1. **Space & Throughput Growth**:
+   - A standard Phase 3 trial with 5,000 subjects over 4 years produces approximately 15 GB to 30 GB of structured clinical data. However, operating 500+ active studies simultaneously across enterprise sponsors aggregates to tens of terabytes of live data.
+   - Peak clinical events (such as 5,000 clinic visits occurring during morning clinic hours across global sites) create high-concurrency read and write demand.
+2. **The Non-Sharded Invariant (FDA 21 CFR Part 11 Compliance)**:
+   - In clinical trials, an audit trail is a legal document. As established in [ADR 009](../critical-problems-and-adrs/009-distributed-clock-skew-and-part-11-audit-timestamp-integrity-adr.md) and [Scale 005](./005-database-cluster-farm-regional-compliance-and-throughput-scaling.md), **a single clinical study database (`study_{studyId}_prod`) shall NEVER be sharded across multiple MongoDB clusters or nodes**.
+   - Sharding an individual study across multiple MongoDB shards introduces independent hardware clocks, distributed two-phase commits (2PC), and potential timestamp inversion, breaking the strict causal ordering and legal authority of audit records.
 
 ```
                       DATA TIER SCALING HORIZONS
                                   │
     ┌─────────────────────────────┼─────────────────────────────┐
     ▼                             ▼                             ▼
-Horizon 1: Multi-Database     Horizon 2: Sharded Cluster    Horizon 3: Dedicated Cluster
-(Shared Cluster Scale-Up)     (Horizontal Pod/Node Add)     (Sovereign High-Load Promotion)
-• 100+ DBs per cluster        • Chunk distribution         • Isolated Atlas / K8s Cluster
-• Separate study databases    • Shard Key: {study, subject} • Zero noisy-neighbor risk
-• 16TB auto-expanding NVMe   • Zero cross-shard queries    • Dedicated KMS / BYOK
+Horizon 1: Multi-Database     Horizon 2: Multi-Cluster Farm  Horizon 3: Dedicated Promotion
+(Shared Cluster Scale-Up)     (Horizontal Scale-Out)        (Sovereign Mega-Study Cluster)
+• 50–100 DBs per replica set  • Prod Cluster Farm            • Dedicated 3-node Replica Set
+• Separate study databases    • Dynamic study routing       • 100% dedicated RAM & NVMe
+• 16TB auto-expanding NVMe    • Zero noisy-neighbor risk    • Single-Primary serialization
+• Non-sharded replica sets    • Regional residency routing  • Strict Part 11 clock integrity
 ```
 
 ---
@@ -44,21 +50,21 @@ Our [3-Cluster Database Architecture](../backend-architecture/database/002-3-clu
 - **Layer 2 Dev Phase (`rs-dev:27027`)**: Protocol design, sandbox forms, mock testing.
 - **Layer 3 Production (`rs-prod:27037`)**: Qualified GxP clinical study execution.
 
-### How Layer 3 Production Scales Out Horizontally
+### How Layer 3 Production Scales Horizontally
 
-When Layer 3 Production exceeds single-node storage or IOPS limits, it scales horizontally across **3 progressive dimensions**:
+When Layer 3 Production exceeds single-node capacity or when high-throughput studies require isolation, it scales horizontally across **3 progressive strategies**:
 
 ```
                                 LAYER 3 SCALE-OUT TOPOLOGY
                                             │
         ┌───────────────────────────────────┼───────────────────────────────────┐
         ▼                                   ▼                                   ▼
-Strategy A: Multi-Cluster Farm      Strategy B: Sharded Replica Sets     Strategy C: Tiered Cold Archival
-(Dynamic Study Router)              (Horizontal Shard Addition)          (WORM S3 / Azure Blob)
-• Prod Cluster Farm:                • Mongo Config Servers + Mongos      • 25-Year FDA Retention
-  - rs-prod-us-east-01              • Shard 1 (Subjects 0001 - 2500)     • Mongo Archive collection
-  - rs-prod-us-east-02              • Shard 2 (Subjects 2501 - 5000)     • Parquet cold lake
-  - rs-prod-eu-west-01              • Shard Key: {study_id, subject_id}  • Slashes live cluster size by 75%
+Strategy A: Multi-Cluster Farm      Strategy B: Dedicated Promotion      Strategy C: Tiered Cold Archival
+(Dynamic Study Router)              (Sovereign Mega-Study Cluster)       (WORM S3 / Azure Blob)
+• Prod Cluster Farm:                • Promoted dedicated replica set     • 25-Year FDA Retention
+  - rs-prod-us-east-01              • Site-Group Partitioning (Scale 005A) • Parquet cold data lake
+  - rs-prod-us-east-02              • Single Primary (ADR 009 invariant) • Drops closed DB from Prod
+  - rs-prod-eu-west-01              • Zero cross-shard clock skew        • Slashes live storage by 75%
 ```
 
 ---
@@ -68,7 +74,7 @@ Strategy A: Multi-Cluster Farm      Strategy B: Sharded Replica Sets     Strateg
 To prevent a single MongoDB cluster from becoming a monolithic bottleneck, Vialiq implements a **Cluster Farm Architecture**:
 
 ### 3.1 The Dynamic Study Registry Document (in Layer 1 Admin)
-The Layer 1 Admin database (`vialiq_admin_control`) maintains a dynamic cluster routing registry:
+The Layer 1 Control Plane database (`vialiq_control_plane.study_registry`) maintains a dynamic cluster routing registry using **non-secret references only** (per [Scale 005](./005-database-cluster-farm-regional-compliance-and-throughput-scaling.md) — actual connection credentials reside strictly in VPC Vault/Secrets Manager):
 
 ```json
 {
@@ -79,8 +85,9 @@ The Layer 1 Admin database (`vialiq_admin_control`) maintains a dynamic cluster 
   "assigned_cluster": {
     "cluster_id": "rs-prod-us-east-02",
     "cluster_type": "ReplicaSet",
-    "primary_connection_uri": "mongodb://rs-prod-02-node1:27017,rs-prod-02-node2:27017,rs-prod-02-node3:27017/?replicaSet=rs-prod-02",
-    "read_preference": "secondaryPreferred",
+    "zone_profile_id": "PROFILE_US_EAST_HIPAA_02",
+    "secret_vault_ref": "vault://rs-prod-us-east-02/uri",
+    "read_preference": "primary",
     "max_pool_size": 200,
     "current_storage_bytes": 482910482000,
     "max_storage_quota_bytes": 2000000000000
@@ -121,7 +128,12 @@ public sealed class DynamicClusterConnectionPool : IConnectionPoolManager
             settings.MaxConnectionPoolSize = clusterAssignment.MaxPoolSize;
             settings.MinConnectionPoolSize = 10;
             settings.WaitQueueTimeout = TimeSpan.FromSeconds(5);
-            settings.ReadPreference = ReadPreference.SecondaryPreferred;
+            // Strict transactional consistency: all clinical reads read from Primary
+            // to guarantee Read-Your-Own-Writes and zero stale patient data.
+            // Secondaries exist strictly for High Availability (HA) automatic failover.
+            settings.ReadPreference = ReadPreference.Primary;
+            settings.ReadConcern = ReadConcern.Majority;
+            settings.WriteConcern = WriteConcern.WMajority;
             return new MongoClient(settings);
         });
 
@@ -134,56 +146,90 @@ public sealed class DynamicClusterConnectionPool : IConnectionPoolManager
 
 ---
 
-## 4. Sharding Strategy: Horizontal Partitioning Inside Mega-Studies
+## 4. Mega-Study Scaling Strategy: Dedicated Cluster Promotion & Regional Partitioning
 
-When a single study's data exceeds 2 TB, horizontal sharding is activated.
+### 4.1 The Rejection of MongoDB Collection Sharding (ADR 009 & Scale 005)
 
-### 4.1 Sharding Key Design: The Golden Life-Sciences Compound Key
-Choosing the wrong sharding key causes **Scatter-Gather Queries** (where every single query must hit all shards), crippling throughput.
+Earlier drafts considered sharding large studies using MongoDB's `mongos` router and config servers (`shardCollection`). Rigorous clinical operations, regulatory compliance (FDA 21 CFR Part 11), and systems engineering review proved this to be an unacceptable anti-pattern in clinical EDC:
+
+1. **Audit Trail Timestamp Inversion Risk**: In a sharded MongoDB cluster, each shard runs on an independent physical host. Microsecond clock drift between shards can cause out-of-order audit records, violating 21 CFR Part 11 § 11.10(e).
+2. **Loss of Atomic Monotonic Sequencing**: With a single Primary node, atomic sequence incrementing (`$inc: { auditStreamSequence: 1 }`) is trivial and guaranteed monotonic. Sharding eliminates single-point serialization, requiring complex distributed counters.
+3. **Clinical Transaction Overhead**: While a patient visit write touches multiple documents (e.g. form data, `study_locks` / `study_edit_leases`, audit ledger), cross-shard transactions incur two-phase commit (2PC) latency overhead and risk locking contention.
+4. **Data Size Reality**: Even a massive Phase 3 study with 5,000 subjects over 4 years generates under 30 GB of structured BSON data. Clinical data volumes do not warrant sharding complexity.
+
+> [!IMPORTANT]
+> **Authoritative Decision: Non-Sharded Study Invariant**  
+> Under no circumstances is an individual clinical study sharded across MongoDB nodes (`enableSharding` / `shardCollection` are **strictly forbidden**).  
+> All documents for a study reside within a **single 3-node High-Availability Replica Set** (1 Primary + 2 Secondaries).
+
+### 4.2 How Studies Above 2 TB or with Extreme Throughput Scale
+
+When a study experiences extreme throughput (> 10,000 concurrent subjects) or approaches storage thresholds (> 2 TB), the platform scales via two accepted patterns:
 
 ```
-                              SHARD KEY ARCHITECTURE
-                                         │
-             ┌───────────────────────────┴───────────────────────────┐
-             ▼                                                       ▼
-      { study_id: 1, subject_id: 1 }                           { _id: "hashed" }
-           (ACCEPTED)                                              (REJECTED)
-• 100% Targeted Single-Shard Routing                 • Scatters queries across all shards
-• All visits & forms for Subject 101 live together   • Breaks clinical transaction boundaries
-• Fast ACID transactions within single subject       • Destroys performance under high concurrency
+                            MEGA-STUDY SCALING ARCHITECTURE
+                                          │
+            ┌─────────────────────────────┴─────────────────────────────┐
+            ▼                                                           ▼
+Pattern 1: Dedicated Cluster Promotion                  Pattern 2: Site-Group Regional Partitioning
+(For High-Throughput / Heavy IOPS Studies)              (For Multi-National Global Studies)
+• Study promoted to dedicated 3-node Replica Set        • Partitioned by sovereign jurisdiction (Scale 005A)
+• 100% dedicated NVMe IOPS, CPU, and RAM                • study_{id}_us_prod on rs-prod-us-01
+• Zero noisy-neighbor interference                      • study_{id}_eu_prod on rs-prod-eu-01
+• Single Primary maintains 100% audit integrity         • study_{id}_cn_prod on rs-prod-cn-01
 ```
 
-#### The Accepted Shard Key: `{ study_id: 1, subject_id: 1 }`
-* **Why `{ study_id: 1, subject_id: 1 }`:**
-  1. **Locality of Clinical Care**: 98% of EDC queries filter by a specific patient (`subject_id`) during clinic visits.
-  2. **Targeted Shard Routing**: When the investigator submits Visit 2 for Subject `SUBJ-001`, the `mongos` router directs the write to the exact single shard hosting that patient.
-  3. **Multi-Document ACID Transactions**: MongoDB supports multi-document ACID transactions across documents located on the same shard without distributed two-phase commit overhead.
+1. **Dedicated Sovereign Cluster Promotion**:
+   - The study is migrated or provisioned onto its own dedicated 3-node replica set (`rs-prod-dedicated-01`) within the cluster farm.
+   - Dedicated NVMe volumes provide up to 16 TB of disk and 100,000 IOPS solely for that trial.
+   - The central routing registry (`vialiq_control_plane.study_registry`) updates the study's non-secret `zone_profile_id` / `cluster_id` pointer, requiring zero application code changes.
+2. **Site-Group Regional Partitioning ([Scale 005-A](./005-a-multilingual-study-db-per-site-group-and-reporting-guide.md))**:
+   - For global studies crossing regulatory borders (US, EU, China, Japan), data is physically partitioned by Site Group into separate regional non-sharded replica sets (`study_onco101_us_prod`, `study_onco101_eu_prod`).
+   - Each regional database operates as an independent replica set with a localized legal timestamp authority and localized KMS keys.
 
-### 4.2 Enabling Sharding via Liquibase
+### 4.3 Liquibase Migration Standard for Production Study Databases
+
+Because studies are non-sharded replica sets, Liquibase migrations manage indexes, collections, and storage compression natively without `mongos` coordination.
 
 ```json
 {
   "databaseChangeLog": [
     {
       "changeSet": {
-        "id": "20261022_001_enable_sharding_crf_entries",
-        "author": "prashant.gupta",
+        "id": "20261108_001_create_crf_entries_and_indexes",
+        "author": "architecture.team",
         "changes": [
           {
-            "runCommand": {
-              "command": {
-                "enableSharding": "vialiq_ten_novartis_global_std_onco101_prod"
+            "createCollection": {
+              "collectionName": "crf_entries"
+            }
+          },
+          {
+            "createIndex": {
+              "collectionName": "crf_entries",
+              "indexName": "idx_crf_entries_composite_lookup",
+              "keys": {
+                "studyId": 1,
+                "subjectId": 1,
+                "visitId": 1,
+                "formKey": 1
+              },
+              "options": {
+                "unique": false
               }
             }
           },
           {
-            "runCommand": {
-              "command": {
-                "shardCollection": "vialiq_ten_novartis_global_std_onco101_prod.crf_entries",
-                "key": {
-                  "study_id": 1,
-                  "subject_id": 1
-                },
+            "createIndex": {
+              "collectionName": "audit_trail",
+              "indexName": "idx_audit_subject_field_timeline",
+              "keys": {
+                "subjectId": 1,
+                "fieldKey": 1,
+                "serverTimestampUtc": 1,
+                "auditStreamSequence": 1
+              },
+              "options": {
                 "unique": false
               }
             }
@@ -243,10 +289,11 @@ Under FDA 21 CFR § 312.62, clinical records must be retained for **25+ years** 
 │ • Format: Cryptographically Sealed Apache Parquet + SHA-256 Manifest       │
 │ • Cost: ~$0.00099 / GB-month (99% cost reduction)                          │
 │ • Access: Read-only on-demand compliance audit restore in < 4 hours        │
+│ • Regulatory: Fully decoupled from MongoDB version upgrades                │
 └────────────────────────────────────────────────────────────────────────────┘
 ```
 
-When a study is officially locked and regulatory submissions are completed, the **Vialiq Archival Engine** exports the entire study database to immutable Parquet datasets on WORM storage and drops the live operational database from Layer 3, freeing up terabytes of high-performance NVMe storage.
+When a study is officially locked and regulatory submissions are completed, the **Vialiq Archival Engine** exports the entire study database to immutable Parquet datasets on WORM storage and drops the live operational database from Layer 3, freeing up high-performance NVMe storage.
 
 ---
 
@@ -255,6 +302,8 @@ When a study is officially locked and regulatory submissions are completed, the 
 | Metric | Single Cluster Baseline | Horizontal Scale-Out Strategy | Maximum Tested Capacity |
 |---|---|---|---|
 | **Supported Concurrent Studies** | 50 Studies | **Cluster Farm (Dynamic Registry)** | **1,000+ Active Studies** |
-| **Max Patients per Mega-Study** | 5,000 Subjects | **Horizontal Sharding `{study, subject}`** | **100,000+ Subjects** |
+| **Max Patients per Mega-Study** | 5,000 Subjects | **Dedicated Cluster Promotion / Site Groups** | **100,000+ Subjects** |
 | **Storage per Cluster** | 4 TB Limit | **CSI Volume Auto-Expansion + S3 Cold Archival** | **50+ TB Aggregate** |
 | **Read IOPS** | 20,000 IOPS | **Secondary-Preferred Replica Set Read Pooling** | **150,000+ IOPS** |
+| **Audit Trail Ordering** | Serialized Oplog | **Non-Sharded Study Invariant (ADR 009)** | **100% Monotonic Parity** |
+| **Collection Sharding** | **Forbidden** | **Cluster Farm Partitioning & Promotion** | **Zero Cross-Shard Skew** |

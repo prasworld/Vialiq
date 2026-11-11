@@ -3,7 +3,7 @@
 > **Status:** ✅ **SEALED & APPROVED**  
 > **Date:** October 2026  
 > **Deciders:** Architecture Core Team  
-> **Domain:** Distributed Caching Tier (.NET 9 `HybridCache` L1 / Redis L2), Multi-Tenant Security, GxP Compliance  
+> **Domain:** Distributed Caching Tier (Redis HA Cluster), Multi-Tenant Security, GxP Compliance  
 > **Regulatory Standards:** HIPAA § 164.312(a)(1), GDPR Article 32, FDA 21 CFR Part 11 § 11.10(d),(g), GAMP 5 Category 4  
 > **Companion Engineering Guide:** [ADR 007-B: High-Availability Redis Cluster Architecture, Dev/Prod Setup & Scaling Guide](./007-b-high-availability-redis-cluster-and-scaling-guide.md)  
 > **Operational Setup Guide:** [Redis High-Availability Cluster Setup Guide (Docker)](../backend-architecture/database/redis-setup-guide.md)  
@@ -44,7 +44,7 @@ STRICTLY FORBIDDEN FROM CACHE                                    PERMITTED IN PR
 ---
 
 ### Decision 1.1: Absolute Ban on Patient & Clinical Data in Cache
-* **Strict Rule**: Live patient CRF responses, subject records, medical histories, lab values, and adverse event narratives shall **NEVER** be stored in Redis (L2) or in-memory `HybridCache` (L1).
+* **Strict Rule**: Live patient CRF responses, subject records, medical histories, lab values, and adverse event narratives shall **NEVER** be stored in the distributed Redis cache.
 * **Rationale**:
   * Prevents plaintext PHI exposure in Redis memory dumps or cluster memory sweeps.
   * Preserves 100% of MongoDB Client-Side Field-Level Encryption (CSFLE) guarantees.
@@ -112,20 +112,24 @@ CLIENT OPENS FORM (Subject 1001, Visit 1, Vital Signs)
         ▼                                                                 ▼
 DATABASE = SOURCE OF TRUTH                                  DISTRIBUTED CACHE = SPEED & COORDINATION
 --------------------------                                  ----------------------------------------
-• MongoDB study_locks (Durable system of record)            • Redis Primary/Replica HA Pair (< 1-2 GB RAM)
-• Zero data exists solely in cache                          • Sub-millisecond lock lookup (< 1ms)
-• If Redis fails, system safely falls back to MongoDB       • .NET 9 HybridCache Single-Flight Mutex
+• MongoDB `study_locks` (Regulatory Freeze / DBL)           • Redis Primary/Replica HA Pair (< 1-2 GB RAM)
+• MongoDB `study_edit_leases` (15m Form Edit Leases)        • Sub-millisecond lock & schema lookup (< 1ms)
+• Zero data exists solely in cache                          • Single-flight concurrency protection
+• 0.001% total HA outage check -> redirects to MongoDB
 ```
 
 ---
 
 ### Decision 2.1: Canonical Source of Truth = Database (Zero Ephemeral-Only State)
 * **Strict Rule**: **No data or locks shall ever exist solely in volatile cache memory.**
-* **Lock Persistence Mechanics**:
-  1. **Acquisition**: When a user locks a form, the lock is written atomically to MongoDB `study_locks` collection (`status: "ACTIVE"`, `userId`, `lockedAtUtc`, `expiresAtUtc`) with a unique index on `{ studyId: 1, targetCrfId: 1, isActive: 1 }`.
-  2. **Cache Synchronization**: It is written-through to Redis key `edc:form_lock:{studyId}:{crfId}` with a 15-minute sliding TTL.
-  3. **Release & Override**: When saved, closed, or broken, the status is updated in MongoDB (`status: "RELEASED"` or `"BROKEN"` with mandatory Part 11 reason) and evicted from Redis (`DEL`).
-* **Failure Resilience**: If Redis restarts or is completely offline, the API does not fail; it catches the Redis connection exception and transparently queries MongoDB `study_locks` directly.
+* **Collection Separation (`study_locks` vs. `study_edit_leases`)**:
+  * **`study_locks`** remains strictly dedicated to permanent **Regulatory Data Freeze / DBL Locks** (`STUDY`, `COHORT`, `SITE`, `SUBJECT`, `VISIT`, `FORM` — `SOFT_FREEZE` / `HARD_LOCK` unlocked only via Four-Eyes Dual Control; cached in Redis hash `vialiq:locks:{studyId}`).
+  * **`study_edit_leases`** stores short-lived **15-minute Single-Editor Form Edit Leases** (`ADR 003`), isolated from governance freeze ledgers.
+* **Lock Persistence Mechanics (Synchronous DB + Cache Completion)**:
+  1. **Governance Pre-Check & Acquisition**: Before granting an edit lease, `AcquireFormLockAsync` evaluates regulatory `study_locks` (`vialiq:locks:{studyId}` / `study_locks`) and rejects immediately with **HTTP `423 Locked`** if frozen/hard-locked. Otherwise, it writes atomically to `study_edit_leases` (`status: 1` / `Active`, `lockedByUserId`, `lockedAtUtc`, `expiresAtUtc`) enforced by partial unique index `{ studyId: 1, targetCrfId: 1 }` with `partialFilterExpression: { status: 1 }`.
+  2. **Cache Synchronization**: Under normal HA operation, the edit lease is synchronously written-through to Redis key `edc:form_lock:{studyId}:{crfId}` with a 15-minute sliding TTL before the API returns success (`Decision 3.1`).
+  3. **Release & Override**: When saved, closed, or broken, the status is updated in `study_edit_leases` (`status: Released` or `Broken` with mandatory Part 11 reason) and synchronously evicted from Redis (`DEL`).
+* **Catastrophic Total-Outage Circuit Breaker (~0.001% Edge Case)**: If *both* the Redis HA Primary and Replica become unavailable simultaneously, a single session/outage circuit-breaker check detects Redis unavailability and redirects read/lock lookups directly to canonical MongoDB (`study_locks` + `study_edit_leases` / Primary `ReadConcern.Majority`) until Redis recovers—avoiding per-request timeout loops. Partial/transient sync failures while Redis is active must never silently degrade (see Decision 3.1).
 
 ---
 
@@ -138,39 +142,44 @@ DATABASE = SOURCE OF TRUTH                                  DISTRIBUTED CACHE = 
   * Auth & Revocation: ~10 MB
   * **Total: ~350 MB to 1 GB RAM.**
 * **No Hard Kubernetes Dependency**: The architecture is container- and orchestrator-agnostic. It runs identically in Azure Container Apps, AWS ECS/Fargate, standard Docker Compose on Linux VMs, or Kubernetes if required by enterprise IT.
-* **High Availability (HA) Clustering**: The distributed L2 cache is deployed as a **Primary-Secondary HA Pair with Automated Sentinel Failover** (detailed in ADR 007-B).
+* **High Availability (HA) Clustering**: The **Single-Tier Distributed Redis Cache** (with zero pod-local `.NET IMemoryCache` L1 memory caching) is deployed as a **Primary-Secondary HA Pair with Automated Sentinel Failover** (detailed in ADR 007-B and operationalized in [Scale 004](../scaling-architecture/004-caching-queues-and-resilience-patterns.md)).
 
 ---
 
-### Decision 2.3: Deterministic Multi-Tenant Namespacing & Fail-Closed Guard
-To guarantee absolute multi-tenant isolation, cache keys adhere strictly to the 3-tier hierarchy established in [FTS-001](../functional-and-technical-specs/001-global-and-client-standards-library-specification.md):
+### Decision 2.3: Unified Polymorphic Cache Key Invariant & Fail-Closed Guard
+To guarantee absolute multi-tenant, blinding, protocol-version, and locale isolation without developer boilerplate or overhead on single-region studies, cache keys adhere strictly to the 3-tier hierarchy ([FTS-001](../functional-and-technical-specs/001-global-and-client-standards-library-specification.md), [ADR 008](./008-protocol-amendment-cache-invalidation-and-epoch-rotation-adr.md), [ADR 010](./010-double-blind-rtsm-unblinding-prevention-in-caching-tiers-adr.md), [Scale 005-A](../scaling-architecture/005-a-multilingual-study-db-per-site-group-and-reporting-guide.md)):
 
 ```
-vialiq:global:standards:{resource}:{id}                  # Global Library (Read-only for all)
-vialiq:tenant:{tenantId}:lib:{resource}:{id}             # Client Library (Isolated strictly to TenantId)
-vialiq:study:{tenantId}:{studyId}:{env}:{resource}:{id}  # Study Instance (Isolated to TenantId + StudyId)
+vialiq:global:standards:{resource}:{id}                                                 # Global Reference Dictionaries (No TTL; persistent under volatile-lru)
+vialiq:tenant:{tenantId}:lib:{resource}:{id}                                            # Client Standards Library (Isolated strictly to TenantId)
+vialiq:study:{tenantId}:{studyId}:{env}:ep{epoch}:{scope}:{locale}:{resource}:{id}      # Study Instance (Auto-resolved from TenantStudyContext)
 ```
+
+* **Zero Overhead for the ~75–85% Single-Culture / Single-Region Studies (`StorageTopologyMode.Single`):** All context segments (`ep{epoch}`, `{scope}` = `std` | `blinded` | `unblinded`, `{locale}` = study `BaseLocale`) resolve automatically from `TenantStudyContext` / `UserContext`. Single-culture trials store **only 1 key copy** in Redis with zero extra headers or config.
+* **Automatic Protection for 25% Multilingual & Double-Blind Trials:** Multi-language bundles (`de-DE`, `zh-CN`), blinded vs. unblinded schemas (`ADR 010`), and amended protocol epochs (`ADR 008`) are structurally disjoint—preventing unblinding or cross-locale leakage even if a controller omits manual header flags.
 
 #### Enforcement via `IScopedCacheService`:
-Developers are strictly prohibited from formatting raw cache key strings. All caching calls flow through `IScopedCacheService`, which extracts authenticated tenant context from `ITenantStudyContextAccessor`:
+Developers are strictly prohibited from formatting raw cache key strings. All caching calls flow through `IScopedCacheService`, which extracts authenticated tenant, study, epoch, blinding scope, and locale context from `ITenantStudyContextAccessor` (and declarative `[Cached]` filters fail closed against `SiteIdentifier` PHI / `BlindedRTSM` patient endpoints):
 
 ```csharp
 public async ValueTask<T> GetOrCreateStudyAsync<T>(
-    string resource, 
-    string key, 
-    Func<CancellationToken, ValueTask<T>> factory, 
+    string resource,
+    string key,
+    Func<CancellationToken, ValueTask<T>> factory,
     CancellationToken ct)
 {
     var context = _contextAccessor.CurrentContext;
-    
+
     // FAIL-CLOSED: Absolute barrier against unauthenticated or missing tenant calls
     if (string.IsNullOrWhiteSpace(context?.TenantId) || string.IsNullOrWhiteSpace(context?.StudyId))
     {
         throw new SecurityException("Security Violation: Attempted to access Study cache without authenticated Tenant and Study context.");
     }
 
-    var fullyQualifiedKey = $"vialiq:study:{context.TenantId}:{context.StudyId}:{context.Environment}:{resource}:{key}";
-    return await _hybridCache.GetOrCreateAsync(fullyQualifiedKey, factory, cancellationToken: ct);
+    var scope = context.BlindingScopeSegment; // "blinded" | "unblinded" | "std"
+    var locale = context.ActiveLocale;        // Defaults to BaseLocale for single-culture trials
+    var fullyQualifiedKey = $"vialiq:study:{context.TenantId}:{context.StudyId}:{context.Environment}:ep{context.ProtocolEpoch}:{scope}:{locale}:{resource}:{key}";
+    return await GetOrCreateInternalAsync(fullyQualifiedKey, factory, DefaultTtl, ct);
 }
 ```
 
@@ -186,27 +195,25 @@ A **Cache Stampede (Cache Herd Attack)** occurs when an attacker (or 5,000 nurse
  ┌───────────────────────────────────────┴───────────────────────────────────────┐
  │                                                                               │
  ▼                                                                               ▼
-DEFENSE 1: SINGLE-FLIGHT MUTEX (Native in .NET 9)               DEFENSE 2: NEGATIVE CACHING (Anti-Penetration)
-HybridCache.GetOrCreateAsync                                    • Attacker queries fake IDs (/forms/fake-uuid-999)
-• Request 1 acquires execution lock and queries MongoDB         • System caches NULL_RECORD for 60 seconds
-• Requests 2 to 5,000 AWAIT Request 1's task                    • Subsequent attacker requests return 404 in 0ms
-• Request 1 populates cache; 4,999 served from RAM in 0ms       • MongoDB is NEVER touched after the first check
-• Database receives EXACTLY 1 query, not 5,000!                                  │
+DEFENSE 1: ATOMIC REDIS FAST-PATH                               DEFENSE 2: NEGATIVE CACHING (Anti-Penetration)
+redis.StringGetAsync / StringSetAsync                            • Attacker queries fake IDs (/forms/fake-uuid-999)
+• Direct sub-millisecond retrieval from Redis                   • System caches NULL_RECORD for 60 seconds
+• Hydrates from MongoDB on miss; 0.001% total outage -> MongoDB • Subsequent attacker requests return 404 in 0ms
+• Populates Redis with explicit TTL                             • MongoDB is NEVER touched after the first check
+• Single-flight concurrency handles cold lookups                                  │
                                                                                  ▼
                                                                 DEFENSE 3: RATE LIMITING (Sliding Window)
                                                                 • Throttles abusive IPs/users with HTTP 429
 ```
 
-1. **Defense 1: Single-Flight Concurrency Mutex (.NET 9 `HybridCache`)**:
-   * Uses an internal asynchronous `SemaphoreSlim` per key.
-   * When 5,000 requests hit simultaneously for a missing key, **Thread 1 executes the MongoDB query**.
-   * Threads 2 through 5,000 pause asynchronously.
-   * When Thread 1 finishes in 15ms, it populates L1/L2 and releases the lock. All 4,999 waiting requests are served **directly from memory in 0ms**.
-   * **MongoDB receives exactly 1 query, not 5,000.**
+1. **Defense 1: Direct Redis Fast-Path & Cache-Miss Self-Healing**:
+   * Uses direct `StackExchange.Redis` `StringGetAsync` with JSON deserialization for sub-millisecond reads (`< 1 ms`).
+   * On a cache miss, queries MongoDB (canonical source) and populates Redis synchronously with explicit TTL; in the `~0.001%` event both Redis HA Primary and Replica are unreachable, a single session circuit-breaker check redirects directly to MongoDB until Sentinel restores Redis.
+   * **MongoDB receives read queries only on cache misses (or active total-outage circuit-breaker redirect).**
 2. **Defense 2: Negative Caching (Anti-Penetration against Random Attacker IDs)**:
    * When an attacker queries a non-existent form or asset ID (`/api/v1/forms/fake-uuid-999`), MongoDB returns `null`.
    * The backend caches a **Negative Sentinel Entry (`NULL_RECORD`)** with a 60-second TTL.
-   * Subsequent requests for that fake ID return HTTP `404 Not Found` directly from cache in `< 1µs`, preventing repeated database scans.
+   * Subsequent requests for that fake ID return HTTP `404 Not Found` directly from Redis in `< 1 ms`, preventing repeated database scans.
 3. **Defense 3: TTL Jitter (Probabilistic Expiration)**:
    * To prevent synchronized expiration storms, all cache TTLs apply **$\pm 10\%$ randomized jitter** (e.g. a 60-minute TTL expires between 54 and 66 minutes).
 4. **Defense 4: ASP.NET Core Sliding-Window Rate Limiting**:
@@ -225,9 +232,9 @@ HybridCache.GetOrCreateAsync                                    • Attacker que
 PHASE 1: ATOMIC DATABASE WRITE                               PHASE 2: SYNCHRONOUS CACHE UPDATE
 ------------------------------                               ---------------------------------
 • Form updates & field values                                • Delete / Renew lock in Redis
-• 21 CFR Part 11 audit records                               • Invalidate L1/L2 summary tags
-• study_locks durable state                                  • Publish invalidation broadcast
-• CommitTransactionAsync(w: "majority")                      • Await synchronous confirmation
+• 21 CFR Part 11 audit records                               • Invalidate / evict Redis keys
+• study_locks & study_edit_leases durable state              • Await synchronous Redis confirmation
+• CommitTransactionAsync(w: "majority")                      • Zero pod-local L1 memory skew
         │                                                                 │
         └────────────────────────────────┬────────────────────────────────┘
                                          ▼
@@ -244,27 +251,19 @@ PHASE 1: ATOMIC DATABASE WRITE                               PHASE 2: SYNCHRONOU
   * Executing cache updates in detached background tasks (`Task.Run`) is **strictly forbidden**.
   * If a background cache task fails silently, Redis retains stale locks or out-of-date workspace status indicators, causing phantom lockouts.
 * **Fail-Closed Synchronization Failure**:
-  * If MongoDB commits successfully, but Redis throws a timeout or connection failure during cache synchronization:
+  * Under normal HA operation, if MongoDB commits successfully, but Redis throws a timeout or connection failure during cache synchronization:
   * The API **does not return HTTP 200**.
-  * It returns **HTTP 503 Service Unavailable** with an explicit `CacheSynchronizationException`, prompting an immediate client refresh. The subsequent read hits MongoDB directly and self-heals the cache.
+  * It returns **HTTP 503 Service Unavailable** with an explicit `CacheSynchronizationException`, prompting an immediate client refresh. (In the `~0.001%` catastrophic event where *both* Redis HA Primary and Replica are completely unavailable, the session circuit breaker redirects directly to canonical MongoDB per Decision 2.1.)
 
 ---
 
-### Decision 3.2: Multi-Instance Invalidation via Redis Pub/Sub Backplane
-When a running API instance updates a cached resource (such as a form schema or user role claim):
-1. **Local L1 Eviction**: The initiating instance evicts the key from its local in-process `HybridCache`.
-2. **Distributed L2 Eviction**: The initiating instance deletes the key from Redis (`KeyDeleteAsync` or `RemoveByTagAsync`).
-3. **Cluster Broadcast**: The initiating instance publishes a lightweight invalidation message across the Redis backplane:
-   ```json
-   // Channel: vialiq:cache:invalidations
-   {
-     "tenantId": "novartis",
-     "studyId": "STUDY_ONCO_101",
-     "cacheKey": "vialiq:study:novartis:STUDY_ONCO_101:prod:schema:form_vitals",
-     "tags": ["form-schemas:STUDY_ONCO_101"]
-   }
-   ```
-4. **Peer Eviction**: All sibling API instances subscribing to the channel evict the matching key from their local L1 RAM in **< 5 milliseconds**.
+### Decision 3.2: Cluster-Wide & Multi-Region Cache Coherence (`Single` Local vs. `MultiRegionGeoPartitioned` Relay)
+Because Vialiq runs **zero pod-local `.NET IMemoryCache` L1 caches**, single-region coherence is immediate across all API pods (`< 1–2 ms` in Shared Redis). To protect the ~75–85% single-region studies from cross-region overhead while keeping ~15–25% multi-region studies coherent ([Scale 005](../scaling-architecture/005-database-cluster-farm-regional-compliance-and-throughput-scaling.md)):
+1. **75% `StorageTopologyMode.Single` (Zero Cross-Region Overhead):** The initiating pod executes direct synchronous `KeyDeleteAsync`, `INCR epoch`, or `StringSetAsync` on its single local Regional Redis cluster—zero cross-region hops.
+2. **25% `StorageTopologyMode.MultiRegionGeoPartitioned` (Targeted Control-Plane Outbox Relay):**
+   * Patient data & 15m form edit leases (`edc:form_lock:*`) stay **100% regional** inside their origin VPC (never replicated cross-border).
+   * Control-Plane metadata invalidations (epoch increments, `study_registry` site/zone transfers, `BlindingScope` / `CanUnlockForms` changes, and session JWT revocations) publish to a **Control-Plane Outbox $\rightarrow$ Regional Cache Relay** targeting only the study's registered `Zones[]` (`ZONE_US`, `ZONE_EU`, `ZONE_CN`), backed by bounded `5–15 min` TTLs on regional auth/routing entries as a fail-safe against transient WAN blips.
+3. **Optional Event Notification:** Lightweight Redis Pub/Sub events (`vialiq:cache:invalidations`) notify SignalR hubs (`PlatformNotificationHub`) if active UI clients require live workspace notifications.
 
 ---
 
@@ -272,54 +271,45 @@ When a running API instance updates a cached resource (such as a form schema or 
 When an IRB/Ethics Committee approves a formal **Protocol Amendment** (e.g. Protocol Version 2.0 modifying 40 forms across 50,000 subjects):
 * Issuing mass `DEL` commands on tens of thousands of keys locks the Redis single-threaded execution loop.
 * **Epoch Salt Rotation**:
-  1. Every study cache key includes an active epoch token:  
-     `vialiq:study:{tenant}:{study}:v{epoch}:...`
-  2. The active epoch counter is stored in Redis: `epoch:{tenant}:{study}`.
+  1. Every study cache key includes the active epoch token inside the unified envelope:  
+     `vialiq:study:{tenant}:{study}:{env}:ep{epoch}:{scope}:{locale}:{resource}:{id}`
+  2. The active epoch counter is stored in Redis (no TTL): `epoch:{tenant}:{study}`.
   3. When Amendment Version 2 is approved, the system executes an atomic increment:  
-     `INCR epoch:novartis:onco101` ($\rightarrow$ `v2`).
-  4. **Instant Invalidation in < 1 ms**: All future lookups automatically target `v2`. The old `v1` cache entries age out naturally via Redis TTL without causing any Redis CPU spikes.
+     `INCR epoch:novartis:onco101` ($\rightarrow$ `ep2`) — locally for `Single` trials, or fanned out across registered `Zones[]` during the `ADR 008` Stage 4 Maintenance Lock for multi-region trials.
+  4. **Instant Invalidation in < 1 ms**: All future lookups automatically target `ep2`. Old `ep1` cache entries age out naturally via Redis TTL without causing Redis CPU spikes.
 
 ---
 
 ### Decision 3.4: Study Freeze & Database Lock Caching
 When an interim analysis freeze or final clinical study closeout occurs:
-1. The study status is updated in MongoDB to `LOCKED` / `FROZEN`.
-2. A cached study status token `vialiq:study:{tenant}:{study}:status` is immediately set to `LOCKED`.
-3. Subsequent form open and edit requests check this token in `< 1µs`:
-   * Any attempt to acquire a lock or submit a CRF is immediately rejected at the controller gate with HTTP `423 Locked`, preventing unnecessary database load.
+1. The study status is updated in MongoDB (`study_locks`) to `LOCKED` / `FROZEN`.
+2. A persistent (no-TTL) Redis governance hash/token (`vialiq:locks:{studyId}` / `vialiq:study:{tenant}:{study}:status`) is immediately updated synchronously (and any active `study_edit_leases` / `edc:form_lock:*` under that frozen scope are evicted).
+3. Subsequent form open and edit requests check this token in `< 1 ms`:
+   * Any attempt to acquire an edit lease or submit a CRF is immediately rejected at the controller gate with HTTP `423 Locked`, preventing unnecessary database load.
 
 ---
 
-## 5. Step 4: Eviction Policy & Noisy-Neighbor Protection
+## 5. Step 4: Eviction Policy & Memory Budget
 
 ```
                          EVICTION & MEMORY POLICY
                                     │
-        ┌───────────────────────────┴───────────────────────────┐
-        ▼                                                       ▼
-REDIS L2 EVICTION POLICY                                  POD IN-PROCESS L1 RAM CEILING
-------------------------                                  -----------------------------
-• maxmemory 2gb (or 4gb)                                  • MaximumPayloadBytes = 10 MB
-• maxmemory-policy volatile-lru                           • Max L1 memory = 512 MB per pod
-• Protects persistent dictionaries                        • Evicts LRU entries to L2 Redis
-• Evicts expired/cold TTL keys only                       • Runaway payload protection
+                        REDIS EVICTION POLICY
+                        ---------------------
+                        • maxmemory 2gb baseline -> 16-256gb (Scale 004)
+                        • maxmemory-policy volatile-lru + 75% alert
+                        • NO TTL: Dictionaries, governance locks, epochs
+                        • WITH TTL: [Cached] views, schemas, 15m edit leases
 ```
 
 ---
 
-### Decision 4.1: Redis Eviction Policy (`volatile-lru`)
-* **Setting**: `maxmemory-policy volatile-lru`
+### Decision 4.1: Redis Eviction Policy (`volatile-lru`) & No-TTL Protection Rule
+* **Setting**: `maxmemory-policy volatile-lru` (paired with `75%` memory high-water alert and tier-scaled `maxmemory`).
 * **Rationale**:
-  * *Why NOT `allkeys-lru`?* `allkeys-lru` indiscriminately evicts any key. If memory was pressured, Redis might evict persistent reference dictionaries (like MedDRA or CDISC CT) or corporate client standards.
-  * *Why NOT `noeviction`?* `noeviction` returns an OOM error on new writes, which would block new form locks from being acquired.
-  * *Why `volatile-lru` wins*: It evicts **only keys that possess an explicit TTL** (e.g. old form locks, expired session tokens, or temporary query caches), while leaving long-lived reference dictionaries completely untouched.
-
----
-
-### Decision 4.2: Pod In-Process L1 Memory Ceiling (.NET 9 `HybridCache`)
-To prevent a single tenant with complex forms from consuming all RAM in an API pod:
-* **Max Payload Cap**: `options.MaximumPayloadBytes = 10 * 1024 * 1024` (10 MB). Any attempt to cache an asset exceeding 10 MB is rejected, preventing rogue payloads from hogging RAM.
-* **Pod Memory Budget**: Each API pod allocates a maximum of **512 MB** for L1 in-process cache. When L1 reaches 512 MB, least-recently-used items are dropped from local RAM; subsequent lookups retrieve them from L2 Redis in < 1ms.
+  * *Why NOT `allkeys-lru`?* `allkeys-lru` indiscriminately evicts any key, risking silent drops of MedDRA/WHODrug dictionaries or governance freeze state under pressure.
+  * *Why NOT `noeviction`?* `noeviction` fails new writes (blocking new form edit leases or revocations) when temporary response caches fill RAM.
+  * *How `volatile-lru` works cleanly as designed*: Invariant **Reference Dictionaries** (`MedDRA`, `WHODrug`, global standards), **Governance Freeze Hashes** (`vialiq:locks:*`), and **Study `epoch` Counters** carry **no TTL** (replaced deterministically on new version publish, XFetch background refresh, or `[RotateCacheKey]`). Meanwhile, `[Cached]` views (`1h`), idle schemas (`24h`), `60s` negative sentinels, and `15m` form edit leases/revocations carry TTLs—so `volatile-lru` can never touch persistent reference/governance state, while `75%` RAM alerting protects active `15m` leases from memory pressure.
 
 ---
 
@@ -327,8 +317,8 @@ To prevent a single tenant with complex forms from consuming all RAM in an API p
 
 * **Positive**:
   * **100% HIPAA & GDPR Multi-Tenant Safety**: No clinical data in cache; strict 3-tier key namespacing; fail-closed `SecurityException` gates.
-  * **Zero Ephemeral-Only State**: MongoDB `study_locks` is the canonical source of truth; if Redis dies, the system degrades safely to MongoDB.
-  * **Dual-Write Consistency**: API operations are only complete when both DB and Cache acknowledge; zero phantom locks, zero stale workspace indicators.
+  * **Zero Ephemeral-Only State & Total-Outage Resilience**: MongoDB (`study_locks` for regulatory freeze/DBL and `study_edit_leases` for 15-minute UI edit leases) is the canonical source of truth; in the `~0.001%` event both Redis HA Primary and Replica are simultaneously unavailable, a single session circuit-breaker check redirects directly to MongoDB until Sentinel recovers.
+  * **Dual-Write Consistency**: Under normal HA operation, API mutations, lock transitions, and invalidations are complete only when both DB and Cache acknowledge synchronously; zero phantom locks, zero stale workspace indicators.
   * **Anti-Stampede & Anti-Attacker Protection**: Single-flight mutex guarantees exactly 1 DB query per concurrent miss; negative caching shields against scanner probes.
   * **High Availability with Auto-Recovery**: Redis primary-secondary failover with automatic re-sync (`PSYNC`) detailed in companion guide ADR 007-B.
 * **Negative**:

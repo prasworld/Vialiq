@@ -1,6 +1,7 @@
 # Field-Level Encryption — Clinical EDC SaaS Platform
 
-> **Status:** FINALIZED — 2026-06-01  
+> **Status:** SUPERSEDED BY [006: Native MongoDB CSFLE & Regional Key Vault Architecture](./backend-architecture/database/006-field-level-encryption-csfle-and-key-management-architecture.md)  
+> **Superseded Note:** Retained for historical context on initial field-encryption requirements. All production key management, Regional `__keyVault` isolation, GDPR crypto-shredding, and `libmongocrypt` CSFLE drivers follow [`006-field-level-encryption-csfle-and-key-management-architecture.md`](./backend-architecture/database/006-field-level-encryption-csfle-and-key-management-architecture.md) with **zero `.NET IMemoryCache`**.
 > **Author:** Architecture Team  
 > **Related Docs:**
 > - [auth-identity-multitenancy-clinical-edc.md](./auth-identity-multitenancy-clinical-edc.md) — Identity, multi-tenancy, audit trail
@@ -358,10 +359,10 @@ HashiCorp Vault (self-hosted):
 │  └────────────────────────────┬────────────────────────────┘                 │
 │                               │ unwrap at runtime (KMS call)                 │
 │                               ▼                                              │
-│  Application Memory (volatile — never written to disk)                       │
+│  Native CSFLE Driver Boundary (`libmongocrypt`, never persisted to disk)    │
 │  ┌─────────────────────────────────────┐                                     │
-│  │ DEK (plaintext, 256 bits)            │ ← IMemoryCache, TTL: 5 minutes     │
-│  │ Used to encrypt / decrypt fields     │   Per tenant, per process instance  │
+│  │ DEK (plaintext, 256 bits)            │ ← Native libmongocrypt key buffer  │
+│  │ Used to encrypt / decrypt fields     │   (zero custom .NET IMemoryCache)  │
 │  └─────────────────────────────────────┘                                     │
 │                               │ AES-256-GCM                                  │
 │                               ▼                                              │
@@ -1181,33 +1182,24 @@ public sealed record DecryptedDek(
 ```
 
 ```csharp
-// Encryption/KeyManagementService.cs
+// Superseded design snippet: production implementation delegates directly to MongoDB CSFLE (`libmongocrypt`)
+// with Regional __keyVaults per backend-architecture/database/006-field-level-encryption-csfle-and-key-management-architecture.md (zero IMemoryCache).
 public sealed class KeyManagementService : IKeyManagementService
 {
-    private readonly IKmsProvider _kms;                        // AWS KMS or Azure Key Vault
-    private readonly IMemoryCache _dekCache;
+    private readonly IKmsProvider _kms;                        // Regional AWS KMS / Azure Key Vault / Aliyun HSM
     private readonly ITenantConfigRepository _tenantRepo;
-    private readonly TimeSpan _cacheTtl = TimeSpan.FromMinutes(5);
 
     public KeyManagementService(
         IKmsProvider kms,
-        IMemoryCache dekCache,
         ITenantConfigRepository tenantRepo)
     {
         _kms = kms;
-        _dekCache = dekCache;
         _tenantRepo = tenantRepo;
     }
 
     public async Task<DecryptedDek> GetDekAsync(string tenantId, CancellationToken ct = default)
     {
-        var cacheKey = $"dek:{tenantId}";
-
-        // Check in-memory cache first — avoids KMS round-trip on every request
-        if (_dekCache.TryGetValue(cacheKey, out DecryptedDek? cached) && cached is not null)
-            return cached;
-
-        // Fetch the encrypted DEK from the tenant config document
+        // Fetch the encrypted DEK from the regional __keyVault
         var tenantConfig = await _tenantRepo.GetAsync(tenantId, ct)
             ?? throw new InvalidOperationException($"Tenant '{tenantId}' not found");
 
@@ -1216,24 +1208,13 @@ public sealed class KeyManagementService : IKeyManagementService
                 $"Tenant '{tenantId}' has no encryption key. " +
                 "Field-level encryption not provisioned for this tenant.");
 
-        // Call KMS to unwrap the DEK (KMS holds the master key, does the decrypt)
+        // Unwrap DEK via Regional KMS HSM (handled internally by MongoDB libmongocrypt in production)
         var plaintextDek = await _kms.UnwrapKeyAsync(
             encryptedKey: tenantConfig.EncryptedDek,
             masterKeyId: tenantConfig.DekMasterKeyId,
             ct: ct);
 
-        var dek = new DecryptedDek(plaintextDek, tenantConfig.DekKeyId!);
-
-        // Cache with TTL — plaintext DEK lives only in app memory
-        // MemoryCache does NOT persist to disk. Set size limit to prevent
-        // caching unbounded tenants in memory.
-        _dekCache.Set(cacheKey, dek, new MemoryCacheEntryOptions
-        {
-            AbsoluteExpirationRelativeToNow = _cacheTtl,
-            Size = 1
-        });
-
-        return dek;
+        return new DecryptedDek(plaintextDek, tenantConfig.DekKeyId!);
     }
 
     public async Task<string> ProvisionTenantDekAsync(string tenantId, CancellationToken ct = default)
@@ -2099,37 +2080,13 @@ Every encrypted field read/write would require:
 
 A single form page with 5 encrypted fields × 10 concurrent users = 50 KMS API calls per page load. AWS KMS latency is ~5-10ms per call. This adds 50-500ms latency per request.
 
-### 22.2 DEK Cache Strategy
+### 22.2 DEK Caching Architecture (Canonical CSFLE Standard)
 
-```
-DEK CACHE DESIGN:
-  - Type: IMemoryCache (in-process, per-pod)
-  - Key: "dek:{tenantId}" (or "dek:{tenantId}:{keyId}" for multi-version)
-  - TTL: 5 minutes (absolute expiry)
-  - Max cache size: set cache SizeLimit to prevent unbounded growth with many tenants
-  - Thread safety: IMemoryCache is thread-safe; concurrent GetDek calls for
-    same tenant may result in multiple KMS calls on first access (acceptable
-    — GetOrCreate race is benign, both DEKs are identical)
-  - Persistence: NO — IMemoryCache is in-memory only; pod restart = cold cache
-
-CACHE INVALIDATION:
-  - On DEK rotation: _dekCache.Remove("dek:{tenantId}") immediately
-  - On crypto-shredding: _dekCache.Remove("dek:{tenantId}") immediately
-  - TTL expiry: automatic after 5 minutes
-
-WHY NOT REDIS?
-  - Redis would require the plaintext DEK to transit the network
-  - A Redis breach would expose all DEKs
-  - In-process memory is strictly safer — the DEK never leaves the pod
-  - With Kubernetes HPA (horizontal pod autoscaler), each pod has its own cache
-    → slightly higher KMS call rate during scale-out (acceptable)
-
-KMS CALL ESTIMATE (with 5-minute cache):
-  10 active tenants × (1 KMS call / 5 min / pod) × 3 pods = 6 KMS calls/min
-  = 8,640 KMS calls/day
-  AWS KMS cost: $0.03/10,000 calls = $0.026/day per 10 tenants
-  → Negligible cost.
-```
+Per [`006-field-level-encryption-csfle-and-key-management-architecture.md`](./backend-architecture/database/006-field-level-encryption-csfle-and-key-management-architecture.md):
+- Custom application `.NET IMemoryCache` instances are **eliminated** across the platform.
+- Plaintext DEKs are **NEVER stored in Distributed Redis** (so Redis compromise can never expose patient PII keys).
+- In production, MongoDB's native C++ **`libmongocrypt` (`crypt_shared`) driver boundary** automatically manages its internal 60-second volatile key unwrap buffer inside the `MongoClient` engine.
+- On GDPR Article 17 crypto-shredding or key revocation in a regional `__keyVault`, scoped CSFLE client handles recycle cleanly within their key-vault invalidation boundary.
 
 ---
 

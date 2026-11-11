@@ -80,7 +80,7 @@ mongosh "mongodb://root:dev_secret_pass_2026@localhost:27027/admin?authSource=ad
 
 # ------------------------------------------------------------------------------
 # 3. LAYER 3: LIVE PRODUCTION CLINICAL PLANE (Port 27037)
-# Hosts: study_{uuid}_prod, study_locks, crf_entries, clinical_queries
+# Hosts: study_{uuid}_prod, study_locks, study_edit_leases, crf_entries, clinical_queries
 # ------------------------------------------------------------------------------
 mongosh "mongodb://root:prod_secret_pass_2026@localhost:27037/admin?authSource=admin"
 ```
@@ -148,13 +148,21 @@ When a new clinical trial protocol is promoted from Layer 2 to Layer 3 Prod, the
 // Connect to Layer 3 Prod
 use study_cardiology_201_prod;
 
-// 1. Study Locks Collection (Partial Unique Index for Active Locks)
+// 1. Regulatory Study Locks Collection (100% pure for SOFT_FREEZE / HARD_LOCK / DBL)
 db.createCollection("study_locks");
 db.study_locks.createIndex(
   { studyId: 1, scope: 1, targetId: 1 },
   { unique: true, partialFilterExpression: { isActive: true }, name: "uniq_active_lock_target" }
 );
 db.study_locks.createIndex({ studyId: 1, isActive: 1, scope: 1, targetId: 1 }, { name: "idx_lock_guard_lookup" });
+
+// 1b. Single-Editor Form Edit Leases Collection (15-min UI edit locks per ADR 003 / ADR 007-A)
+// Note: Checked ONLY after verifying no active freeze/DBL exists in study_locks (HTTP 423).
+db.createCollection("study_edit_leases");
+db.study_edit_leases.createIndex(
+  { studyId: 1, targetCrfId: 1 },
+  { unique: true, partialFilterExpression: { status: 1 }, name: "uniq_active_form_edit_lease" }
+);
 
 // 2. CRF Entries Collection (High-performance compound index for patient visits)
 db.createCollection("crf_entries");

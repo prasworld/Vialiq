@@ -5,7 +5,7 @@
 > **Status:** Accepted / Active Architecture Standard  
 > **Date:** November 2026  
 > **Version:** 1.0.0  
-> **Target Systems:** MongoDB 7.0+ Replica Set Farm, .NET 9 Kestrel, Debezium / Apache Kafka CDC, SQL Server 2022+ Columnstore / Snowflake, AWS KMS / Azure Key Vault / Regional Cloud HSMs  
+> **Target Systems:** MongoDB 7.0+ Replica Set Farm, .NET 9 Kestrel, .NET 9 `Vialiq.CdcWorker` (Native MongoDB Change Streams), SQL Server 2022+ Columnstore / Snowflake, AWS KMS / Azure Key Vault / Regional Cloud HSMs  
 > **Regulatory Standards:** FDA 21 CFR Part 11, EU Clinical Trials Regulation (EU CTR 536/2014), GDPR Art. 9/17/28/89, HIPAA Security Rule § 164.312, China Personal Information Protection Law (PIPL) & Data Security Law (DSL), Japan Act on the Protection of Personal Information (APPI), ICH GCP E6(R3) Section 5.18, CDISC SDTM v2.0  
 > **Related Architecture Documents:**
 > - [ADR 004: CSFLE-to-SQL Server CDC Decryption Boundary](../critical-problems-and-adrs/004-csfle-to-sql-server-cdc-decryption-boundary-adr.md)
@@ -14,7 +14,9 @@
 > - [ADR 009: Legal Timestamp Authority & Monotonic Sequencing](../critical-problems-and-adrs/009-distributed-clock-skew-and-part-11-audit-timestamp-integrity-adr.md)
 > - [ADR 010: Double-Blind RTSM Unblinding Prevention in Caching Tiers](../critical-problems-and-adrs/010-double-blind-rtsm-unblinding-prevention-in-caching-tiers-adr.md)
 > - [Scale 001: Database Horizontal Scaling & Storage Lifecycle](./001-database-horizontal-scaling-and-sharding.md)
+> - [Scale 004: Distributed Redis Caching & Queues](./004-caching-queues-and-resilience-patterns.md)
 > - [Scale 005: Database Cluster Farm & Throughput Scaling](./005-database-cluster-farm-regional-compliance-and-throughput-scaling.md)
+> - [FTS-003: Inter-Zone Patient Transfers, Inspections & Study Governance](../functional-and-technical-specs/003-inter-zone-patient-transfers-and-multinational-inspections-specification.md)
 
 ---
 
@@ -32,24 +34,23 @@
    - [4.4 Dynamic Site Assignment Rule Engine & Overrides](#44-dynamic-site-assignment-rule-engine--overrides)
    - [4.5 The Unified Database Provider (`DynamicClinicalDatabaseResolver`)](#45-the-unified-database-provider-dynamicclinicaldatabaseresolver)
    - [4.6 Clean Architecture Invariant: Zero Controller & Service Pollution](#46-clean-architecture-invariant-zero-controller--service-pollution)
-   - [4.7 Unified Aggregate Executor (`IClinicalAggregateExecutor`) for Reporting](#47-unified-aggregate-executor-iclinicalaggregateexecutor-for-reporting)
-   - [4.8 Turnkey Developer Ergonomics: In-Memory & Local Testing](#48-turnkey-developer-ergonomics-in-memory--local-testing)
+   - [4.7 Operational vs. Global Reporting Aggregation](#47-operational-vs-global-reporting-aggregation)
+   - [4.8 Turnkey Developer Ergonomics & xUnit Test Doubles](#48-turnkey-developer-ergonomics--xunit-test-doubles)
 5. [Multilingual Data Invariance (Functional Boundaries)](#5-multilingual-data-invariance-functional-boundaries)
    - [5.1 Decoupling: UI i18n vs. Protocol-Specific Translations](#51-decoupling-ui-i18n-vs-protocol-specific-translations)
-   - [5.2 The Invariant Storage Principle (Canonical CDISC Encoding)](#52-the-invariant-storage-principle-canonical-cdisc-encoding)
-   - [5.3 Runtime Localized Presentation & Audit Metadata Binding](#53-runtime-localized-presentation--audit-metadata-binding)
+   - [5.2 Study & Site Language Rules (`Base ↔ Site` Toggle & Free-Text Translation)](#52-study--site-language-rules-base--site-toggle--free-text-translation)
+   - [5.3 The Invariant Storage Principle (Canonical CDISC Encoding)](#53-the-invariant-storage-principle-canonical-cdisc-encoding)
+   - [5.4 Runtime Localized Presentation & Audit Metadata Binding](#54-runtime-localized-presentation--audit-metadata-binding)
 6. [Cryptographic Privacy & Localized Key Management (CSFLE + Regional KMS)](#6-cryptographic-privacy--localized-key-management-csfle--regional-kms)
    - [6.1 The Sovereign Envelope Encryption Topology](#61-the-sovereign-envelope-encryption-topology)
    - [6.2 Cross-Region Decryption Prevention Guarantee](#62-cross-region-decryption-prevention-guarantee)
-   - [6.3 GDPR Article 17 Crypto-Shredding without Audit Invalidation](#63-gdpr-article-17-crypto-shredding-without-audit-invalidation)
+   - [6.3 GDPR Article 17 Crypto-Shredding Across CRFs & Audit Trails](#63-gdpr-article-17-crypto-shredding-across-crfs--audit-trails)
 7. [Exhaustive Global Reporting Architecture Across Disjoint Physical Locations](#7-exhaustive-global-reporting-architecture-across-disjoint-physical-locations)
    - [7.1 The 3-Tier Clinical Reporting Taxonomy](#71-the-3-tier-clinical-reporting-taxonomy)
    - [7.2 Tier 1: Local Operational & Monitoring Reporting](#72-tier-1-local-operational--monitoring-reporting)
-   - [7.3 Tier 2: Real-Time Global Executive Dashboards (Federated Push-Down Math)](#73-tier-2-real-time-global-executive-dashboards-federated-push-down-math)
-   - [7.4 Tier 3: Global Biostatistics & CDISC Submission Data Lake (CDC De-Identification)](#74-tier-3-global-biostatistics--cdisc-submission-data-lake-cdc-de-identification)
-8. [Edge Cases, Patient Transfers & Inspection Readiness](#8-edge-cases-patient-transfers--inspection-readiness)
-   - [8.1 Inter-Site Subject Relocation Across Storage Zones](#81-inter-site-subject-relocation-across-storage-zones)
-   - [8.2 Multi-National Health Authority Inspection Readiness (FDA vs. EMA vs. NMPA)](#82-multi-national-health-authority-inspection-readiness-fda-vs-ema-vs-nmpa)
+   - [7.3 Tier 2: Fast Global Executive Dashboards (SQL Server Rollup Store)](#73-tier-2-fast-global-executive-dashboards-sql-server-rollup-store)
+   - [7.4 Tier 3: Global Biostatistics, SDTM Datasets & SQL Server ETL (Regional CDC Boundary)](#74-tier-3-global-biostatistics-sdtm-datasets--sql-server-etl-regional-cdc-boundary)
+8. [Edge Cases, Patient Transfers, Regulatory Inspections & SOW Governance](#8-edge-cases-patient-transfers-regulatory-inspections--sow-governance)
 9. [Summary Engineering Matrix & Implementation Checklist](#9-summary-engineering-matrix--implementation-checklist)
 
 ---
@@ -166,9 +167,9 @@ In a commercial clinical SaaS platform, the vast majority of studies are **NOT**
 
 ---
 
-### 4.2 Polymorphic Storage Topology Contracts in `Vialiq.Core`
+### 4.2 Polymorphic Storage Topology & Study Registry Contracts in `Vialiq.Core`
 
-The core domain contracts define storage topology as an immutable, polymorphic contract:
+The core domain contracts define study storage topology, multilingual configuration, and medical coding bindings inside a single immutable manifest per study in `vialiq_control_plane.study_registry`:
 
 ```csharp
 namespace Vialiq.Core.Models;
@@ -177,19 +178,21 @@ using System.Collections.Generic;
 
 public enum StorageTopologyMode
 {
-    SingleZone = 1,
-    MultiRegionGeoPartitioned = 2
+    Single = 1,                    // Default for ~85% of studies
+    MultiRegionGeoPartitioned = 2  // Dynamic per-site regional zones
 }
 
 public sealed record StorageZoneConfig(
     string ZoneId,
+    string ZoneProfileId,          // Catalog pointer to SRE-certified infrastructure profile
     string Name,
     string TargetRegion,
     string ClusterId,
-    string ConnectionUri,
     string DatabaseName,
     string ComplianceProfile,
-    string KmsKeyArn,
+    string KmsProvider,            // e.g. "aws", "azure", "aliyun"
+    string KmsKeyArn,              // Pointer ONLY — wrapped DEKs live inside zone cluster DB
+    string KeyVaultNamespace,      // e.g. "keyvault_study_global301_eu.__keyVault"
     int MaxPoolSize = 200);
 
 public sealed record SiteRoutingRule(
@@ -198,43 +201,83 @@ public sealed record SiteRoutingRule(
     string Expression,
     string TargetZoneId);
 
+public sealed record TranslationConfig(
+    string BaseLocale,             // Study default language (need not be English, e.g. "ja-JP", "en-US")
+    IReadOnlyList<string> SupportedLocales,
+    bool PreserveOriginalVerbatim = true);
+
+public sealed record MedicalCodingConfig(
+    string MeddraVersion,
+    string WhoddVersion,
+    string DictionaryDatabaseRef);
+
 public sealed record StorageTopologyManifest(
     StorageTopologyMode Mode,
     IReadOnlyList<StorageZoneConfig> Zones,
     string DefaultZoneId,
+    bool IsLockedForProductionDataEntry,
     IReadOnlyList<SiteRoutingRule>? RoutingRules = null)
 {
-    public bool IsSingleZone => Mode == StorageTopologyMode.SingleZone || Zones.Count <= 1;
+    public bool IsSingleZone => Mode == StorageTopologyMode.Single || Zones.Count <= 1;
 }
 ```
 
 ---
 
-### 4.3 Declarative Manifests: Single-Zone vs. Multi-Zone
+### 4.3 Canonical `study_registry` Manifest & Pre-Go-Live Locking
 
-Both configurations live side-by-side in `vialiq_control_plane.study_registry`, parsed by the exact same JSON schema:
+Both single-zone and multi-zone studies share the exact same canonical schema inside `vialiq_control_plane.study_registry` (containing **non-secret references ONLY**—connection credentials live strictly in VPC Vault/Secrets Manager, and wrapped DEKs live inside their regional Key Vault DBs):
 
-#### Example A: Standard Single-Zone Study (Phase 1 Oncology: `ONCO-101`)
+#### Example A: Standard Single-Zone Study (Domestic Japan Study: `ONCO-101-JP`)
 ```json
 {
-  "_id": "std_roche_onco101",
-  "protocolNumber": "ONCO-101",
+  "_id": "std_takeda_onco101jp",
+  "protocolNumber": "ONCO-101-JP",
+  "translationConfig": {
+    "baseLocale": "ja-JP",
+    "supportedLocales": ["ja-JP"],
+    "preserveOriginalVerbatim": true
+  },
+  "medicalCoding": {
+    "meddraVersion": "27.1-J",
+    "whoddVersion": "Global-202609",
+    "dictionaryDatabaseRef": "vialiq_coding_dictionaries_jp"
+  },
   "storageTopology": {
-    "mode": "SingleZone",
+    "mode": "Single",
+    "isLockedForProductionDataEntry": true,
     "zones": [
       {
         "zoneId": "ZONE_PRIMARY",
-        "name": "US Commercial Prod Cluster",
-        "targetRegion": "us-east-1",
-        "clusterId": "rs-prod-us-01",
-        "connectionUri": "mongodb://node1.us.vialiq:27037/?replicaSet=rs-prod-us",
-        "databaseName": "study_onco101_prod",
-        "complianceProfile": "HIPAA_FDA_PART11",
-        "kmsKeyArn": "arn:aws:kms:us-east-1:123456789012:key/us-cmk-01"
+        "zoneProfileId": "PROFILE_JP_TOKYO_APPI_01",
+        "name": "Japan Domestic Prod Cluster",
+        "targetRegion": "ap-northeast-1",
+        "clusterId": "rs-prod-jp-01",
+        "databaseName": "study_onco101jp_prod",
+        "complianceProfile": "JAPAN_APPI_PMDA",
+        "kmsProvider": "aws",
+        "kmsKeyArn": "arn:aws:kms:ap-northeast-1:123456789012:key/jp-cmk-01",
+        "keyVaultNamespace": "keyvault_study_onco101jp.__keyVault"
       }
     ],
     "defaultZoneId": "ZONE_PRIMARY"
-    // No routingRules needed — all sites route to ZONE_PRIMARY
+  },
+  "identityConfig": {
+    "authMode": "EmailPassword",
+    "keycloakRealm": "jp-pharma-domestic",
+    "oidcIssuer": "https://auth.vialiq.cloud/realms/jp-pharma-domestic",
+    "idpAlias": null,
+    "secretVaultRef": null,
+    "mfaPolicy": {
+      "enforcement": "RequiredAll",
+      "allowedFactors": ["TotpAuthenticator", "WebAuthnFido2"],
+      "stepUpSigningRequired": true
+    },
+    "sessionAndPasswordPolicy": {
+      "idleTimeoutMinutes": 15,
+      "maxConcurrentSessions": 1,
+      "lockoutAttempts": 5
+    }
   }
 }
 ```
@@ -244,43 +287,74 @@ Both configurations live side-by-side in `vialiq_control_plane.study_registry`, 
 {
   "_id": "std_roche_global301",
   "protocolNumber": "GLOBAL-ONCO-301",
+  "identityConfig": {
+    "authMode": "HybridBrokered",
+    "keycloakRealm": "roche-global",
+    "oidcIssuer": "https://auth.vialiq.cloud/realms/roche-global",
+    "idpAlias": "okta-sso",
+    "secretVaultRef": "vault://ten_roche/std_roche_global301/oidc",
+    "mfaPolicy": {
+      "enforcement": "RequiredAll",
+      "allowedFactors": ["TotpAuthenticator", "WebAuthnFido2", "HardwareToken"],
+      "stepUpSigningRequired": true
+    },
+    "sessionAndPasswordPolicy": {
+      "idleTimeoutMinutes": 15,
+      "maxConcurrentSessions": 1,
+      "lockoutAttempts": 5
+    }
+  },
+  "translationConfig": {
+    "baseLocale": "en-US",
+    "supportedLocales": ["en-US", "de-DE", "fr-FR", "zh-CN", "pt-BR"],
+    "preserveOriginalVerbatim": true
+  },
+  "medicalCoding": {
+    "meddraVersion": "27.1",
+    "whoddVersion": "Global-202609",
+    "dictionaryDatabaseRef": "vialiq_coding_dictionaries"
+  },
   "storageTopology": {
     "mode": "MultiRegionGeoPartitioned",
+    "isLockedForProductionDataEntry": true,
     "zones": [
       {
         "zoneId": "ZONE_US",
+        "zoneProfileId": "PROFILE_US_VA_HIPAA_01",
         "name": "North America Storage Zone",
         "targetRegion": "us-east-1",
         "clusterId": "rs-prod-us-01",
-        "connectionUri": "mongodb://node1.us.vialiq.internal:27037,node2.us.vialiq.internal:27037/?replicaSet=rs-prod-us-01",
         "databaseName": "study_global301_us_prod",
         "complianceProfile": "HIPAA_FDA_PART11",
+        "kmsProvider": "aws",
         "kmsKeyArn": "arn:aws:kms:us-east-1:123456789012:key/us-cmk-01",
-        "readPreference": "secondaryPreferred",
+        "keyVaultNamespace": "keyvault_study_global301_us.__keyVault",
         "maxPoolSize": 200
       },
       {
         "zoneId": "ZONE_EU",
+        "zoneProfileId": "PROFILE_EU_FRA_GDPR_01",
         "name": "European Economic Area Storage Zone",
         "targetRegion": "eu-central-1",
         "clusterId": "rs-prod-eu-01",
-        "connectionUri": "mongodb://node1.eu.vialiq.internal:27037,node2.eu.vialiq.internal:27037/?replicaSet=rs-prod-eu-01",
         "databaseName": "study_global301_eu_prod",
         "complianceProfile": "GDPR_EU_CTR_536",
+        "kmsProvider": "aws",
         "kmsKeyArn": "arn:aws:kms:eu-central-1:123456789012:key/eu-cmk-01",
-        "readPreference": "secondaryPreferred",
+        "keyVaultNamespace": "keyvault_study_global301_eu.__keyVault",
         "maxPoolSize": 200
       },
       {
         "zoneId": "ZONE_CN",
+        "zoneProfileId": "PROFILE_CN_BJ_PIPL_01",
         "name": "Mainland China Sovereign Storage Zone",
         "targetRegion": "cn-north-1",
         "clusterId": "rs-prod-cn-01",
-        "connectionUri": "mongodb://node1.cn.vialiq.internal:27037,node2.cn.vialiq.internal:27037/?replicaSet=rs-prod-cn-01",
         "databaseName": "study_global301_cn_prod",
         "complianceProfile": "CHINA_PIPL_DSL_GENETIC",
+        "kmsProvider": "aliyun",
         "kmsKeyArn": "arn:aliyun:kms:cn-north-1:123456789012:key/cn-hsm-01",
-        "readPreference": "secondaryPreferred",
+        "keyVaultNamespace": "keyvault_study_global301_cn.__keyVault",
         "maxPoolSize": 150
       }
     ],
@@ -294,20 +368,24 @@ Both configurations live side-by-side in `vialiq_control_plane.study_registry`, 
 }
 ```
 
+> **Pre-Go-Live Configuration Lock (Real-World Clinical Reality):**
+> Country feasibility, ethics approvals, and clinical site selection happen *before* protocol database build. `storageTopology`, `baseLocale`, and active `supportedLocales` are configured prior to Go-Live (by holders of the SOW-governed **`STUDY_INFRA_CONFIG`** RBAC privilege per [FTS-003](../functional-and-technical-specs/003-inter-zone-patient-transfers-and-multinational-inspections-specification.md#4-part-c-study-configuration-governance-pre-go-live-locking--sow-rbac)) and **permanently locked** once `PROD` data entry begins (`IsLockedForProductionDataEntry = true`). Any extraordinary mid-study expansion (adding an additive new zone when already in `MultiRegionGeoPartitioned`, or adding a new `locale`) requires a formal GxP Amendment and controlled DBA/engineering change-control procedure.
+
 ---
 
-### 4.4 Dynamic Site Assignment Rule Engine & Overrides
+### 4.4 Dynamic Site Assignment Rule Engine, Overrides & Redis Resolution
 
-When clinical sites are created or synchronized from CTMS:
-1. For **`SingleZone`** studies: The rule engine short-circuits instantly ($O(1)$) and stamps `ResolvedZoneId = DefaultZoneId`.
+When clinical sites are registered or synchronized from CTMS:
+1. For **`Single`** mode studies: The rule engine short-circuits instantly ($O(1)$) and stamps `ResolvedZoneId = DefaultZoneId`.
 2. For **`MultiRegionGeoPartitioned`** studies: The rule engine evaluates the site's geopolitical attributes (`CountryCode`) against the prioritized expressions.
-3. **Manual Overrides**: If a Swiss site (`SITE-042`) requires storage in `ZONE_EU` under a bilateral treaty, the Lead CRA sets `IsZoneOverridden = true` with a mandatory Part 11 audit justification.
+3. **Manual Overrides**: If a Swiss site (`SITE-042`) requires storage in `ZONE_EU` under a bilateral treaty, the Study Admin sets `IsZoneOverridden = true` with a mandatory Part 11 e-signature & audit justification.
+4. **Single-Tier Distributed Redis Lookup (`Single` = 100% Local; `Multi-Zone` = Targeted Control-Plane Relay)**: Per the platform's canonical caching standard ([ADR 007-A](../critical-problems-and-adrs/007-a-multitenant-cache-isolation-and-security-scoping-adr.md) & [Scale 004](./004-caching-queues-and-resilience-patterns.md)), `IStudyRegistryService` and `ISiteRegistryCache` cache topology manifests and site routing maps strictly inside **Single-Tier Distributed Redis** (**no `.NET IMemoryCache` / pod L1 RAM caches**). For the ~75–85% `Single` studies, invalidations execute directly against local Regional Redis with zero cross-region overhead; for `MultiRegionGeoPartitioned` studies, Control-Plane Outbox relays `study_registry`/epoch/revocation invalidations only to the study's registered `Zones[]` (with bounded 5–15m routing/claim TTLs), while patient writes and `edc:form_lock:*` leases remain 100% inside their origin regional VPC.
 
 ---
 
 ### 4.5 The Unified Database Provider (`DynamicClinicalDatabaseResolver`)
 
-In `Vialiq.Infrastructure`, the C# database resolver provides a single, high-performance interface consumed by all services:
+In `Vialiq.Infrastructure`, the C# database resolver provides a single, high-performance interface consumed by all services (HTTP requests, SignalR hubs, and background CDC/Outbox workers resolving synthetic `TenantStudyContext` scopes), resolving warm cluster secrets internally from VPC Secrets Manager by `ZoneProfileId`:
 
 ```csharp
 namespace Vialiq.Infrastructure.Data;
@@ -332,7 +410,7 @@ public interface IClinicalDatabaseProvider
 
     /// <summary>
     /// Resolves all physical databases participating in the study (1 for single-zone, N for multi-zone).
-    /// Used by the federated aggregation engine for global cross-zone dashboards.
+    /// Used strictly by asynchronous background sweeps and cross-zone administrative reconciliation.
     /// </summary>
     Task<IReadOnlyList<IMongoDatabase>> GetAllZoneDatabasesAsync(CancellationToken ct = default);
 }
@@ -343,18 +421,21 @@ public sealed class DynamicClinicalDatabaseResolver : IClinicalDatabaseProvider
     private readonly ITenantStudyContextAccessor _contextAccessor;
     private readonly IStudyRegistryService _studyRegistry;
     private readonly ISiteRegistryCache _siteCache;
+    private readonly IClusterSecretProvider _secretProvider;
     
-    // Request-scoped cache: database resolution happens at most ONCE per HTTP request
+    // Request-scoped resolution handle (scoped per HTTP/worker execution, never cross-request RAM cache)
     private IMongoDatabase? _scopedDatabase;
 
     public DynamicClinicalDatabaseResolver(
         ITenantStudyContextAccessor contextAccessor,
         IStudyRegistryService studyRegistry,
-        ISiteRegistryCache siteCache)
+        ISiteRegistryCache siteCache,
+        IClusterSecretProvider secretProvider)
     {
         _contextAccessor = contextAccessor;
         _studyRegistry = studyRegistry;
         _siteCache = siteCache;
+        _secretProvider = secretProvider;
     }
 
     public async Task<IMongoDatabase> GetDatabaseAsync(CancellationToken ct = default)
@@ -368,8 +449,8 @@ public sealed class DynamicClinicalDatabaseResolver : IClinicalDatabaseProvider
         var topology = await _studyRegistry.GetTopologyAsync(context.TenantId, context.StudyId, ct).ConfigureAwait(false)
             ?? throw new ConfigurationException($"Storage topology missing for study '{context.StudyId}'.");
 
-        // 1. FAST-PATH: Single-Zone Studies (85% of traffic)
-        // If the study is SingleZone, immediately return its one assigned database with zero site evaluation
+        // 1. FAST-PATH: Single-Zone Studies (~85% of traffic)
+        // If mode is Single, immediately return its one assigned database with zero site evaluation
         if (topology.IsSingleZone)
         {
             var singleZone = topology.Zones[0];
@@ -377,7 +458,7 @@ public sealed class DynamicClinicalDatabaseResolver : IClinicalDatabaseProvider
             return _scopedDatabase;
         }
 
-        // 2. DYNAMIC PATH: Multi-Zone Studies (15% of traffic)
+        // 2. DYNAMIC PATH: Multi-Zone Studies (~15% of traffic)
         // Requires SiteId from the context to resolve geopolitical partition
         if (string.IsNullOrEmpty(context.SiteId))
         {
@@ -418,11 +499,16 @@ public sealed class DynamicClinicalDatabaseResolver : IClinicalDatabaseProvider
     {
         var client = _clusterClients.GetOrAdd(zone.ClusterId, _ =>
         {
-            var settings = MongoClientSettings.FromConnectionString(zone.ConnectionUri);
+            // Secrets resolved purely from internal VPC Secrets Manager by SRE-certified ZoneProfileId
+            var connectionUri = _secretProvider.ResolveMongoConnectionUri(zone.ZoneProfileId);
+            var settings = MongoClientSettings.FromConnectionString(connectionUri);
             settings.MaxConnectionPoolSize = zone.MaxPoolSize;
             settings.MinConnectionPoolSize = 10;
             settings.WaitQueueTimeout = TimeSpan.FromSeconds(3);
-            settings.ReadPreference = ReadPreference.SecondaryPreferred;
+            // Operational clinical reads require strict Read-Your-Own-Writes consistency.
+            // All clinical operational queries route to Primary. Secondaries provide HA failover.
+            settings.ReadPreference = ReadPreference.Primary;
+            settings.ReadConcern = ReadConcern.Majority;
             settings.WriteConcern = WriteConcern.WMajority;
             return new MongoClient(settings);
         });
@@ -484,96 +570,19 @@ public sealed class CrfEntryService : ICrfEntryService
 
 ---
 
-### 4.7 Unified Aggregate Executor (`IClinicalAggregateExecutor`) for Reporting
+### 4.7 Operational vs. Global Reporting Aggregation
 
-To keep cross-study dashboards and reporting code clean, we provide a unified aggregate executor:
-
-```csharp
-namespace Vialiq.Infrastructure.Reporting;
-
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using MongoDB.Bson;
-using MongoDB.Driver;
-using Vialiq.Infrastructure.Data;
-
-public interface IClinicalAggregateExecutor
-{
-    /// <summary>
-    /// Executes an aggregation pipeline. For single-zone studies, executes once.
-    /// For multi-zone studies, executes push-down queries in parallel across all zones and merges numerical counts.
-    /// </summary>
-    Task<Dictionary<string, int>> ExecuteCountAggregateAsync(
-        string collectionName,
-        BsonDocument[] pipeline,
-        string groupKeyField = "_id",
-        string countField = "total",
-        CancellationToken ct = default);
-}
-
-public sealed class ClinicalAggregateExecutor : IClinicalAggregateExecutor
-{
-    private readonly IClinicalDatabaseProvider _dbProvider;
-
-    public ClinicalAggregateExecutor(IClinicalDatabaseProvider dbProvider)
-    {
-        _dbProvider = dbProvider;
-    }
-
-    public async Task<Dictionary<string, int>> ExecuteCountAggregateAsync(
-        string collectionName,
-        BsonDocument[] pipeline,
-        string groupKeyField = "_id",
-        string countField = "total",
-        CancellationToken ct = default)
-    {
-        // 1. Retrieve all participating databases (1 for single-zone, N for multi-zone)
-        var databases = await _dbProvider.GetAllZoneDatabasesAsync(ct).ConfigureAwait(false);
-
-        // 2. Dispatch queries in parallel across all physical clusters
-        var queryTasks = databases.Select(async db =>
-        {
-            var collection = db.GetCollection<BsonDocument>(collectionName);
-            using var cursor = await collection.AggregateAsync<BsonDocument>(pipeline, cancellationToken: ct).ConfigureAwait(false);
-            return await cursor.ToListAsync(ct).ConfigureAwait(false);
-        });
-
-        var resultsByZone = await Task.WhenAll(queryTasks).ConfigureAwait(false);
-
-        // 3. Merge counts transparently
-        var mergedTotals = new Dictionary<string, int>();
-
-        foreach (var docList in resultsByZone)
-        {
-            foreach (var doc in docList)
-            {
-                var key = doc[groupKeyField].ToString() ?? "Unknown";
-                var count = doc[countField].AsInt32;
-
-                if (!mergedTotals.ContainsKey(key))
-                    mergedTotals[key] = 0;
-
-                mergedTotals[key] += count;
-            }
-        }
-
-        return mergedTotals;
-    }
-}
-```
-
-* **Why this is a core design strength:**  
-  A developer writing a dashboard for *"Total Subject Screening Failures"* writes the MongoDB `$match` and `$group` pipeline **exactly once**. Whether the study has 1 site in Ohio or 200 sites across US, Germany, and China, the exact same method executes safely and efficiently!
+* **Regional Operational Reporting (Same-Zone):** For single-zone studies or single-country monitors inspecting sites in their local zone, queries run directly against the regional MongoDB Primary (`ReadPreference.Primary`) via `IClinicalDatabaseProvider` ($< 10\text{ ms}$ latency).
+* **Cross-Zone Executive Dashboards (Avoid WAN Lag):** Synchronously dispatching live `Task.WhenAll` MongoDB `aggregate()` queries over WAN across the US, EU, and Mainland China (`180–350 ms+` RTT and Great Firewall TCP jitter) introduces brittle latency spikes and partial dashboard failures. Instead, global cross-zone executive and CRA study dashboards query the **Central SQL Server 2022 Reporting Warehouse / Rollup Store** ($< 15\text{ ms}$), which is continuously updated by regional CDC / metric streams (see [Section 7.3](#73-tier-2-fast-global-executive-dashboards-sql-server-rollup-store)). Batch reconciliation jobs can optionally use `IClinicalDatabaseProvider.GetAllZoneDatabasesAsync()` asynchronously.
 
 ---
 
-### 4.8 Turnkey Developer Ergonomics: In-Memory & Local Testing
+### 4.8 Turnkey Developer Ergonomics & xUnit Test Doubles
 
-In local developer environments (Mac workstations, CI pipelines) or automated integration test suites:
+In local developer environments (Mac workstations, CI pipelines) or automated unit test suites:
 * Developers run single-instance MongoDB locally (e.g. `vialiq-mongo-layer3-prod` on `localhost:27037`).
-* In `appsettings.Development.json`, both `ZONE_US`, `ZONE_EU`, and `ZONE_CN` connection strings simply point to `mongodb://localhost:27037` with different database names (`study_test_us_prod`, `study_test_eu_prod`).
-* `InMemoryClinicalDatabaseProvider` enables 100% offline, lightning-fast xUnit test execution with zero external Docker dependencies.
+* In `appsettings.Development.json`, `ZONE_US`, `ZONE_EU`, and `ZONE_CN` test profiles point to `mongodb://localhost:27037` with isolated database names (`study_test_us_prod`, `study_test_eu_prod`).
+* Automated unit tests substitute an `IClinicalDatabaseProvider` xUnit test double (`FakeClinicalDatabaseProvider`) for fast offline CI verification (note: there is no application `.NET IMemoryCache` tier in runtime).
 
 ---
 
@@ -608,12 +617,30 @@ It is critical to distinguish the **System UI Localization** from the **Clinical
 
 ---
 
-### 5.2 The Invariant Storage Principle (Canonical CDISC Encoding)
+### 5.2 Study & Site Language Rules (`Base ↔ Site` Toggle & Free-Text Translation)
+
+Vialiq follows industry-proven multilingual workflows (aligned with Medidata Rave & Veeva Vault EDC), eliminating complex $N \times N$ foreign-to-foreign language translation matrices:
+
+1. **Study Default Loads in `BASE_LANGUAGE`:**
+   - Upon opening a study, the application defaults to the study's configured `baseLocale` (note: `baseLocale` is not required to be English—e.g. a domestic Japanese PMDA study runs in `ja-JP` as its `baseLocale`).
+   - Once a user enters Site-level operational workflows (Subject Matrix / Site View / Data Entry), the active clinical context automatically engages that Site's assigned **`SITE_LANGUAGE`**.
+2. **User Preferences Governance:**
+   - A user can switch or override their viewing preference for `BASE_LANGUAGE` in **User Preferences** (e.g., global CRA/Data Manager UI review), **but can NEVER override a Site's configured `SITE_LANGUAGE`**.
+3. **In-Page `Base ↔ Site` Language Toggle:**
+   - Every Data Entry (DE) and inspection page provides a quick `Base ↔ Site` language toggle allowing Site Admins, CRAs, and Auditors to flip labels, dropdown displays, and translated verbatims cleanly.
+4. **Hub-and-Spoke Free-Text Translation (`Site Language → Base Language` ONLY):**
+   - Free-text inputs (`text-input`, `textarea`) explicitly marked `isTranslatable: true` in Form Builder (e.g., `AE.AETERM`, `MH.MHTERM`, `CM.CMTRT`) participate in the **`Site Language → Base Language`** translation workflow.
+   - The original investigator entry (e.g., `"Dor de cabeça severa"` in `pt-BR`) is **preserved verbatim** alongside its translated `BaseLanguage` equivalent (`"Severe headache"`).
+   - **No Cross-Site Foreign Matrix:** Translating directly between non-base site languages (e.g., Portuguese $\rightarrow$ Chinese for a Chinese site admin) is **explicitly not supported** (Chinese site personnel have zero RBAC access to Brazilian sites under GCP).
+
+---
+
+### 5.3 The Invariant Storage Principle (Canonical CDISC Encoding)
 
 > **The Architectural Golden Rule:**  
 > Translated human strings must **NEVER** be stored as dictionary keys, field identifiers, or coded categorical answers in the operational database.
 
-Regardless of whether the form was filled out by a German nurse in Berlin, a French doctor in Lyon, or a Chinese coordinator in Beijing, **the database record is 100% invariant, uniform, and CDISC SDTM compliant**:
+Regardless of whether the form was filled out by a German nurse in Berlin, a French doctor in Lyon, or a Chinese coordinator in Beijing, **the structured database record is 100% invariant, uniform, and CDISC SDTM compliant**:
 
 ```json
 {
@@ -649,11 +676,11 @@ Regardless of whether the form was filled out by a German nurse in Berlin, a Fre
 
 ---
 
-### 5.3 Runtime Localized Presentation & Audit Metadata Binding
+### 5.4 Runtime Localized Presentation & Audit Metadata Binding
 
 When the Angular 21 form engine renders the CRF:
-1. It requests the **Published Form Schema** (`vialiq:study:roche:global301:v1.0:form:vs:schema`).
-2. It requests the **Culture-Specific Translation Bundle** from the Study Translation Cache (`vialiq:study:roche:global301:v1.0:lang:de-DE`).
+1. It requests the **Published Form Schema** (`vialiq:study:roche:global301:prod:ep1:blinded:de-DE:form:vs:schema`) from Distributed Redis ([ADR 007-A](../critical-problems-and-adrs/007-a-multitenant-cache-isolation-and-security-scoping-adr.md) & [ADR 010](../critical-problems-and-adrs/010-double-blind-rtsm-unblinding-prevention-in-caching-tiers-adr.md)).
+2. It requests the **Culture-Specific Translation Bundle** from Distributed Redis (`vialiq:study:roche:global301:prod:ep1:std:de-DE:lang:bundle`).
 3. The renderer matches:
    - Variable `SYSBP` $\rightarrow$ Label: *"Systolischer Blutdruck (mmHg)"*
    - Concept `C25473` $\rightarrow$ Dropdown Text: *"Leicht"*
@@ -667,21 +694,23 @@ When the Angular 21 form engine renders the CRF:
 
 ### 6.1 The Sovereign Envelope Encryption Topology
 
-To guarantee that European or Chinese patient data cannot be decrypted by unauthorized personnel, patient PII (`SiteIdentifier` classification from [ADR 004](../critical-problems-and-adrs/004-csfle-to-sql-server-cdc-decryption-boundary-adr.md)) is encrypted using **MongoDB Client-Side Field-Level Encryption (CSFLE)** with dedicated regional Key Encryption Keys (KEKs):
+To guarantee that European or Chinese patient data and cryptographic keys remain physically and legally quarantined within their origin countries, patient PII (`SiteIdentifier` classification from [ADR 004](../critical-problems-and-adrs/004-csfle-to-sql-server-cdc-decryption-boundary-adr.md)) is encrypted using **MongoDB Client-Side Field-Level Encryption (CSFLE)** with **regional KMS keys AND regional `__keyVault` storage**:
+
+* **`study_registry` (Layer 1 Control Plane) stores pointers ONLY:** It persists non-secret KMS configuration (`kmsProvider`, `kmsKeyArn`, `keyVaultNamespace`) per storage zone—**never raw DEK secrets**.
+* **Sovereign Key Vault Residency:** Actual wrapped Data Encryption Keys (`__keyVault` collection) physically reside in an isolated database **inside each regional cluster** (`keyvault_study_global301_eu.__keyVault` on `rs-prod-eu-01`; `keyvault_study_global301_cn.__keyVault` on `rs-prod-cn-01`) wrapped by that region's local KMS/HSM (detail codified in [`006-field-level-encryption-csfle-and-key-management-architecture.md`](../backend-architecture/database/006-field-level-encryption-csfle-and-key-management-architecture.md)).
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
-│                              LOCALIZED ENVELOPE ENCRYPTION                             │
+│                     LOCALIZED ENVELOPE ENCRYPTION & SOVEREIGN KEY VAULTS               │
 ├──────────────────────────────┬──────────────────────────────┬──────────────────────────┤
 │ ZONE_US (N. Virginia)        │ ZONE_EU (Frankfurt)          │ ZONE_CN (Beijing)        │
 ├──────────────────────────────┼──────────────────────────────┼──────────────────────────┤
 │ AWS KMS: us-east-1           │ AWS KMS: eu-central-1        │ Local Cloud HSM: Beijing │
-│ Key: arn:aws:kms:us-east-1.. │ Key: arn:aws:kms:eu-cent..   │ Key: hsm-cn-bj-master    │
+│ Vault: keyvault_*_us.__keyVlt│ Vault: keyvault_*_eu.__keyVlt│ Vault: keyvault_*_cn..   │
 │                              │                              │                          │
-│ Wraps DEKs for:              │ Wraps DEKs for:              │ Wraps DEKs for:          │
-│ • US Subject Names           │ • EU Subject Names           │ • CN Subject Names       │
-│ • US National IDs            │ • EU Health Insurance Nos    │ • CN Resident IDs        │
-│ • US Medical Record Nos      │ • EU Patient Initials & DOB  │ • CN Hospital Record Nos │
+│ Wraps DEKs inside US VPC:    │ Wraps DEKs inside EU VPC:    │ Wraps DEKs inside CN VPC:│
+│ • US Subject Names & MRNs    │ • EU Subject Names & DOB     │ • CN Subject Names & IDs │
+│ • US Audit PII Snapshots     │ • EU Audit PII Snapshots     │ • CN Audit PII Snapshots │
 └──────────────────────────────┴──────────────────────────────┴──────────────────────────┘
 ```
 
@@ -689,27 +718,28 @@ To guarantee that European or Chinese patient data cannot be decrypted by unauth
 
 ### 6.2 Cross-Region Decryption Prevention Guarantee
 
-* **Physical Isolation:** The European Master Key resides strictly inside the Hardware Security Modules (HSMs) of AWS Frankfurt (`eu-central-1`).
-* **IAM Policy Guard:** IAM roles in the United States or Asia **explicitly lack `kms:Decrypt` permissions** on the European CMK.
-* **The Forensic Guarantee:** Even if an attacker or rogue administrator acquires a complete physical database dump (`mongodump`) of `study_onco301_eu_prod`, the patient PII fields are ciphertext. Because the decrypt API cannot be invoked outside Frankfurt, European patient privacy remains 100% mathematically protected.
+* **Physical & Key Isolation:** Both the European Master Key (AWS Frankfurt KMS HSM) and Europe's wrapped DEK collection (`__keyVault`) reside exclusively inside `eu-central-1`.
+* **IAM Policy Guard:** IAM roles in the United States or Asia **explicitly lack `kms:Decrypt` permissions** on the European CMK and DB RBAC access to `keyvault_*_eu`.
+* **The Forensic Guarantee:** Even if an attacker or rogue administrator acquires a complete physical database dump (`mongodump`) of `study_onco301_eu_prod`, the patient PII fields are ciphertext and neither the DEKs nor the decrypt API are reachable outside Frankfurt.
 
 ---
 
-### 6.3 GDPR Article 17 Crypto-Shredding without Audit Invalidation
+### 6.3 GDPR Article 17 Crypto-Shredding Across CRFs & Audit Trails
 
 In European clinical sites, a participant may withdraw consent and exercise their **GDPR Article 17 Right to Erasure**.
 
 #### The Problem:
-Deleting the patient's records from `crf_entries` or `audit_crf_data` violates **FDA 21 CFR Part 11 § 11.10(e)** and destroys the SHA-256 cryptographic audit chain.
+1. Deleting records from `crf_entries` or `audit_crf_data` violates **FDA 21 CFR Part 11 § 11.10(e)** and destroys the SHA-256 cryptographic audit chain.
+2. Leaving plaintext PII in historical audit trail `oldValue` / `newValue` snapshots violates GDPR Article 17 even if the live CRF is erased.
 
-#### The Vialiq Solution (Cryptographic Erasure):
-1. Every subject has an isolated, individual **Data Encryption Key (DEK)** stored in the regional Key Vault.
-2. When Patient `SUBJ-052-001` exercises Article 17:
-   - The platform securely destroys Patient 001's specific DEK in the European vault.
-3. **The Outcome:**
-   - The audit log records and clinical records remain intact in the database.
-   - However, the patient's name, initials, and identifying metadata become permanently unrecoverable mathematical entropy (garbage bytes).
-   - **GDPR Article 17 is 100% satisfied** while **FDA 21 CFR Part 11 audit integrity remains intact**.
+#### The Vialiq Solution (Unified Zone-Local Cryptographic Erasure):
+1. Every subject has an isolated, individual **Data Encryption Key (`dek_subject_{uuid}`)** stored in their **Site Zone's `__keyVault`**.
+2. Both live `crf_entries` PII and `audit_trail` `oldValue`/`newValue` `SiteIdentifier` snapshots are encrypted with that subject's `dek_subject_{uuid}`.
+3. When Patient `SUBJ-052-001` exercises Article 17:
+   - The platform securely deletes/revokes Patient 001's specific DEK inside **`ZONE_EU`'s `__keyVault`**, logs an unencrypted structural compliance event (`GDPR_CRYPTO_SHREDDING_EXECUTED`), and respects native MongoDB `libmongocrypt` driver key expiration (see [`006-csfle`](../backend-architecture/database/006-field-level-encryption-csfle-and-key-management-architecture.md)).
+4. **The Outcome:**
+   - The clinical records and SHA-256 chained `audit_trail` (`auditSequence`, `serverTimestampUtc`, `performedByUserId`, `reasonForChange`, `signatureHash`) remain **100% intact**.
+   - Patient PII across both live forms and historical audit logs permanently collapses into unrecoverable ciphertext, rendering cleanly in the UI/exports as **`[REDACTED — GDPR ARTICLE 17 ERASURE EXECUTED]`**.
 
 ---
 
@@ -717,7 +747,7 @@ Deleting the patient's records from `crf_entries` or `audit_crf_data` violates *
 
 ### 7.1 The 3-Tier Clinical Reporting Taxonomy
 
-When data is physically stored in three different sovereign clouds across the globe, how do we run reports?
+When operational data is physically partitioned across US, EU, and China clusters, reporting separates strictly into 3 latency-safe, legally compliant tiers:
 
 ```
 =======================================================================================================================
@@ -725,9 +755,11 @@ THE 3-TIER CLINICAL REPORTING ENGINE
 =======================================================================================================================
 Reporting Tier          Primary Audience              Target Datastore         Data Transferred Across Borders
 -----------------------------------------------------------------------------------------------------------------------
-Tier 1: Local Operational Local CRAs, Monitors, PIs   Local Regional Mongo DB  ZERO (100% local inside region)
-Tier 2: Global Dashboards Executive Sponsors, DSMB    Federated Virtual Engine ZERO PII (Only mathematical sums/counts)
-Tier 3: Biostatistics/FDA SAS Programmers, Regulators Central Reporting DWH   ZERO PII (CDC De-Identified Research Data)
+Tier 1: Local Operational Local CRAs, Monitors, PIs   Local Regional Mongo DB  ZERO (100% local inside region VPC)
+Tier 2: Global Dashboards Executive Sponsors, Study   Central SQL Server 2022  ZERO PII (Pre-rolled site/study metrics
+                          Admins, Global CRAs         / Rollup Metrics Store   pushed out via regional CDC workers)
+Tier 3: Biostatistics/FDA SAS Programmers, Coders,    Central Reporting DWH    ZERO PII (SiteIdentifier dropped in-region;
+                          Regulators (SDTM/ADaM)      (SQL Server Columnstore) pseudonymized ClinicalResearch + safe coded terms)
 =======================================================================================================================
 ```
 
@@ -735,207 +767,86 @@ Tier 3: Biostatistics/FDA SAS Programmers, Regulators Central Reporting DWH   ZE
 
 ### 7.2 Tier 1: Local Operational & Monitoring Reporting
 
-* **Scope:** Single-site or single-country monitoring.
+* **Scope:** Single-site or single-country monitoring within a single zone.
   - *"Show all unverified forms at Charité Berlin."*
   - *"List all open discrepancy queries for Site 052."*
   - *"Display the full Part 11 audit trail for Patient 052-003."*
-* **Architecture:** The query routes directly to the regional cluster (`rs-prod-eu-01`) using `ReadPreference.SecondaryPreferred`.
-* **Latency:** $< 10\text{ ms}$. Full patient identifying metadata is available to authorized local investigators. Zero cross-border data transfer.
+* **Architecture:** The query routes directly to the regional cluster (`rs-prod-eu-01`) Primary node using `ReadPreference.Primary` and `ReadConcern.Majority` to guarantee strict Read-Your-Own-Writes consistency for newly entered forms, discrepancy queries, and audit trails.
+* **Latency:** $< 10\text{ ms}$. Full patient identifying metadata is available locally to authorized investigators. Zero cross-border data transfer.
 
 ---
 
-### 7.3 Tier 2: Real-Time Global Executive Dashboards (Federated Push-Down Math)
+### 7.3 Tier 2: Fast Global Executive Dashboards (SQL Server Rollup Store)
 
-* **Scope:** Real-time operational metrics across all global sites.
+* **Scope:** Interactive cross-country monitoring dashboards for Study Administrators, Global CRAs, and Sponsor Leads across all participating zones.
   - *"What is our total worldwide patient enrollment today?"*
-  - *"Show total Serious Adverse Events (SAEs) broken down by Grade (1 to 5) across all 25 countries."*
-  - *"What percentage of forms have been verified globally?"*
+  - *"Show open discrepancy query aging and SDV completion rates across US, Germany, and China sites."*
 
-#### The Legal Dilemma:
-Transferring raw Chinese or European patient records to a central US server just to count them violates cross-border data privacy laws.
+#### Why Live Synchronous Cross-WAN Mongo Queries Are Rejected:
+Firing real-time `Task.WhenAll` MongoDB aggregations across `us-east-1`, `eu-central-1`, and Mainland China (`cn-north-1`) on every page load suffers **180–350 ms+ cross-continental WAN latency** and **Great Firewall TCP inspection stalls**, causing sluggish dashboards whenever any remote link blips.
 
-#### The Architectural Solution: Federated Push-Down Aggregations
-The central reporting engine dispatches **push-down aggregation pipelines** to each regional cluster in parallel:
-
-```
-                            GLOBAL EXECUTIVE MONITORING DASHBOARD (US)
-                       Query: "Count Serious Adverse Events Grouped by Grade"
-                                                 │
-                 ┌───────────────────────────────┼───────────────────────────────┐
-                 │ 1. Dispatch Local Aggregation │ 1. Dispatch Local Aggregation │ 1. Dispatch Local Aggregation
-                 ▼                               ▼                               ▼
-      US CLUSTER (rs-prod-us)         EU CLUSTER (rs-prod-eu)         CHINA CLUSTER (rs-prod-cn)
-      db.crf_entries.aggregate([      db.crf_entries.aggregate([      db.crf_entries.aggregate([
-        { $match: { isSAE: true } },    { $match: { isSAE: true } },    { $match: { isSAE: true } },
-        { $group: {                     { $group: {                     { $group: {
-            _id: "$grade",                  _id: "$grade",                  _id: "$grade",
-            count: { $sum: 1 }              count: { $sum: 1 }              count: { $sum: 1 }
-        }}                              }}                              }}
-      ])                              ])                              ])
-                 │                               │                               │
-                 │ Returns:                      │ Returns:                      │ Returns:
-                 │ Grade 3: 14                   │ Grade 3: 20                   │ Grade 3: 8
-                 │ Grade 4: 2                    │ Grade 4: 3                    │ Grade 4: 1
-                 ▼                               ▼                               ▼
-                 └───────────────────────────────┼───────────────────────────────┘
-                                                 │
-                                                 ▼
-                             2. Central Aggregator Sums Numerical Results:
-                                - Grade 3 SAEs Worldwide: 42
-                                - Grade 4 SAEs Worldwide: 6
-```
-
-#### C# Implementation of the Federated Push-Down Engine:
-
-```csharp
-namespace Vialiq.Infrastructure.Reporting;
-
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using MongoDB.Bson;
-using MongoDB.Driver;
-using Vialiq.Core.Interfaces;
-using Vialiq.Core.Models;
-
-public sealed class FederatedDashboardAggregator : IFederatedReportingService
-{
-    private readonly ISiteStorageResolver _storageResolver;
-    private readonly IStudyRegistryService _studyRegistry;
-
-    public FederatedDashboardAggregator(
-        ISiteStorageResolver storageResolver,
-        IStudyRegistryService studyRegistry)
-    {
-        _storageResolver = storageResolver;
-        _studyRegistry = studyRegistry;
-    }
-
-    public async Task<Dictionary<int, int>> GetGlobalSaeCountsByGradeAsync(string tenantId, string studyId)
-    {
-        var topology = await _studyRegistry.GetTopologyAsync(tenantId, studyId).ConfigureAwait(false);
-
-        // 1. Prepare parallel query tasks across all regional storage zones
-        var tasks = topology.Zones.Select(async zone =>
-        {
-            var database = await _storageResolver.GetDatabaseByZoneAsync(zone).ConfigureAwait(false);
-            var collection = database.GetCollection<BsonDocument>("crf_entries");
-
-            // Local aggregation pipeline: zero patient rows leave the regional cluster!
-            var pipeline = new[]
-            {
-                new BsonDocument("$match", new BsonDocument("isSAE", true)),
-                new BsonDocument("$group", new BsonDocument
-                {
-                    { "_id", "$clinicalData.AE_GRADE" },
-                    { "total", new BsonDocument("$sum", 1) }
-                })
-            };
-
-            var results = await collection.AggregateAsync<BsonDocument>(pipeline).ConfigureAwait(false);
-            return await results.ToListAsync().ConfigureAwait(false);
-        });
-
-        // 2. Execute all regional queries concurrently
-        var regionalResults = await Task.WhenAll(tasks).ConfigureAwait(false);
-
-        // 3. Roll up pure numbers into global totals
-        var globalTotals = new Dictionary<int, int>();
-
-        foreach (var zoneList in regionalResults)
-        {
-            foreach (var doc in zoneList)
-            {
-                int grade = doc["_id"].AsInt32;
-                int count = doc["total"].AsInt32;
-
-                if (!globalTotals.ContainsKey(grade))
-                    globalTotals[grade] = 0;
-
-                globalTotals[grade] += count;
-            }
-        }
-
-        return globalTotals;
-    }
-}
-```
-
-* **Why This is Legally Unassailable:**  
-  **No personal health data, no patient records, and no free-text notes cross sovereign borders.** Only anonymous, grouped mathematical numbers (`Grade 3: 42`) are transmitted. This complies with **100% of international data sovereignty laws**.
+#### The Production Solution: Central SQL Server Rollup Store (< 15 ms)
+1. **Local Aggregation Inside Each Zone:** Lightweight regional CDC / metric workers maintain real-time site/study summary counters (`enrolledCount`, `openQueriesCount`, `sdvCompletedPct`, `saeGradeCounts`) inside each regional VPC.
+2. **Non-PII Metric Sync:** Only anonymous, aggregated site KPI counts (zero patient records, zero free text) replicate continuously to the **Central SQL Server 2022 Reporting Database** over TLS 1.3.
+3. **Instant Global Dashboards:** When a global CRA or Study Admin opens the study dashboard, ASP.NET Core 9 queries Central SQL Server in **$< 15\text{ ms}$**, completely immune to cross-ocean MongoDB WAN latency or China firewall stalls.
 
 ---
 
-### 7.4 Tier 3: Global Biostatistics & CDISC Submission Data Lake (CDC De-Identification)
+### 7.4 Tier 3: Global Biostatistics, SDTM Datasets & SQL Server ETL (Regional CDC Boundary)
 
-* **Scope:** Primary statistical endpoint analysis for FDA NDA / EMA MAA drug approval filings.
-  - *"Did the investigational arm achieve a statistically significant 6-month Progression-Free Survival (PFS) compared to placebo across the global cohort?"*
-* **The Architecture:** Powered by our sealed [**ADR 004 (CSFLE-to-SQL Server CDC Boundary)**](../critical-problems-and-adrs/004-csfle-to-sql-server-cdc-decryption-boundary-adr.md).
+* **Scope:** Pooled global clinical efficacy/safety analysis, MedDRA/WHODrug medical coding, and FDA NDA / EMA MAA **CDISC SDTM/ADaM** submission dataset generation across all 5,000 subjects worldwide.
+* **The Architecture:** Powered by [**ADR 004 (CSFLE-to-SQL Server CDC Boundary)**](../critical-problems-and-adrs/004-csfle-to-sql-server-cdc-decryption-boundary-adr.md) deployed symmetrically inside each region's VPC:
 
 ```
-┌─────────────────────────────────┐
-│ REGIONAL MONGO PROD (e.g. EU)   │
-│ - Live patient data             │
-│ - Name, SSN, medical notes      │
-└────────────────┬────────────────┘
-                 │
-                 │ 1. MongoDB Change Streams (Kafka / Debezium)
-                 ▼
+┌───────────────────────────────────────────┐
+│ REGIONAL MONGO PROD (US / EU / CN VPC)    │
+│ - Live clinical + PII (`SiteIdentifier`)  │
+│ - Subject Identity keys stay in-region    │
+└─────────────────────┬─────────────────────┘
+                      │ 1. Local MongoDB Change Stream
+                      ▼
 ┌────────────────────────────────────────────────────────────────────────┐
-│ REGIONAL CDC DE-IDENTIFICATION BOUNDARY (Runs inside EU VPC)           │
+│ REGIONAL CDC BOUNDARY WORKER (.NET 9 Worker INSIDE Regional VPC)       │
 ├────────────────────────────────────────────────────────────────────────┤
-│ The Boundary Filter enforces ADR 004 Data Classifications:            │
+│ Enforces ADR 004 4-Tier Classification BEFORE leaving region:         │
 │                                                                        │
-│ ❌ SiteIdentifier (Name, MRN, Address, ID)  ➔ HARD-DROPPED AT BORDER   │
+│ ❌ SiteIdentifier (Name, MRN, National ID)  ➔ HARD-DROPPED AT BORDER   │
+│ ❌ Unscrubbed Raw Free-Text Notes           ➔ BLOCKED IN-REGION        │
+│ 🛡️ Translatable AE/Med Verbatims            ➔ PII-scrubbed, translated │
+│                                                Site → Base + MedDRA    │
 │ 🙈 BlindedRTSM (Treatment Arm, Drug Kit)    ➔ MASKED AS "BLINDED"      │
-│ ✅ ClinicalResearch (Vitals, Lab Values, AEs)➔ EMITTED TO GLOBAL STREAM│
-└────────────────┬───────────────────────────────────────────────────────┘
-                 │
-                 │ 2. De-Identified, Non-PHI Research Stream (Kafka TLS)
-                 ▼
+│ ⛔ Quarantine (Unregistered/Missing Schema) ➔ ROUTED TO LOCAL ZONE DLQ │
+│ ✅ ClinicalResearch (Labs, Vitals, Dates)   ➔ EMITTED OVER TLS 1.3     │
+└─────────────────────┬──────────────────────────────────────────────────┘
+                      │ 2. De-Identified Pseudonymous Stream (`GlobalSubjectGuid` / `SUBJ-052-001`)
+                      ▼
 ┌────────────────────────────────────────────────────────────────────────┐
-│ CENTRAL DATA WAREHOUSE (SQL Server 2022+ / Snowflake / Databricks)     │
+│ CENTRAL REPORTING WAREHOUSE (Microsoft SQL Server 2022+ Columnstore)   │
 ├────────────────────────────────────────────────────────────────────────┤
-│ • Normalized CDISC SDTM Domains (`LB`, `AE`, `VS`, `DM`)               │
-│ • Patient is identified ONLY by Universal Pseudonym: `SUBJ-052-001`    │
-│ • Zero PHI exists in the central warehouse                             │
-│ • Powers SAS, R, and Python biostatistical efficacy models             │
+│ • Merges US + EU + China rows cleanly into CDISC SDTM tables:          │
+│   `sdtm.DM`, `sdtm.VS`, `sdtm.LB`, `sdtm.AE`, `sdtm.DS`, `sdtm.CM`     │
+│ • Zero Direct Patient PII exists in SQL Server (HIPAA Safe Harbor)     │
+│ • Drives unified SAS/R/Python statistical analysis & Tier 2 Dashboards │
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
-#### Regulatory Compliance Status:
-* **HIPAA Safe Harbor (§ 164.514(b))**: All 18 direct identifiers are purged at the regional CDC boundary.
-* **GDPR Article 89(1)**: Processing for scientific research purposes is permitted under pseudonymization and technical safeguards.
-* **China DSL / PIPL**: Scientific data stripped of personal biometric identity satisfies cross-border research exemptions.
+#### Regulatory & Compliance Safeguards:
+* **Zero Direct PII or Raw Unscrubbed Notes Cross Borders:** Any direct patient identifiers (`SiteIdentifier`) and any unclassified (`Quarantine`) fields never leave the regional cluster's VPC. Clinical verbatims needed for SDTM (`AETERM`, `CMTRT`) pass through PII scrubbing + controlled `Site → Base` translation / MedDRA coding in-region (and China PIPL/HGRAC transfer approvals cover pseudonymized safety/endpoint tables).
+* **HIPAA Safe Harbor (§ 164.514(b)) & GDPR Art. 89(1):** SQL Server operates strictly on pseudonymized research data (`GlobalSubjectGuid`).
+* **Single SQL Server ETL Target:** Existing SQL Server SDTM/ADaM transformations require zero multi-dialect duplication—every region pushes normalized, schema-verified research rows into one central SQL Server reporting schema.
 
 ---
 
-## 8. Edge Cases, Patient Transfers & Inspection Readiness
+## 8. Edge Cases, Patient Transfers, Regulatory Inspections & SOW Governance
 
-### 8.1 Inter-Site Subject Relocation Across Storage Zones
+Because cross-border subject transfers, multi-national health authority inspections, and client SOW role governance span both operational workflows and infrastructure policies, their exhaustive functional and technical specification is maintained in a dedicated companion document:
 
-In longitudinal trials lasting multiple years, a participant may relocate (e.g. a patient enrolled at **MD Anderson in Houston (Site 005, USA)** moves to London and transfers their ongoing care to **Guy's Hospital (Site 062, UK/EU)**).
+> 👉 **[FTS-003: Inter-Zone Patient Transfers, Multi-National Health Authority Inspections & Study Governance](../functional-and-technical-specs/003-inter-zone-patient-transfers-and-multinational-inspections-specification.md)**
 
-#### The Protocol Relocation Workflow:
-1. **The Origin Invariant:** Historical clinical visits (Visits 1 through 3) completed in the US **remain permanently in the US database** (`study_onco301_us_prod`), preserving the original legal jurisdiction and 21 CFR Part 11 audit records.
-2. **Subject Pointer Linking:**
-   - In the EU database (`study_onco301_eu_prod`), a subject record is created with `OriginalSubjectId: "SUBJ-005-012"` and `TransferStatus: "TransferredFrom_ZONE_US"`.
-3. **Subsequent Visits (Visit 4 onward):**
-   - New visits are entered by the London clinical team and saved strictly into the **European database**.
-4. **Biostatistical Re-assembly:**
-   - In the central reporting warehouse, the CDC pipeline reconciles the two halves of the subject's journey via the unique immutable `GlobalSubjectGuid`, presenting a seamless clinical timeline for SAS analysis while respecting regional storage laws.
-
----
-
-### 8.2 Multi-National Health Authority Inspection Readiness (FDA vs. EMA vs. NMPA)
-
-When regulatory health authorities perform on-site clinical audits:
-
-| Health Authority | Inspection Scenario | Vialiq Inspection Strategy |
-|---|---|---|
-| **US FDA Investigator** | Inspecting a US clinical site | Inspects live records in `study_onco301_us_prod`. Audit trail displays local UTC and site local time. |
-| **European EMA Inspector** | Performing GCP inspection in Paris | Inspects live records in `study_onco301_eu_prod`. Complete verification that all EU patient PII remained inside the EEA. |
-| **China NMPA Inspector** | Auditing Shanghai clinical site | Inspects records in `study_onco301_cn_prod` hosted on local Chinese cloud infrastructure. Full genetic data sovereignty demonstrated. |
+Summary highlights governed by **FTS-003**:
+1. **Inter-Zone Subject Relocation:** Origin visits (`ZONE_US`) remain immutably locked (`TRANSFERRED_OUT`); destination sites (`ZONE_EU`) capture local re-consent and enroll a linked subject referencing `GlobalSubjectGuid`. Central SQL Server merges both chronological segments cleanly into SDTM `DM`/`DS`.
+2. **Multi-National Inspections (FDA, EMA, NMPA):** Scoped read-only Inspector credentials route strictly to their jurisdiction's replica set, rendering UTC + Local TZ, `Base ↔ Site` toggles with preserved original verbatims, bookmarked certified PDF/A packets, and EMA-mandated dynamic XML/CSV audit exports.
+3. **SOW-Flexible Configuration Governance (`STUDY_INFRA_CONFIG`):** Tenant Admins assign `STUDY_INFRA_CONFIG` per client SOW (either to Vialiq Managed Services OR Client Self-Service Technical Lead), restricted strictly to pre-certified Zone Profiles (zero raw DB connection strings) and locked pre-Go-Live once `PROD` FPI begins.
 
 ---
 
@@ -948,27 +859,29 @@ SUMMARY ARCHITECTURAL MATRIX: MULTI-REGION & MULTILINGUAL EDC PLATFORM
 Architectural Concern              Engineering Solution                Regulatory Standard           Key Benefit
 -----------------------------------------------------------------------------------------------------------------------
 1. Single Protocol vs Multi-Country "One Logical Study, Multi-DB Farm"  ICH GCP E6(R3) Section 5.18   Unified protocol build;
-                                    (Site-Group Geo-Partitioning)                                    zero code duplication.
+                                    (Site-Group Geo-Partitioning)                                    locked before PROD FPI.
 2. Cross-Border Sovereignty        Dynamic Site Storage Resolver       China PIPL/DSL, GDPR Art. 9,  Zero PII leaves legal
-   (China, EU, US)                  (`countryCode -> TargetCluster`)    HIPAA Security Rule           country of origin.
-3. Multilingual Representation     Canonical CDISC DB Keys +           CDISC SDTM v2.0,              100% SAS/FDA compliance;
-                                    Dynamic Localized UI Presentation   ICH GCP E6(R3) Attribution    native UX in 30+ langs.
-4. Cryptographic Sovereignty       MongoDB CSFLE + Local Regional KMS  GDPR Art. 17 (Right to Eras.) Remote US admins cannot
-                                    (AWS Frankfurt / US / Aliyun HSM)   HIPAA Safe Harbor             decrypt foreign PII.
-5. Local Operational Queries       Direct Regional Secondary Reads     FDA 21 CFR Part 11            < 10ms response time;
-                                    (`ReadPreference.SecondaryPreferred`)                             full patient details.
-6. Real-Time Global Dashboards     Federated Push-Down Math Engine     Cross-Border Exemption        Zero PII crosses wire;
-                                    (Parallel Regional Aggregations)    (Pure numerical rollups)      live global totals.
-7. Biostatistical Clinical Science  De-Identified CDC Boundary Pipeline HIPAA Safe Harbor,            Global SAS/R analysis on
-                                    (Debezium / Kafka ➔ SQL Server DWH) GDPR Art. 89 (Scientific)     pooled 5,000 subjects.
+   (China, EU, US)                  (`CountryCode` / Override Rules)    HIPAA Security Rule           country of origin.
+3. Multilingual Representation     Canonical CDISC DB Keys +           CDISC SDTM v3.4,              Base default + User override
+                                    `Base ↔ Site` Toggle (`Site → Base`) ICH GCP E6(R3) Attribution  (Site language immutable).
+4. Cryptographic Sovereignty       CSFLE + Regional `__keyVault` DBs   GDPR Art. 17 (Right to Eras.) Shreds CRFs + Audit PII;
+                                    & KMS pointers in `study_registry`  FDA 21 CFR Part 11 § 11.10   SHA-256 chain stays intact.
+5. Local Operational Queries       Direct Regional Primary Reads       FDA 21 CFR Part 11            < 10ms response time;
+                                    (`ReadPreference.Primary`)                                         strict Read-Your-Own-Writes.
+6. Fast Cross-Zone Dashboards      Central SQL Server Rollup Store     Non-PII Site KPI Rollups      < 15ms UI; zero China/EU
+                                    (No slow live WAN Mongo queries)                                 WAN latency failures.
+7. Biostatistical Clinical Science  Regional CDC Boundary Workers      HIPAA Safe Harbor,            Unified global SDTM/ADaM
+                                    (In-Region De-ID ➔ Central SQL)     GDPR Art. 89 (Scientific)     across 5,000+ subjects.
+8. Transfers, Audits & SOW Roles   Origin Custody + GlobalGuid Join    FDA BIMO / EMA / NMPA /       FTS-003 unified governance
+                                    + `STUDY_INFRA_CONFIG` Catalog      SOC 2 Separation of Duties    & SOW flexibility.
 =======================================================================================================================
 ```
 
 ### Developer Implementation Checklist:
-- [ ] **Data Model:** Add `storageTopology` schema to `TenantStudyContext` and `study_registry`.
-- [ ] **Site Entity:** Ensure `SiteEntity` includes `CountryCode`, `ResolvedZoneId`, and `IsZoneOverridden`.
-- [ ] **Infrastructure Service:** Implement `DynamicSiteStorageResolver.cs` in `Vialiq.Infrastructure`.
-- [ ] **Connection Pool:** Update `DynamicClusterConnectionPool` to cache connections per `ZoneId`.
-- [ ] **CDC Pipeline:** Verify Debezium transforms drop `SiteIdentifier` fields at regional VPC boundaries.
-- [ ] **Reporting Engine:** Deploy `FederatedDashboardAggregator.cs` for cross-zone executive dashboards.
+- [ ] **Data Model:** Add canonical `storageTopology`, `translationConfig`, `medicalCoding`, and zone KMS pointers to `study_registry` (with pre-Go-Live lock enforcement once `PROD` subjects exist).
+- [ ] **Site Entity:** Ensure `SiteEntity` includes `CountryCode`, immutable `SiteLanguage`, `ResolvedZoneId`, and `IsZoneOverridden`.
+- [ ] **Infrastructure Service:** Implement `DynamicClinicalDatabaseResolver.cs` resolving secrets by `ZoneProfileId` using Single-Tier Distributed Redis caching (no `.NET IMemoryCache`).
+- [ ] **Key Vault Topology:** Provision per-region `__keyVault` databases inside `rs-prod-us`, `rs-prod-eu`, and `rs-prod-cn`, enforcing GDPR crypto-shredding across both `crf_entries` and `audit_trail` snapshots.
+- [ ] **Regional CDC & SQL Server:** Deploy regional `.NET CDC Boundary Workers` inside each zone VPC to strip `SiteIdentifier` PII and emit de-identified `ClinicalResearch` + non-PII KPIs to Central SQL Server 2022.
+- [ ] **FTS-003 Compliance:** Implement `TRANSFERRED_OUT` / re-consent linkage workflows, read-only scoped Inspector views (PDF/A & CSV/XML), and `STUDY_INFRA_CONFIG` RBAC catalog bindings.
 

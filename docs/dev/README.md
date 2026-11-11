@@ -30,6 +30,10 @@ docs/dev/
   * **Section 11:** Database Architecture, BSON Schemas, Codelists, MedDRA/WHODrug, Liquibase & CDC SDTM Pipeline.
   * **Section 12:** Web & API Enterprise Deployment Framework (Linux/K8s & Windows Server/IIS).
 
+### 🧩 [Study-Specific MFE Architecture & Loading Specification](../functional-and-technical-specs/002-study-specific-mfe-creation-and-secure-loading-specification.md)
+* **Technical Blueprint for Custom Micro-Frontends** (`FTS-002`).
+* End-to-end lifecycle: Nx scaffolding, `ControlValueAccessor`, SAST/DAST GxP gating, SHA-384 SRI hashing, asymmetric Ed25519 manifest signing, declarative pre-route authorization, multi-cloud deployment (AWS/Azure/On-Prem), and Docker development.
+
 ### 📦 [Local Publishing Guide](./local-publishing.md)
 * How to test and publish monorepo libraries (e.g. `@vialiq/web-components`, `@vialiq/automapper`) locally via Verdaccio or tarballs.
 

@@ -437,11 +437,18 @@ In clinical trials, terminating an active pod during a study lock or e-signature
   });
   ```
 
+### 5.3 Unified Observability, Distributed Tracing & PHI/RTSM Telemetry Safety
+
+To maintain 21 CFR Part 11 / HIPAA § 164.312(b) traceability without ever leaking patient PII or blinding metadata:
+1. **End-to-End Trace Correlation (`W3C traceparent` + `X-Correlation-Id`):** Ingress (`X-Request-ID`) maps cleanly into `X-Correlation-Id` and OpenTelemetry W3C `traceparent`, propagating across Angular $\rightarrow$ Gateway $\rightarrow$ Kestrel $\rightarrow$ MongoDB `audit_trail` $\rightarrow$ SignalR $\rightarrow$ RabbitMQ $\rightarrow$ CDC Worker $\rightarrow$ Central SQL Server 2022.
+2. **Allow-List Structured Logging (Zero Clinical Payloads):** Telemetry exporters (OpenTelemetry / Loki / Fluentd / SIEM) record **only operational metadata** (`tenantId`, `studyId`, `zoneId`, `siteId`, `subjectId`, `crfId`, `statusCode`, `latencyMs`, `correlationId`, `traceId`). Request/response bodies, `SiteIdentifier` PHI, KMS/DEK material, and `BlindedRTSM` values are strictly scrubbed before emission; dead-letter payloads remain encrypted inside the origin DB.
+3. **Sovereign Telemetry Residency (`75% Single` vs. `25% Multi-Region`):** `Single`-zone studies use one local VPC telemetry stack (`Prometheus / Loki / Jaeger`); `MultiRegionGeoPartitioned` trials retain application logs, traces, and SIEM events **strictly inside each sovereign VPC** (`US`, `EU`, `CN`) while federating only scrubbed SLO/health metrics and GxP security alerts (`HTTP 503` sync failures, CDC quarantine drops, hash-chain checks, emergency unblinding events).
+
 ---
 
 ## 6. Real-Time WebSockets & Concurrency Locks
 
-Vialiq EDC maintains live field-level editing locks and real-time clinical query collaboration via **WebSockets (SignalR)** backed by the Redis backplane.
+Vialiq EDC maintains single-editor form-level lock notifications (`ADR 003`) and real-time clinical query collaboration via **WebSockets (SignalR)** backed by the Redis backplane.
 
 ### Platform Specifics:
 * **Linux / Nginx Ingress:**
@@ -467,10 +474,15 @@ Vialiq EDC maintains live field-level editing locks and real-time clinical query
 * **Windows Server Environments:** Installed using the official MongoDB Windows MSI installer (`mongodb-windows-x86_64-7.0.x-signed.msi`). Registered as an automatic Windows Service (`mongod.exe --service --config C:\mongodb\mongod.cfg`).
 
 ### 7.2 Redis 7.2 Sentinel High-Availability Tier
-* **Linux Environments:** Deployed using the 3-Sentinel + Primary-Replica cluster verified in `tools/docker/docker-compose.redis-dev.yml`.
+* **Linux Environments:** Deployed as **Non-Clustered Redis Sentinel HA (`Cluster Mode: Disabled`, `min-replicas-to-write 1`)**: production runs **1 Primary + 2 Replicas + 3 Sentinels** (preventing a 1-replica write stall), while local Docker tests **1 Primary + 1 Replica + 3 Sentinels** via `tools/docker/docker-compose.redis-dev.yml`.
 * **Windows Server Environments:** Redis officially does not maintain native Windows binaries past 3.2. For Windows environments:
   1. **Tier 1 Recommendation:** Managed cloud cache (**Azure Cache for Redis** or **AWS ElastiCache**).
   2. **Tier 2 Recommendation (Air-Gapped / On-Premise Windows):** Deploy **Microsoft Garnet** (open-source C# caching engine developed by Microsoft Research), running as a Windows Service and offering 100% Redis wire-protocol compatibility.
+
+### 7.3 Identity & Control-Plane HA/DR (Keycloak + `rs-admin`)
+* **Control Plane (`rs-admin` / `vialiq_control_plane`):** Deployed as a 3-node Multi-AZ MongoDB Replica Set (`w: "majority"`) storing tenant manifests and non-secret `study_registry.identityConfig` references (`EmailPassword` / `ActiveDirectoryLdap` / `OktaOidc` / `EntraIdOidc` / `HybridBrokered` + MFA/step-up rules; raw client secrets live strictly in Vault/Secrets Manager).
+* **Identity Provider (`https://auth.vialiq.cloud`):** Keycloak HA runs across Multi-AZ pods backed by Managed Multi-AZ PostgreSQL with automated cross-region async DB replica/snapshot DR (`RTO <= 15–30 min`), **no active-active multi-master Keycloak required in Phase 1** (sovereign regional Keycloak is optional per SOW).
+* **Zero Runtime Auth Dependency & DR Grace Continuity:** Regional API pods verify tokens locally via Regional Redis-cached `JWKS` (1h TTL), `study_registry.identityConfig`, and `user_study_access` (revocations pushed immediately via Control-Plane Outbox for multi-region studies or direct Redis delete for `Single` studies). During an active Control-Plane / Keycloak DR failover window (`RTO <= 15–30 min` > normal `5–15 min` cache TTL), Regional Redis honors a **stale-while-revalidate grace fallback** for cached active sessions while local `rs-prod` `study_locks` remain enforced. API readiness probes (`/health/ready`) **never** probe Keycloak `/health/ready`.
 
 ---
 
@@ -534,7 +546,7 @@ Backend API Layer         Chiseled Container (.NET 9)    Non-root, zero shell, ~
                           IIS In-Process Hosting (ANCM)  AspNetCoreModuleV2 in w3wp.exe          ✅ READY
                           Windows Service Alternative    Microsoft.Extensions.Hosting.WinServ    ✅ READY
                           Health Checks (/healthz)       Liveness, Readiness, Startup probes     ✅ READY
-                          Graceful Shutdown Draining     30s host timeout, 5s preStop hook       ✅ READY
+                          Graceful Shutdown Draining     45s pod grace period, 30s host timeout, 5s preStop hook ✅ READY
 
 Infrastructure & Comms    WebSocket Support              Nginx upgrade / IIS Web-WebSockets      ✅ READY
                           Redis Strategy (Windows)       Azure Redis / Microsoft Garnet          ✅ READY

@@ -1,6 +1,6 @@
 # Form Builder — Comprehensive Phase-Wise Development Plan
 
-> **Synthesized from:** [form-builder-overview.md](file:///Users/prashantgupta/code/nx/docs/form-builder-overview.md) · [form-builder-roadmap.md](file:///Users/prashantgupta/code/nx/docs/form-builder-roadmap.md) · [form-builder-architecture.md](file:///Users/prashantgupta/code/nx/docs/form-builder-architecture.md) · [form-builder-schema.md](file:///Users/prashantgupta/code/nx/docs/form-builder-schema.md) · [form-builder-renderer.md](file:///Users/prashantgupta/code/nx/docs/form-builder-renderer.md) · [form-builder-dnd.md](file:///Users/prashantgupta/code/nx/docs/form-builder-dnd.md) · [form-builder-technical-debt.md](file:///Users/prashantgupta/code/nx/docs/form-builder-technical-debt.md) · [form-builder-validation.md](file:///Users/prashantgupta/code/nx/docs/form-builder-validation.md) · [form-builder-custom-validators.md](file:///Users/prashantgupta/code/nx/docs/form-builder-custom-validators.md)
+> **Synthesized from:** [form-builder-overview.md](./form-builder-overview.md) · [form-builder-roadmap.md](./form-builder-roadmap.md) · [form-builder-architecture.md](./form-builder-architecture.md) · [form-builder-schema.md](./form-builder-schema.md) · [form-builder-renderer.md](./form-builder-renderer.md) · [form-builder-dnd.md](./form-builder-dnd.md) · [form-builder-technical-debt.md](./form-builder-technical-debt.md) · [form-builder-validation.md](./form-builder-validation.md) · [form-builder-custom-validators.md](./form-builder-custom-validators.md)
 >
 > **Author:** Synthesized by Antigravity — 2026-08-30
 > **Status:** Living Document — ready for execution
@@ -541,7 +541,7 @@ src/lib/canvas/
 > 
 > > **UPDATE (Oct 2026): 🛑 SKIPPED.** This entire phase was deferred. Getting the core visual builder (DnD + Registry + Settings + Undo/Redo) stable was the priority. Validation Engine and Rules Editor UI moved to the v2 Roadmap.
 
-> **Architecture (decided 2026-05-29):** Validation uses `ValidationEngine` (Angular `@Injectable()`) with `json-logic-js`. Custom validators via `provideValidation()` from `@vialiq/form-validator-sdk`. See [form-builder-validation.md](file:///Users/prashantgupta/code/nx/docs/form-builder-validation.md) §20 for full implementation spec.
+> **Architecture (decided 2026-05-29):** Validation uses `ValidationEngine` (Angular `@Injectable()`) with `json-logic-js`. Custom validators via `provideValidation()` from `@vialiq/form-validator-sdk`. See [form-builder-validation.md](./form-builder-validation.md) §20 for full implementation spec.
 
 ### 5.1 Validation Rules Editor
 
@@ -929,13 +929,13 @@ export class FormRendererComponent {
 - `saveState` button action on `ButtonComponentSchema`
 - Options: server-side draft API vs client-side IndexedDB vs hybrid
 - Session/user binding + expiry policy
-- See [form-builder-offline.md](file:///Users/prashantgupta/code/nx/docs/form-builder-offline.md) §12 for open questions
+- See [form-builder-offline.md](./form-builder-offline.md) §12 for open questions
 
 ### P4.3 Offline / Disconnected Mode (TD-09)
 
 - Full offline: load form, capture data, submit on reconnect
 - Service worker strategy, IndexedDB schema, conflict resolution
-- Reference: [form-builder-offline.md](file:///Users/prashantgupta/code/nx/docs/form-builder-offline.md)
+- Reference: [form-builder-offline.md](./form-builder-offline.md)
 
 ### P4.4 Multilingual / i18n (TD-11)
 

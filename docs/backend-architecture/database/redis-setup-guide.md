@@ -55,7 +55,7 @@
 
 ### 1.1 The Role of Redis in Vialiq EDC
 In the Vialiq EDC clinical platform, Redis does **not** serve as a primary data store. Instead, it fulfills three specialized infrastructure responsibilities:
-1. **L2 Distributed Cache Layer**: Backing .NET 9 `HybridCache` for ultra-fast, sub-millisecond retrieval of invariant study form schemas, MessagePack validation AST rules, dropdown codelists, and medical dictionaries (MedDRA, WHODrug).
+1. **Distributed Cache Layer**: Ultra-fast, sub-millisecond retrieval of invariant study form schemas, MessagePack validation AST rules, dropdown codelists, and medical dictionaries (MedDRA, WHODrug).
 2. **Distributed Concurrency Lock Coordinator (ADR 003)**: Managing single-editor lease locks (`edc:form_lock:{studyId}:{crfId}`) with a strict 15-minute sliding TTL to eliminate multi-investigator write races while guaranteeing MongoDB remains the durable system of record.
 3. **Cache Invalidation & Real-Time Backplane**: Relaying cluster-wide schema invalidations and SignalR real-time synchronization messages across horizontally scaled API pods.
 
@@ -86,7 +86,7 @@ STRICTLY FORBIDDEN FROM REDIS                                   PERMITTED IN RED
 
 ### 1.3 High-Availability Topology: Primary-Replica + 3-Sentinel Quorum
 
-To ensure continuous 24/7/365 clinical trial operations with zero single points of failure, the local Docker environment reflects the production high-availability architecture:
+To ensure continuous 24/7/365 clinical trial operations with zero single points of failure, production deploys **Non-Clustered Sentinel HA (`1 Primary + 2 Replicas + 3 Sentinels`)** so losing one replica satisfies `min-replicas-to-write 1` without halting cache writes; the local Docker environment mirrors this topology leanly with `1 Primary + 1 Replica + 3 Sentinels`:
 
 ```
                                   HIGH-AVAILABILITY REDIS TOPOLOGY
@@ -156,8 +156,10 @@ Ensure Docker Desktop on macOS is configured for optimal performance:
 
 ### 2.3 Redis Memory Clamping & GxP Eviction Policy (`volatile-lru`)
 In clinical EDC, cache eviction rules are governed by regulatory audit and stability requirements:
-* **The GxP Compliance Rule**: NEVER configure `allkeys-lru` or `allkeys-random`. Under memory pressure, Redis must **never** evict invariant study schemas, clinical edit check ASTs, or medical dictionaries.
-* **The Configured Policy**: `maxmemory-policy volatile-lru`. Redis will evict **only** keys that have an explicit TTL set (ephemeral lock leases and short-lived auth tokens). If persistent metadata exceeds memory, Redis returns an error rather than silently dropping critical study schemas.
+* **The GxP Compliance Rule**: NEVER configure `allkeys-lru` or `allkeys-random`. Under memory pressure, Redis must **never** evict invariant reference dictionaries (`MedDRA`, `WHODrug`), governance lock hashes (`vialiq:locks:*`), or study epoch counters.
+* **The Configured Policy (`maxmemory-policy volatile-lru`)**:
+  * **No TTL (Persistent / Non-Evictable):** Global reference dictionaries (`MedDRA`, `WHODrug`), governance freeze hashes (`vialiq:locks:{studyId}`), and `epoch` counters omit TTLs (replaced deterministically on dictionary version publish, XFetch background refresh, or `[RotateCacheKey]`).
+  * **Explicit TTL (Evictable Pool):** Temporary `[Cached]` view responses (`1h`/`24h`), `60s` negative cache sentinels, `15m` form edit leases, and session revocations carry explicit TTLs, paired with a **75% memory high-water alert** (and scaled `maxmemory` tiers in `Scale 004`) so active leases never starve.
 
 ### 2.4 macOS Kernel Tuning (`vm.overcommit_memory = 1`)
 When Redis saves background snapshots (BGSAVE) or rewrites the Append-Only File (AOF), the Linux kernel forks the process. Under macOS Docker Desktop:
@@ -173,7 +175,7 @@ The Docker VM image provided by Docker Desktop automatically manages memory over
 
 ### 3.1 Developer Compose Specification (`tools/docker/docker-compose.redis-dev.yml`)
 
-The developer environment is declared in [`tools/docker/docker-compose.redis-dev.yml`](file:///Users/prashantgupta/code/nx/tools/docker/docker-compose.redis-dev.yml):
+The developer environment is declared in [`tools/docker/docker-compose.redis-dev.yml`](../../../tools/docker/docker-compose.redis-dev.yml):
 
 ```yaml
 version: '3.8'
@@ -295,7 +297,7 @@ networks:
 
 ### 3.2 Production Hardened Configuration (`tools/docker/redis-prod.conf`)
 
-For cloud virtual machines or self-hosted bare metal deployments, the production parameters are codified in [`tools/docker/redis-prod.conf`](file:///Users/prashantgupta/code/nx/tools/docker/redis-prod.conf):
+For cloud virtual machines or self-hosted bare metal deployments, the production parameters are codified in [`tools/docker/redis-prod.conf`](../../../tools/docker/redis-prod.conf):
 
 ```ini
 # --- NETWORK & SECURITY ---
@@ -308,8 +310,8 @@ timeout 300
 tcp-keepalive 60
 
 # --- MEMORY LIMITS & GxP EVICTION ---
-maxmemory 2147483648                  # 2 GB RAM cap
-maxmemory-policy volatile-lru         # Evict ONLY keys with explicit TTLs
+maxmemory 2147483648                  # Starter 2 GB baseline (scale to 4-64 GB non-clustered Sentinel HA per Scale 004; 75% RAM alert)
+maxmemory-policy volatile-lru         # Evict ONLY TTL-bound ephemera; dictionaries/locks/epochs omit TTL
 
 # --- REPLICATION & ANTI-SPLIT-BRAIN ---
 replica-serve-stale-data yes
@@ -629,7 +631,7 @@ To keep Redis lean and prevent memory leaks as clinical trials run their multi-y
 
 ### Gotcha 3: Split-Brain Mitigation (`min-replicas-to-write 1`)
 * **Symptom**: In production, during an isolated network partition, an old master might continue accepting writes while Sentinel promotes a new master, creating split-brain data loss.
-* **Fix**: In [`tools/docker/redis-prod.conf`](file:///Users/prashantgupta/code/nx/tools/docker/redis-prod.conf), we enforce `min-replicas-to-write 1` and `min-replicas-max-lag 10`. If a primary loses connection to its replica, it **rejects all write commands**, preventing split-brain overwrites.
+* **Fix**: In [`tools/docker/redis-prod.conf`](../../../tools/docker/redis-prod.conf), we enforce `min-replicas-to-write 1` and `min-replicas-max-lag 10`. If a primary loses connection to its replica, it **rejects all write commands**, preventing split-brain overwrites.
 
 ### Gotcha 4: Redis Insight Connection Issues with Protected Mode
 * **Symptom**: Redis Insight reports `DENIED Redis is running in protected mode because protected mode is enabled and no password is configured`.

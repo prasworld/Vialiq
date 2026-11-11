@@ -29,9 +29,9 @@ In compliance with **21 CFR Part 11, ICH E6(R3), and GDPR Art. 17**, the Vialiq 
 │  │ MongoDB Atlas M10 (HA 3-Node Replica Set, Multi-Region)                    │  │
 │  │ ├── tenants (organizations, tenant metadata, Keycloak realm mappings)      │  │
 │  │ ├── users (global user identity catalog, credentials managed via Keycloak) │  │
-│  │ ├── study_registry (master catalog of all clinical studies)                │  │
-│  │ ├── study_user_assignments (user-to-study & site role assignments)         │  │
-│  │ └── db_routing_registry (encrypted cluster URIs & database routing maps)   │  │
+│  │ ├── study_registry (master catalog + non-secret ZoneProfile/identity/KMS refs)│  │
+│  │ ├── user_study_access (user-to-study & site role assignments)              │  │
+│  │ └── control_plane_outbox (targeted multi-region cache/revocation relay)    │  │
 │  │ ⚠️ ZERO patient records | ZERO form builder schemas                       │  │
 │  └────────────────────────────────────────────────────────────────────────────┘  │
 │                                      │                                           │
@@ -85,9 +85,9 @@ Collections are cleanly partitioned across the 3 clusters:
 CLUSTER 0: ADMIN LAYER (vialiq_control_plane)
 ├── tenants                   # Organization metadata, Keycloak realm mapping, tier
 ├── users                     # Global user profiles, system admin credentials
-├── study_registry            # Master study registry, lifecycle status, sponsor ID
-├── study_user_assignments    # User-to-study & site-level role bindings
-└── db_routing_registry       # Encrypted cluster connection strings & tenancy mode
+├── study_registry            # Master catalog, non-secret ZoneProfile/KMS & identityConfig refs
+├── user_study_access         # User-to-study & site-level role bindings (cached in Regional Redis)
+└── control_plane_outbox      # Targeted invalidation relay for MultiRegionGeoPartitioned studies
 
 CLUSTER 1: NOT-LIVE STUDY CLUSTER (study_{studyId}_dev & study_{studyId}_uat)
 ├── form_definitions          # Draft & WIP CRF schemas (Form Builder designer)

@@ -45,7 +45,7 @@ The Load Balancer and Ingress layer in **Vialiq EDC** is not merely a round-robi
         ▼ Path: /* (Static Assets)                ▼ Path: /api/* (REST)                     ▼ Path: /hubs/* (SignalR)
 ┌───────────────────────┐                 ┌───────────────────────┐                 ┌───────────────────────┐
 │   Angular Web Shell   │                 │   .NET 9 API Cluster  │                 │  .NET 9 WebSocket Hub │
-│   - Nginx / S3 / IIS  │                 │   - Stateless REST    │                 │   - Field-Lock PubSub │
+│   - Nginx / S3 / IIS  │                 │   - Stateless REST    │                 │   - Form-Lock PubSub  │
 │   - Cache: 1yr hashed │                 │   - DynamicDbResolver │                 │   - Redis Backplane   │
 │   - env.json: no-cache│                 │   - OCC Concurrency   │                 │   - Upgrade: websocket│
 └───────────────────────┘                 └───────────────────────┘                 └───────────────────────┘
@@ -102,6 +102,7 @@ metadata:
       more_set_headers "Strict-Transport-Security: max-age=31536000; includeSubDomains";
       more_set_headers "Referrer-Policy: strict-origin-when-cross-origin";
       more_set_headers "X-Request-ID: $req_id";
+      more_set_headers "X-Correlation-Id: $req_id";
       
     # 6. Anti-Brute-Force Rate Limiting (Part 11 § 11.300)
     nginx.ingress.kubernetes.io/limit-rps: "100"
@@ -341,7 +342,7 @@ docker run -d --name vialiq-dev-gateway \
 
 ## 5. Real-Time WebSockets & SignalR Load Balancing
 
-Vialiq EDC maintains live field-level editing locks and instant discrepancy alerts via **ASP.NET Core SignalR**.
+Vialiq EDC maintains query discrepancy updates and form-level lock notifications (`ADR 003`) via **ASP.NET Core SignalR**.
 
 ### 5.1 The Sticky Connection vs. Distributed State Problem
 * WebSockets require a persistent, stateful TCP socket connection between the client and a specific server instance.
@@ -355,8 +356,8 @@ Vialiq EDC maintains live field-level editing locks and instant discrepancy aler
    * The client sends `Connection: Upgrade` and `Upgrade: websocket`.
    * The load balancer upgrades the HTTP connection to a persistent bi-directional WebSocket stream with a **3600-second idle timeout**.
 3. **Redis Backplane Message Fan-Out:**
-   * When User 1 acquires a lock on `Form_VitalSigns` on Pod A, Pod A publishes a message to Redis channel `vialiq:pubsub:locks`.
-   * Pods B, C, and D receive the Redis message and push the lock update to their respective connected clients.
+   * When an administrator breaks or updates a form-level lock on `Form_VitalSigns` on Pod A (or a query changes state), Pod A publishes an event to Redis channel `vialiq:pubsub:locks`.
+   * Pods B, C, and D receive the Redis message and push the notification to their respective connected clients.
    * **Result:** No sticky sessions required for application logic. If Pod A fails, Angular auto-reconnects to Pod B in $< 500\text{ ms}$ and resumes immediately.
 
 ---
@@ -370,7 +371,7 @@ LOAD BALANCER REGULATORY & SECURITY SAFEGUARDS
 Mandate                   Regulation               Load Balancer Enforcement Mechanism
 -------------------------------------------------------------------------------------------------------------
 1. Password Guessing      21 CFR Part 11 § 11.300  Rate limit /api/v1/auth/login to max 5 attempts/min/IP.
-2. Audit Trail Linkage    21 CFR Part 11 § 11.10   Inject unique X-Request-ID (UUIDv7) on all ingress calls.
+2. Audit Trail Linkage    21 CFR Part 11 § 11.10   Inject X-Request-ID + X-Correlation-Id + W3C traceparent.
 3. Man-in-the-Middle      HIPAA Security Rule      Enforce TLS 1.3 only, eliminate TLS 1.0/1.1 and weak ciphers.
 4. Clickjacking Defense   OWASP Top 10             Inject 'X-Frame-Options: DENY' to prevent hidden overlays.
 5. Buffer Exhaustion      GAMP 5 Security          Enforce client_max_body_size = 30M; drop oversized requests.

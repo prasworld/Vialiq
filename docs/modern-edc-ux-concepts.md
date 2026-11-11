@@ -5,7 +5,7 @@
 > **Date:** October 22, 2026  
 > **Author:** Architecture Review Board / Prashant Gupta  
 > **Target:** Replace legacy 50,000-cell tabular grid with intuitive, workflow-driven clinical interaction paradigms.  
-> **Image Assets:** Permanently stored under [`docs/img/`](file:///Users/prashantgupta/code/nx/docs/img/)  
+> **Image Assets:** Permanently stored under [`docs/img/`](./img/)  
 
 ---
 

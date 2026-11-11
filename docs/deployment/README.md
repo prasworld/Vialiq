@@ -10,7 +10,8 @@ This directory contains the operational and architectural specifications for pac
 docs/deployment/
 ├── README.md                                                     # You are here (Master Index & Architecture Overview)
 ├── 001-web-and-api-enterprise-deployment-framework.md           # VIALIQ-DEPLOY-001: Web & API Enterprise Deployment Framework
-└── 002-load-balancer-ingress-and-traffic-routing-guide.md      # VIALIQ-DEPLOY-002: Load Balancer, Ingress & Traffic Routing
+├── 002-load-balancer-ingress-and-traffic-routing-guide.md      # VIALIQ-DEPLOY-002: Load Balancer, Ingress & Traffic Routing
+└── 003-vialiq-to-xencet-rebrand-and-package-publishing-guide.md  # XC-DEP-003: Rebrand, NPM Publishing & Infrastructure Transition
 ```
 
 ---
@@ -41,6 +42,21 @@ docs/deployment/
   * **Zero-CORS Local Developer Gateway:** Dockerized Nginx reverse proxy on `http://localhost:80` unifying frontend (`:4200`) and backend (`:5000`) with zero CORS friction.
   * **SignalR WebSocket Routing:** Persistent TCP streaming with distributed state fan-out via the Redis Sentinel backplane.
   * **Health Probes & Draining:** Automatic 2-second eviction via `GET /healthz/ready` and 30-second graceful connection draining.
+
+---
+
+### 📄 [003: Rebrand, NPM Package Publishing & Infrastructure Migration Guide](./003-vialiq-to-xencet-rebrand-and-package-publishing-guide.md)
+* **Document ID:** `XC-DEP-003` (Formerly `VIALIQ-DEP-003`)
+* **Status:** Sealed & Approved Blueprint
+* **Key Scope:**
+  * **NPM Registry & OIDC Provenance:** Setup of `@xencet` scope on npmjs.com with keyless GitHub Actions OIDC Trusted Publishing and legacy `@vialiq/*` deprecation shims.
+  * **GitHub Repository Parity:** Guidance for keeping or renaming `prasworld/Vialiq` to `prasworld/Xencet`.
+  * **Frontend Monorepo Transition:** Updating 8 libraries to `@xencet/*`, `tsconfig.base.json` path mappings, root `package.json`, and `sync-peer-deps.mjs`.
+  * **Custom Element Dual-Aliasing:** Seamless `<xc-*>` adoption with automatic `<vi-*>` backward-compatibility alias for zero-breakage on existing CRF forms.
+  * **Backend .NET 9 API:** Solution and project renaming (`Xencet.Api.sln`), namespace find-and-replace, `TenantDiscoveryService` update, and Redis prefix update.
+  * **Docker Dev Topology:** Container and network renaming (`xencet-mongo-*`, `xencet-redis-*`, `xencet-network`) and package script updates.
+  * **Ingress & TLS:** `*.xencet.com` wildcard certificate provisioning, dual-host ingress routing, and sponsor IdP redirect URI whitelisting.
+  * **21 CFR Part 11 Audit Integrity:** Formal GxP Change Control procedure (`CR-XC-2026-001`) and dual-trust verification ensuring historical audit logs signed by `vialiq-api` remain valid.
 
 ---
 

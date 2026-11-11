@@ -4,9 +4,9 @@
 > **Purpose:** Pragmatic, copy-paste CLI commands with minimal theory to spin up, verify, seed, and manage the 3-Layer MongoDB cluster locally.  
 > **Hardware:** Mac (Apple Silicon), Windows (WSL2/Hyper-V), or Linux.  
 > **Related Files:**
-> - [tools/docker/docker-compose.3layer.yml](file:///Users/prashantgupta/code/nx/tools/docker/docker-compose.3layer.yml)
-> - [docs/backend-architecture/database/002-3-cluster-and-flexible-tenancy-architecture.md](file:///Users/prashantgupta/code/nx/docs/backend-architecture/database/002-3-cluster-and-flexible-tenancy-architecture.md)
-> - [docs/backend-architecture/database/007-database-administration-and-mongosh-command-glossary.md](file:///Users/prashantgupta/code/nx/docs/backend-architecture/database/007-database-administration-and-mongosh-command-glossary.md)
+> - [tools/docker/docker-compose.3layer.yml](../../../tools/docker/docker-compose.3layer.yml)
+> - [002-3-cluster-and-flexible-tenancy-architecture.md](./002-3-cluster-and-flexible-tenancy-architecture.md)
+> - [007-database-administration-and-mongosh-command-glossary.md](./007-database-administration-and-mongosh-command-glossary.md)
 
 ---
 
@@ -43,7 +43,7 @@ lsof -i :27017 -i :27027 -i :27037
 
 ## 3. Spin Up Clusters (From Scratch)
 
-From the workspace root (`/Users/prashantgupta/code/nx`), choose your launch profile:
+From the workspace root, choose your launch profile:
 
 ### Option A: Full Environment (All 3 Layers) — *Recommended*
 ```bash
@@ -233,7 +233,7 @@ docker logs -f vialiq-mongo-layer3-prod
   ```
 
 ### 4. Memory Optimization on Developer Laptops
-- By default, each cluster in [docker-compose.3layer.yml](file:///Users/prashantgupta/code/nx/tools/docker/docker-compose.3layer.yml) clamps the WiredTiger cache to `512MB` (`--wiredTigerCacheSizeGB 0.5`).
+- By default, each cluster in [docker-compose.3layer.yml](../../../tools/docker/docker-compose.3layer.yml) clamps the WiredTiger cache to `512MB` (`--wiredTigerCacheSizeGB 0.5`).
 - All 3 clusters running simultaneously consume **under 2.0 GB RAM total**, making them safe to run alongside frontend builds (`nx serve shell`).
 
 ---

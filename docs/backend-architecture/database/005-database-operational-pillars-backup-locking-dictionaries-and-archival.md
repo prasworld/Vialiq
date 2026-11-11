@@ -86,10 +86,11 @@ While earlier specifications defined our core document schemas, multi-document A
 
 ## 1. Pillar 1: Backup Strategy, Continuous Oplog PITR & Disaster Recovery (DR)
 
-### 1.1 Regulatory Requirements (FDA & HIPAA)
+### 1.1 Regulatory Requirements (FDA & HIPAA) & Infrastructure Ownership
 - **FDA 21 CFR Part 11 §11.10(c):** Requires *"Protection of records to enable their accurate and ready retrieval throughout the records retention period."*
 - **HIPAA Security Rule (45 CFR §164.308(a)(7)(ii)(A)):** Mandates a formal Data Backup Plan creating exact retrievable copies of Electronic Protected Health Information (ePHI).
 - **ICH E6(R3) Section 2.13:** Requires robust contingency and recovery mechanisms ensuring trial data integrity is never compromised during hardware or infrastructure failures.
+- **Administration Ownership ([FTS-003 § 4.4](../../functional-and-technical-specs/003-inter-zone-patient-transfers-and-multinational-inspections-specification.md#44-end-to-end-infrastructure-ownership--execution-matrix)):** Backups, continuous `oplog.rs` PITR archiving, and automated weekly DR verification are **100% SRE-managed automated platform baselines** inside each sovereign region—never manually configured or disabled by clinical Study Admins or `STUDY_INFRA_CONFIG` users.
 
 ### 1.2 Recovery Point Objective (RPO) & Recovery Time Objective (RTO)
 
@@ -161,6 +162,9 @@ mongorestore --host mongo-restore-target:27017 \
   /backups/oplog_segments/
 ```
 
+> [!IMPORTANT]
+> **Post-PITR Re-Alignment (Only Needed After Catastrophic Manual PITR Restore):** Normal MongoDB HA failover (`w: "majority"`) does not rewind committed state or corrupt downstream Change Streams. However, if SREs execute a manual `--oplogLimit` PITR restore to recover from human/logical data corruption, run three steps before reopening site traffic: (1) **flush volatile regional Redis caches** (`study_edit_leases` & schema caches; `study_locks` restore cleanly from MongoDB), (2) **reset Change Stream `resumeToken`s** (`Vialiq.CdcWorker`, `_event_outbox` relay, `SafetyAlertWorker`) because the restored oplog begins a fresh timeline, and (3) **run an idempotent SQL `MERGE` re-sync** for the affected region/studies so Central SQL Server matches the restored MongoDB snapshot.
+
 ### 1.5 Automated Restoration Drills & Audit Chain Validation
 
 Every Sunday at 02:00 UTC, a decoupled Kubernetes CronJob automatically validates DR readiness:
@@ -203,9 +207,15 @@ In commercial EDC systems (Medidata Rave, Veeva Vault CDMS), data locking is **p
 | **Biostatistics Extraction (SDTM/ADaM)** | Provisional | Cleaned Draft | **Official Blinded / Final** |
 | **Regulatory Signature (PI)** | Allowed | Allowed | **Permanent & Immutable** |
 
-### 2.3 Database Lock Schema & State Machine
+### 2.3 Database Lock Schema & State Machine (`study_locks` vs. `study_edit_leases`)
 
-Every study database (`study_{uuid}_prod`) contains a dedicated, indexed `study_locks` collection:
+> [!IMPORTANT]
+> **Collection Separation Invariant (`study_locks` vs. `study_edit_leases`):**
+> * **`study_locks`** is kept 100% pure for permanent **Regulatory Governance Locks & Database Locks (DBL)** (`SOFT_FREEZE` / `HARD_LOCK`, Four-Eyes unlock only, cached in Redis hash `vialiq:locks:{studyId}`).
+> * **`study_edit_leases`** (codified in [ADR 003](../../critical-problems-and-adrs/003-realtime-signalr-reconnection-and-field-lease-reconciliation-adr.md) & [ADR 007-A](../../critical-problems-and-adrs/007-a-multitenant-cache-isolation-and-security-scoping-adr.md)) holds ephemeral **15-minute Single-Editor UI Edit Leases** (`targetCrfId`, `status`, `expiresAtUtc`, partial unique index `{ studyId: 1, targetCrfId: 1 }` on `status: 1`, cached at `edc:form_lock:{studyId}:{crfId}`).
+> * **Precedence Gate:** Every `AcquireFormLockAsync` checks regulatory `study_locks` (`HTTP 423 Locked`) **before** granting an edit lease in `study_edit_leases`, and applying a `SOFT_FREEZE` / `HARD_LOCK` invalidates active edit leases under that frozen scope.
+
+Every study database (`study_{uuid}_prod`) contains a dedicated, indexed `study_locks` collection for regulatory governance locks:
 
 ```typescript
 export enum LockScope {
@@ -463,8 +473,12 @@ export class LockManagementService {
 
       await session.commitTransaction();
 
-      // 6. Synchronize distributed in-memory cache
+      // 6. Synchronize Single-Tier Distributed Redis cache & preempt active UI edit leases
       await this.redisCacheService.setLock(dto.studyId, dto.scope, dto.targetId, dto.lockType);
+      await db.collection('study_edit_leases').updateMany(
+        { studyId: dto.studyId, status: 1 }, // Invalidate active UI edit leases under newly frozen scope
+        { $set: { status: 2, releasedAtUtc: timestamp } }
+      );
 
       return lockDocument;
     } catch (error) {
@@ -567,7 +581,7 @@ Vialiq uses a **Dual-Store Architecture** to maintain lock state:
                                         │ Synchronizes on write (Pub/Sub)
                                         ▼
     ┌────────────────────────────────────────────────────────────────────────┐
-    │ ULTRA-FAST IN-MEMORY READ CACHE: Redis Cluster                         │
+    │ SINGLE-TIER DISTRIBUTED CACHE: Redis Cluster                           │
     │ Key: vialiq:locks:{studyId}                                            │
     │ Hash Fields:                                                           │
     │   "STUDY:ALL"                       -> "HARD_LOCK"                     │
@@ -578,11 +592,10 @@ Vialiq uses a **Dual-Store Architecture** to maintain lock state:
     └────────────────────────────────────────────────────────────────────────┘
 ```
 
-#### Cache Invalidation on Mutations
+#### Cache Coherence on Mutations
 When `applyLock()` or `approveAndExecuteUnlock()` modifies MongoDB:
 1. The transaction commits successfully to MongoDB.
-2. The Redis hash `vialiq:locks:{studyId}` is immediately updated.
-3. A Redis Pub/Sub message (`LOCK_STATE_CHANGED`) is broadcast across all active NestJS API pods, ensuring local process caches update within $<5$ milliseconds.
+2. The Single-Tier Distributed Redis hash `vialiq:locks:{studyId}` is immediately updated synchronously (zero pod-local L1 memory caches exist, so all pods observe updates in `< 1–2 ms`).
 
 ---
 
@@ -778,7 +791,7 @@ Vialiq introduces **Configurable Security Tiers** during Study Protocol & Form B
 | **Tier 1: Deterministic FLE** | `AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic` | **Exact Match Only:** Equality queries (`find({ mrn: "123" })`). No range or regex. | **~5% overhead:** Identical plaintext produces identical ciphertext; supports index lookups. | Pseudonymous patient IDs, Medical Record Numbers (`mrn`), National Health IDs. |
 | **Tier 2: Randomized FLE (AEAD)** | `AEAD_AES_256_CBC_HMAC_SHA_512-Random` | **No Direct Querying:** Cannot be queried directly; loaded by document `_id` or indexed parent key. | **~10% overhead:** Unique ciphertext every write; immune to statistical frequency analysis. | Direct Patient Identifiers (Full Name, Date of Birth, Email, Street Address, E-Signature PINs). |
 | **Tier 3: Queryable Encryption (QE)** | MongoDB 7.0 Native Fast Encrypted Indexes (Structured Encryption). | **Range & Prefix:** Encrypted equality, range (`$gt`, `$lt`), and prefix searches over encrypted data. | **~15–20% overhead:** Auxiliary encrypted index collections managed automatically. | Sensitive continuous metrics (Subject age, sensitive baseline genomic markers). |
-| **Tier 4: Role-Blinded Isolation** | Randomized AEAD governed by restricted Cloud KMS IAM Key Policy. | **Role-Gated:** Decryptable **only** by unblinded service accounts or unblinded pharmacist roles. | **KMS Network Bound:** Controlled via local key caching (TTL: 300s). | Investigational Product (IP) Treatment Arm, Randomized Kit Allocation. |
+| **Tier 4: Role-Blinded Isolation** | Randomized AEAD governed by restricted Cloud KMS IAM Key Policy. | **Role-Gated:** Decryptable **only** by unblinded service accounts or unblinded pharmacist roles. | **KMS Network Bound:** Handled by native MongoDB `libmongocrypt` 60s key buffer (no `.NET IMemoryCache`). | Investigational Product (IP) Treatment Arm, Randomized Kit Allocation. |
 
 ---
 
@@ -916,11 +929,11 @@ Instead of violating FDA regulations by deleting records from the database or au
    async function executeGdprCryptoShredding(subjectId: string): Promise<void> {
      const keyAltName = `dek_subject_${subjectId}`;
 
-     // 1. Permanently delete the subject's unique Data Encryption Key from __keyVault
-     await keyVaultDb.collection('__keyVault').deleteOne({ keyAltNames: keyAltName });
+  // 1. Permanently delete the subject's unique Data Encryption Key from the Site Zone's __keyVault
+  await zoneKeyVaultDb.collection('__keyVault').deleteOne({ keyAltNames: keyAltName });
 
-     // 2. Invalidate KMS in-memory cache across all running API worker pods
-     await redisClient.publish('KMS_KEY_INVALIDATED', JSON.stringify({ keyAltName }));
+  // 2. Notify CSFLE driver scopes to recycle scoped libmongocrypt key buffers (zero custom .NET IMemoryCache)
+  await csfleClientManager.notifyKeyRevoked(zoneId, keyAltName);
 
      // 3. Log regulatory compliance event in audit trail
      await auditTrailDb.collection('audit_trail').insertOne({
@@ -1136,7 +1149,7 @@ A critical architectural capability of MongoDB CSFLE is that **the API applicati
 
 #### 3.7.5 Resumable Batch Worker with Checkpointing & Optimistic Concurrency Control (OCC)
 
-The background re-encryption worker integrates with our BullMQ Job Architecture (Document 004). It handles crashes, network blips, and concurrent clinical edits with mathematical safety:
+The background re-encryption worker integrates with our Async Worker Tier (canonical production runtime = `.NET 9` + `RabbitMQ`/`Hangfire` per [Scale 004](../../scaling-architecture/004-caching-queues-and-resilience-patterns.md); TypeScript/BullMQ snippet below is legacy illustrative reference). It handles crashes, network blips, and concurrent clinical edits with mathematical safety:
 
 ```typescript
 import { Injectable, Logger } from '@nestjs/common';
@@ -1400,6 +1413,8 @@ export function configureCsfleClient(kmsProvider: 'aws' | 'local', masterKey: an
 ---
 
 ### 3.9 Double-Blind RTSM Treatment Arm Isolation & Unblinded KMS Access Policy
+
+> *(Phase-1 Scope Note: Native RTSM randomization & kit depot workflows are deferred to Phase 2+; randomized Phase 1 trials integrate with external IXRS while keeping these `BlindedRTSM` KMS isolation & Code Break hooks active from Day 1.)*
 
 In double-blind studies, blinding integrity is governed at the **cryptographic KMS level**:
 1. The Data Encryption Key for `treatmentArm` (`dek_study_101_rtsm_blinded`) is encrypted with an isolated Cloud KMS Key ARN:
@@ -1753,6 +1768,8 @@ The archival bundle is committed to cloud object storage protected by **S3 Objec
 
 > [!CAUTION]
 > **COMPLIANCE Mode Protection:** Once S3 Object Lock Compliance Mode is enabled, the archive **CANNOT be deleted or overwritten by ANY user**, including the AWS Root Account or Cloud Administrator, until the 25-year retention date expires.
+
+* **Archival & Legal Hold Governance ([FTS-003 § 4.4](../../functional-and-technical-specs/003-inter-zone-patient-transfers-and-multinational-inspections-specification.md#44-end-to-end-infrastructure-ownership--execution-matrix)):** S3 Glacier Object Lock buckets (`COMPLIANCE` mode) are provisioned by **Platform SRE** per sovereign region; Final Hard Lock & Archival execution is initiated by **Clinical Data Management / Lead Sponsor** post-LPLV, and **Sponsor Legal Officers** exclusively control `isLegalHold` overrides.
 
 ### 4.5 Legal Hold Protection Engine
 

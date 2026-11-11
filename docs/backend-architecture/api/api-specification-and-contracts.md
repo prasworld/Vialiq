@@ -1,37 +1,45 @@
 # EDC API Specification & Endpoint Contracts
 
 > **Domain:** Backend Architecture — API Layer  
-> **Status:** Active Specification  
-> **Date:** October 15, 2026  
-> **Version:** 1.0.0  
+> **Status:** Active Specification (Aligned with ASP.NET Core 9.0 Clean Architecture)  
+> **Date:** November 7, 2026  
+> **Version:** 2.0.0  
+> **Target Systems:** ASP.NET Core 9.0 (`backend/api/src/Vialiq.Api`), Angular 21 Host (`apps/shell/`), Form Renderer (`libs/form-renderer`)  
 > **Related Documents:**
-> - [ADR: API Framework & Architecture Strategy](./001-api-architecture-adr.md)
-> - [Database Specification](../database/database-architecture-specification.md)
-> - [Form Builder Validation & Edit Checks](../../form-builder-validation.md)
-> - [Field-Level Encryption Specification](../../field-level-encryption-clinical-edc.md)
+> - [ADR 001: EDC API Architecture & Technology Stack](./001-api-architecture-adr.md)
+> - [ADR 003: DTO Architecture Strategy & Rejection of GraphQL](./003-dto-design-and-graphql-evaluation-adr.md)
+> - [ADR 004: Unified Monorepo Architecture vs. Git Submodules](./004-repository-architecture-monorepo-vs-submodule-adr.md)
+> - [ADR 005: Hybrid Context, GxP Override Engine, and Real-Time SignalR](./005-api-foundations-auth-override-engine-and-realtime-adr.md)
+> - [ADR 006: API Controller Conventions, Seeding & Migration](./006-api-controller-conventions-seeding-and-migration-adr.md)
+> - [Scale 003: TLS Wildcard Certificates & Custom Vanity Domains](../../scaling-architecture/003-tls-wildcard-certificates-and-custom-domains.md)
+> - [Database Architecture: 3-Cluster & Flexible Tenancy](../database/002-3-cluster-and-flexible-tenancy-architecture.md)
 
 ---
 
 ## 1. API Architecture Overview
 
-The Vialiq EDC API is built with **NestJS** as a **Modular Monolith**. It exposes a **RESTful OpenAPI 3.0** interface for state operations and a **WebSocket Gateway** for real-time presence, field-locking, and live discrepancy monitoring.
+The Vialiq EDC API is built on **ASP.NET Core 9.0 (.NET 9 C#)** adhering to strict **Clean Architecture** patterns (`backend/api/src/Vialiq.Api`). It exposes a **RESTful OpenAPI 3.0** interface with IETF `QUERY` extensions for state operations and dual **SignalR Hubs** (`EdcCollaborationHub`, `PlatformNotificationHub`) backed by Redis Cluster for real-time query discrepancy updates, platform job notifications, and future form-level lock state announcements (`ADR 003`).
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                 Client Applications (Angular / Lit 3)       │
+│          Client Applications (Angular 21 / Lit 3)           │
+│  - Reactive Signals & In-Memory Store                       │
+│  - @vialiq/automapper Boundary Projection                   │
+│  - SignalR TypeScript Client (/hubs/edc, /hubs/notifications)│
 └──────────────────────────────┬──────────────────────────────┘
-                               │ HTTPS / WSS
+                               │ HTTPS / WSS (Zero Study in Hostname)
                                ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                 API Gateway & Middleware Layer              │
-│  - JWT & OAuth2 Bearer Auth                                 │
+│              ASP.NET Core 9 Pipeline & Middleware           │
+│  - JWT Bearer Authentication & Cryptographic Signature Check│
 │  - 21 CFR Part 11 Session Inactivity Timeout Guard (15 min) │
-│  - Tenant & Study Scope Guard                               │
-│  - Global DTO Validation Pipe (class-validator / Zod)       │
+│  - Hybrid Context Resolution (X-Tenant-Id, X-Study-Id, Env) │
+│  - GxP Challenge-Response Override Filter (HTTP 428)        │
+│  - FluentValidation & Rate Limiting                         │
 └──────────────────────────────┬──────────────────────────────┘
                                │
 ┌──────────────────────────────▼──────────────────────────────┐
-│                    NestJS Core EDC Modules                  │
+│              Vialiq Clean Architecture Solution              │
 │                                                             │
 │  ┌────────────────────────┐   ┌──────────────────────────┐  │
 │  │ Study & Site Module    │   │ Form Definition Module   │  │
@@ -39,48 +47,73 @@ The Vialiq EDC API is built with **NestJS** as a **Modular Monolith**. It expose
 │  └────────────────────────┘   └──────────────────────────┘  │
 │  ┌────────────────────────┐   ┌──────────────────────────┐  │
 │  │ Clinical Data Module   │   │ Validation Engine Module │  │
-│  │ - Auto-Save, Submit    │   │ - json-logic-js runner   │  │
+│  │ - Auto-Save, Submit    │   │ - JsonLogic.Net runner   │  │
 │  └────────────────────────┘   └──────────────────────────┘  │
 │  ┌────────────────────────┐   ┌──────────────────────────┐  │
-│  │ Query (Discrepancy) Mod│   │ Audit Trail Module       │  │
-│  │ - Raise, Answer, Close │   │ - 21 CFR Part 11 Ledger  │  │
+│  │ Query (Discrepancy) Mod│   │ Audit Trail Ledger       │  │
+│  │ - Raise, Answer, Close │   │ - 21 CFR Part 11 Chains  │  │
 │  └────────────────────────┘   └──────────────────────────┘  │
 │  ┌────────────────────────┐   ┌──────────────────────────┐  │
-│  │ E-Signature Module     │   │ Export & CDISC Module    │  │
-│  │ - Double-Auth Signing  │   │ - ODM-XML, SAS, CSV      │  │
+│  │ E-Signature Module     │   │ Real-Time SignalR Hubs   │  │
+│  │ - Double-Auth Signing  │   │ - Redis HA Backplane     │  │
 │  └────────────────────────┘   └──────────────────────────┘  │
 └──────────────────────────────┬──────────────────────────────┘
                                │
                                ▼
-                  MongoDB Data Access Layer
+┌─────────────────────────────────────────────────────────────┐
+│               Data Access & Storage Tier                    │
+│  - MongoDB 3-Cluster (Admin rs-admin, Dev rs-dev, Prod rs)  │
+│  - Client-Side Field-Level Encryption (CSFLE via AWS KMS)   │
+│  - Redis Cluster High-Availability (Form Locks & Pub/Sub)   │
+│  - SQL Server CDC Warehouse (Relational Analytics Pipeline) │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
 ## 2. Security, Authentication & 21 CFR Part 11 Middleware
 
-### 2.1 Role-Based Access Control (RBAC)
-Every endpoint is guarded by a role requirement:
-- `CRC`: Clinical Research Coordinator (Site data entry, query answers)
-- `CRA`: Clinical Research Associate / Monitor (SDV verification, raise queries, freeze forms)
-- `PI`: Principal Investigator (Sign forms, answer clinical queries)
-- `DM`: Data Manager (Edit checks, lock database, close queries, bulk operations)
-- `AUDITOR`: Regulatory / Sponsor Auditor (Read-only access to subjects, forms, and audit logs)
+### 2.1 Hybrid Security & Context Resolution Engine
+In alignment with [ADR 005](./005-api-foundations-auth-override-engine-and-realtime-adr.md) and [Scale 003](../../scaling-architecture/003-tls-wildcard-certificates-and-custom-domains.md):
+- **Hostnames strictly identify the tenant**: `https://novartis.vialiq.com` or custom enterprise vanity `https://edc.novartis.com`. Under no circumstances does the clinical study identifier appear in the URL hostname or path.
+- **JWT Bearer Token**: Provides user identity, roles, cryptographic tenancy signature, and security stamps.
+- **Operational Headers**: Provide runtime scope without brittle path hierarchies:
+  - `X-Tenant-Id`: Tenant boundary (validated against JWT claims).
+  - `X-Study-Id`: Active clinical trial identifier (selected via in-app global switcher).
+  - `X-Environment`: Execution environment (`prod`, `dev`, `uat`).
+  - `X-Correlation-Id`: Distributed tracing GUID.
 
-### 2.2 Inactivity Session Timeout Guard (§ 11.10(a))
+### 2.2 Role-Based Access Control (RBAC)
+Every endpoint enforces granular role requirements via `[Authorize(Roles = "...")]`:
+- `CRC`: Clinical Research Coordinator (Site data entry, auto-save, answer queries)
+- `CRA`: Clinical Research Associate / Monitor (SDV verification, raise queries, freeze forms)
+- `PI`: Principal Investigator (Electronic signature, answer clinical queries)
+- `DM`: Data Manager (Edit checks, lock database, close queries, bulk operations)
+- `AUDITOR`: Regulatory / Sponsor Auditor (Read-only access to subjects, forms, and audit trail ledgers)
+
+### 2.3 Inactivity Session Timeout Guard (§ 11.10(a))
 To comply with FDA 21 CFR Part 11:
 - JWT access tokens have a short expiration window (15 minutes).
-- Any request received after 15 minutes of user inactivity returns `HTTP 401 Unauthorized` with error code `SESSION_TIMEOUT`.
-- The client UI initiates an automatic screen freeze prompting re-authentication.
+- Requests received after 15 minutes of user inactivity return `HTTP 401 Unauthorized` with error code `SESSION_TIMEOUT`.
+- The Angular client initiates an in-place session lock modal prompting re-authentication without losing unsaved reactive form state.
+
+### 2.4 GxP Challenge-Response Override Protocol (HTTP 428)
+Per [ADR 005](./005-api-foundations-auth-override-engine-and-realtime-adr.md), when an action requires clinical justification, electronic re-authentication (§ 11.200), protocol deviation clearance, or dual authorization ("Four-Eyes Principle"):
+1. API halts execution and returns `HTTP 428 Precondition Required` with an `OverrideChallengeDto`.
+2. The Angular host intercepts the 428 status and dynamically slides out the corresponding GxP Sidepanel.
+3. The user provides required credentials or justification, and re-dispatches the request with an `X-GxP-Override-Token` header.
 
 ---
 
 ## 3. REST API Endpoint Contracts
 
-### 3.1 Form Definition Endpoints (`/api/v1/forms`)
+All clinical endpoints reside under `/api/v1/edc/` and operate within the scope of the caller's `X-Tenant-Id` and `X-Study-Id` context headers.
 
-#### `GET /api/v1/studies/:studyId/forms`
-List all active form schemas for a study.
+### 3.1 Form Definition Endpoints (`/api/v1/edc/forms`)
+
+#### `GET /api/v1/edc/forms`
+List all active form schemas for the active study.
+- **Context Headers:** `X-Study-Id`, `X-Environment`
 - **Roles:** All authenticated roles
 - **Response:**
   ```json
@@ -96,26 +129,29 @@ List all active form schemas for a study.
   ]
   ```
 
-#### `GET /api/v1/forms/:formId`
+#### `GET /api/v1/edc/forms/{formId}`
 Fetch the complete Form Builder JSON schema.
+- **Context Headers:** `X-Study-Id`
 - **Roles:** All authenticated roles
 - **Response:** Returns `FormDefinitionDocument` including `components` and `validationRules`.
 
-#### `POST /api/v1/studies/:studyId/forms`
+#### `POST /api/v1/edc/forms`
 Save a new draft form definition authored in the Form Builder.
+- **Context Headers:** `X-Study-Id`
 - **Roles:** `DM`, `ADMIN`
 - **Request Body:** Form schema payload matching `FormSchema`.
 
-#### `PUT /api/v1/forms/:formId/publish`
+#### `PUT /api/v1/edc/forms/{formId}/publish`
 Publish a draft form version to make it active for subject data collection.
+- **Context Headers:** `X-Study-Id`
 - **Roles:** `DM`, `ADMIN`
 - **Response:** `HTTP 200 OK` (monotonically increments active version).
 
 ---
 
-### 3.2 Clinical Data Capture (`/api/v1/data-capture`)
+### 3.2 Clinical Data Capture (`/api/v1/edc/data-capture`)
 
-#### `GET /api/v1/subjects/:subjectId/visits/:visitId/forms/:formKey`
+#### `GET /api/v1/edc/subjects/{subjectId}/visits/{visitId}/forms/{formKey}`
 Fetch a subject's CRF entry data for a visit.
 - **Roles:** `CRC`, `CRA`, `PI`, `DM`, `AUDITOR`
 - **Response:**
@@ -134,7 +170,7 @@ Fetch a subject's CRF entry data for a visit.
   }
   ```
 
-#### `PUT /api/v1/crf-entries/:crfId/auto-save`
+#### `PUT /api/v1/edc/crfs/{crfId}/auto-save`
 Debounced background draft save while typing (does not trigger audit reason requirements).
 - **Roles:** `CRC`
 - **Request Body:**
@@ -145,7 +181,7 @@ Debounced background draft save while typing (does not trigger audit reason requ
   ```
 - **Response:** `HTTP 200 OK`
 
-#### `POST /api/v1/crf-entries/:crfId/submit`
+#### `POST /api/v1/edc/crfs/{crfId}/submit`
 Formal clinical data submission. Enforces 21 CFR Part 11 audit reason and executes edit checks.
 - **Roles:** `CRC`, `PI`
 - **Request Body:**
@@ -167,32 +203,32 @@ Formal clinical data submission. Enforces 21 CFR Part 11 audit reason and execut
   }
   ```
 
-#### `POST /api/v1/crf-entries/:crfId/lock`
+#### `POST /api/v1/edc/crfs/{crfId}/lock`
 Lock a form to prevent further site edits during monitor review or database freeze.
 - **Roles:** `CRA`, `DM`, `ADMIN`
 - **Request Body:** `{ "reason": "MONITOR_REVIEW" }`
 
 ---
 
-### 3.3 Clinical Discrepancy (Query) Workflow (`/api/v1/queries`)
+### 3.3 Clinical Discrepancy (Query) Workflow (`/api/v1/edc/queries`)
 
-#### `GET /api/v1/crf-entries/:crfId/queries`
-List all queries (open and closed) associated with a CRF instance.
+#### `GET /api/v1/edc/crfs/{crfId}/queries`
+List all queries associated with a CRF instance.
 - **Roles:** `CRC`, `CRA`, `PI`, `DM`
 
-#### `POST /api/v1/queries`
+#### `POST /api/v1/edc/queries`
 Raise a manual discrepancy query against a specific field.
 - **Roles:** `CRA`, `DM`
 - **Request Body:**
   ```json
   {
-    "crfEntryId": "crf_789",
+    "crfId": "crf_789",
     "fieldKey": "systolic",
     "queryText": "Blood pressure exceeds protocol screening threshold. Please verify against source document."
   }
   ```
 
-#### `PUT /api/v1/queries/:queryId/answer`
+#### `PUT /api/v1/edc/queries/{queryId}/answer`
 Site coordinator answers the query.
 - **Roles:** `CRC`, `PI`
 - **Request Body:**
@@ -202,17 +238,22 @@ Site coordinator answers the query.
   }
   ```
 
-#### `PUT /api/v1/queries/:queryId/close`
+#### `PUT /api/v1/edc/queries/{queryId}/close`
 Monitor or Data Manager closes the query after reviewing the answer.
 - **Roles:** `CRA`, `DM`
 - **Request Body:** `{ "resolution": "Query answered satisfactorily" }`
 
+#### `[HttpQuery] /api/v1/edc/queries/search`
+Per [ADR 006](./006-api-controller-conventions-seeding-and-migration-adr.md), searches queries using complex criteria without URL truncation or PHI leakage.
+- **Roles:** `CRA`, `DM`, `AUDITOR`
+- **Request Body:** `QueryFilterCriteriaDto`
+
 ---
 
-### 3.4 Audit Trail (`/api/v1/audit-trail`)
+### 3.4 Audit Trail Ledger (`/api/v1/edc/audit-trail`)
 
-#### `GET /api/v1/crf-entries/:crfId/audit-trail`
-Fetch the complete chronological, field-level audit trail for a CRF.
+#### `GET /api/v1/edc/crfs/{crfId}/audit-trail`
+Fetch chronological, field-level audit trail for a CRF.
 - **Roles:** All authenticated roles
 - **Response:**
   ```json
@@ -229,11 +270,16 @@ Fetch the complete chronological, field-level audit trail for a CRF.
   ]
   ```
 
+#### `[HttpQuery] /api/v1/edc/audit-trail/search`
+Per [ADR 006](./006-api-controller-conventions-seeding-and-migration-adr.md), high-volume regulatory audit search with cryptographic verification.
+- **Roles:** `DM`, `AUDITOR`
+- **Request Body:** `AuditSearchCriteriaDto`
+
 ---
 
-### 3.5 Electronic Signatures (`/api/v1/signatures`)
+### 3.5 Electronic Signatures (`/api/v1/edc/signatures`)
 
-#### `POST /api/v1/crf-entries/:crfId/sign`
+#### `POST /api/v1/edc/crfs/{crfId}/sign`
 Principal Investigator signs the Case Report Form (21 CFR Part 11 double-authentication).
 - **Roles:** `PI`, `SUB_INVESTIGATOR`
 - **Request Body:**
@@ -256,57 +302,80 @@ Principal Investigator signs the Case Report Form (21 CFR Part 11 double-authent
 
 ---
 
-## 4. Real-Time WebSocket Gateway (`/ws/edc`)
+## 4. Real-Time SignalR Hub Architecture (`/hubs/edc`, `/hubs/notifications`)
 
-The WebSocket Gateway is implemented with `@nestjs/websockets` (Socket.io) backed by a Redis pub/sub adapter:
+Per [ADR 005](./005-api-foundations-auth-override-engine-and-realtime-adr.md), real-time collaboration is partitioned into two specialized ASP.NET Core SignalR hubs backed by a Redis Cluster backplane:
 
-### 4.1 Room Subscriptions
-Clients join rooms scoped to the active form:
-- Room format: `study:{studyId}:crf:{crfId}`
+### 4.1 Topology
+
+1. **`EdcCollaborationHub` (`/hubs/edc`)**:
+   - Manages interactive CRF workspace notifications, real-time clinical query/discrepancy badges, and `[FUTURE TO-DO]` form-level lock state broadcasts (`FormLockStateChanged` per [ADR 003](../../critical-problems-and-adrs/003-realtime-signalr-reconnection-and-field-lease-reconciliation-adr.md); fine-grained field-level leases are explicitly rejected).
+   - Room format: `tenant:{tenantId}:study:{studyId}:form:{formId}`
+2. **`PlatformNotificationHub` (`/hubs/notifications`)**:
+   - Pushes asynchronous system events, CDISC batch export status, discrepancy assignments, and regulatory broadcast alerts.
+   - User group format: `tenant:{tenantId}:user:{userId}`
 
 ### 4.2 Events & Payloads
 
-| Event Name | Direction | Payload | Description |
-|---|---|---|---|
-| `crf:acquire_lock` | Client ➔ Server | `{ crfId, userId }` | Requests an exclusive editing lease (5-min TTL in Redis). |
-| `crf:lock_acquired` | Server ➔ Room | `{ crfId, lockedBy: "Dr. Smith", expiresAt }` | Broadcast to all clients viewing the form. |
-| `crf:release_lock` | Client ➔ Server | `{ crfId }` | Releases the lock when user navigates away. |
-| `query:created` | Server ➔ Room | `{ queryId, fieldKey, queryText }` | Instantly highlights the field on the active coordinator's screen. |
-| `query:resolved` | Server ➔ Room | `{ queryId, fieldKey }` | Removes the discrepancy warning icon in real time. |
+| Event Name | Hub | Direction | Payload | Description |
+|---|---|---|---|---|
+| `FormLockStateChanged` `[FUTURE TO-DO]` | Collaboration | Server ➔ Room | `{ crfId, status, lockedBy, expiresAt }` | Broadcasts form-level lock acquire/release/break transitions to refresh Clinical Workspace card badges without polling. |
+| `QueryRaised` | Collaboration | Server ➔ Room | `{ queryId, fieldKey, queryText }` | Instantly highlights discrepancy warning icon. |
+| `QueryResolved` | Collaboration | Server ➔ Room | `{ queryId, fieldKey }` | Removes discrepancy warning icon in real time. |
+| `JobCompleted` | Notification | Server ➔ User | `{ jobId, downloadUrl, status }` | Alerts user when background CDISC ODM export completes. |
 
 ---
 
 ## 5. Validation Engine Execution Pipeline
 
-The server-side validation pipeline executes `json-logic-js` edit checks identically to the client:
+The server-side validation pipeline executes `JsonLogic.Net` with custom clinical operator extensions in `backend/api/src/Vialiq.Validation/`, guaranteeing deterministic parity with the Angular client engine:
 
-```typescript
-@Injectable()
-export class ValidationEngineService {
-  /**
-   * Executes form edit checks on candidate data submission
-   */
-  async validateCrfPayload(
-    rules: FormRuleDescriptor[],
-    data: Record<string, unknown>
-  ): Promise<ValidationError[]> {
-    const errors: ValidationError[] = [];
+```csharp
+namespace Vialiq.Validation.Services;
 
-    for (const ruleDesc of rules) {
-      // Execute JSON Logic rule against form payload
-      const isValid = jsonLogic.apply(ruleDesc.rule, data);
-      
-      if (!isValid) {
-        errors.push({
-          ruleId: ruleDesc.id,
-          fieldKey: ruleDesc.targetFieldKey,
-          severity: ruleDesc.severity,
-          message: ruleDesc.errorMessage
-        });
-      }
+using JsonLogic.Net;
+using Vialiq.Domain.Models;
+
+public interface IValidationEngineService
+{
+    Task<IReadOnlyList<ValidationErrorDto>> ValidateCrfPayloadAsync(
+        IEnumerable<FormRuleDescriptor> rules,
+        Dictionary<string, object> data,
+        CancellationToken cancellationToken = default);
+}
+
+public sealed class ValidationEngineService : IValidationEngineService
+{
+    private readonly JsonLogicEvaluator _evaluator;
+
+    public ValidationEngineService(JsonLogicEvaluator evaluator)
+    {
+        _evaluator = evaluator;
     }
 
-    return errors;
-  }
+    public Task<IReadOnlyList<ValidationErrorDto>> ValidateCrfPayloadAsync(
+        IEnumerable<FormRuleDescriptor> rules,
+        Dictionary<string, object> data,
+        CancellationToken cancellationToken = default)
+    {
+        var errors = new List<ValidationErrorDto>();
+
+        foreach (var ruleDesc in rules)
+        {
+            var isValid = _evaluator.Apply(ruleDesc.RuleJson, data);
+            if (isValid is false or null)
+            {
+                errors.Add(new ValidationErrorDto
+                {
+                    RuleId = ruleDesc.Id,
+                    FieldKey = ruleDesc.TargetFieldKey,
+                    Severity = ruleDesc.Severity,
+                    Message = ruleDesc.ErrorMessage
+                });
+            }
+        }
+
+        return Task.FromResult<IReadOnlyList<ValidationErrorDto>>(errors);
+    }
 }
 ```

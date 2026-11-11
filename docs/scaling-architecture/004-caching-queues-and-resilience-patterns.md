@@ -1,11 +1,12 @@
 # Scaling Architecture: Caching Strategy, Message Queues, Cache Invalidation, and Cache Herd Resilience Patterns
 
 > **Document ID:** `VIALIQ-SCALE-004`  
-> **Domain:** Platform Scalability — In-Memory & Distributed Caching, Message Queues & Stampede Protection  
+> **Domain:** Platform Scalability — Single-Tier Distributed Redis Caching, Message Queues & Stampede Protection  
+> **Canonical Caching Structure:** Works together with [ADR 007-A (Security & Isolation)](../critical-problems-and-adrs/007-a-multitenant-cache-isolation-and-security-scoping-adr.md), [ADR 007-B (HA Redis Cluster)](../critical-problems-and-adrs/007-b-high-availability-redis-cluster-and-scaling-guide.md), and [ADR 008 (Amendment Cache Warming)](../critical-problems-and-adrs/008-protocol-amendment-cache-invalidation-and-epoch-rotation-adr.md)  
 > **Status:** Accepted  
 > **Date:** October 22, 2026  
 > **Author:** Architecture Team / Prashant Gupta  
-> **Target Systems:** Redis 7.0+ Cluster, RabbitMQ 3.13+ / Azure Service Bus, ASP.NET Core 9.0 (`HybridCache`), Hangfire  
+> **Target Systems:** Redis 7.2+ Sentinel HA (Non-Clustered: 1 Primary + 2 Replicas + 3 Sentinels in Prod), RabbitMQ 3.13+ / Azure Service Bus, ASP.NET Core 9.0 (`StackExchange.Redis`), Hangfire  
 > **Related Documents:**
 > - [Scale 001: Database Horizontal Scaling & Sharding](./001-database-horizontal-scaling-and-sharding.md)
 > - [Scale 002: Global Load Balancing & Ingress Routing](./002-global-load-balancing-and-traffic-routing.md)
@@ -25,41 +26,41 @@ In a life-sciences EDC platform, caching and asynchronous queues present a delic
 3. **Burst Heavy Processing**:
    - 100,000-page CDISC ODM-XML exports and Serious Adverse Event (SAE) regulatory notifications must be offloaded from Kestrel HTTP threads to a resilient, backpressure-controlled message queue.
 
-To resolve these challenges, Vialiq implements a **Unified Dual-Tier Caching Architecture with .NET 9 `HybridCache`** paired with **Enterprise RabbitMQ Message Queuing**.
+To resolve these challenges, Vialiq implements a **Distributed Redis Caching Tier** paired with **Enterprise RabbitMQ Message Queuing**.
 
 ```
                    CACHING & ASYNCHRONOUS MESSAGING TOPOLOGY
                                        │
         ┌──────────────────────────────┴──────────────────────────────┐
         ▼                                                             ▼
-Multi-Tier Caching (.NET 9 HybridCache)                       Asynchronous Message Queue (RabbitMQ)
-• L1: In-Memory Pod Cache (< 1 μs latency)                    • Topic Exchange: `edc.clinical.events`
-• L2: Distributed Redis Cluster (< 2 ms latency)              • CDISC ODM & SAS Export Workers
-• Built-In Cache Stampede / Herd Mutex                        • Dead Letter Exchanges (DLX) & Retries
+Distributed Redis Cache (StackExchange.Redis)                 Asynchronous Message Queue (RabbitMQ)
+• Sub-millisecond schema & codelist lookup (< 1 ms)           • Topic Exchange: `edc.clinical.events`
+• Form concurrency single-editor locking                      • CDISC ODM & SAS Export Workers
+• Cluster backplane for cross-pod invalidation                • Dead Letter Exchanges (DLX) & Retries
 • Probabilistic Early Refresh (XFetch Algorithm)              • Prefetch Backpressure & Idempotent Consumer
 ```
 
 ---
 
-## 2. Multi-Tier Caching Architecture: .NET 9 `HybridCache`
+## 2. Single-Tier Distributed Caching Architecture: High-Availability Redis
 
-In .NET 9, Microsoft introduced **`HybridCache`**, an enterprise-grade multi-tier caching library that natively unifies L1 in-memory speed with L2 distributed durability, while **eliminating the Cache Herd / Stampede problem out-of-the-box**.
+> **Architectural Standard (Zero `.NET IMemoryCache` / Zero Pod-Local L1 Cache):**  
+> Vialiq enforces a **Single-Tier Distributed Redis Cache** across all API instances. Pod-local `.NET IMemoryCache` L1 caches are **intentionally eliminated** to prevent multi-pod stale state, race conditions, and complex L1 eviction broadcasts.
+
+Redis provides sub-millisecond (`< 1–2 ms`) distributed caching across all API instances inside each region's VPC, eliminating database load for invariant clinical definitions:
 
 ```
 ASP.NET Core 9 API Pod
 ┌────────────────────────────────────────────────────────────────────────┐
-│ HybridCache.GetOrCreateAsync("schema:vitals:v1", factory)               │
+│ IScopedCacheService.GetOrCreateStudyAsync("schema:vitals:v1", factory) │
 │                                                                        │
-│ 1. Check L1 In-Memory Cache (IMemoryCache)                             │
-│    └── Cache Hit? ──► Return in < 1 microsecond (Zero network IO)      │
+│ 1. Check Redis Distributed Cache (StackExchange.Redis)                 │
+│    └── Cache Hit? ──► Deserialize JSON & Return in < 1 millisecond     │
 │                                                                        │
-│ 2. Cache Miss in L1? Check L2 Distributed Cache (Redis Cluster)        │
-│    └── Cache Hit? ──► Populate local L1 + Return in < 2 milliseconds   │
-│                                                                        │
-│ 3. Cache Miss in L2? (DB Fallback with Single-Flight Mutex)            │
-│    └── EXACTLY ONE thread queries MongoDB; all others await result!    │
+│ 2. Cache Miss (or 0.001% Total HA Outage Circuit Breaker)?             │
+│    └── Query MongoDB Primary ──► Sync to Redis (if active) & Return    │
 └───────────────────────────────────┬────────────────────────────────────┘
-                                    │ Single Query (Zero Thundering Herd)
+                                    │ Canonical Read Query
 ┌───────────────────────────────────▼────────────────────────────────────┐
 │ MongoDB Production Cluster (`rs-prod:27037`)                           │
 └────────────────────────────────────────────────────────────────────────┘
@@ -70,26 +71,9 @@ ASP.NET Core 9 API Pod
 ```csharp
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Configure Redis L2 Distributed Cache
-builder.Services.AddStackExchangeRedisCache(options =>
-{
-    options.Configuration = builder.Configuration.GetConnectionString("Redis");
-    options.InstanceName = "Vialiq:";
-});
-
-// 2. Configure .NET 9 HybridCache (L1 In-Memory + L2 Redis + Stampede Mutex)
-builder.Services.AddHybridCache(options =>
-{
-    // Maximum payload size to cache in L1 in-memory (to avoid RAM bloat)
-    options.MaximumPayloadBytes = 1024 * 1024 * 5; // 5 MB
-    
-    // Default cache durations
-    options.DefaultEntryOptions = new HybridCacheEntryOptions
-    {
-        Expiration = TimeSpan.FromMinutes(60),       // L2 Redis duration
-        LocalCacheExpiration = TimeSpan.FromMinutes(15) // L1 In-memory duration
-    };
-});
+// Register Redis Connection Multiplexer & Scoped Cache Services
+builder.Services.AddVialiqCaching(builder.Configuration);
+```
 ```
 
 ---
@@ -104,27 +88,24 @@ A **Cache Stampede (Thundering Herd)** occurs when:
 
 Vialiq mitigates this through **3 complementary defenses**:
 
-### Defense 1: Single-Flight Concurrency Mutex (Native in .NET 9 `HybridCache`)
-Under traditional caching (`IDistributedCache`), 1,000 misses trigger 1,000 database calls.  
-Under **`HybridCache`**, the engine uses an internal **`SemaphoreSlim` single-flight lock per key**:
-- Thread 1 acquires the execution lock and runs the factory query against MongoDB.
-- Threads 2 through 1,500 await Thread 1's completion asynchronously.
-- Thread 1 writes the result to L1 and L2 and releases the lock.
-- Threads 2 through 1,500 immediately consume Thread 1's result. **MongoDB receives exactly 1 query instead of 1,500.**
+### Defense 1: Redis Fast-Path, Total-Outage Redirect & SemaphoreSlim Protection
+Under distributed Redis caching, queries check Redis memory in $< 1\text{ ms}$:
+- On hit, the deserialized schema is returned immediately with zero database round-trips.
+- On miss (when Redis is healthy), a single-flight database factory queries MongoDB Primary and synchronously populates Redis with an explicit TTL (consistent with the strict DB + Cache model in `ADR 007-A`; in the `~0.001%` total HA outage where both Primary and Replica are unavailable, a single session circuit-breaker check redirects directly to MongoDB).
 
 ```csharp
 namespace Vialiq.Infrastructure.Services;
 
-using Microsoft.Extensions.Caching.Hybrid;
+using Vialiq.Caching.Abstractions;
 using Vialiq.Core.Interfaces;
 using Vialiq.Core.Models.Form;
 
 public sealed class CachedFormDefinitionService : IFormDefinitionService
 {
-    private readonly HybridCache _cache;
+    private readonly IScopedCacheService _cache;
     private readonly IMongoDatabaseFactory _dbFactory;
 
-    public CachedFormDefinitionService(HybridCache cache, IMongoDatabaseFactory dbFactory)
+    public CachedFormDefinitionService(IScopedCacheService cache, IMongoDatabaseFactory dbFactory)
     {
         _cache = cache;
         _dbFactory = dbFactory;
@@ -132,11 +113,9 @@ public sealed class CachedFormDefinitionService : IFormDefinitionService
 
     public async Task<FormSchemaDto> GetFormSchemaAsync(string studyId, string formId, int version, CancellationToken ct)
     {
-        var cacheKey = $"schema:{studyId}:{formId}:v{version}";
-
-        // Single-Flight Mutex: Guarantees ONLY ONE database call even under 10,000 concurrent requests!
-        return await _cache.GetOrCreateAsync(
-            cacheKey,
+        return await _cache.GetOrCreateStudyAsync(
+            "schema",
+            $"{formId}:v{version}",
             async token =>
             {
                 var db = _dbFactory.GetStudyDatabase();
@@ -144,7 +123,7 @@ public sealed class CachedFormDefinitionService : IFormDefinitionService
                 var entity = await collection.Find(f => f.FormId == formId && f.Version == version).FirstOrDefaultAsync(token);
                 return entity.ToDto();
             },
-            cancellationToken: ct);
+            ct);
     }
 }
 ```
@@ -172,80 +151,67 @@ var expiration = TimeSpan.FromHours(1).Add(TimeSpan.FromSeconds(jitterSeconds));
 
 ---
 
-## 4. Cache Invalidation & Event-Driven Cache Purging
+## 4. Cache Invalidation & Instant Cluster-Wide Consistency
 
-In life sciences, when a Protocol Amendment publishes a new form version, or an investigator changes an active codelist, stale cache entries must be purged instantly.
+In life sciences, when a Protocol Amendment publishes a new form version, or an investigator changes an active codelist, stale cache entries must disappear immediately across every API pod.
 
-### 4.1 Redis Pub/Sub Invalidation Grid
-Because each API pod maintains its own in-memory L1 cache, an invalidation triggered on Pod 1 must clear the L1 cache on Pods 2 through 50:
+### 4.1 Instant Redis Point Eviction (No Pod L1 Synchronization Needed)
+Because the platform uses **Single-Tier Distributed Redis** with **zero pod-local `.NET IMemoryCache` instances**, deleting or replacing a key directly in Redis immediately makes the updated state visible to Pods 1 through 50 without per-pod L1 memory purging:
 
 ```
-Admin updates Form Schema on Pod 1
+Admin updates Codelist / Lock on Pod 1
                   │
                   ▼
-         [ Redis Pub/Sub ]
-       Channel: "vialiq:cache:invalidate"
-       Payload: { "pattern": "schema:onco101:vitals:*" }
+       [ Direct Redis Mutation ]
+       KeyDeleteAsync / StringSetAsync
+       on Shared Distributed Redis HA
                   │
          ┌────────┴────────┐
          ▼                 ▼
      API Pod 2         API Pod 50
-  Clears Local L1    Clears Local L1
-  In < 5 millisec    In < 5 millisec
+  Reads Shared Redis  Reads Shared Redis
+  (< 1–2 ms coherent) (< 1–2 ms coherent)
 ```
 
-### Invalidation Publisher & Subscriber Implementation:
+*(Note: For formal multi-form Protocol Amendments, see [ADR 008](../critical-problems-and-adrs/008-protocol-amendment-cache-invalidation-and-epoch-rotation-adr.md) for version-scoped pre-warmed cache builds inside the maintenance window. For ~75–85% `Single` zone studies, invalidation executes 100% against local Redis; for ~15–25% `MultiRegionGeoPartitioned` studies, Control-Plane Outbox fans out metadata epochs, role/blinding updates, and JWT revocations across all registered regional `Zones[]`.)*
+
+### Distributed Cache Invalidator Implementation:
 
 ```csharp
 namespace Vialiq.Infrastructure.Caching;
 
 using StackExchange.Redis;
-using System.Text.Json;
-using Microsoft.Extensions.Caching.Hybrid;
+using System.Threading.Tasks;
 
 public sealed class DistributedCacheInvalidator
 {
     private readonly IConnectionMultiplexer _redis;
-    private readonly HybridCache _hybridCache;
-    private const string ChannelName = "vialiq:cache:invalidate";
+    private const string AuditEventChannel = "vialiq:cache:audit-events";
 
-    public DistributedCacheInvalidator(IConnectionMultiplexer redis, HybridCache hybridCache)
+    public DistributedCacheInvalidator(IConnectionMultiplexer redis)
     {
         _redis = redis;
-        _hybridCache = hybridCache;
-
-        // Subscribe to global invalidation events across all pods
-        var sub = _redis.GetSubscriber();
-        sub.Subscribe(ChannelName, async (channel, message) =>
-        {
-            var evt = JsonSerializer.Deserialize<CacheInvalidationMessage>(message.ToString());
-            if (evt != null)
-            {
-                await _hybridCache.RemoveAsync(evt.CacheKey);
-            }
-        });
     }
 
     public async Task InvalidateKeyGloballyAsync(string cacheKey)
     {
-        // 1. Remove from local pod
-        await _hybridCache.RemoveAsync(cacheKey);
+        // Delete key directly in Shared Distributed Redis (synchronous dual-write per ADR 007-A)
+        // Because zero pod-local IMemoryCache exists, all 50 API pods see the eviction immediately.
+        var db = _redis.GetDatabase();
+        await db.KeyDeleteAsync(cacheKey).ConfigureAwait(false);
 
-        // 2. Publish to Redis to invalidate across all sibling API pods
+        // Optional lightweight event broadcast for observability/SignalR notifications
         var pub = _redis.GetSubscriber();
-        var payload = JsonSerializer.Serialize(new CacheInvalidationMessage(cacheKey));
-        await pub.PublishAsync(ChannelName, payload);
+        await pub.PublishAsync(RedisChannel.Literal(AuditEventChannel), cacheKey).ConfigureAwait(false);
     }
 }
-
-public record CacheInvalidationMessage(string CacheKey);
 ```
 
 ---
 
 ## 5. Asynchronous Message Queue Topology (RabbitMQ / Service Bus)
 
-Operations that exceed **200ms of compute or external IO** are offloaded to **RabbitMQ**:
+Unlike relational engines (which rely on internal DB triggers or SQL Server Agent jobs), **MongoDB has no built-in database job scheduler**. Keeping MongoDB strictly for ACID persistence & queries avoids starving clinical API traffic ([Database Spec 004](../backend-architecture/database/004-background-jobs-protocol-migration-and-auto-query-engine.md#1-executive-summary-why-mongodb-does-not-compromise-jobs)). Instead, event-driven EDC reactions and tasks exceeding **200ms of compute or external IO** run via stateless `.NET 9` workers + **RabbitMQ** (plus MongoDB Change Streams & Hangfire):
 
 ```
                                RABBITMQ TOPOLOGY
@@ -265,7 +231,7 @@ Queue: `q.exports.cdisc`      Queue: `q.safety.alerts`        Queue: `q.pdf.pati
 ### 5.1 RabbitMQ Resilience Rules
 
 #### 1. Dead Letter Exchange (DLX) & Retry Topology
-Messages that fail due to transient errors (e.g. S3 timeout) are retried with exponential backoff up to **3 times**. If processing fails permanently, the message is routed to `q.dead-letter` with full failure metadata for GxP audit investigation, preventing blocked queues.
+Messages that fail due to transient errors (e.g. S3 timeout) are retried with exponential backoff up to **3 times**. If processing fails permanently, only non-PHI metadata (`correlationId`, `traceparent`, `eventId`, `studyId`, `errorCode`) is emitted to telemetry/SIEM, while full dead-letter payloads (`q.dead-letter` / `cdc_quarantine_records`) remain encrypted at rest inside the origin regional boundary for GxP triage.
 
 #### 2. Prefetch Limit & Backpressure
 Worker pods configure a strict prefetch count:
@@ -274,8 +240,8 @@ channel.BasicQos(prefetchSize: 0, prefetchCount: 10, global: false);
 ```
 This prevents a fast publisher from overwhelming a worker pod with 5,000 multi-gigabyte export tasks, maintaining memory stability.
 
-#### 3. Idempotent Consumer Pattern
-Every clinical event published to RabbitMQ contains a unique `X-Correlation-Id` and `EventId`. Consumers check Redis before processing:
+#### 3. Idempotent Consumer & Distributed Trace Continuity
+API handlers **never dual-write** critical domain events to MongoDB and RabbitMQ separately: writes commit atomically in MongoDB (`w: "majority"`) via collection **Change Streams** or an in-transaction **`_event_outbox`** collection tailed by regional `.NET 9` workers (zero extra infra for 75% `Single` studies). Every clinical event propagates both OpenTelemetry W3C `traceparent` and `X-Correlation-Id` alongside `EventId` so traces link seamlessly from API request $\rightarrow$ worker $\rightarrow$ `Vialiq.CdcWorker`. Consumers treat Redis as a fast Level-1 short-circuit, backed by a **durable DB idempotency guard** (`_processed_events` unique index in MongoDB or SQL `MERGE`) so retries past the 7-day TTL or during Redis failover never duplicate work:
 ```csharp
 var isProcessed = await _redisDb.StringSetAsync(
     $"processed:{eventId}", "1", TimeSpan.FromDays(7), When.NotExists);
@@ -292,13 +258,13 @@ if (!isProcessed)
 
 ## 6. Caching & Messaging SLA Scorecard
 
-| Operation | Without Caching / Queues | With HybridCache & RabbitMQ | Scalability Multiplier |
+| Operation | Without Caching / Queues | With Single-Tier Redis & RabbitMQ | Scalability Multiplier |
 |---|---|---|---|
-| **Form Schema Fetch** | 45 ms (MongoDB Aggregation) | **< 1 microsecond (L1 In-Memory)** | **45,000x Faster** |
-| **MedDRA Dictionary Search** | 120 ms (Full-text index) | **< 2 ms (L2 Redis Cluster)** | **60x Faster** |
+| **Form Schema Fetch** | 45 ms (MongoDB Aggregation) | **< 1–2 ms (Distributed Redis)** | **25x–45x Faster** |
+| **MedDRA Dictionary Search** | 120 ms (Full-text index) | **< 2 ms (Distributed Redis)** | **60x Faster** |
 | **Cache Expiration Surge (Herd)** | Database connection pool collapse | **Single-Flight Lock (1 query only)** | **100% Collapse Immune** |
 | **100k-Page CDISC ODM Export** | Crashes HTTP thread (504 Gateway Timeout) | **Asynchronous Worker Queue (HTTP 202)** | **Zero Web Latency Impact** |
-| **Pod Invalidation Propagation** | Inconsistent stale data across pods | **Redis Pub/Sub (< 5 ms global sync)** | **Strict GxP Compliant** |
+| **Pod Cache Coherence** | Stale L1 pod memory drift | **Immediate Shared Redis Consistency** | **Zero Pod Stale Reads** |
 
 ---
 
@@ -323,13 +289,12 @@ THROUGHPUT & TRAFFIC TARGETS
 Average Read Throughput             250 req/sec              5,000 req/sec                  35,000 req/sec
 Peak Write Throughput (Audit + CRF) 50 req/sec               1,200 req/sec                  8,500 req/sec
 Message Queue Ingestion (RabbitMQ)  100 msgs/sec             2,500 msgs/sec                 15,000 msgs/sec
-Change Data Capture Stream (Debezium) 50 events/sec          1,000 events/sec               6,000 events/sec
+CDC Stream (Vialiq.CdcWorker)        50 events/sec          1,000 events/sec               6,000 events/sec
 SignalR Real-Time Active Connections 400 connections         12,000 connections             85,000 connections
 -------------------------------------------------------------------------------------------------------------
 LATENCY SERVICE LEVEL AGREEMENTS (SLAs)
 -------------------------------------------------------------------------------------------------------------
-L1 Cache Hit (In-Memory) Latency    < 5 microseconds         < 1 microsecond                < 1 microsecond
-L2 Cache Hit (Redis Cluster) Latency < 5 milliseconds        < 2 milliseconds               < 3 milliseconds
+Distributed Redis Cache Hit Latency < 2 milliseconds         < 1 millisecond                < 2 milliseconds
 API Read Endpoints (p50 / p95 / p99) 15ms / 35ms / 65ms      10ms / 25ms / 45ms             12ms / 30ms / 50ms
 API Write Endpoints (21 CFR Part 11) 45ms / 85ms / 150ms     35ms / 65ms / 110ms            40ms / 75ms / 125ms
 Matrix Slice Query (50x15 window)   40ms / 75ms / 120ms      25ms / 50ms / 85ms             30ms / 60ms / 95ms
@@ -339,8 +304,7 @@ CACHE HIT RATIO & MEMORY FOOTPRINT
 -------------------------------------------------------------------------------------------------------------
 Form Schema & Protocol Cache Hit %   > 98.5%                 > 99.8%                        > 99.95%
 Medical Dictionaries (MedDRA/WHODrug) > 95.0%                > 99.0%                        > 99.5%
-Redis L2 Cluster Sizing (RAM)       16 GB (3-node cluster)   64 GB (6-node cluster)         256 GB (12-node cluster)
-Pod L1 HybridCache Memory Limit      512 MB per pod           1.5 GB per pod                 3.0 GB per pod
+Redis Sentinel HA RAM (Non-Clustered) 2–4 GB (1P+2R Sentinel)       8–16 GB (1P+2R Sentinel)       32–64 GB (1P+2R Sentinel)
 =============================================================================================================
 ```
 
@@ -348,7 +312,7 @@ Pod L1 HybridCache Memory Limit      512 MB per pod           1.5 GB per pod    
 
 ## 8. API-Level Custom Attributes for Response Caching, Invalidation & Key Rotation
 
-To deliver high developer velocity while preventing cache pollution and multi-tenant cross-talk, the ASP.NET Core API provides first-class declarative custom attributes built on top of .NET 9 `HybridCache`.
+To deliver high developer velocity while preventing cache pollution and multi-tenant cross-talk, the ASP.NET Core API provides first-class declarative custom attributes built on top of the Redis distributed caching tier.
 
 ```
                         API CUSTOM ATTRIBUTE CACHE LIFECYCLE
@@ -393,9 +357,10 @@ public sealed class CachedAttribute : Attribute
     public string VaryByHeaders { get; set; } = string.Empty;
 
     /// <summary>
-    /// Enables HTTP 304 Not Modified conditional responses using weak ETags.
+    /// Fail-closed guard: Prevents accidental [Cached] attachment on routes handling
+    /// Patient PHI (SiteIdentifier) or RTSM randomization data (ADR 007-A / ADR 010).
     /// </summary>
-    public bool EnableETag { get; set; } = true;
+    public bool AllowResponseCaching { get; set; } = true;
 
     public CachedAttribute(int durationSeconds)
     {
@@ -420,6 +385,7 @@ public enum CacheScope
 [Route("api/v1/edc/form-schemas")]
 public class FormSchemasController : ControllerBase
 {
+    // CachedActionFilter automatically injects ProtocolEpoch, BlindingScope, and ActiveLocale into the Redis key.
     [HttpGet("{formId}")]
     [Cached(DurationSeconds = 3600, Scope = CacheScope.Study, Tags = new[] { "form-schemas:{studyId}", "form:{studyId}:{formId}" })]
     public async Task<ActionResult<FormSchemaDto>> GetSchema(
@@ -436,7 +402,7 @@ public class FormSchemasController : ControllerBase
 
 ### 8.2 Attribute 2: `[InvalidateCache]` Declarative Invalidation
 
-Intercepts mutating actions (POST, PUT, PATCH, DELETE). Upon successful execution (HTTP 2xx), it evaluates target tag patterns, invalidates local `HybridCache`, and publishes an invalidation event across the Redis cluster backplane.
+Intercepts mutating actions (POST, PUT, PATCH, DELETE). Under **Dual-Write Synchronous Completion (`ADR 007-A Decision 3.1`)**, upon successful MongoDB commit it synchronously deletes the target keys in Shared Distributed Redis (failing with HTTP `503 CacheSynchronizationException` on transient sync failure while Redis HA is active) and optionally publishes a lightweight notification event across the Redis backplane.
 
 ```csharp
 namespace Vialiq.Api.Attributes;
@@ -510,17 +476,17 @@ public sealed class RotateCacheKeyAttribute : Attribute
 ```
 
 #### How Epoch Salt Rotation Works:
-1. Every cached key incorporates an active **Study Epoch Token**:
-   $$\text{Key} = \text{tenant\_id} : \text{study\_id} : \mathbf{epoch\_v} : \text{resource} : \text{id}$$
-2. The active `epoch_v` is stored in a lightweight Redis integer counter (`epoch:novartis:onco101`).
+1. Every cached key uses the unified polymorphic study envelope (auto-resolved by `IScopedCacheService` / `CachedActionFilter`):
+   $$\text{Key} = \text{vialiq:study}:\text{tenant}:\text{study}:\text{env}:\mathbf{\text{ep}\{\text{epoch}\}}:\text{scope}:\text{locale}:\text{resource}:\text{id}$$
+2. The active `epoch` counter is stored in Redis without TTL (`epoch:novartis:onco101`).
 3. When the study sponsor approves Protocol Amendment Version 3:
    ```csharp
    [HttpPost("actions/approve-protocol-amendment")]
    [RotateCacheKey(CacheScope.Study, "ProtocolAmendmentApproved")]
    public async Task<IActionResult> ApproveAmendment(...)
    ```
-4. The filter increments the epoch counter: `INCR epoch:novartis:onco101` $\rightarrow$ `v4`.
-5. **Instant Invalidation**: In **< 1 millisecond**, all future cache lookups request `v4`. The old `v3` entries age out naturally via Redis TTL without causing any cache deletion spikes or Redis command blocking!
+4. The filter increments the epoch counter: `INCR epoch:novartis:onco101` $\rightarrow$ `ep4`. For ~75–85% `StorageTopologyMode.Single` studies, this hits the single home Redis directly; for ~15–25% `MultiRegionGeoPartitioned` studies, Control-Plane Outbox fans the epoch increment out to every zone in `manifest.Zones` during the `ADR 008` Stage 4 Maintenance Lock.
+5. **Instant Invalidation**: In **< 1 millisecond**, all future cache lookups request `ep4`. Old `ep3` entries age out naturally via Redis TTL without causing cache deletion spikes or blocking!
 
 ---
 
@@ -536,22 +502,21 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
-using Microsoft.Extensions.Caching.Hybrid;
 using Vialiq.Api.Attributes;
 using Vialiq.Core.Interfaces;
 
 public sealed class CachedActionFilter : IAsyncActionFilter
 {
-    private readonly HybridCache _hybridCache;
+    private readonly IScopedCacheService _cacheService;
     private readonly ITenantStudyContextAccessor _contextAccessor;
     private readonly ILogger<CachedActionFilter> _logger;
 
     public CachedActionFilter(
-        HybridCache hybridCache,
+        IScopedCacheService cacheService,
         ITenantStudyContextAccessor contextAccessor,
         ILogger<CachedActionFilter> logger)
     {
-        _hybridCache = hybridCache;
+        _cacheService = cacheService;
         _contextAccessor = contextAccessor;
         _logger = logger;
     }
@@ -570,13 +535,21 @@ public sealed class CachedActionFilter : IAsyncActionFilter
         var tenantId = _contextAccessor.CurrentTenantId;
         var studyId = _contextAccessor.CurrentStudyId;
 
-        // Build deterministic multi-tenant cache key
-        var cacheKey = BuildCacheKey(context, cachedAttr, tenantId, studyId);
+        // Fail-closed guard: Never allow declarative response caching on endpoints flagged as PHI or RTSM
+        if (!cachedAttr.AllowResponseCaching || _contextAccessor.IsPhiOrRtsmEndpoint(context))
+        {
+            await next();
+            return;
+        }
+
+        // Build deterministic multi-tenant cache key (auto-injects Epoch, BlindingScope, & Locale — zero developer boilerplate)
+        var cacheKey = BuildCacheKey(context, cachedAttr, _contextAccessor);
 
         // Check conditional ETag request (If-None-Match)
         var incomingETag = context.HttpContext.Request.Headers.IfNoneMatch.ToString();
 
-        var cachedBytes = await _hybridCache.GetOrCreateAsync<byte[]>(
+        var cachedBytes = await _cacheService.GetOrCreateStudyAsync<byte[]>(
+            "action-cache",
             cacheKey,
             async cancel =>
             {
@@ -589,13 +562,7 @@ public sealed class CachedActionFilter : IAsyncActionFilter
                 }
 
                 return Array.Empty<byte>();
-            },
-            new HybridCacheEntryOptions
-            {
-                Expiration = TimeSpan.FromSeconds(cachedAttr.DurationSeconds),
-                LocalCacheExpiration = TimeSpan.FromSeconds(Math.Min(cachedAttr.DurationSeconds, 300))
-            },
-            tags: ResolveTags(cachedAttr.Tags, context, tenantId, studyId));
+            });
 
         if (cachedBytes.Length == 0) return;
 
@@ -615,14 +582,17 @@ public sealed class CachedActionFilter : IAsyncActionFilter
         context.Result = new FileContentResult(cachedBytes, "application/json");
     }
 
-    private static string BuildCacheKey(ActionExecutingContext ctx, CachedAttribute attr, string tenantId, string studyId)
+    private static string BuildCacheKey(ActionExecutingContext ctx, CachedAttribute attr, ITenantStudyContextAccessor accessor)
     {
+        var context = accessor.CurrentContext;
         var sb = new StringBuilder();
         sb.Append(attr.Scope switch
         {
             CacheScope.Global => "global",
-            CacheScope.Tenant => $"tenant:{tenantId}",
-            _ => $"study:{tenantId}:{studyId}"
+            CacheScope.Tenant => $"tenant:{context.TenantId}",
+            // Automatically enforces Epoch (ADR 008), BlindingScope (ADR 010), & Locale (Scale 005-A)
+            // Single-culture studies resolve to BaseLocale (1 key copy, zero overhead).
+            _ => $"study:{context.TenantId}:{context.StudyId}:{context.Environment}:ep{context.ProtocolEpoch}:{context.BlindingScopeSegment}:{context.ActiveLocale}"
         });
 
         sb.Append(':').Append(ctx.HttpContext.Request.Path.Value?.Trim('/'));

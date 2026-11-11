@@ -5,7 +5,7 @@
 > **Status:** Accepted  
 > **Date:** October 20, 2026  
 > **Author:** Architecture Team / Prashant Gupta  
-> **Target Systems:** ASP.NET Core 8/9 LTS Web API (`backend/api/`), Angular 21 Host (`apps/shell/`), Nx Monorepo  
+> **Target Systems:** ASP.NET Core 9.0 LTS Web API (`backend/api/`), Angular 21 Host (`apps/shell/`), Nx Monorepo  
 > **Related Documents:**
 > - [001: EDC API Architecture ADR](./001-api-architecture-adr.md)
 > - [002: API Stack Discussion Agenda & Framework Evaluation](./002-api-stack-discussion-agenda-and-evaluation-framework.md)
@@ -17,7 +17,7 @@
 
 ## 1. Context & Problem Statement
 
-Following the architectural decision to build the core EDC API using **ASP.NET Core (.NET 8/9 LTS)** alongside the **Angular 21 (Signals)** frontend in our Nx workspace, we evaluated how to manage source code, Git repositories, team workflows, and regulatory documentation:
+Following the architectural decision to build the core EDC API using **ASP.NET Core 9.0 (.NET 9 LTS)** alongside the **Angular 21 (Signals)** frontend in our Nx workspace, we evaluated how to manage source code, Git repositories, team workflows, and regulatory documentation:
 
 ### The Architectural Dilemma:
 Should the .NET backend API live as:
@@ -39,7 +39,10 @@ We **accept Option B: Unified Monorepo with a Dedicated `backend/` Folder Hierar
 Specifically:
 1. **The .NET API Solution is located at `backend/api/Vialiq.Api.sln`**: We place the solution in `backend/api/` (rather than under `apps/`) to provide room for future backend solutions (e.g., `backend/workers/` for CDISC exports, `backend/ai-engine/`).
 2. **Independent CI/CD via Path Filtering**: We implement path-filtered CI/CD workflows so that frontend and backend builds, tests, and deployments remain 100% decoupled.
-3. **Automated Contract Synchronization**: NSwag will generate TypeScript wire contracts directly into `libs/edc-contracts/` to guarantee compile-time breaking change detection across teams.
+3. **Intentional Model Asymmetry & `@vialiq/automapper` Boundary Projection**: 
+   - In accordance with [ADR 005 (Intentional Model Asymmetry)](../../critical-problems-and-adrs/005-model-decoupling-and-intentional-asymmetry-adr.md), **we formally reject NSwag, code-generation drift tooling, and synthetic 1:1 contract parity**.
+   - Clinical EDC payloads are metadata-driven (`formData: Record<string, unknown>`). The wire contract between Kestrel and Angular consists exclusively of stable, minimal transport envelopes (`FormSubmissionDto`, `FormLockDto`, `AuditQueryDto`).
+   - **Boundary Mapping via `@vialiq/automapper`**: We authored our own in-house mapping engine ([`@vialiq/automapper`](../../../libs/automapper)) to bridge interactive UI View Models (Tier 1) and transport envelopes (Tier 2). Internal Angular component state and reactive signals remain completely decoupled from wire payloads.
 
 ---
 
@@ -87,7 +90,7 @@ Consider a common clinical EDC feature: *Adding an `investigatorNpiNumber` to th
   7. Team reviews and merges PR #2.
   *Result:* A simple contract update requires coordinating two separate Pull Requests, two review cycles, and careful merge order synchronization.
 * **With a Monorepo (`backend/api/`)**:
-  1. Backend DTO + NSwag contract + Angular UI component are updated in **1 single branch**.
+  1. Backend DTO + Angular UI component + `@vialiq/automapper` profile are updated in **1 single branch**.
   2. **1 Pull Request $\rightarrow$ 1 Review $\rightarrow$ Atomic Merge.** Zero cross-repo coordination.
 
 #### 4. The 21 CFR Part 11 & GAMP 5 Regulatory Traceability Penalty
@@ -106,9 +109,17 @@ When repositories are split, documentation inevitably splits. Backend engineers 
 
 Even with separate team members, independent CI/CD, and decoupled deployments, the Unified Monorepo is decisively superior for the following reasons:
 
-### Justification 1: "Shift-Left" Breaking Contract Detection
-* In separate repos, if a backend engineer renames a property or changes an enum (e.g. `QueryStatus.OPEN` to `QueryStatus.UNRESOLVED`), their backend CI pipeline passes with flying colors. The breakage is only discovered later when the frontend team pulls the changes or when QA encounters a runtime crash.
-* In a monorepo, when a backend engineer creates a PR, NSwag contract generation runs in CI. If the backend change breaks an Angular component, **the build fails immediately on the backend developer's PR**. The compiler catches breaking contract changes before they are ever merged or deployed.
+### Justification 1: "Shift-Left" Breaking Contract Detection via `@vialiq/automapper`
+* In separate repos, if a backend engineer renames a property or changes an enum in a wire payload (e.g. `QueryStatus.OPEN` to `QueryStatus.UNRESOLVED`), their backend CI pipeline passes with flying colors. The breakage is only discovered later when the frontend team pulls the changes or when QA encounters a runtime crash.
+* In our unified monorepo, both the backend endpoints and frontend mapping profiles live together. When a backend transport envelope is updated, the Angular application's strongly-typed [`@vialiq/automapper`](../../../libs/automapper) profiles immediately flag the type mismatch during PR compilation:
+  ```typescript
+  // Type error caught immediately in CI if backend renames 'reasonForChange' -> 'auditReason'
+  addProfile<CrfFormUiState, FormSubmissionDto>(crfMapper, 'CrfUiStateToSubmitDto', (rule) => {
+    rule.forMember('reasonForChange', mapFrom(src => src.reasonForChange)); 
+    // TS2345: Property 'reasonForChange' does not exist on type 'FormSubmissionDto'!
+  });
+  ```
+  The TypeScript compiler catches breaking contract changes at the mapping boundary before PRs are ever merged or deployed, without requiring fragile NSwag code generators or synthetic contract drift tooling ([ADR 005](../../critical-problems-and-adrs/005-model-decoupling-and-intentional-asymmetry-adr.md)).
 
 ### Justification 2: The Golden Parity Test Suite (`parity-tests.json`)
 * In [003-dto-design-and-graphql-evaluation-adr.md](./003-dto-design-and-graphql-evaluation-adr.md), we established a shared test suite of 500+ clinical edit-check rules (`parity-tests.json`).
@@ -116,7 +127,7 @@ Even with separate team members, independent CI/CD, and decoupled deployments, t
 * In a monorepo, `parity-tests.json` lives in a shared location that both test runners execute on every commit, guaranteeing 100% mathematical parity without copying files across repos.
 
 ### Justification 3: Shared Infrastructure & Single-Command Onboarding
-* Our local 3-Layer MongoDB Cluster ([docker-compose.3layer.yml](file:///Users/prashantgupta/code/nx/tools/docker/docker-compose.3layer.yml)) lives in `tools/docker/`.
+* Our local 3-Layer MongoDB Cluster ([docker-compose.3layer.yml](../../../tools/docker/docker-compose.3layer.yml)) lives in `tools/docker/`.
 * Any new developer—whether backend, frontend, or QA—clones one repository, runs `npm run docker:mongo:all`, and has the entire database tier, API, and UI operational in minutes.
 
 ### Justification 4: Independent CI/CD is Native in Monorepos (Path Filtering)
@@ -129,8 +140,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'backend/api/**'
-      - 'libs/edc-contracts/**' # Only redeploys if API or contracts change
+      - 'backend/api/**' # Only redeploys if API code changes
 
 # .github/workflows/ui-deploy.yml (Deploys UI to Cloudflare / S3 CDN)
 name: Deploy Frontend UI
@@ -165,19 +175,23 @@ By creating a dedicated `backend/api/` folder (rather than putting the API under
 ├── backend/                               # Dedicated Backend Tier (Multi-Solution Ready)
 │   └── api/                               # Core Web API Solution Root
 │       ├── Vialiq.Api.sln                 # Visual Studio / Rider Solution File
+│       ├── Directory.Build.props          # Central TargetFramework net9.0 & Analyzer Rules
+│       ├── Directory.Packages.props       # Central Package Management (CPM)
 │       ├── src/
 │       │   ├── Vialiq.Core/               # Domain Models, Aggregates, Enums, Interfaces
 │       │   ├── Vialiq.Validation/         # C# JsonLogic Engine & AST Evaluator
-│       │   ├── Vialiq.Infrastructure/     # MongoDB 3-Layer Drivers, CSFLE, Key Vault, Redis
+│       │   ├── Vialiq.Infrastructure/     # MongoDB 3-Layer Drivers, CSFLE, Key Vault
+│       │   ├── Vialiq.Caching/            # Redis Cluster HA, Mutex & Scoped Caching Tier
 │       │   └── Vialiq.Api/                # Host Web API (Controllers, Kestrel, SignalR)
 │       └── tests/
 │           ├── Vialiq.Validation.Tests/   # Golden Parity Test Suite (json-logic parity)
+│           ├── Vialiq.Caching.Tests/      # Redis Sentinel Failover & Stampede Mutex Tests
 │           └── Vialiq.Api.Tests/          # WebApplicationFactory Integration Tests
 │
 ├── libs/                                  # Shared Libraries
-│   ├── automapper/                        # @vialiq/automapper (Our TypeScript Mapper)
-│   ├── edc-contracts/                     # Generated TypeScript API Client & DTOs (via NSwag)
+│   ├── automapper/                        # @vialiq/automapper (TypeScript Model & Envelope Mapper)
 │   ├── form-renderer/                     # Angular Form Renderer Component
+│   ├── form-builder/                      # Angular Form Builder Component & Palette
 │   └── web-components/                    # Lit 3 Core UI Components (<vi-*>)
 │
 ├── docs/                                  # Single Source of Truth
@@ -187,18 +201,18 @@ By creating a dedicated `backend/api/` folder (rather than putting the API under
 │   └── compliance/                        # 21 CFR Part 11, GAMP 5, and ICH E6(R3)
 │
 └── tools/
-    └── docker/                            # docker-compose.3layer.yml & mongo-cluster.yml
+    └── docker/                            # docker-compose.3layer.yml & redis-dev.yml
 ```
 
 ---
 
 ## 6. Verification & Build Status
 
-The `backend/api/Vialiq.Api.sln` solution and all 6 projects have been initialized, linked, and verified on Apple Silicon (macOS ARM64):
+The `backend/api/Vialiq.Api.sln` solution and all 8 projects have been initialized, linked, and verified on Apple Silicon (macOS ARM64):
 
 ```bash
 dotnet build backend/api/Vialiq.Api.sln
 ```
-* **Target Framework:** .NET 8.0 LTS (`net8.0`)
-* **Projects Compiled:** 6 of 6 (`Vialiq.Core`, `Vialiq.Validation`, `Vialiq.Infrastructure`, `Vialiq.Api`, `Vialiq.Validation.Tests`, `Vialiq.Api.Tests`)
+* **Target Framework:** .NET 9.0 LTS (`net9.0`)
+* **Projects Compiled:** 8 of 8 (`Vialiq.Core`, `Vialiq.Validation`, `Vialiq.Infrastructure`, `Vialiq.Caching`, `Vialiq.Api`, `Vialiq.Validation.Tests`, `Vialiq.Caching.Tests`, `Vialiq.Api.Tests`)
 * **Build Result:** ✅ **0 Warning(s), 0 Error(s)**

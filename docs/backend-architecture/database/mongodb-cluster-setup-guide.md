@@ -144,7 +144,7 @@ docker compose -f docker-compose.mongo-single.yml up -d
 
 This simulates a real production setup. It runs 3 separate MongoDB containers (`mongo1`, `mongo2`, `mongo3`) communicating over an internal virtual network.
 
-This configuration is already included in your project at [`tools/docker/docker-compose.mongo-cluster.yml`](file:///Users/prashantgupta/code/nx/tools/docker/docker-compose.mongo-cluster.yml).
+This configuration is already included in your project at [`tools/docker/docker-compose.mongo-cluster.yml`](../../../tools/docker/docker-compose.mongo-cluster.yml).
 
 ```yaml
 version: '3.8'

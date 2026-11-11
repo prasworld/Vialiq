@@ -130,7 +130,7 @@ export interface ExtensionFieldDefinition {
 
   /** 
    * Trait Filter: Only apply to components possessing ALL these traits
-   * (e.g. ['isInput', 'hasValue']).
+   * (e.g. ['isInput']).
    */
   requiredTraits?: (keyof ComponentTraits)[];
   
@@ -179,7 +179,7 @@ readonly groupedExtensions = computed(() => {
       if (!field.appliesTo.includes(schema.type)) return false;
     }
     
-    // Check component traits (e.g. isInput, hasValue, isLayout)
+    // Check component traits (e.g. isInput, isContainer, isDisplayOnly)
     if (field.requiredTraits && field.requiredTraits.length > 0) {
       const traits = descriptor.traits || {};
       const hasAllTraits = field.requiredTraits.every(t => traits[t]);
@@ -214,11 +214,18 @@ readonly groupedExtensions = computed(() => {
 
 This ensures that general enterprise properties **never pollute or collide with widget-specific property keys**.
 
+> [!IMPORTANT]
+> **Backend Ingress Alignment with ADR 004:**  
+> Per [ADR 004](./critical-problems-and-adrs/004-csfle-to-sql-server-cdc-decryption-boundary-adr.md), the backend CDC Ingress Worker (`CdcRecordTransformer`) reads classification specifically from `schema.metadata["dataClassification"]` (with fallback to root `DataClassification` for backward compatibility). If `dataClassification` is missing, unmapped, or null, the worker strictly **fails closed to `DataClassification.Quarantine`**, dropping the field from the SQL Server reporting warehouse and logging an alert to prevent unclassified PII leaks.
+
 ---
 
 ## 5. Concrete Implementation Example: Clinical Metadata Extension Provider
 
 Here is how a clinical EDC host application provides **General Clinical Configuration** (implementing [ADR 004](./critical-problems-and-adrs/004-csfle-to-sql-server-cdc-decryption-boundary-adr.md)) to **all form fields** via token injection:
+
+> [!NOTE]
+> Values written by this provider are serialized under `schema.metadata.dataClassification`. In the backend .NET 9 API, `FormComponentDefinition.GetDataClassification()` inspects this exact `metadata` path.
 
 ### 5.1 Define the Clinical Extension Provider
 
@@ -241,10 +248,10 @@ export class ClinicalMetadataExtensionProvider implements ExtensionProvider {
         weight: 10,
         options: [
           { label: 'Clinical Research (Replicated to SQL Server)', value: 'ClinicalResearch' },
-          { label: 'Site Identifier (CSFLE in Mongo, DROPPED from SQL)', value: 'SiteIdentifier' },
+          { label: 'Site-Held Patient PII (MRN, Initials - CSFLE in Mongo, DROPPED from SQL)', value: 'SiteIdentifier' },
           { label: 'Blinded RTSM (Masked as "BLINDED" in SQL Server)', value: 'BlindedRTSM' },
         ],
-        description: 'Governs Client-Side Field-Level Encryption and CDC pipeline routing.',
+        description: 'Governs Client-Side Field-Level Encryption and CDC pipeline routing (Patient PII, distinct from trial center SITEID).',
         requiredTraits: ['isInput'], // Applies to all data input fields
       },
 

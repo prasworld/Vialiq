@@ -1409,25 +1409,23 @@ var context = new ValidationContext<FormData>(
 
 ### 11.2 Caching Medical Coding Lookups
 
+Dictionary lookups route through `IScopedCacheService` backed by **Single-Tier Distributed Redis** per [ADR 007-A](./critical-problems-and-adrs/007-a-multitenant-cache-isolation-and-security-scoping-adr.md) and [Scale 004](./scaling-architecture/004-caching-queues-and-resilience-patterns.md) (no local `.NET IMemoryCache`):
+
 ```csharp
 // ViaLiq.EDC.MedicalCoding/CachedMedDRAService.cs
 public class CachedMedDRAService : IMedDRAService
 {
     private readonly IMedDRAService _inner;
-    private readonly IMemoryCache _cache;
+    private readonly IScopedCacheService _cache;
     
-    public async Task<bool> IsValidPTAsync(string ptCode, string version)
+    public async Task<bool> IsValidPTAsync(string ptCode, string version, CancellationToken ct = default)
     {
-        var cacheKey = $"meddra:pt:{version}:{ptCode}";
-        
-        if (_cache.TryGetValue(cacheKey, out bool cachedResult))
-            return cachedResult;
-        
-        var result = await _inner.IsValidPTAsync(ptCode, version);
-        
-        _cache.Set(cacheKey, result, TimeSpan.FromHours(24));
-        
-        return result;
+        return await _cache.GetOrCreateGlobalAsync(
+            "meddra:pt:valid",
+            $"{version}:{ptCode}",
+            async token => await _inner.IsValidPTAsync(ptCode, version),
+            ttl: TimeSpan.FromHours(24),
+            ct: ct);
     }
 }
 ```

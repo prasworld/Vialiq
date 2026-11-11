@@ -4,9 +4,9 @@
 > **Status:** Approved / Active Architecture Standard  
 > **Target Audience:** Backend, Frontend, DevOps, and QA Engineers  
 > **Target Files:**
-> - [tools/docker/docker-compose.3layer.yml](file:///Users/prashantgupta/code/nx/tools/docker/docker-compose.3layer.yml)
-> - [tools/docker/docker-compose.mongo-cluster.yml](file:///Users/prashantgupta/code/nx/tools/docker/docker-compose.mongo-cluster.yml)
-> - [tools/docker/mongo/mongod.conf](file:///Users/prashantgupta/code/nx/tools/docker/mongo/mongod.conf)
+> - [tools/docker/docker-compose.3layer.yml](../../../tools/docker/docker-compose.3layer.yml)
+> - [tools/docker/docker-compose.mongo-cluster.yml](../../../tools/docker/docker-compose.mongo-cluster.yml)
+> - [tools/docker/mongo/mongod.conf](../../../tools/docker/mongo/mongod.conf)
 > **Related Architecture Documents:**
 > - [002: 3-Cluster & Flexible Tenancy Architecture](./002-3-cluster-and-flexible-tenancy-architecture.md)
 > - [007: Database Administration & mongosh Command Glossary](./007-database-administration-and-mongosh-command-glossary.md)
@@ -79,7 +79,7 @@ Command: npm run docker:mongo:all                              Command: docker c
 
 ### 3.2 When to Use It
 Use this file for **almost all day-to-day engineering**:
-1. **Full-Stack Feature Development**: Developing NestJS backend modules (`StudyModule`, `ClinicalDataModule`, `AuditModule`) and Angular / Lit UI components.
+1. **Full-Stack Feature Development**: Developing ASP.NET Core 9 backend services (`Vialiq.Api`, `Vialiq.Core`, `Vialiq.Validation`) and Angular / Lit UI components.
 2. **Dynamic Multi-Cluster Connection Pooling**: Testing how the backend dynamically directs tenant queries to Layer 1, and clinical trial transactions to Layer 2 or Layer 3.
 3. **Study Promotion Pipeline**: Designing a study schema in Layer 2 (Dev), conducting UAT sign-off, and executing the promotion engine to clone it into Layer 3 (Prod).
 4. **21 CFR Part 11 Regulatory Compliance Verification**: Verifying that Layer 1 Admin remains free of patient data, and that sandbox testing never pollutes production audit trails.
@@ -151,7 +151,7 @@ npm run docker:mongo:clean && npm run docker:mongo:all
 
 ### 4.2 When to Use It
 Use this file for **infrastructure validation, chaos drills, and high-availability testing**:
-1. **Driver Auto-Reconnect & Failover Validation**: Confirming that when the primary node crashes, the Node.js/NestJS driver detects the new primary and queues/retries in-flight clinical data writes without throwing unhandled exceptions.
+1. **Driver Auto-Reconnect & Failover Validation**: Confirming that when the primary node crashes, the .NET MongoDB driver (`MongoDB.Driver`) detects the new primary and queues/retries in-flight clinical data writes without throwing unhandled exceptions.
 2. **Write Concern (`w: "majority"`) Testing**: Verifying that 21 CFR Part 11 audit records are safely replicated across a quorum of nodes before the server acknowledges the transaction.
 3. **Read Preference Routing**: Validating that heavy analytical reports or CDISC ODM exports can be directed to secondary nodes (`readPreference: "secondaryPreferred"`), offloading the primary write path.
 4. **Cross-Platform Compatibility**: A lightweight, platform-agnostic MongoDB replica set that runs seamlessly on Windows (WSL2/Hyper-V) without Apple Silicon specific flags.

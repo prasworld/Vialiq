@@ -144,7 +144,7 @@ With 512 MB cache per layer:
 
 ### 3.1 Multi-Layer Docker Compose Specification (`tools/docker/docker-compose.3layer.yml`)
 
-The complete infrastructure is declared in [`tools/docker/docker-compose.3layer.yml`](file:///Users/prashantgupta/code/nx/tools/docker/docker-compose.3layer.yml):
+The complete infrastructure is declared in [`tools/docker/docker-compose.3layer.yml`](../../../tools/docker/docker-compose.3layer.yml):
 
 ```yaml
 version: '3.8'
@@ -339,7 +339,7 @@ volumes:
 
 For teams that prefer to build a custom enterprise image pre-packaged with diagnostic tools and custom templates:
 
-[`tools/docker/mongo/Dockerfile`](file:///Users/prashantgupta/code/nx/tools/docker/mongo/Dockerfile):
+[`tools/docker/mongo/Dockerfile`](../../../tools/docker/mongo/Dockerfile):
 ```dockerfile
 FROM mongo:7.0
 
@@ -647,7 +647,7 @@ docker compose -f tools/docker/docker-compose.3layer.yml --profile all down -v
 
 ## 5. Developer Productivity: NPM Scripts & Shortcuts
 
-To avoid typing long Docker Compose commands, add the following shortcuts to root [`package.json`](file:///Users/prashantgupta/code/nx/package.json):
+To avoid typing long Docker Compose commands, add the following shortcuts to root [`package.json`](../../../package.json):
 
 ```json
 "scripts": {

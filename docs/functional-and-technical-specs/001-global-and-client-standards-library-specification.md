@@ -342,7 +342,7 @@ public class ClientLibraryRepository : IClientLibraryRepository
 
 ---
 
-### TI-4: Dual-Tier Caching Architecture (.NET 9 `HybridCache` + Redis)
+### TI-4: Distributed Caching Architecture (Redis)
 
 Caching conforms to the 3-tier namespacing architecture:
 
@@ -351,14 +351,14 @@ namespace Vialiq.Infrastructure.Caching;
 
 public class StandardsLibraryCacheService : IStandardsLibraryCacheService
 {
-    private readonly HybridCache _hybridCache;
+    private readonly IScopedCacheService _cacheService;
     private readonly ITenantStudyContextAccessor _contextAccessor;
 
     public StandardsLibraryCacheService(
-        HybridCache hybridCache,
+        IScopedCacheService cacheService,
         ITenantStudyContextAccessor contextAccessor)
     {
-        _hybridCache = hybridCache;
+        _cacheService = cacheService;
         _contextAccessor = contextAccessor;
     }
 
@@ -369,8 +369,11 @@ public class StandardsLibraryCacheService : IStandardsLibraryCacheService
         Func<CancellationToken, ValueTask<StandardTemplateDocument?>> factory,
         CancellationToken ct)
     {
-        var cacheKey = $"vialiq:global:lib:tpl:{templateId}:{version}";
-        return await _hybridCache.GetOrCreateAsync(cacheKey, factory, cancellationToken: ct);
+        return await _cacheService.GetOrCreateGlobalAsync(
+            "lib:tpl",
+            $"{templateId}:{version}",
+            factory,
+            ct);
     }
 
     // 2. CLIENT LIBRARY CACHE (Strictly isolated by TenantId)
@@ -380,14 +383,11 @@ public class StandardsLibraryCacheService : IStandardsLibraryCacheService
         Func<CancellationToken, ValueTask<StandardTemplateDocument?>> factory,
         CancellationToken ct)
     {
-        var tenantId = _contextAccessor.CurrentContext?.TenantId;
-        if (string.IsNullOrWhiteSpace(tenantId))
-        {
-            throw new SecurityException("Cannot query Client Library cache without authenticated TenantId.");
-        }
-
-        var cacheKey = $"vialiq:tenant:{tenantId}:lib:tpl:{templateId}:{version}";
-        return await _hybridCache.GetOrCreateAsync(cacheKey, factory, cancellationToken: ct);
+        return await _cacheService.GetOrCreateClientLibraryAsync(
+            "lib:tpl",
+            $"{templateId}:{version}",
+            factory,
+            ct);
     }
 }
 ```

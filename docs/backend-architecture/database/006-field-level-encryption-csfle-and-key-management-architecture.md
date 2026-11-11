@@ -1,7 +1,7 @@
 # Field-Level Encryption (CSFLE/QE), Multi-Tenant Key Vault Security & Cryptographic Lifecycle Architecture
 
 > **Document ID:** `VIALIQ-ARCH-DB-007`  
-> **Status:** Approved / Active Architecture Standard  
+> **Status:** Approved / Active Cryptographic Standard *(Canonical runtime = `.NET 9` + `RabbitMQ`/`Hangfire`; illustrative TypeScript/NestJS/BullMQ snippets below are legacy background exploration)*  
 > **Regulatory Compliance:** FDA 21 CFR Part 11, EU Annex 11, HIPAA Security Rule §164.312(a)(2)(iv), GDPR Article 17, NIST SP 800-57, FIPS 140-2/3 Level 3, ICH GCP E6(R3)  
 > **Target Audience:** Principal Security Architects, Clinical Data Management Leads, Database Administrators, Regulatory Compliance Officers, Core Backend Engineers  
 > **Related Documents:**
@@ -151,8 +151,8 @@ Vialiq introduces **Configurable Security Tiers** in the Form Builder and Study 
 | **Tier 0: Standard Base Security** | TLS 1.3 in-transit + WiredTiger AES-256 disk encryption at-rest. | **Full:** Range (`$gt`/`$lt`), Regex, Compound indexes, Text search, Aggregations. | **Baseline (100% Speed):** Zero crypto latency overhead. | Vital signs (Blood Pressure, Pulse, Temperature), non-sensitive CRF values, adverse event verbatims. |
 | **Tier 1: Deterministic FLE** | `AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic` | **Exact Match Only:** Equality queries (`find({ mrn: "123" })`). No range or regex. | **~5% overhead:** Identical plaintext always produces identical ciphertext; supports index lookups. | Subject MRN (Medical Record Number), National Health ID, Screening Number. |
 | **Tier 2: Randomized FLE (AEAD)** | `AEAD_AES_256_CBC_HMAC_SHA_512-Random` | **No Direct Querying:** Cannot search by value. Loaded by document `_id` or indexed parent key (`subjectId`). | **~10% overhead:** Unique ciphertext on every write (random IV); immune to statistical frequency analysis. | Direct Patient Identifiers (Full Name, Date of Birth, Email, Street Address, SSN). |
-| **Tier 3: Queryable Encryption (QE)** | MongoDB 7.0 Native Fast Encrypted Indexes (Structured Encryption). | **Range & Prefix:** Encrypted equality, range (`$gt`, `$lt`), and prefix search over encrypted data. | **~15–20% overhead:** Auxiliary encrypted index collections managed automatically. | Sensitive continuous metrics (Subject age, sensitive baseline genomic markers). |
-| **Tier 4: Role-Blinded Isolation** | Randomized AEAD governed by restricted Cloud KMS IAM Key Policy. | **Role-Gated:** Decryptable **only** by unblinded service accounts or unblinded pharmacist roles. | **KMS Network Bound:** Controlled via local key caching (TTL: 300s). | Investigational Product (IP) Kit Number, Treatment Arm (Active vs. Placebo). |
+| **Tier 3: Queryable Encryption (QE)** | MongoDB 7.0 Native Fast Encrypted Indexes (Structured Encryption). | **Range & Prefix:** Encrypted equality, range (`$gt`, `$lt`), and prefix search over encrypted data. | **~15–20% overhead:** Auxiliary encrypted index collections managed automatically. | Sensitive optional clinical metrics not projected to SQL (while derived `Age`/`Birth Year` remain `ClinicalResearch` per ADR 004 for SDTM `DM`). |
+| **Tier 4: Role-Blinded Isolation** | Randomized AEAD governed by restricted Cloud KMS IAM Key Policy. | **Role-Gated:** Decryptable **only** by unblinded service accounts or unblinded pharmacist roles. | **KMS Network Bound:** Handled by native MongoDB `libmongocrypt` 60s key buffer (no `.NET IMemoryCache`). | Investigational Product (IP) Kit Number, Treatment Arm (Active vs. Placebo). |
 
 ---
 
@@ -160,7 +160,7 @@ Vialiq introduces **Configurable Security Tiers** in the Form Builder and Study 
 
 ### 3.1 Is Storing Keys in Layer 1 Admin Safe and Compliant?
 
-> **The Question:** We store the `__keyVault` collection in the Layer 1 Admin Cluster (`vialiq_control_plane.__keyVault`). If multiple pharmaceutical sponsors (e.g. Pfizer, Novartis, Roche) run clinical trials on Vialiq, is storing their combination keys together in the Admin Cluster safe and compliant? Could one client's keys decrypt another's data?
+> **The Question:** We store the `__keyVault` collection in the Layer 1 Admin Cluster (`vialiq_control_plane.__keyVault` for `Single` baseline studies, or regional `keyvault_study_{id}_{zoneId}.__keyVault` inside each sovereign VPC for `MultiRegionGeoPartitioned` studies per [Scale 005-A](../../scaling-architecture/005-a-multilingual-study-db-per-site-group-and-reporting-guide.md)). If multiple pharmaceutical sponsors (e.g. Pfizer, Novartis, Roche) run clinical trials on Vialiq, is sharing the KMS pattern compliant? Could one client's keys decrypt another's data?
 
 #### The Compliance & Cryptographic Answer: YES, 100% Safe Due to Envelope Cryptography
 
@@ -253,32 +253,38 @@ Depending on the sponsor's regulatory classification and enterprise contractual 
 
 ---
 
-### 3.3 Defense-in-Depth: Physical Cluster Separation (Layer 1 vs. Layer 3)
+### 3.3 Defense-in-Depth: Physical Separation & Sovereign Regional Key Vaults
 
-Storing Key Vaults on Layer 1 Admin introduces a powerful **physical architectural barrier** that protects clinical data:
+Storing Key Vaults separately from operational CRF databases introduces a powerful **physical architectural barrier**:
+
+* **Single-Region / Standard Trials (`Single` Mode):** Wrapped DEKs can reside on Layer 1 Admin (`vialiq_control_plane.__keyVault` or `keyvault_sponsor_{tenantId}.__keyVault`), isolated physically from Layer 3 Prod CRF documents.
+* **Global Multi-Region Geo-Partitioned Studies (`MultiRegionGeoPartitioned`, e.g., US / EU / China):** To obey China PIPL/DSL and strict EU DPO sovereignty laws, **wrapped DEKs (`__keyVault`) NEVER leave their sovereign region**:
+  - `vialiq_control_plane.study_registry` (Layer 1) stores **non-secret KMS & KeyVault pointers ONLY** (`kmsProvider`, `kmsKeyArn`, `keyVaultNamespace`).
+  - Wrapped DEKs physically reside inside isolated databases within each **sovereign regional cluster** (`keyvault_study_global301_eu.__keyVault` on `rs-prod-eu-01` wrapped by AWS Frankfurt KMS; `keyvault_study_global301_cn.__keyVault` on `rs-prod-cn-01` wrapped by Aliyun Beijing HSM), with separate MongoDB RBAC credentials from `crf_entries`.
 
 ```
     ┌──────────────────────────────────────────────┐       ┌──────────────────────────────────────────────┐
-    │             LAYER 1: ADMIN CLUSTER           │       │             LAYER 3: PROD CLUSTER            │
-    │             (Port 27017 / Private)           │       │             (Port 27037 / App Tier)          │
+    │        SOVEREIGN KEY VAULT DB / LAYER 1      │       │             LAYER 3: PROD STUDY DB           │
+    │   (Isolated Key Vault in Region / Admin)     │       │             (crf_entries / audit_trail)      │
     ├──────────────────────────────────────────────┤       ├──────────────────────────────────────────────┤
-    │ • Stores: Wrapped DEKs only                  │       │ • Stores: Encrypted patient CRF data         │
+    │ • Stores: Wrapped DEKs only (ciphertexts)    │       │ • Stores: Encrypted patient CRF & audit PII  │
     │ • Stores: ZERO patient clinical records      │       │ • Stores: ZERO cryptographic keys            │
-    │ • Compromise Impact: Attackers get ciphertext│       │ • Compromise Impact: Attackers get ciphertext│
-    │   keys that require Cloud KMS to unwrap.     │       │   data with zero keys to decrypt them.       │
+    │ • Requires regional Cloud KMS / HSM to unwrap│       │ • Protected by separate DB RBAC credentials  │
     └──────────────────────────────────────────────┘       └──────────────────────────────────────────────┘
 ```
 
 To achieve an unauthorized decryption of clinical patient data, an attacker would have to breach **three completely independent, isolated security perimeters simultaneously**:
-1. **Perimeter 1:** Breach Layer 3 Prod to steal the raw encrypted BSON records.
-2. **Perimeter 2:** Breach Layer 1 Admin (isolated on private VPC port 27017) to steal the wrapped DEKs.
-3. **Perimeter 3:** Breach AWS / Azure Cloud KMS IAM infrastructure to compromise the Hardware Security Module (HSM) master key.
+1. **Perimeter 1:** Breach the regional Layer 3 Prod clinical database to steal raw encrypted BSON records.
+2. **Perimeter 2:** Breach the isolated Key Vault database (`__keyVault`) to steal the wrapped DEKs.
+3. **Perimeter 3:** Breach regional Cloud KMS / HSM IAM infrastructure inside that sovereign territory (`eu-central-1` / Beijing HSM).
 
 ---
 
+> **Key Vault Governance Ownership:** Physical KMS CMKs and regional `__keyVault` databases are provisioned by **Platform SRE / Cloud Security** (or the **Sponsor Security Team** for Model 3 BYOK IAM trust policies). Study-level non-secret KMS/KeyVault pointers (`kmsKeyArn`, `keyVaultNamespace`) are bound prior to `PROD` FPI by holders of **`STUDY_INFRA_CONFIG`** (Vialiq Support or Client Tech Lead per SOW) as detailed in [FTS-003 Section 4.4](../../functional-and-technical-specs/003-inter-zone-patient-transfers-and-multinational-inspections-specification.md#44-end-to-end-infrastructure-ownership--execution-matrix).
+
 ### 3.4 Extended `__keyVault` Lifecycle Document Schema
 
-Every DEK document in `vialiq_control_plane.__keyVault` contains rigorous lifecycle state tracking:
+Every DEK document in the resolved target `__keyVault` contains rigorous lifecycle state tracking:
 
 ```typescript
 export enum KeyStatus {
@@ -318,35 +324,48 @@ A fundamental regulatory contradiction exists in clinical trial software:
 * **GDPR Article 17 ("Right to Erasure / Right to be Forgotten"):** An EU participant has the legal right to revoke informed consent and demand permanent deletion of their personal health data.
 * **FDA 21 CFR §11.10(e) & ICH GCP:** Strictly **forbids deleting or altering** clinical records, audit trail histories, or cryptographic signatures (data must be preserved for 25 years).
 
-### The Technical Solution: Subject-Level Crypto-Shredding
+### The Technical Solution: Zone-Local Subject-Level Crypto-Shredding (CRFs & Audit Trails)
 Instead of violating FDA regulations by deleting records from the database or audit trail:
-1. Every clinical subject is assigned an **isolated, individual Data Encryption Key (`dek_subject_{uuid}`)**.
-2. When a patient exercises their GDPR Article 17 Right to Erasure, the system executes **Crypto-Shredding**:
+1. Every clinical subject is assigned an **isolated, individual Data Encryption Key (`dek_subject_{uuid}`)** stored in their **Site Zone's `__keyVault`** (`keyvault_study_{id}_{zoneId}.__keyVault` pointed to by `study_registry`).
+2. Both live `crf_entries` PII and historical audit snapshots (`ADR 006` segregated collections such as `audit_crf_data` / `audit_subject_journey`) encrypt `SiteIdentifier` `oldValue`/`newValue` with that subject's `dek_subject_{uuid}`. Structural audit metadata (`auditSequence`, `serverTimestampUtc`, `performedByUserId`, `reasonForChange`, `signatureHash`) and the **stored post-CSFLE ciphertext envelope (`BinData`)** feed the Part 11 SHA-256 chain (never pre-encryption plaintext, so deleting `dek_subject_{uuid}` leaves hash-chain verification valid forever).
+3. When a patient exercises their GDPR Article 17 Right to Erasure, the system records the erasure through the canonical Part 11 chained audit service (Primary server clock + `auditSequence`, never unchained `DateTime.UtcNow`) and executes **Crypto-Shredding** strictly inside that subject's Site Zone:
 
-```typescript
-async function executeGdprCryptoShredding(subjectId: string): Promise<void> {
-  const keyAltName = `dek_subject_${subjectId}`;
+```csharp
+public async Task ExecuteGdprCryptoShreddingAsync(
+    string tenantId,
+    string studyId,
+    string zoneId,
+    string subjectId,
+    CancellationToken ct)
+{
+    var keyAltName = $"dek_subject_{subjectId}";
+    var zoneKeyVaultDb = await _zoneKeyVaultResolver.GetKeyVaultDatabaseAsync(tenantId, studyId, zoneId, ct);
+    var auditTrailDb = await _clinicalDbProvider.GetDatabaseByZoneAsync(tenantId, studyId, zoneId, ct);
 
-  // 1. Permanently delete the subject's unique Data Encryption Key from __keyVault
-  await keyVaultDb.collection('__keyVault').deleteOne({ keyAltNames: keyAltName });
+    // 1. Permanently delete the subject's unique DEK inside their sovereign Site Zone's __keyVault
+    await zoneKeyVaultDb.GetCollection<BsonDocument>("__keyVault")
+        .DeleteOneAsync(Builders<BsonDocument>.Filter.AnyEq("keyAltNames", keyAltName), ct);
 
-  // 2. Invalidate KMS in-memory cache across all running API worker pods
-  await redisClient.publish('KMS_KEY_INVALIDATED', JSON.stringify({ keyAltName }));
+    // 2. Notify CSFLE driver scopes to recycle scoped MongoClient libmongocrypt key buffer (60s native buffer; zero .NET IMemoryCache used)
+    await _csfleClientManager.NotifyKeyRevokedAsync(zoneId, keyAltName, ct);
 
-  // 3. Log regulatory compliance event in audit trail
-  await auditTrailDb.collection('audit_trail').insertOne({
-    _id: crypto.randomUUID(),
-    eventType: 'GDPR_CRYPTO_SHREDDING_EXECUTED',
-    subjectId,
-    reason: 'Subject revoked informed consent; invoked GDPR Article 17',
-    timestamp: new Date()
-  });
+    // 3. Log immutable compliance event via the canonical ADR 006/009 chained audit collection
+    //    (e.g., audit_subject_journey) using Primary server clock & AuditSequence
+    await auditTrailDb.GetCollection<BsonDocument>("audit_subject_journey").InsertOneAsync(new BsonDocument
+    {
+        { "_id", Guid.NewGuid().ToString() },
+        { "eventType", "GDPR_CRYPTO_SHREDDING_EXECUTED" },
+        { "subjectId", subjectId },
+        { "zoneId", zoneId },
+        { "reason", "Subject revoked informed consent; invoked GDPR Article 17" },
+        { "serverTimestampUtc", DateTime.UtcNow }
+    }, cancellationToken: ct);
 }
 ```
 
 ### The Regulatory Outcome:
-* The encrypted ciphertext in `subject_identities`, `crf_entries`, and `audit_trail` remains **100% untouched**, preserving bit-for-bit SHA-256 hash-chain validity for FDA auditors.
-* Without the shredded DEK, the ciphertext is mathematically unrecoverable (effectively randomized entropy), fulfilling GDPR Article 17 with **zero audit trail destruction**.
+* The encrypted ciphertext in `subject_identities`, `crf_entries`, **and historical `audit_trail` snapshots (`oldValue`/`newValue`)** remains **100% untouched** on disk, preserving bit-for-bit SHA-256 hash-chain validity for FDA/EMA inspectors.
+* Without the shredded DEK, patient PII in both live CRFs and audit logs collapses into unrecoverable ciphertext. When rendered in the Audit Viewer or PDF/CSV inspection exports, missing-key exceptions are handled gracefully and displayed as **`[REDACTED — GDPR ARTICLE 17 ERASURE EXECUTED]`**, fulfilling GDPR Article 17 with **zero audit trail destruction**.
 
 ---
 
@@ -369,7 +388,7 @@ When a clinical trial completes and transitions through locking and archival, it
 ```
 
 ### 5.1 Active Enrollment & Visits
-Keys support live reads and writes. DEKs are cached in API worker memory for up to 5 minutes (TTL: 300s) to minimize KMS API latency.
+Keys support live reads and writes. Key unwrapping is managed inside MongoDB's native C++ `libmongocrypt` driver boundary using its built-in 60-second internal key buffer (zero custom `.NET IMemoryCache`).
 
 ### 5.2 Database Lock (DBL) Read-Only Transition
 * An automated script updates the AWS KMS IAM Key Policy for that study to `DENY_KEY_CREATION`.

@@ -31,7 +31,7 @@ In high-stakes clinical research running 24/7/365 across global clinical sites (
              │                                                       │
              ▼                                                       ▼
   ┌─────────────────────┐       Asynchronous Streaming Replication    ┌─────────────────────┐
-  │ REDIS PRIMARY (L2)  │ ══════════════════════════════════════════> │ REDIS REPLICA (L2)  │
+  │   REDIS PRIMARY     │ ══════════════════════════════════════════> │   REDIS REPLICA     │
   │ Port 6379           │                 (PSYNC)                     │ Port 6380           │
   │ • Write: Locks      │                                             │ • Read-Only Queries │
   │ • Publish Invalidate│                                             │ • Auto-Promote Ready│
@@ -55,7 +55,7 @@ In high-stakes clinical research running 24/7/365 across global clinical sites (
 ### Core Operational Guarantees:
 1. **Sub-2-Second Automated Failover**: If the Primary node experiences hardware failure or network partition, the Sentinel quorum detects the timeout in 1.5 seconds and promotes the Replica to Master (`slaveof no one`).
 2. **Self-Healing Re-Attachment**: When the failed node reboots, it detects that a new Master exists. It automatically re-joins as a **Replica** (`slaveof <new-primary-ip> 6379`) and streams missing changes via Redis partial resynchronization (`PSYNC`).
-3. **Database Fallback Anchor**: As established in ADR 007-A, MongoDB `study_locks` is the canonical system of record. If an extreme catastrophic failure took down *both* Redis nodes simultaneously, the application catches the connection exception and falls back safely to MongoDB with zero data loss.
+3. **Database Source-of-Truth & Total-Outage Circuit Breaker**: As established in ADR 007-A, MongoDB (`study_locks` for regulatory freeze/DBL and `study_edit_leases` for 15-minute UI edit leases) is the canonical system of record. Normal HA operations enforce **Dual-Write Synchronous Completion (`DB + Cache`)** for consistent reads; in the extreme (~0.001%) event both Redis Primary and Replica nodes are simultaneously unavailable, a single session circuit-breaker check redirects directly to MongoDB until Sentinel restores the Redis cluster.
 
 ---
 
@@ -239,7 +239,7 @@ In production cloud environments, manage the HA pair using native Multi-AZ capab
   * **High Availability**: Multi-AZ with Automatic Failover enabled across Availability Zones A and B.
   * **Security**: Transit Encryption (TLS 1.3), Encryption at Rest (AWS KMS customer managed key), Redis AUTH Token.
 * **Azure Cache for Redis**:
-  * **Tier**: Standard (2 nodes: Primary + Replica with automatic SLA 99.99%) or Premium (Zone Redundant across 3 availability zones).
+  * **Tier**: Production deploys **Zone-Redundant Multi-AZ (`1 Primary + 2 Replicas + 3 Sentinels`, Cluster Mode: Disabled)** so losing 1 replica keeps `min-replicas-to-write 1` active with zero write stalls (local dev uses 1P + 1R + 3 Sentinels).
   * **Minimum Sizing**: Standard C1 (1 GB) or C2 (2.5 GB).
 
 ### 3.2 Production Hardened Configuration File (`redis.conf`)
@@ -257,8 +257,8 @@ timeout 300
 tcp-keepalive 60
 
 # --- MEMORY LIMITS & GxP EVICTION (ADR 007-A) ---
-maxmemory 2147483648                  # Hard 2 GB RAM limit
-maxmemory-policy volatile-lru         # Evict ONLY keys with explicit TTLs
+maxmemory 2147483648                  # Starter 2 GB baseline (scale to 4-64 GB non-clustered Sentinel HA per Scale 004; 75% headroom alert)
+maxmemory-policy volatile-lru         # Evict ONLY TTL-bound caches; dictionaries/governance locks/epochs carry NO TTL
 
 # --- REPLICATION & FAILOVER DURABILITY ---
 replica-serve-stale-data yes
@@ -295,7 +295,7 @@ backend/api/src/Vialiq.Caching/
 │   └── Models/
 │       ├── LockResult.cs
 │       └── LockPayload.cs
-├── Services/                           # Production Redis + .NET 9 HybridCache
+├── Services/                           # Production Redis Caching & Locking
 │   ├── RedisConnectionFactory.cs      # Resilient StackExchange.Redis connection multiplexer
 │   ├── ScopedCacheService.cs          # Multi-tenant cache service with fail-closed validation
 │   └── StudyLockService.cs            # Dual-Write synchronous lock coordinator (MongoDB + Redis)
@@ -386,7 +386,6 @@ using System;
 using System.Security;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Caching.Hybrid;
 using Vialiq.Core.Interfaces;
 
 public interface IScopedCacheService
@@ -414,18 +413,19 @@ public interface IScopedCacheService
 
 public sealed class ScopedCacheService : IScopedCacheService
 {
-    private readonly HybridCache _hybridCache;
     private readonly ITenantStudyContextAccessor _contextAccessor;
     private readonly IRedisConnectionFactory _redisFactory;
+    private readonly ILogger<ScopedCacheService> _logger;
+    private static readonly TimeSpan DefaultTtl = TimeSpan.FromHours(1);
 
     public ScopedCacheService(
-        HybridCache hybridCache,
         ITenantStudyContextAccessor contextAccessor,
-        IRedisConnectionFactory redisFactory)
+        IRedisConnectionFactory redisFactory,
+        ILogger<ScopedCacheService> logger)
     {
-        _hybridCache = hybridCache;
         _contextAccessor = contextAccessor;
         _redisFactory = redisFactory;
+        _logger = logger;
     }
 
     public async ValueTask<T> GetOrCreateStudyAsync<T>(
@@ -442,35 +442,38 @@ public sealed class ScopedCacheService : IScopedCacheService
             throw new SecurityException("Security Violation: Attempted to access Study cache without authenticated Tenant and Study context.");
         }
 
-        var fullyQualifiedKey = $"vialiq:study:{context.TenantId}:{context.StudyId}:{context.Environment}:{resource}:{key}";
-        return await _hybridCache.GetOrCreateAsync(fullyQualifiedKey, factory, cancellationToken: ct);
+        var scope = context.BlindingScopeSegment; // "blinded" | "unblinded" | "std"
+        var locale = context.ActiveLocale;        // Defaults to BaseLocale for single-culture trials
+        var fullyQualifiedKey = $"vialiq:study:{context.TenantId}:{context.StudyId}:{context.Environment}:ep{context.ProtocolEpoch}:{scope}:{locale}:{resource}:{key}";
+        return await GetOrCreateInternalAsync(fullyQualifiedKey, factory, DefaultTtl, ct);
     }
 
     public async ValueTask<T> GetOrCreateClientLibraryAsync<T>(
-        string resource, 
-        string key, 
-        Func<CancellationToken, ValueTask<T>> factory, 
+        string resource,
+        string key,
+        Func<CancellationToken, ValueTask<T>> factory,
         CancellationToken ct = default)
     {
         var context = _contextAccessor.CurrentContext;
-        
+
         if (string.IsNullOrWhiteSpace(context?.TenantId))
         {
             throw new SecurityException("Security Violation: Attempted to access Client Library cache without authenticated Tenant context.");
         }
 
         var fullyQualifiedKey = $"vialiq:tenant:{context.TenantId}:lib:{resource}:{key}";
-        return await _hybridCache.GetOrCreateAsync(fullyQualifiedKey, factory, cancellationToken: ct);
+        return await GetOrCreateInternalAsync(fullyQualifiedKey, factory, DefaultTtl, ct);
     }
 
     public async ValueTask<T> GetOrCreateGlobalAsync<T>(
-        string dictionary, 
-        string key, 
-        Func<CancellationToken, ValueTask<T>> factory, 
+        string dictionary,
+        string key,
+        Func<CancellationToken, ValueTask<T>> factory,
         CancellationToken ct = default)
     {
         var fullyQualifiedKey = $"vialiq:global:standards:{dictionary}:{key}";
-        return await _hybridCache.GetOrCreateAsync(fullyQualifiedKey, factory, cancellationToken: ct);
+        // Persistent (No TTL): protected from volatile-lru eviction; refreshed on new dictionary import / XFetch
+        return await GetOrCreateInternalAsync(fullyQualifiedKey, factory, ttl: null, ct);
     }
 
     public async Task InvalidateStudyKeyAsync(string resource, string key, CancellationToken ct = default)
@@ -478,11 +481,62 @@ public sealed class ScopedCacheService : IScopedCacheService
         var context = _contextAccessor.CurrentContext;
         if (context == null) return;
 
-        var fullyQualifiedKey = $"vialiq:study:{context.TenantId}:{context.StudyId}:{context.Environment}:{resource}:{key}";
-        await _hybridCache.RemoveAsync(fullyQualifiedKey, ct);
-        
+        var scope = context.BlindingScopeSegment;
+        var locale = context.ActiveLocale;
+        var fullyQualifiedKey = $"vialiq:study:{context.TenantId}:{context.StudyId}:{context.Environment}:ep{context.ProtocolEpoch}:{scope}:{locale}:{resource}:{key}";
+
+        // 0.001% total HA outage circuit breaker: redirect to MongoDB without blocking
+        if (_redisFactory.IsClusterCircuitOpenForSession())
+        {
+            return;
+        }
+
+        // Synchronous DB + Cache completion rule (ADR 007-A Decision 3.1):
+        // Never swallow transient Redis failures during invalidation; throw HTTP 503
+        // (`CacheSynchronizationException`) so sibling pods never serve stale data.
+        // For MultiRegionGeoPartitioned trials, Control-Plane Outbox relays metadata invalidations
+        // to each registered zone (`Zones[]`); 75% Single studies stay 100% local.
+        var redis = _redisFactory.GetDatabase();
+        await redis.KeyDeleteAsync(fullyQualifiedKey);
+
         // Broadcast across multi-instance backplane
-        await _redisFactory.GetSubscriber().PublishAsync("vialiq:cache:invalidations", fullyQualifiedKey);
+        await _redisFactory.GetSubscriber().PublishAsync(
+            RedisChannel.Literal("vialiq:cache:invalidations"),
+            fullyQualifiedKey);
+    }
+
+    private async ValueTask<T> GetOrCreateInternalAsync<T>(
+        string key,
+        Func<CancellationToken, ValueTask<T>> factory,
+        TimeSpan? ttl,
+        CancellationToken ct)
+    {
+        // Single session circuit-breaker check when both Redis HA Primary & Replica are unavailable (~0.001%)
+        if (!_redisFactory.IsClusterCircuitOpenForSession())
+        {
+            var redis = _redisFactory.GetDatabase();
+            var cached = await redis.StringGetAsync(key);
+            if (cached.HasValue)
+            {
+                var deserialized = JsonSerializer.Deserialize<T>((string)cached!);
+                if (deserialized != null)
+                {
+                    return deserialized;
+                }
+            }
+
+            var freshValue = await factory(ct);
+            if (freshValue != null)
+            {
+                var serialized = JsonSerializer.Serialize(freshValue);
+                await redis.StringSetAsync(key, serialized, ttl);
+            }
+
+            return freshValue;
+        }
+
+        // Direct MongoDB canonical read when total-outage circuit breaker is open
+        return await factory(ct);
     }
 }
 ```
@@ -528,32 +582,42 @@ public sealed class StudyLockService : IStudyLockService
         IRedisConnectionFactory redisFactory,
         ILogger<StudyLockService> logger)
     {
-        _locksCollection = studyDb.GetCollection<StudyLockEntity>("study_locks");
+        // Regulatory freeze/DBL ledger (`study_locks`) vs 15-minute UI edit leases (`study_edit_leases`)
+        _governanceLocksCollection = studyDb.GetCollection<RegulatoryLockEntity>("study_locks");
+        _editLeasesCollection = studyDb.GetCollection<StudyLockEntity>("study_edit_leases");
         _redisFactory = redisFactory;
         _logger = logger;
     }
 
     public async Task<LockResult> AcquireFormLockAsync(
-        string studyId, 
-        string crfId, 
-        UserContext user, 
+        string studyId,
+        string crfId,
+        UserContext user,
         CancellationToken ct)
     {
         var redisKey = $"edc:form_lock:{studyId}:{crfId}";
-        var redis = _redisFactory.GetDatabase();
+        var redisAvailable = !_redisFactory.IsClusterCircuitOpenForSession();
 
-        // 1. Check Redis fast path
-        var existingRedisLock = await redis.StringGetAsync(redisKey);
-        if (existingRedisLock.HasValue)
+        // 0. REGULATORY GOVERNANCE GATE (Check study_locks hierarchy FIRST -> HTTP 423 Locked)
+        await AssertNoRegulatoryLockAsync(studyId, crfId, user, redisAvailable, ct);
+
+        // 1. Check Redis fast path for active 15m edit lease (when HA cluster is healthy)
+        if (redisAvailable)
         {
-            var lockData = JsonSerializer.Deserialize<LockPayload>(existingRedisLock!);
-            if (lockData?.UserId != user.UserId)
+            var redis = _redisFactory.GetDatabase();
+            var existingRedisLock = await redis.StringGetAsync(redisKey);
+            if (existingRedisLock.HasValue)
             {
-                return LockResult.Denied(lockData!.UserId, lockData.FullName, lockData.ExpiresAtUtc);
+                var lockData = JsonSerializer.Deserialize<LockPayload>(existingRedisLock!);
+                if (lockData?.UserId != user.UserId)
+                {
+                    return LockResult.Denied(lockData!.UserId, lockData.FullName, lockData.ExpiresAtUtc);
+                }
             }
         }
 
-        // 2. ATOMIC DB WRITE: MongoDB is canonical source of truth
+        // 2. ATOMIC DB WRITE: MongoDB `study_edit_leases` is canonical source of truth
+        // Partial unique index: { studyId: 1, targetCrfId: 1 } where { status: 1 }
         var now = DateTime.UtcNow;
         var expiresAt = now.Add(LockTtl);
 
@@ -580,27 +644,23 @@ public sealed class StudyLockService : IStudyLockService
             ReturnDocument = ReturnDocument.After
         };
 
-        StudyLockEntity lockRecord;
         try
         {
-            lockRecord = await _locksCollection.FindOneAndUpdateAsync(filter, update, options, ct);
+            await _editLeasesCollection.FindOneAndUpdateAsync(filter, update, options, ct);
         }
         catch (MongoCommandException ex) when (ex.Code == 11000) // Duplicate key race condition
         {
-            var currentLock = await _locksCollection.Find(l => l.StudyId == studyId && l.TargetCrfId == crfId).FirstOrDefaultAsync(ct);
+            var currentLock = await _editLeasesCollection.Find(l => l.StudyId == studyId && l.TargetCrfId == crfId).FirstOrDefaultAsync(ct);
             return LockResult.Denied(currentLock.LockedByUserId, currentLock.LockedByFullName, currentLock.ExpiresAtUtc);
         }
 
-        // 3. SYNCHRONOUS CACHE WRITE: Write-through to Redis
-        try
+        // 3. SYNCHRONOUS CACHE WRITE (Strict DB + Cache Completion per ADR 007-A Decision 3.1)
+        // Transient Redis write errors when HA is active are NOT swallowed (throws HTTP 503 after DB rollback/retry);
+        // only the ~0.001% total HA outage circuit breaker bypasses directly to MongoDB.
+        if (redisAvailable)
         {
             var payload = JsonSerializer.Serialize(new LockPayload(user.UserId, user.FullName, expiresAt));
-            await redis.StringSetAsync(redisKey, payload, LockTtl);
-        }
-        catch (Exception cacheEx)
-        {
-            _logger.LogWarning(cacheEx, "Failed to write lock to Redis for CRF {CrfId}. Degraded to MongoDB-only lock.", crfId);
-            // System remains safe because MongoDB holds the source of truth
+            await _redisFactory.GetDatabase().StringSetAsync(redisKey, payload, LockTtl);
         }
 
         return LockResult.Acquired(expiresAt);
@@ -610,31 +670,27 @@ public sealed class StudyLockService : IStudyLockService
     {
         var now = DateTime.UtcNow;
 
-        // 1. Update DB Source of Truth
-        await _locksCollection.UpdateOneAsync(
+        // 1. Update DB Source of Truth (`study_edit_leases`)
+        await _editLeasesCollection.UpdateOneAsync(
             l => l.StudyId == studyId && l.TargetCrfId == crfId && l.LockedByUserId == user.UserId,
             Builders<StudyLockEntity>.Update
                 .Set(l => l.Status, LockStatus.Released)
                 .Set(l => l.ReleasedAtUtc, now),
             cancellationToken: ct);
 
-        // 2. Synchronous Cache Eviction
-        try
+        // 2. Synchronous Cache Eviction (Strict DB + Cache Completion; never swallow transient errors)
+        if (!_redisFactory.IsClusterCircuitOpenForSession())
         {
             var redisKey = $"edc:form_lock:{studyId}:{crfId}";
             await _redisFactory.GetDatabase().KeyDeleteAsync(redisKey);
         }
-        catch (Exception cacheEx)
-        {
-            _logger.LogWarning(cacheEx, "Failed to evict lock from Redis for CRF {CrfId}.", crfId);
-        }
     }
 
     public async Task BreakFormLockAsync(
-        string studyId, 
-        string crfId, 
-        string auditReason, 
-        UserContext user, 
+        string studyId,
+        string crfId,
+        string auditReason,
+        UserContext user,
         CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(auditReason))
@@ -644,8 +700,8 @@ public sealed class StudyLockService : IStudyLockService
 
         var now = DateTime.UtcNow;
 
-        // 1. Break lock in MongoDB source of truth with audit reason
-        await _locksCollection.UpdateOneAsync(
+        // 1. Break UI edit lease in MongoDB (`study_edit_leases`) with audit reason
+        await _editLeasesCollection.UpdateOneAsync(
             l => l.StudyId == studyId && l.TargetCrfId == crfId,
             Builders<StudyLockEntity>.Update
                 .Set(l => l.Status, LockStatus.Broken)
@@ -654,9 +710,12 @@ public sealed class StudyLockService : IStudyLockService
                 .Set(l => l.BrokenAtUtc, now),
             cancellationToken: ct);
 
-        // 2. Evict from Redis
-        var redisKey = $"edc:form_lock:{studyId}:{crfId}";
-        await _redisFactory.GetDatabase().KeyDeleteAsync(redisKey);
+        // 2. Synchronous Cache Eviction (Strict DB + Cache Completion)
+        if (!_redisFactory.IsClusterCircuitOpenForSession())
+        {
+            var redisKey = $"edc:form_lock:{studyId}:{crfId}";
+            await _redisFactory.GetDatabase().KeyDeleteAsync(redisKey);
+        }
     }
 }
 ```
@@ -666,22 +725,8 @@ public sealed class StudyLockService : IStudyLockService
 ### 4.4 Dependency Injection & Service Registration (`Program.cs`)
 
 ```csharp
-// Program.cs
-builder.Services.AddSingleton<IRedisConnectionFactory, RedisConnectionFactory>();
-
-// Register .NET 9 HybridCache with Stampede Mutex & L1 Memory Limits
-builder.Services.AddHybridCache(options =>
-{
-    // Hard limit per cached item (prevents giant payload memory leaks)
-    options.MaximumPayloadBytes = 10 * 1024 * 1024; // 10 MB
-    
-    // Default entry options
-    options.DefaultEntryOptions = new HybridCacheEntryOptions
-    {
-        Expiration = TimeSpan.FromHours(1),
-        LocalCacheExpiration = TimeSpan.FromMinutes(15)
-    };
-});
+// Program.cs - Register Vialiq Redis Caching & Lock Infrastructure
+builder.Services.AddVialiqCaching(builder.Configuration);
 
 builder.Services.AddScoped<IScopedCacheService, ScopedCacheService>();
 builder.Services.AddScoped<IStudyLockService, StudyLockService>();
@@ -725,11 +770,11 @@ PHASE 1 (1 to 50 Studies): Single Primary-Replica HA Pair (2 GB RAM)
 
 PHASE 2 (50 to 250 Studies): Enable Read-Replica Offloading
 ├── Primary handles writes (Form locks & schema publications)
-└── Replicas handle read queries (SecondaryPreferred for dictionaries and exports)
+└── Replicas handle read queries (CommandFlags.PreferReplica for read-only dictionaries and codelists)
 
 PHASE 3 (250 to 1,000 Studies): Multi-AZ Regional Distribution
 ├── Active-Passive read replicas deployed across Cloud Availability Zones (AZ-A, AZ-B, AZ-C)
-└── Local L1 pod cache absorb 90% of traffic (< 1µs in-process)
+└── Single-Tier Distributed Redis replicas absorb 90% of read traffic (< 1–2 ms)
 
 PHASE 4 (1,000+ Studies): Study Partitioning (If RAM ever exceeds 16 GB)
 ├── If a pharma sponsor runs > 3,000 studies, partition Redis by Therapeutic Area:
@@ -759,5 +804,5 @@ To keep Redis lean as studies complete their clinical lifecycle:
 |---|---|---|
 | **Primary Redis Node Dies** | Sentinel quorum detects in 1.5s; promotes Secondary to Primary. `ConnectionMultiplexer` in API redirects writes in 0ms without restarting. | **RTO < 2s / RPO = 0** |
 | **Old Primary Recovers** | Node restarts, detects existing Master, demotes to Secondary, and syncs missing delta via `PSYNC`. | **RTO < 5s / RPO = 0** |
-| **Both Redis Nodes Crash** | API catches connection error, degrades gracefully to MongoDB `study_locks` direct queries. Zero clinical data lost. | **RTO = 0 (Degraded mode)** |
+| **Both Redis Nodes Crash (~0.001%)** | Single session circuit-breaker check redirects directly to canonical MongoDB (`study_locks` + `study_edit_leases`, `ReadConcern.Majority`) until Sentinel restores Redis HA. Zero clinical data lost. | **RTO = 0 (Circuit-breaker redirect)** |
 | **Network Partition (Split Brain)** | Sentinel requires quorum of 2 out of 3 to authorize promotion. Isolated node cannot accept writes (`min-replicas-to-write 1`). | **Zero Split-Brain Overwrites** |

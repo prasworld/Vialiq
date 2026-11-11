@@ -1,9 +1,9 @@
 # Authentication, Authorization, MFA, AD Integration, Multi-Tenancy & Audit Compliance
 ## Clinical EDC SaaS Platform — Deep Architecture Analysis
 
-**Date:** 31 May 2026
-**Status:** DISCUSSION DOCUMENT — Pre-Finalization
-**Scope:** Auth, AuthZ, MFA, Active Directory, Multi-Tenancy, Identity Server, Audit Compliance
+**Date:** 31 May 2026 (Updated November 2026 — Aligned with Canonical `.NET 9` API & `study_registry.identityConfig`)
+**Status:** Canonical Auth Reference (Section 18 + [`API 005`](../api/005-api-foundations-auth-override-engine-and-realtime-adr.md) — **Active**; Sections 1–17's early Node.js/React exploratory code snippets are superseded historical background)
+**Scope:** Auth, AuthZ, MFA, Active Directory, Okta/Entra/Email+Password, Multi-Tenancy, Identity Server, Audit Compliance
 **Clinical Context:** Electronic Data Capture (EDC) for Phase I–IV Clinical Trials
 **Regulatory Context:** 21 CFR Part 11, GDPR, HIPAA, ICH E6(R3), EMA Annex 11
 
@@ -3113,8 +3113,8 @@ public class TenantJwtBearerConfigureOptions
                 // e.g. "https://keycloak.yourdomain.com/realms/client-a-pharma"
                 var jwksUrl = $"{issuer}/protocol/openid-connect/certs";
                 
-                // Fetch JWKS (cached via IMemoryCache — don't hammer Keycloak)
-                return JwksCache.GetKeys(jwksUrl);
+                // Resolve signing keys via ASP.NET Core standard OIDC metadata discovery + Distributed Redis
+                return await _jwksProvider.GetKeysAsync(jwksUrl);
             },
             
             // Validate that issuer matches a known Keycloak realm pattern
@@ -3133,22 +3133,28 @@ public class TenantJwtBearerConfigureOptions
 ```
 
 ```csharp
-// Auth/JwksCache.cs — in-memory JWKS key cache with 1hr TTL
-public static class JwksCache
+// Auth/JwksCache.cs — Distributed Redis JWKS key cache (1hr TTL; zero .NET IMemoryCache)
+public sealed class JwksProvider
 {
-    private static readonly MemoryCache _cache = new(new MemoryCacheOptions());
+    private readonly IScopedCacheService _cache;
+    private readonly HttpClient _http;
 
-    public static IEnumerable<SecurityKey> GetKeys(string jwksUrl)
+    public JwksProvider(IScopedCacheService cache, HttpClient http)
     {
-        return _cache.GetOrCreate(jwksUrl, entry =>
-        {
-            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1);
-            
-            using var http = new HttpClient();
-            var json = http.GetStringAsync(jwksUrl).GetAwaiter().GetResult();
-            var jwks = new JsonWebKeySet(json);
-            return jwks.GetSigningKeys();
-        })!;
+        _cache = cache;
+        _http = http;
+    }
+
+    public async Task<IEnumerable<SecurityKey>> GetKeysAsync(string jwksUrl, CancellationToken ct = default)
+    {
+        var json = await _cache.GetOrCreateGlobalAsync(
+            "oidc:jwks",
+            jwksUrl,
+            async token => await _http.GetStringAsync(jwksUrl, token),
+            ttl: TimeSpan.FromHours(1),
+            ct: ct);
+
+        return new JsonWebKeySet(json).GetSigningKeys();
     }
 }
 ```
@@ -4016,10 +4022,10 @@ builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddSingleton<IActiveSessionStore, MongoActiveSessionStore>();
 
 // ── Health Checks ────────────────────────────────────────────────────────────
+// NOTE: Do NOT couple API pod /health/ready to Keycloak /health/ready — API pods cache
+// OIDC JWKS in Redis (1h TTL) so active users keep working smoothly during IdP restarts.
 builder.Services.AddHealthChecks()
-    .AddMongoDb(builder.Configuration["MongoDB:SharedClusterUri"]!, name: "mongodb-shared")
-    .AddUrlGroup(new Uri(builder.Configuration["Keycloak:BaseUrl"]! + "/health/ready"),
-                 name: "keycloak");
+    .AddMongoDb(builder.Configuration["MongoDB:SharedClusterUri"]!, name: "mongodb-shared");
 
 // ── CORS ─────────────────────────────────────────────────────────────────────
 builder.Services.AddCors(options =>
@@ -4135,15 +4141,15 @@ public class MongoIndexInitializer
 │                           │ .JwtBearer with dynamic issuer         │
 │                           │ resolution per Keycloak realm          │
 ├───────────────────────────┼────────────────────────────────────────┤
-│ JWKS key caching          │ IMemoryCache, 1hr TTL per realm        │
+│ JWKS key caching          │ Distributed Redis, 1hr TTL per realm   │
 ├───────────────────────────┼────────────────────────────────────────┤
 │ Claims mapping            │ IClaimsTransformation                  │
 │                           │ realm_access.roles → ClaimTypes.Role   │
 │                           │ canSign, mfaVerified → clinical claims │
 ├───────────────────────────┼────────────────────────────────────────┤
-│ Tenant resolution         │ Custom middleware: extracts tenantId   │
-│                           │ from JWT, looks up TenantConfig,       │
-│                           │ attaches IMongoDatabase to HttpContext  │
+│ Tenant resolution         │ Custom middleware (API 005): extracts  │
+│                           │ tenantId from JWT + X-Tenant-Id/Study, │
+│                           │ attaches IMongoDatabase to HttpContext │
 ├───────────────────────────┼────────────────────────────────────────┤
 │ Multi-tenancy DB          │ ClinicalDatabaseResolver:              │
 │                           │ Cluster 1 → DEV/UAT study databases    │
@@ -4152,9 +4158,15 @@ public class MongoIndexInitializer
 │ System RBAC               │ RequireRole() + named policies         │
 │                           │ 10 clinical role constants             │
 ├───────────────────────────┼────────────────────────────────────────┤
-│ Study-level authz         │ StudyAccessHandler: checks             │
-│                           │ user_study_access MongoDB collection   │
-│                           │ per request; site-level restriction    │
+│ Study-level authz &       │ StudyAccessHandler: checks Redis-cached│
+│ Identity Policy           │ user_study_access (instant revocation) │
+│                           │ & non-secret study_registry.           │
+│                           │ identityConfig (Email/AD/Okta + MFA)   │
+├───────────────────────────┼────────────────────────────────────────┤
+│ Control Plane & IdP HA/DR │ Multi-AZ Keycloak + Managed Postgres   │
+│                           │ & Multi-AZ rs-admin (w: "majority") +  │
+│                           │ cross-region async DR (no API probe    │
+│                           │ dependency on Keycloak /health/ready)  │
 ├───────────────────────────┼────────────────────────────────────────┤
 │ Step-up auth              │ StepUpAuthHandler: checks acr="step-up"│
 │                           │ and auth_time within 300s              │

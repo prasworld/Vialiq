@@ -2,8 +2,8 @@
 
 > **Document ID:** `VIALIQ-ARCH-API-002`  
 > **Domain:** Backend Architecture — API Layer  
-> **Status:** Open for Discussion / Architecture Review  
-> **Date:** October 19, 2026  
+> **Status:** Closed / Decided (Consensus Reached on ASP.NET Core 9.0 in ADR 001 & ADR 005)  
+> **Date:** October 19, 2026 (Closed: October 20, 2026)  
 > **Author:** Architecture Team / Prashant Gupta  
 > **Target Decision:** Finalizing the Core API Stack, Framework Selection, Data Access, and Regulatory Interceptors  
 > **Related Documents:**
@@ -24,8 +24,9 @@ The API layer serves as the single secure bridge between:
 2. **The Database Layer**: 3 physical MongoDB clusters (Layer 1 Admin on `27017`, Layer 2 Dev on `27027`, Layer 3 Prod on `27037`).
 3. **The Regulatory Perimeter**: Strict adherence to FDA 21 CFR Part 11, ICH GCP E6(R3), EU Annex 11, and HIPAA § 164.312.
 
-> [!IMPORTANT]  
-> **The Core Framework Decision is OPEN:** While earlier drafts explored NestJS, we have **not zeroed down on NestJS**. The architectural evaluation between **NestJS (TypeScript)** and **ASP.NET Core (.NET 8/9 C#)** is actively under review.
+> [!NOTE]  
+> **Evaluation Outcome: DECIDED in ADR 001 & ADR 005**  
+> The framework evaluation concluded on October 20, 2026, establishing **ASP.NET Core 9.0 (.NET 9 C#)** as the accepted platform API stack based on multi-threaded throughput, native CSFLE multi-cluster driver support, SignalR real-time scaling, and enterprise GxP requirements. This document remains preserved as the historical evaluation framework and criteria record.
 
 ---
 
@@ -80,7 +81,7 @@ Regardless of framework, the API must implement clean, decoupled domain boundari
 ├───────────────────────┼─────────────────────────────┼───────────────────────┤
 │ 7. Part 11 Audit Trail│ 8. Electronic Signature     │ 9. Locking & Freezing │
 │    Append-only ledger,│    Dual-auth (§ 11.50/200), │    4-layer hierarchy, │
-│    SHA-256 chaining   │    crypto document signing  │    active field leases│
+│    SHA-256 chaining   │    crypto document signing  │    form-level locks   │
 ├───────────────────────┴─────────────────────────────┴───────────────────────┤
 │ 10. Background Processing & CDISC Export (BullMQ / Hangfire)                │
 └─────────────────────────────────────────────────────────────────────────────┘
@@ -99,7 +100,7 @@ Clinical trial monitoring requires hybrid synchronous and real-time communicatio
 | Protocol | Technology Options | EDC Use Case |
 |---|---|---|
 | **RESTful HTTP** | OpenAPI 3.0 / Swagger | CRUD operations, formal CRF submission, study setup, audit lookups |
-| **Real-Time WebSockets** | Socket.io (NestJS) vs. SignalR (.NET) + Redis Backplane | Concurrency field-locking (preventing 2 users editing the same field), monitor presence, real-time query popups |
+| **Real-Time WebSockets** | Socket.io (NestJS) vs. SignalR (.NET) + Redis Backplane | Single-editor form lock status announcements (`ADR 003`), monitor presence, real-time query popups |
 | **Server-Sent Events / Change Streams** | MongoDB Change Streams $\rightarrow$ SSE Gateway | Real-time safety alerts (e.g. 24h Serious Adverse Event / SAE alerts to Safety Monitor) |
 
 ### Key Topics for Discussion:
@@ -147,8 +148,8 @@ Clinical trials have non-negotiable legal requirements that must be enforced at 
 3. **Dual-Authentication E-Signature Guard (§ 11.50 & § 11.200)**:
    - Requiring both primary password and dedicated signature PIN / MFA code before executing an electronic signature mutation.
    - Cryptographic manifest generation binding the user identity, timestamp, meaning, and exact BSON snapshot of data signed.
-4. **Field-Level Concurrency Locking Guard**:
-   - Redis-backed distributed lock lease (5-minute TTL) ensuring exclusive field edit rights to prevent race conditions between site coordinators.
+4. **Form-Level Concurrency Locking Guard ([ADR 003](../../critical-problems-and-adrs/003-realtime-signalr-reconnection-and-field-lease-reconciliation-adr.md))**:
+   - Single-Editor / Multi-Reader form lock (15-minute TTL synced across MongoDB `study_edit_leases` + Redis, gated by regulatory `study_locks`) ensuring exclusive form edit rights and zero race conditions between site coordinators.
 
 ---
 

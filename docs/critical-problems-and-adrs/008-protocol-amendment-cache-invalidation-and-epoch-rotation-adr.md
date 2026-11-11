@@ -111,15 +111,15 @@ Because of this governance window, **the system has dedicated, unhurried time to
 
 ### Decision 8.3: Pre-Opening Cache Warming (The Zero-Stampede Guarantee)
 * **Rule**: All amended schemas, validation ASTs, and database indexes **must be 100% compiled and written to Redis before the study is unlocked for data entry.**
-* **Execution Flow**:
+* **Single-Region (~75%) vs. Multi-Region (~25%) Execution Flow**:
   1. Background worker reads the Change Manifest.
-  2. Compiles the modified forms into production JSON schemas and MessagePack ASTs.
-  3. Writes them directly to Redis using version-scoped keys:
+  2. Compiles modified forms into production JSON schemas and MessagePack ASTs (for blinded/unblinded scopes and supported study locales).
+  3. **75% `StorageTopologyMode.Single` Studies:** Writes directly into the study's single home Redis (`< 0.2ms`, zero cross-region hops).
+  4. **25% `StorageTopologyMode.MultiRegionGeoPartitioned` Studies:** Dispatches the manifest via Control-Plane Outbox to every registered regional VPC (`manifest.Zones` — US, EU, CN), where each regional worker warms its own local Regional Redis and emits a completion `ACK` **during Stage 4 Maintenance Lock** before Stage 5 unlocks data entry—guaranteeing `0.0%` cold misses and zero cross-region version skew.
      ```redis
-     SET vialiq:study:novartis:onco101:v3:schema:form_labs_pk "{...}" EX 86400
+     SET vialiq:study:novartis:onco101:prod:ep3:blinded:en-US:schema:form_labs_pk "{...}" EX 86400
      ```
-  4. Pre-creates any required MongoDB compound indexes.
-  5. Validates that all keys return `PONG`/`OK`.
+  5. Pre-creates any required MongoDB compound indexes in the study database(s).
   6. **Only then** transitions `StudyLockStatus` from `UpversioningMaintenance` to `Active`.
 * **Result**:
   * **Runtime Cache Miss Rate = 0.0%**.
@@ -132,9 +132,10 @@ Because of this governance window, **the system has dedicated, unhurried time to
 * **Rule**: In clinical trials running across international territories, protocol amendments occur asynchronously due to regulatory approval lag:
   * US Sites (FDA / Local IRB approved): Route to `Protocol v3.0`.
   * EU Sites (Awaiting BfArM / Ethics approval): Remain on `Protocol v2.0`.
-* **Cache Key Schema**:
-  $$\text{Cache Key} = \text{vialiq:study:}\{\text{tenantId}\}\text{:}\{\text{studyId}\}\text{:}\{\mathbf{protocolVersion}\}\text{:}\{\text{resource}\}\text{:}\{\text{id}\}$$
-* **Isolation Guarantee**: Writing schemas for `v3.0` does not touch, overwrite, or invalidate `v2.0` keys. European sites continue to read cached `v2.0` definitions seamlessly until their formal country activation date.
+* **Unified Cache Key Schema (`ADR 007-A` & `ADR 010` Aligned)**:
+  $$\text{Cache Key} = \text{vialiq:study:}\{\text{tenantId}\}\text{:}\{\text{studyId}\}\text{:}\{\text{env}\}\text{:ep}\{\mathbf{epoch}\}\text{:}\{\text{scope}\}\text{:}\{\text{locale}\}\text{:}\{\text{resource}\}\text{:}\{\text{id}\}$$
+  *(Where single-culture domestic trials auto-resolve `{locale}` to `BaseLocale` and store only one key copy.)*
+* **Isolation Guarantee**: Writing schemas for `ep3` does not touch, overwrite, or invalidate `ep2` keys. European sites continue to read cached `ep2` definitions seamlessly until their formal country activation date.
 
 ---
 
@@ -256,9 +257,9 @@ public sealed class ProtocolWarmupService : IProtocolWarmupService
             ct.ThrowIfCancellationRequested();
 
             var compiledJsonSchema = await formSchemaCompiler(formId);
-            var cacheKey = $"vialiq:study:{manifest.TenantId}:{manifest.StudyId}:{manifest.TargetVersion}:schema:{formId}";
+            var cacheKey = $"vialiq:study:{manifest.TenantId}:{manifest.StudyId}:prod:ep{manifest.TargetVersion}:{manifest.BlindingScope}:{manifest.Locale}:schema:{formId}";
 
-            // Eager write-through: Key is populated BEFORE users have access
+            // Eager write-through: Key is populated BEFORE users have access (across all target zones for multi-region studies)
             await db.StringSetAsync(cacheKey, compiledJsonSchema, DefaultSchemaTtl);
 
             _logger.LogInformation("Successfully pre-warmed cache key {CacheKey}", cacheKey);
@@ -288,7 +289,7 @@ public sealed class ProtocolWarmupService : IProtocolWarmupService
 
         foreach (var formId in manifest.ModifiedFormIds)
         {
-            var cacheKey = $"vialiq:study:{manifest.TenantId}:{manifest.StudyId}:{manifest.TargetVersion}:schema:{formId}";
+            var cacheKey = $"vialiq:study:{manifest.TenantId}:{manifest.StudyId}:prod:ep{manifest.TargetVersion}:{manifest.BlindingScope}:{manifest.Locale}:schema:{formId}";
             await db.KeyDeleteAsync(cacheKey);
         }
     }

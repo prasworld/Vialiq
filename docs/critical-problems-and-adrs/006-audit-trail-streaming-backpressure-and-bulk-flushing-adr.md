@@ -264,14 +264,13 @@ public async Task<SaveCrfResponseDto> SaveCrfDataAsync(
     try
     {
         var lockKey = $"edc:form_lock:{studyId}:{request.CrfId}";
-        var summaryTag = $"subject-summary:{studyId}:{request.SubjectId}";
+        var summaryKey = $"subject-summary:{studyId}:{request.SubjectId}";
 
-        // Synchronously delete the lock key in Redis and invalidate L1/L2 summary tags
-        await _redisDb.KeyDeleteAsync(lockKey);
-        await _hybridCache.RemoveByTagAsync(new[] { summaryTag }, ct);
+        // Synchronously delete the lock key and summary key in Redis
+        await _redisDb.KeyDeleteAsync(new RedisKey[] { lockKey, summaryKey });
         await _redisSubscriber.PublishAsync(
             "vialiq:cache:invalidations", 
-            JsonSerializer.Serialize(new CacheInvalidationEvent(lockKey, summaryTag))
+            JsonSerializer.Serialize(new CacheInvalidationEvent(lockKey, summaryKey))
         );
     }
     catch (Exception cacheEx)
@@ -294,17 +293,19 @@ public async Task<SaveCrfResponseDto> SaveCrfDataAsync(
 
 ---
 
-### Decision 6: Cache Protection via Read Replica Offloading
+### Decision 6: Cache Protection via Read Isolation & Secondary Export Offloading
 
-To ensure large audit exports and CRA queries never evict active clinical forms from MongoDB's WiredTiger RAM cache:
-* **Writes**: Written to the Primary node in the active replica set (`w: "majority"`).
-* **Audit Visualization & Large Exports**: Executed against **Secondary** replica set nodes (`ReadPreference: SecondaryPreferred`):
+To balance immediate consistency for clinical users with cache protection against large audit scans:
+* **Writes**: Written atomically to the Primary node in the active replica set (`w: "majority"`).
+* **Operational In-Form Audit Views**: In-form field popovers and form drawer timelines query the **Primary** node (`ReadPreference.Primary`, `ReadConcern.Majority`) ensuring immediate Read-Your-Own-Writes consistency for newly committed field changes.
+* **Large Historical Exports & Global Regulatory Search**: Offline regulatory exports and background queries explicitly opt into **Secondary** replica set nodes (`ReadPreference: SecondaryPreferred`) to prevent cold historical scans from evicting active clinical working sets from WiredTiger RAM:
   ```csharp
-  var auditCollection = database
+  // Offline export queries explicitly opt into Secondary reads:
+  var exportAuditCollection = database
       .GetCollection<AuditTrailEntry>("audit_crf_data")
       .WithReadPreference(ReadPreference.SecondaryPreferred);
   ```
-* Primary node memory remains 100% dedicated to low-latency clinical data entry.
+* Primary node memory remains focused on low-latency clinical entry and immediate audit verification.
 
 ---
 

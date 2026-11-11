@@ -18,7 +18,7 @@
 
 The global Electronic Data Capture (EDC) market is undergoing a generational shift. For two decades, clinical trials have been dominated by monolithic, relational-database platforms built in the early 2000s (e.g. Medidata Rave, Oracle InForm). While these platforms offer entrenched regulatory validation, they inflict crippling operational friction: **6–12 week study build times, multi-day system freezes during protocol amendments, brittle custom programming, browser crashes on massive patient grids, and exorbitant licensing costs**.
 
-**Vialiq EDC** was architected from the ground up to solve these core life-sciences failure modes. By coupling **Angular 21 Reactive Signals**, **Lit 3 Web Components**, **Google Blockly visual programming**, **ASP.NET Core 9.0 (.NET 9) Clean Architecture**, **Polyglot Datastores (MongoDB 7+ and SQL Server CDC)**, **Field-Level Encryption (CSFLE) with GDPR Crypto-Shredding**, and **.NET 9 HybridCache**, Vialiq establishes a new performance and ergonomics benchmark for clinical trial data capture.
+**Vialiq EDC** was architected from the ground up to solve these core life-sciences failure modes. By coupling **Angular 21 Reactive Signals**, **Lit 3 Web Components**, **Google Blockly visual programming**, **ASP.NET Core 9.0 (.NET 9) Clean Architecture**, **Polyglot Datastores (MongoDB 7+ and SQL Server CDC)**, **Field-Level Encryption (CSFLE) with GDPR Crypto-Shredding**, and **High-Availability Redis Caching**, Vialiq establishes a new performance and ergonomics benchmark for clinical trial data capture.
 
 ```
 =======================================================================================================================
@@ -29,7 +29,7 @@ Evaluation Dimension                   Weight   Vialiq   Medidata   Veeva     Or
 -----------------------------------------------------------------------------------------------------------------------
 1. Clinical UX & Workspace Matrix      10%      9.8/10   6.2/10     7.8/10    6.5/10   8.2/10   5.0/10
 2. Form Engine & Edit Check Parity     15%      9.7/10   7.5/10     8.5/10    7.0/10   7.8/10   6.0/10
-3. Concurrency, Leases & Locking       10%      9.8/10   6.8/10     8.0/10    6.5/10   7.2/10   4.5/10
+3. Concurrency & Form Locking          10%      9.8/10   6.8/10     8.0/10    6.5/10   7.2/10   4.5/10
 4. 21 CFR Part 11 & Causal Audit Trail 15%      9.9/10   9.5/10     9.2/10    9.0/10   7.5/10   6.0/10
 5. Data Privacy & GDPR Crypto-Shred    10%      9.9/10   5.5/10     6.0/10    5.5/10   7.0/10   4.0/10
 6. Double-Blind RTSM & Cache Blinding  10%      9.8/10   8.8/10     8.5/10    8.0/10   6.0/10   3.5/10
@@ -80,17 +80,17 @@ Platform Comparison:
 
 ---
 
-### 2.3 Dimension 3: Form Concurrency, Active Field Leases & Real-Time Collaboration
+### 2.3 Dimension 3: Form Concurrency, Single-Editor Locking & Real-Time Collaboration
 * **The Clinical Problem:** In high-velocity trials, multiple users (Investigator signing, CRA monitoring, CRC entering data, Data Manager raising queries) access the same CRF simultaneously. Legacy systems either lock the entire subject or blindly overwrite concurrent edits (Last Write Wins).
 
 ```
 Platform Comparison:
 • Medidata Rave: Record-level locking at form save. Does not provide active real-time lease presence. If User A and User B open the form concurrently, User B receives an uninformative concurrency error upon submitting, losing unsaved edits.
-• Veeva Vault EDC: Document-level checkout/locking model. Strong audit trail, but lacks sub-document active field presence.
-• Oracle Clinical One: Form-level locking. No live presence indicators; changes overwrite or trigger optimistic locking exceptions on save.
-• Castor EDC: Field-level audit trail, but no active real-time collaboration or live field lease visual indicators.
+• Veeva Vault EDC: Document-level checkout/locking model. Strong audit trail, but lacks persistent cross-session coordination banners.
+• Oracle Clinical One: Form-level locking. No live lock countdown banner; changes overwrite or trigger optimistic locking exceptions on save.
+• Castor EDC: Field-level audit trail, but no active form lock countdown indicators.
 • REDCap: Rudimentary record locking (entire record or form is locked by user). Simultaneous edits silently overwrite each other (Last-Write-Wins hazard).
-• Vialiq EDC (Score: 9.8/10 — ADR 003): Single-Editor / Multi-Reader Form Lock with 15-minute sliding TTL in Redis and persistent MongoDB state (`study_locks`). Dual-layer heartbeat via SignalR (`EdcCollaborationHub`), sub-document field leases with visual presence avatars, deterministic release on save/close, and FDA 21 CFR Part 11 compliant "Break Lock" emergency override with mandatory audit reason logging.
+• Vialiq EDC (Score: 9.8/10 — ADR 003): Single-Editor / Multi-Reader Form-Level Lock with 15-minute TTL synced synchronously between MongoDB (`study_edit_leases`, gated by regulatory `study_locks` `HTTP 423` checks) and Redis (`edc:form_lock:{studyId}:{crfId}`). Zero per-field heartbeat churn, transient disconnect resilience, deterministic CAD release on save/cancel/logout/expiry, and FDA 21 CFR Part 11 compliant `CanUnlockForms` "Break Lock" override with mandatory audit reason logging.
 ```
 
 ---
@@ -143,7 +143,7 @@ Platform Comparison:
 • Vialiq EDC (Score: 9.8/10 — ADR 010): 
   - Absolute Ban on RTSM in Redis: Patient treatment arms and kit allocations are strictly forbidden from Redis and L1 RAM.
   - Outbound Contract Masking: `[BlindedRtsm]` properties are automatically stripped or masked as `"BLINDED"` via `BlindedDataContractModifier` in .NET 9 serialization.
-  - Role-Scoped HybridCache Keys: Form schemas with dual views incorporate `scope:{blinded|unblinded}`.
+  - Role-Scoped Redis Keys: Form schemas with dual views incorporate `scope:{blinded|unblinded}`.
   - Emergency Code Break Protocol: 24/7 direct-to-MongoDB modal with dual-credential Part 11 e-signature, mandatory clinical justification, and instant safety broadcast.
 ```
 
@@ -198,7 +198,7 @@ Platform Comparison:
 • REDCap: Monolithic MySQL backend (EAV model - Entity-Attribute-Value). Storing all data in an `eav_values` table causes exponential degradation when querying millions of clinical data points.
 • Vialiq EDC (Score: 9.8/10 — ADR 004): 
   - Polyglot Segregation: MongoDB 7.0+ Replica Sets handle 100% of high-concurrency transactional EDC writes (sub-10ms form saves).
-  - Real-Time CDC Boundary: Debezium / Kafka CDC streams MongoDB oplog changes into SQL Server 2022+ columnstore tables for real-time SAS/SDTM analytics.
+  - Real-Time CDC Boundary: `.NET 9 Vialiq.CdcWorker` streams majority-committed MongoDB Change Streams (decrypted in RAM) over TLS 1.3 into SQL Server 2022+ columnstore tables for real-time SAS/SDTM analytics.
   - Automated Ingress Privacy Drop: Site identifiers are cryptographically dropped at the CDC boundary, ensuring analytics databases remain completely de-identified.
 ```
 
@@ -251,8 +251,8 @@ STUDY DESIGN & VALIDATION
 • In-House Study Build Turnaround Time   ✅ 1-2 Weeks ❌ 6-12 Weeks  ⚠️ 3-5 Weeks ❌ 6-10 Weeks   ✅ 2-3 Weeks ✅ 1-2 Weeks
 
 CONCURRENCY & COLLABORATION
-• Active Field Lease Indicators (Avatars)✅ Real-Time ❌ No          ❌ No        ❌ No           ❌ No       ❌ No
-• Real-Time Sub-Doc Lock (SignalR/Redis) ✅ 15m TTL   ❌ Form Save   ⚠️ Doc Lock  ⚠️ Form Lock    ❌ No       ❌ Table Lock
+• Single-Editor / Multi-Reader Form Lock ✅ Form-Level ❌ On Save   ⚠️ Doc Lock  ⚠️ Form Lock    ❌ No       ⚠️ Record Lock
+• Zero-Heartbeat Lock Lifecycle (TTL)    ✅ 15m TTL   ❌ Form Save  ⚠️ Manual    ⚠️ Form Lock    ❌ No       ❌ Table Lock
 • Part 11 Emergency Break Lock Override  ✅ Yes       ❌ No          ⚠️ Admin     ⚠️ Admin        ❌ No       ❌ No
 • Dual-Write Synchronous Consistency     ✅ Mongo+Redis ❌ DB Only   ✅ Platform  ✅ DB Only      ✅ DB Only  ❌ DB Only
 
@@ -272,8 +272,8 @@ DATA PRIVACY & BLINDING
 
 SCALING, DATASTORE & INFRASTRUCTURE
 • Operational Datastore Throughput       ✅ >35k req/s ⚠️ Relational ⚠️ Cloud DB  ⚠️ Relational   ⚠️ Standard ⚠️ Low (EAV)
-• CDC Boundary for Real-Time SAS/SDTM    ✅ Kafka/SQL ❌ Batch ETL   ⚠️ REST API  ⚠️ Scheduled    ❌ Export   ❌ CSV Export
-• Anti-Stampede Single-Flight Caching    ✅ HybridCache ❌ DB Hits   ⚠️ Platform  ⚠️ Platform     ❌ No       ❌ No
+• CDC Boundary for Real-Time SAS/SDTM    ✅ CDC/SQL   ❌ Batch ETL   ⚠️ REST API  ⚠️ Scheduled    ❌ Export   ❌ CSV Export
+• Distributed Fast-Path Caching          ✅ Redis Cache  ❌ DB Hits   ⚠️ Platform  ⚠️ Platform     ❌ No       ❌ No
 • High-Availability Failover (<2s)       ✅ Sentinel  ⚠️ Multi-Min   ✅ AWS Multi-AZ ⚠️ Standard  ⚠️ Standard ❌ Manual
 • Cloud Infrastructure Footprint (1k st) ✅ <3.0 GB RAM ❌ Massive   ⚠️ Large     ❌ Massive      ✅ Moderate ⚠️ High Disk
 =======================================================================================================================

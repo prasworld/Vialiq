@@ -23,11 +23,11 @@ ADR 003  Form Concurrency & Lock Lifecycle        HIGH (Race Hazard) SEALED     
 ADR 004  CSFLE-to-SQL Server CDC Boundary         CRITICAL (HIPAA)   SEALED     Metadata Data Classification & Ingress Drop
 ADR 005  Model Decoupling & Intentional Asymmetry N/A (By Design)    SEALED     Intentional Asymmetry (No 1:1 Parity Needed)
 ADR 006  21 CFR Part 11 Audit Trail Architecture  CRITICAL (Part 11) SEALED     Stratified Collections & 4D Compound Indexes
-ADR 007-A Multi-Tenant Cache Scoping & Security    CRITICAL (Breach)  SEALED     Data Boundary, Dual-Write Completion, HybridCache
+ADR 007-A Multi-Tenant Cache Scoping & Security    CRITICAL (Breach)  SEALED     Data Boundary, Dual-Write Completion, Redis Cluster
 ADR 007-B HA Redis Cluster, Dev/Prod & Scaling     HIGH (SPOF/Scale)  SEALED     HA Pair + Sentinel, <2s Failover, 1k Studies Math
 ADR 008  Protocol Amendment Invalidation Storms   HIGH (Redis Spike) SEALED     5-Stage Governed Pipeline & Pre-Warmed Cache Rebuild
 ADR 009  Distributed Clock Skew & Part 11 E-Sig   HIGH (Regulatory)  SEALED     Non-Sharded Replica Set, Atomic Sequence, Zero Client Trust
-ADR 010  Double-Blind RTSM Unblinding in Cache    CRITICAL (Blind)   SEALED     Role-Scoping & Contract Stripper
+ADR 010  Double-Blind RTSM Blinding Perimeter    CRITICAL (Blind)   SEALED     Role-Scoping & Masking (RTSM Engine Deferred Phase 2+)
 ADR 011  Study-Specific Controls & Module Fed     HIGH (Bloat/CSV)   SEALED     Module Federation Plugin & Property Comp
 =============================================================================================================
 ```

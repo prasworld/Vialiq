@@ -71,7 +71,7 @@ To ensure strict data boundaries, high performance, and security, models are div
 Contains sensitive database identifiers, tenant partition keys, and cryptographic audit hash chains that **must never leak over the network**:
 
 ```csharp
-// apps/api/src/Vialiq.Core/Entities/CrfEntryEntity.cs
+// backend/api/src/Vialiq.Core/Entities/CrfEntryEntity.cs
 public class CrfEntryEntity
 {
     [BsonId]
@@ -96,7 +96,7 @@ public class CrfEntryEntity
 ```
 
 #### Tier 2: Public Wire DTOs (`Vialiq.Api.Contracts`)
-Tailored contracts representing explicit network requests and responses. These are fed to **NSwag** to generate TypeScript interfaces into `libs/edc-contracts`:
+Tailored contracts representing explicit network requests and responses. In accordance with [ADR 005 (Model Decoupling & Intentional Asymmetry)](../../critical-problems-and-adrs/005-model-decoupling-and-intentional-asymmetry-adr.md), these are stable transport envelopes (`SubmitCrfRequestDto`, `CrfDetailResponseDto`), decoupled from internal database representations and frontend UI state:
 
 ```csharp
 // Request DTO: Submitted by the Coordinator
@@ -175,7 +175,7 @@ To seamlessly bridge these three layers without writing tedious, error-prone man
 ```
 
 #### A. Frontend Mapping with `@vialiq/automapper` (`libs/automapper`)
-Our workspace includes a high-performance, type-safe mapper library: [`@vialiq/automapper`](file:///Users/prashantgupta/code/nx/libs/automapper).
+Our workspace includes a high-performance, type-safe mapper library: [`@vialiq/automapper`](../../../libs/automapper).
 
 In the Angular application, mapping profiles explicitly define the transformation between interactive UI state and public wire DTOs:
 
@@ -183,7 +183,7 @@ In the Angular application, mapping profiles explicitly define the transformatio
 // apps/shell/src/app/mappings/crf-mapping.profile.ts
 import { createMapper, addProfile, forMember, mapFrom, ignore } from '@vialiq/automapper';
 import { CrfFormUiState } from '@vialiq/form-renderer';
-import { SubmitCrfRequestDto, CrfDetailResponseDto } from '@vialiq/edc-contracts';
+import { SubmitCrfRequestDto, CrfDetailResponseDto } from '../models/transport-contracts';
 
 export const crfMapper = createMapper();
 
@@ -213,7 +213,7 @@ addProfile<CrfDetailResponseDto, CrfFormUiState>(crfMapper, 'CrfDetailDtoToUiSta
 On the ASP.NET Core tier, C# mapping profiles ensure domain entities never leak internal database or cryptographic keys to the wire:
 
 ```csharp
-// apps/api/src/Vialiq.Api/Mappings/CrfMappingProfile.cs
+// backend/api/src/Vialiq.Api/Mappings/CrfMappingProfile.cs
 using AutoMapper;
 using Vialiq.Core.Entities;
 using Vialiq.Api.Contracts.Edc;
@@ -468,8 +468,8 @@ public class EproDailyDiaryDto
 4. **Complete Separation of Concerns**: Angular UI developers can freely manipulate ephemeral view state without risking database pollution.
 
 ### Implementation Action Plan
-1. **Domain Layer**: Centralize all business logic, edit checks, and multi-cluster MongoDB access in `apps/api/src/Vialiq.Core/`.
+1. **Domain Layer**: Centralize all business logic, edit checks, and multi-cluster MongoDB access in `backend/api/src/Vialiq.Core/`.
 2. **Controller Separation**:
-   - `apps/api/src/Vialiq.Api/Controllers/Edc/` $\rightarrow$ Web Desktop endpoints.
-   - `apps/api/src/Vialiq.Api/Controllers/Epro/` $\rightarrow$ Mobile patient endpoints.
-3. **Automated Contracts**: NSwag will generate typed TypeScript contracts in `libs/edc-contracts` for the Angular app, and OpenAPI specs for future Swift/Kotlin mobile clients.
+   - `backend/api/src/Vialiq.Api/Controllers/Edc/` $\rightarrow$ Web Desktop endpoints.
+   - `backend/api/src/Vialiq.Api/Controllers/Epro/` $\rightarrow$ Mobile patient endpoints.
+3. **Model Decoupling & Boundary Projection**: In alignment with [ADR 005 (Model Decoupling & Intentional Asymmetry)](../../critical-problems-and-adrs/005-model-decoupling-and-intentional-asymmetry-adr.md), the frontend uses [`@vialiq/automapper`](../../../libs/automapper) to project between interactive Angular UI state and wire transport envelopes (`SubmitCrfRequestDto`, `FormSubmissionDto`), eliminating fragile NSwag code generators and synthetic parity drift testing.

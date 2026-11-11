@@ -21,7 +21,7 @@ Vialiq EDC is a **modular monorepo** (`nx`) separating the user-facing web tier,
     │   Angular Web Shell  │                                  │  .NET 9 Web API Host │
     │   (nx serve shell)   │                                  │   (dotnet watch api) │
     │   - Webpack MF Host  │ ───────── HTTP / REST ─────────> │   - Controllers/Auth │
-    │   - Lit 3 Components │                                  │   - HybridCache (L1) │
+    │   - Lit 3 Components │                                  │   - Redis Cache      │
     └──────────────────────┘                                  └──────────┬───────────┘
                                                                          │
                         ┌────────────────────────────────────────────────┴────────┐

@@ -16,6 +16,10 @@
 
 ## 1. Executive Summary & Clinical Context
 
+> [!NOTE]
+> **Phase-1 Scope Boundary (Randomization Engine Deferred to Phase 2+):**
+> Vialiq is **NOT implementing a built-in RTSM/IWRS randomization engine or drug-kit depot workflow in Phase 1**. In Phase 1, randomized studies integrate via **External IXRS/IRT** (storing only opaque `GlobalSubjectGuid`, `RandomizationNumber`, and `RandomizationDate` / `RFSTDTC` metadata in EDC), while **all blinding security guardrails in this ADR (`BlindedRTSM` masking, Redis treatment-arm ban, role-scoped schema keys, server-side EC bifurcation, and Code Break audit hook) remain active from Day 1** so future RTSM integration plugs in with zero security rewrites.
+
 In a **Double-Blind Clinical Trial**, neither the trial subjects (patients) nor the investigating site personnel (Principal Investigators, Sub-Investigators, Clinical Research Coordinators / CRCs, Site Nurses, Clinical Research Associates / CRAs) may know which treatment arm a participant is assigned to (e.g., *Investigational New Drug 100mg*, *Active Comparator*, or *Matching Placebo*).
 
 ```
@@ -59,7 +63,7 @@ MASKING               RTSM DATA IN REDIS   SCHEMA CACHING      BIFURCATION      
   at serialization      in Redis.            incorporate         `BlindedRTSM`     • Mandatory Part 11
   via JSON modifier.  • Unblinded arm      `scope:{Blinded|    executed strictly     e-sig & rationale.
 • Blinded users         data fetched         Unblinded}` in      on server           • Instant safety
-  receive "BLINDED"     on-demand directly   HybridCache key.    (`IServerEdit-      notification +
+  receive "BLINDED"     on-demand directly   Redis cache key.    (`IServerEdit-      notification +
   or omitted fields.    from MongoDB.                          Check`).            audit log.
 ```
 
@@ -80,9 +84,9 @@ MASKING               RTSM DATA IN REDIS   SCHEMA CACHING      BIFURCATION      
 
 ---
 
-### Decision 10.2: Absolute Ban on Patient Treatment Arm Data in Shared L2 Redis
+### Decision 10.2: Absolute Ban on Patient Treatment Arm Data in Distributed Redis
 * **Reinforcing ADR 007-A (Rule 1)**:
-  **Patient-level treatment arms, randomization allocations, and kit-to-arm mappings are STRICTLY FORBIDDEN from being cached in Redis or in-memory L1 cache.**
+  **Patient-level treatment arms, randomization allocations, and kit-to-arm mappings are STRICTLY FORBIDDEN from being cached in Distributed Redis (and `.NET IMemoryCache` L1 caches do not exist).**
 * **Rationale**:
   1. A clinical study has at most a few thousand subjects. Randomization allocation queries are low-frequency transactional events (occurring once per subject enrollment or once per visit kit dispensation).
   2. Caching patient-level unblinded data creates a catastrophic threat surface: a memory dump, a bug in cache key generation, or a Redis CLI inspection could leak active drug allocations.
@@ -90,20 +94,21 @@ MASKING               RTSM DATA IN REDIS   SCHEMA CACHING      BIFURCATION      
 
 ---
 
-### Decision 10.3: Role & Blinding Scoping in HybridCache Keys for Schemas & Matrices
-While patient data is never cached, **Form Schemas, Protocol Visit Matrices, and Codelists** ARE cached in .NET 9 `HybridCache` (as codified in ADR 007-A and ADR 008).
+### Decision 10.3: Role & Blinding Scoping in Redis Cache Keys for Schemas & Matrices
+While patient data is never cached, **Form Schemas, Protocol Visit Matrices, and Codelists** ARE cached in Redis (as codified in ADR 007-A and ADR 008).
 * **The Dual-View Dilemma**:
   Certain form definitions have role-dependent views:
   - An **Unblinded Pharmacist** viewing the "Investigational Product Dispensing Log" must see unblinded fields (`Kit Concentration`, `Active Molecule Batch ID`, `Reconstitution Diluent`).
   - A **Blinded CRC** viewing the same form must only see blinded operational fields (`Kit Barcode Number`, `Dispensation Date`, `Units Returned`).
-* **The Cache Key Invariant**:
-  Any cache key for form schemas, visit matrices, or dynamic controls MUST incorporate the caller's **Blinding Scope**:
+* **The Unified Cache Key Invariant (`ADR 007-A`, `ADR 008`, `Scale 004` Aligned)**:
+  Any cache key for form schemas, visit matrices, declarative `[Cached]` responses, or dynamic controls MUST automatically incorporate the caller's **Blinding Scope**, **Protocol Epoch**, and **Active Locale** (`BaseLocale` default for single-culture trials):
   ```
-  vialiq:study:{tenant}:{study}:{version}:scope:{Blinded|Unblinded}:form:{formId}:schema
+  vialiq:study:{tenant}:{study}:{env}:ep{epoch}:{blinded|unblinded|std}:{locale}:form:{formId}:schema
   ```
 * **Guarantees**:
-  - Blinded users only ever read from `scope:Blinded` cache slots.
-  - Unblinded users only ever read from `scope:Unblinded` cache slots.
+  - Blinded users only ever read from `:blinded:` cache slots (auto-injected by `IScopedCacheService` and `CachedActionFilter`, never left optional via manual `VaryByHeaders`).
+  - Unblinded users only ever read from `:unblinded:` cache slots.
+  - Endpoints serving `SiteIdentifier` PHI or `BlindedRTSM` patient allocations are fail-closed blocked from declarative `[Cached]` caching.
   - Cross-contamination is mathematically impossible because the cache keys are structurally disjoint.
 
 ---
@@ -216,7 +221,7 @@ public static class BlindedDataContractModifier
 
 ---
 
-### 3.3 Role-Scoped Cache Key Generation for HybridCache
+### 3.3 Role-Scoped Cache Key Generation for Redis
 
 ```csharp
 namespace Vialiq.Caching.Extensions;
@@ -232,12 +237,14 @@ public static class RtsmCacheKeyBuilder
     public static string BuildSchemaKey(
         string tenantId,
         string studyId,
-        string protocolVersion,
+        string environment,
+        int protocolEpoch,
         BlindingScope scope,
+        string locale,
         string formId)
     {
         var scopeSegment = scope == BlindingScope.Unblinded ? "unblinded" : "blinded";
-        return $"vialiq:study:{tenantId}:{studyId}:{protocolVersion}:scope:{scopeSegment}:form:{formId}:schema";
+        return $"vialiq:study:{tenantId}:{studyId}:{environment}:ep{protocolEpoch}:{scopeSegment}:{locale}:form:{formId}:schema";
     }
 }
 ```

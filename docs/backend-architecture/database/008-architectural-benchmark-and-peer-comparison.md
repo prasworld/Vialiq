@@ -120,9 +120,9 @@ In a 3-year Phase 3 oncology trial involving 1,200 subjects across 45 global hos
 3. **Complex Field Mapping:** Old subjects enrolled under Amendment 1 have null values. Relational foreign key constraints must be re-indexed, often requiring custom migration scripts.
 
 #### How Vialiq Handles This:
-1. **Zero Database Downtime (Live Hot Promotion):** The Lead Data Manager promotes the amended protocol from Layer 2 UAT to Layer 3 Prod in milliseconds ([Doc 002 Section 3](file:///Users/prashantgupta/code/nx/docs/backend-architecture/database/002-3-cluster-and-flexible-tenancy-architecture.md#3-protocol-promotion-engine)). Not a single database table is locked.
+1. **Zero Database Downtime (Live Hot Promotion):** The Lead Data Manager promotes the amended protocol from Layer 2 UAT to Layer 3 Prod in milliseconds ([Doc 002 Section 3](./002-3-cluster-and-flexible-tenancy-architecture.md#3-protocol-promotion-engine)). Not a single database table is locked.
 2. **Polymorphic Document Storage:** Existing subjects enrolled under Amendment 1 continue with their existing schema (`_schemaVersion: "v1.0"`). Newly enrolled subjects or subsequent visits automatically use `_schemaVersion: "v2.0"`. Both coexist seamlessly in the `crf_entries` collection.
-3. **Decoupled Retrospective Re-evaluation:** A background BullMQ worker ([Doc 004 Section 4](file:///Users/prashantgupta/code/nx/docs/backend-architecture/database/004-background-jobs-protocol-migration-and-auto-query-engine.md#4-retrospective-subject-data-re-evaluation-engine)) queries existing tumor assessment forms in cursor batches of 500 documents, applies the new `HER2_RATIO` edit check, and automatically opens non-conformance queries for any historical subjects meeting the condition—with zero performance impact on live site entry.
+3. **Decoupled Retrospective Re-evaluation:** A background BullMQ worker ([Doc 004 Section 4](./004-background-jobs-protocol-migration-and-auto-query-engine.md#4-retrospective-subject-data-re-evaluation-engine)) queries existing tumor assessment forms in cursor batches of 500 documents, applies the new `HER2_RATIO` edit check, and automatically opens non-conformance queries for any historical subjects meeting the condition—with zero performance impact on live site entry.
 
 ---
 
@@ -155,7 +155,7 @@ A Contract Research Organization (CRO) hosts clinical trials for two fierce comm
 #### How Vialiq Handles This:
 1. **Physical Database Isolation:** Pfizer's trial resides in `study_pfizer_101_prod`; Roche's trial resides in `study_roche_202_prod`. They do not share database collections.
 2. **Zero-Knowledge Field-Level Encryption (CSFLE):** Sensitive patient fields are encrypted on the backend API before transmission to MongoDB. MongoDB stores only raw ciphertext (`BinData(6, "...")`). A full database dump by an attacker or rogue DBA yields only unreadable encrypted binary blobs.
-3. **Bring Your Own Key (BYOK) Sovereign Control ([Doc 006 Section 3.2](file:///Users/prashantgupta/code/nx/docs/backend-architecture/database/006-field-level-encryption-csfle-and-key-management-architecture.md#model-3-bring-your-own-key-byok--zero-knowledge-sovereign-control)):**
+3. **Bring Your Own Key (BYOK) Sovereign Control ([Doc 006 Section 3.2](./006-field-level-encryption-csfle-and-key-management-architecture.md#model-3-bring-your-own-key-byok--zero-knowledge-sovereign-control)):**
    - Pfizer creates the Customer Master Key (CMK) inside **Pfizer's own corporate AWS account**.
    - Pfizer grants cross-account `kms:Decrypt` rights strictly to Vialiq's dedicated worker IAM role.
    - **Instant Sovereign Kill Switch:** If Pfizer suspects a security incident or terminates the contract, Pfizer disables the key in their own AWS console with 1 click. Instantly, **Vialiq cannot decrypt a single byte of Pfizer patient data**, even with root access to both Admin and Prod clusters.
@@ -196,7 +196,7 @@ A clinical trial subject in Germany revokes informed consent at Month 6 of a 2-y
 
 #### How Vialiq Resolves This (Subject-Level Crypto-Shredding):
 1. Every trial participant is assigned an isolated, individual Data Encryption Key (`dek_subject_{uuid}`) stored in `vialiq_control_plane.__keyVault`.
-2. Upon receiving the erasure notice, the DBA runs the automated CLI command ([Doc 007 Section 6.2](file:///Users/prashantgupta/code/nx/docs/backend-architecture/database/007-database-administration-and-mongosh-command-glossary.md#62-executing-subject-level-crypto-shredding-gdpr-article-17-via-cli)):
+2. Upon receiving the erasure notice, the DBA runs the automated CLI command ([Doc 007 Section 6.2](./007-database-administration-and-mongosh-command-glossary.md#62-executing-subject-level-crypto-shredding-gdpr-article-17-via-cli)):
    ```javascript
    db.__keyVault.deleteOne({ keyAltNames: "dek_subject_SUBJ-004" });
    ```
@@ -250,7 +250,7 @@ A multicenter global trial involves 80 clinical sites:
    - **Layer 2 (API Gateway):** NestJS `@CheckLockGuard` executes an $O(1)$ lookup against Redis in $<1$ ms, rejecting unauthorized edits with `HTTP 423 Locked`.
    - **Layer 3 (Database ACID Session):** Even if the Redis cache is flushed or bypassed, `assertWritePermitted()` executes inside the multi-document MongoDB transaction with `readConcern: "majority"`. If an active lock exists, the transaction rolls back.
    - **Layer 4 (Change Stream Sentinel):** A decoupled watchdog process tails the MongoDB `oplog.rs`. If a locked record is modified directly via a rogue `mongosh` admin console, it emits a critical security alert to the Quality Officer.
-3. **Four-Eyes Emergency Unlock Workflow ([Doc 005 Section 2.8](file:///Users/prashantgupta/code/nx/docs/backend-architecture/database/005-database-operational-pillars-backup-locking-dictionaries-and-archival.md#28-emergency-unlock-workflow-four-eyes-principle--safety-window)):**
+3. **Four-Eyes Emergency Unlock Workflow ([Doc 005 Section 2.8](./005-database-operational-pillars-backup-locking-dictionaries-and-archival.md#28-emergency-unlock-workflow-four-eyes-principle--safety-window)):**
    - Unlocking requires dual-person authorization: Lead Data Manager approval + Principal Investigator countersignature with Part 11 password re-authentication.
    - An **Auto-Relock Safety Daemon** schedules an automatic re-lock after 24 or 48 hours to ensure an unlocked study is never forgotten.
 
@@ -279,10 +279,10 @@ A multicenter global trial involves 80 clinical sites:
 
 #### How Vialiq Handles This:
 1. **Type A: Master Key (CMK) Rotation (Zero Downtime, Zero Record Touch):**
-   - When rotating the Master Key in Cloud KMS, Vialiq invokes MongoDB CSFLE `ClientEncryption.rewrapManyDataKey()` ([Doc 006 Section 6.1](file:///Users/prashantgupta/code/nx/docs/backend-architecture/database/006-field-level-encryption-csfle-and-key-management-architecture.md#61-type-a-customer-master-key-cmk-rotation-zero-downtime-zero-record-touch)).
+   - When rotating the Master Key in Cloud KMS, Vialiq invokes MongoDB CSFLE `ClientEncryption.rewrapManyDataKey()` ([Doc 006 Section 6.1](./006-field-level-encryption-csfle-and-key-management-architecture.md#61-type-a-customer-master-key-cmk-rotation-zero-downtime-zero-record-touch)).
    - **Execution time: $<500$ milliseconds.**
    - **Patient records touched: ZERO.** Only the small wrapped DEK documents in `__keyVault` are re-wrapped. Zero downtime for active trials.
-2. **Type B: DEK Field Re-encryption with OCC Protection ([Doc 006 Section 6.4](file:///Users/prashantgupta/code/nx/docs/backend-architecture/database/006-field-level-encryption-csfle-and-key-management-architecture.md#64-resumable-batch-worker-with-redis-checkpointing--occ-concurrency-protection)):**
+2. **Type B: DEK Field Re-encryption with OCC Protection ([Doc 006 Section 6.4](./006-field-level-encryption-csfle-and-key-management-architecture.md#64-resumable-batch-worker-with-redis-checkpointing--occ-concurrency-protection)):**
    - If a study DEK is compromised, a background worker re-encrypts fields in batches of 500 documents.
    - **Optimistic Concurrency Control (`_version` guard):** If a CRC edits a document at the exact millisecond the worker is re-encrypting it, the worker's stale write is rejected, preserving the live clinical edit with zero data corruption.
 3. **Cryptographic Blinding Enforcement:**
@@ -320,13 +320,13 @@ Under **EU CTR 536/2014 Article 58**, a global trial sponsor must retain all cli
 
 #### How Vialiq Executes 25-Year Decommissioning:
 1. **Phase 1: Final Study Hard Lock:** The study transitions to read-only mode on Layer 3 Prod.
-2. **Phase 2: Regulatory Export Package Compilation ([Doc 005 Section 4.3](file:///Users/prashantgupta/code/nx/docs/backend-architecture/database/005-database-operational-pillars-backup-locking-dictionaries-and-archival.md#43-regulatory-export-package-generation-cdisc-odm-xml--pdfa)):**
+2. **Phase 2: Regulatory Export Package Compilation ([Doc 005 Section 4.3](./005-database-operational-pillars-backup-locking-dictionaries-and-archival.md#43-regulatory-export-package-generation-cdisc-odm-xml--pdfa)):**
    - **CDISC ODM-XML v1.3.2:** Vendor-neutral machine-readable format containing all forms, fields, queries, and audit trails. Can be ingested into any future system 20 years later without requiring MongoDB.
    - **PDF/A-1b Patient Casebooks:** Human-readable, searchable, permanent digital casebooks with embedded SHA-256 audit trails.
 3. **Phase 3: Immutable WORM Storage:**
    - The archive bundle is uploaded to **AWS S3 Glacier Object Lock in Compliance Mode** (retention period locked until October 2051). Even the AWS root account holder cannot delete the files.
    - The Master Key in AWS KMS is placed on `COMPLIANCE_HOLD_25_YEAR` with deletion protection.
-   - The live database `study_cardiology_201_prod` is safely dropped from Layer 3 Prod ([Doc 007 Section 9.2](file:///Users/prashantgupta/code/nx/docs/backend-architecture/database/007-database-administration-and-mongosh-command-glossary.md#92-safe-database-decommissioning-post-worm-archival)), immediately freeing NVMe storage and cutting cloud hosting costs by **95%**.
+   - The live database `study_cardiology_201_prod` is safely dropped from Layer 3 Prod ([Doc 007 Section 9.2](./007-database-administration-and-mongosh-command-glossary.md#92-safe-database-decommissioning-post-worm-archival)), immediately freeing NVMe storage and cutting cloud hosting costs by **95%**.
 
 ---
 
@@ -360,7 +360,7 @@ A software engineer or QA automation engineer joins the team and needs to develo
    ```bash
    npm run docker:mongo:all
    ```
-3. **100% Offline Field-Level Encryption ([Doc 006 Section 7](file:///Users/prashantgupta/code/nx/docs/backend-architecture/database/006-field-level-encryption-csfle-and-key-management-architecture.md#7-field-level-encryption-development-mode-local-offline-developer-experience)):**
+3. **100% Offline Field-Level Encryption ([Doc 006 Section 7](./006-field-level-encryption-csfle-and-key-management-architecture.md#7-field-level-encryption-development-mode-local-offline-developer-experience)):**
    - Developers use the native `local` KMS provider with a 96-byte random key.
    - Uses the official MongoDB `crypt_shared` C++ dynamic shared library (`mongo_crypt_v1.dylib` on macOS / `.so` on Linux) running in-process without slow background daemons.
    - Automated seeding script (`scripts/seed-local-encryption-keys.ts`) provisions test keys in $<3$ seconds.

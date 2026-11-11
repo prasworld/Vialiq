@@ -93,9 +93,6 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ISignatureService, SignatureService>();
         services.AddScoped<IOverrideChallengeService, OverrideChallengeService>();
 
-        // Singleton Real-Time Leases
-        services.AddSingleton<IFieldLockManager, DistributedFieldLockManager>();
-
         // Database Migration & Seeding Engine
         services.AddScoped<IDatabaseMigrationRunner, MongoDatabaseMigrationRunner>();
         services.AddScoped<IDevelopmentSeeder, DevelopmentSeeder>();
@@ -342,7 +339,7 @@ By leveraging this convention, **10 controllers** handle all clinical operations
    - Angular UI View Models: Optimized for Signals, Form Groups, and Lit Component bindings.
 3. **Dual AutoMapper Tier**:
    - **Backend Tier (AutoMapper / Mapster)**: Maps between internal MongoDB BSON Entities $\leftrightarrow$ Public Wire DTOs.
-   - **Frontend Tier ([`@vialiq/automapper`](file:///Users/prashantgupta/code/nx/libs/automapper))**: Maps between Public Wire DTOs $\leftrightarrow$ UI Form Signals & View State.
+   - **Frontend Tier ([`@vialiq/automapper`](../../../libs/automapper))**: Maps between Public Wire DTOs $\leftrightarrow$ UI Form Signals & View State.
 
 ```
 ┌─────────────────────────┐               ┌─────────────────────────┐
@@ -560,7 +557,7 @@ public sealed class DevelopmentSeeder : IDevelopmentSeeder
         _logger.LogInformation("Seeding development clinical fixture: ONCO-101...");
 
         // 1. Seed Layer 1 Admin Control Plane (rs-admin:27017)
-        var adminDb = _poolManager.GetAdminClusterClient().GetDatabase("vialiq_admin_control");
+        var adminDb = _poolManager.GetAdminClusterClient().GetDatabase("vialiq_control_plane");
         await SeedAdminControlPlaneAsync(adminDb);
 
         // 2. Seed Layer 2 Dev Study Database (rs-dev:27027)

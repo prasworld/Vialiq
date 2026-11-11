@@ -86,11 +86,11 @@ To meet the stringent data integrity, data sovereignty, and audit standards of c
   ```
   admin_db
   ├── tenants               # Client/Sponsor accounts, subscription tiers, SLA settings
-  ├── users                 # Global user accounts, password hashes, MFA keys, status
+  ├── users                 # Global user identity profile metadata (credentials strictly in Keycloak OIDC)
   ├── roles_permissions     # Platform-wide role definitions (Super-Admin, Sponsor-Admin, PI, CRC)
-  ├── studies               # Study registry: studyCode, protocolTitle, assignedTenantId, status
-  ├── study_user_assignments# User-to-Study-to-Role mappings (User A is CRC in Study 101, CRA in Study 202)
-  └── db_routing_registry   # Dynamic connection strings & database names mapped per tenant/study/env
+  ├── study_registry        # Master catalog + non-secret ZoneProfile/KMS & identityConfig refs
+  ├── user_study_access     # User-to-Study-to-Role/Site bindings (cached in Regional Redis)
+  └── control_plane_outbox  # Targeted cache/revocation relay for MultiRegionGeoPartitioned studies
   ```
 * **Strict Boundary Rules**:
   * **ZERO Clinical Data**: Must never store patient records, CRF entries, or clinical queries.
@@ -154,9 +154,9 @@ The platform operates on a strict **Database-per-Study** model across the 3 phys
 CLUSTER 0: CENTRALIZED CONTROL PLANE (vialiq_control_plane)
   ├── tenants (organizations, sponsors, CRO metadata)
   ├── users (centralized global user catalog, credentials in Keycloak)
-  ├── study_registry (master catalog of all clinical studies)
-  ├── study_user_assignments (user-to-study & site-level role bindings)
-  └── db_routing_registry (cluster connection maps)
+  ├── study_registry (master catalog + non-secret ZoneProfile/KMS & identityConfig refs)
+  ├── user_study_access (user-to-study & site-level role bindings)
+  └── control_plane_outbox (targeted multi-region invalidation relay)
   ⚠️ ZERO clinical patient data | ZERO form builder schemas
 
 CLUSTER 1: NOT-LIVE STUDY CLUSTER (DEV / UAT)

@@ -32,7 +32,7 @@ The Vialiq Clinical EDC platform operates a **Heterogeneous Polyglot Datastore A
         ▼                                                                 ▼
 Primary Operational Datastore (NoSQL)                             Secondary Reporting Warehouse (RDBMS)
 MongoDB 7.0+ Replica Sets (3 Clusters)                           Microsoft SQL Server 2022+ (Reporting / ETL)
-• rs-admin:27017 (Global Registry & Key Vault)                   • Staging Tables (Debezium / CDC Staging)
+• rs-admin:27017 (Global Registry & Key Vault)                   • Staging Tables (Vialiq.CdcWorker / CDC Staging)
 • rs-dev:27027 (Dev/Testing Study DBs)                           • CDISC SDTM Relational Tables (DM, AE, VS, LB)
 • rs-prod:27037 (Qualified GxP Production DBs)                   • SAS / R Export Views & Star Schemas
 ```
@@ -722,7 +722,7 @@ docker run --rm \
   -v $(pwd)/database/migrations:/liquibase/changelogs \
   liquibase/liquibase:4.29-alpine \
   --changelog-file=/liquibase/changelogs/mongo/changelog-master.xml \
-  --url="mongodb://localhost:27017/vialiq_admin_control?directConnection=true" \
+  --url="mongodb://localhost:27017/vialiq_control_plane?directConnection=true" \
   update
 ```
 
@@ -855,7 +855,7 @@ Development Mode enforces strict guardrails to prevent accidental pollution or d
     "docker:mongo:clean": "docker compose -f tools/docker/docker-compose.3layer.yml --profile all down -v",
     "docker:sqlserver:up": "docker compose -f tools/docker/docker-compose.sqlserver.yml up -d",
     "db:setup": "npm run db:migrate:all && npm run db:seed",
-    "db:migrate:mongo": "docker run --rm --network host -v $(pwd)/database/migrations:/liquibase/changelogs liquibase/liquibase:4.29-alpine --changelog-file=/liquibase/changelogs/mongo/changelog-master.xml --url=\"mongodb://localhost:27017/vialiq_admin_control?directConnection=true\" update",
+    "db:migrate:mongo": "docker run --rm --network host -v $(pwd)/database/migrations:/liquibase/changelogs liquibase/liquibase:4.29-alpine --changelog-file=/liquibase/changelogs/mongo/changelog-master.xml --url=\"mongodb://localhost:27017/vialiq_control_plane?directConnection=true\" update",
     "db:migrate:sql": "docker run --rm --network host -v $(pwd)/database/migrations:/liquibase/changelogs liquibase/liquibase:4.29-alpine --changelog-file=/liquibase/changelogs/sqlserver/changelog-master.xml --url=\"jdbc:sqlserver://localhost:1433;databaseName=vialiq_reporting;encrypt=false\" --username=sa --password=\"VialiqDevPass123!\" update",
     "db:migrate:all": "npm run db:migrate:mongo && npm run db:migrate:sql",
     "db:seed": "dotnet run --project backend/api/src/Vialiq.Api -- --seed-only",
