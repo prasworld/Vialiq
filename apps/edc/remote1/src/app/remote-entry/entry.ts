@@ -12,11 +12,9 @@ export const STUDY_DESCRIPTORS: ComponentDescriptor[] = [
   standalone: true,
   imports: [FormBuilderComponent],
   providers: [
-    { provide: BUILDER_COMPONENTS, useValue: [TEXT_INPUT_DESCRIPTOR], multi: true }
+    { provide: BUILDER_COMPONENTS, useValue: STUDY_DESCRIPTORS, multi: true }
   ],
   selector: 'app-remote1-entry',
-  template: `<div style="height: 100vh; width: 100vw;"><vi-form-builder [customComponents]="studyDescriptors"></vi-form-builder></div>`,
+  template: `<div style="height: 100vh; width: 100vw;"><vi-form-builder></vi-form-builder></div>`,
 })
-export class RemoteEntry {
-  readonly studyDescriptors = STUDY_DESCRIPTORS;
-}
+export class RemoteEntry {}

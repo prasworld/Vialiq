@@ -1,6 +1,6 @@
 import { withModuleFederation } from '@nx/module-federation/angular';
 import config from './module-federation.config';
-import { Configuration } from 'webpack';
+import type { Configuration, RuleSetRule } from 'webpack';
 import * as path from 'path';
 import * as fs from 'fs';
 import { pathToFileURL } from 'url';
@@ -46,46 +46,89 @@ const vialiqSassImporter = {
   },
 };
 
+function mergeSassOptions(raw: unknown): Record<string, unknown> {
+  const base =
+    raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {};
+  const existingImporters = Array.isArray(base['importers'])
+    ? base['importers']
+    : [];
+  return {
+    ...base,
+    importers: [vialiqSassImporter, ...existingImporters],
+  };
+}
+
+function patchSassLoader<T>(loader: T): T {
+  if (!loader || typeof loader !== 'object') return loader;
+  const entry = loader as {
+    loader?: unknown;
+    options?: unknown;
+  };
+  if (typeof entry.loader !== 'string' || !entry.loader.includes('sass-loader')) {
+    return loader;
+  }
+
+  const options =
+    entry.options && typeof entry.options === 'object'
+      ? (entry.options as Record<string, unknown>)
+      : {};
+  const rawSassOptions = options['sassOptions'];
+  // Angular CLI defines sassOptions as a function (loaderContext) => ({ loadPaths, importers, ... });
+  // preserve and wrap it rather than overwriting with a plain object.
+  const sassOptions =
+    typeof rawSassOptions === 'function'
+      ? (...args: unknown[]) =>
+          mergeSassOptions(
+            (rawSassOptions as (...loaderArgs: unknown[]) => unknown)(...args),
+          )
+      : mergeSassOptions(rawSassOptions);
+
+  return {
+    ...loader,
+    options: {
+      ...options,
+      sassOptions,
+    },
+  };
+}
+
+type WebpackRule = RuleSetRule | false | 0 | '' | '...' | null | undefined;
+
+function injectSassImporter<T extends WebpackRule>(rule: T): T {
+  if (!rule || typeof rule !== 'object') return rule;
+
+  const updatedRule: RuleSetRule = { ...rule };
+  if (Array.isArray(rule.use)) {
+    updatedRule.use = rule.use.map(patchSassLoader) as RuleSetRule['use'];
+  } else if (rule.use && typeof rule.use === 'object') {
+    updatedRule.use = patchSassLoader(rule.use);
+  }
+  if (Array.isArray(rule.rules)) {
+    updatedRule.rules = rule.rules.map(injectSassImporter);
+  }
+  if (Array.isArray(rule.oneOf)) {
+    updatedRule.oneOf = rule.oneOf.map(injectSassImporter);
+  }
+  return updatedRule as T;
+}
+
 /**
  * DTS Plugin is disabled in Nx Workspaces as Nx already provides Typing support for Module Federation
  * The DTS Plugin can be enabled by setting dts: true
  * Learn more about the DTS Plugin here: https://module-federation.io/configure/dts.html
  */
+// withModuleFederation resolves to a factory `(baseConfig) => mfConfig`, so wrap it
+// to preserve Module Federation's config and patch the resulting webpack rules.
 export default withModuleFederation(config, { dts: false }).then(
-  (federationConfig: Configuration) => ({
-    ...federationConfig,
-    module: {
-      ...federationConfig.module,
-      rules: (federationConfig.module?.rules ?? []).map((rule: any) => {
-        // Inject the custom importer into every sass-loader rule
-        if (!rule || typeof rule !== 'object' || !rule.use) return rule;
-        return {
-          ...rule,
-          use: rule.use.map((loader: any) => {
-            if (
-              !loader ||
-              typeof loader !== 'object' ||
-              !loader.loader ||
-              !loader.loader.includes('sass-loader')
-            ) {
-              return loader;
-            }
-            return {
-              ...loader,
-              options: {
-                ...loader.options,
-                sassOptions: {
-                  ...(loader.options?.sassOptions ?? {}),
-                  importers: [
-                    vialiqSassImporter,
-                    ...((loader.options?.sassOptions?.importers as unknown[]) ?? []),
-                  ],
-                },
-              },
-            };
-          }),
-        };
-      }),
+  (mfFactory) =>
+    (baseConfig: Configuration): Configuration => {
+      const mfConfig: Configuration = mfFactory(baseConfig);
+      return {
+        ...mfConfig,
+        module: {
+          ...mfConfig.module,
+          rules: (mfConfig.module?.rules ?? []).map(injectSassImporter),
+        },
+      };
     },
-  })
 );
