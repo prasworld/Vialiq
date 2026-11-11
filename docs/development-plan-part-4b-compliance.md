@@ -2006,9 +2006,7 @@ public sealed record DataEncryptionKey(byte[] KeyBytes, string KeyId, DateTimeOf
 ```
 
 **Key design decisions:**
-- One DEK per tenant (not per study or per field — see §5 of FLE doc for rationale)
-- DEK is wrapped by KMS and stored as `encryptedDek` blob in the `TenantKeys` collection
-- In-memory cache uses `IMemoryCache` with 5-minute sliding expiration
+- Cryptographic implementation uses **MongoDB 7.0 native CSFLE (`libmongocrypt`) with Regional Key Vaults** per [`006-field-level-encryption-csfle-and-key-management-architecture.md`](./backend-architecture/database/006-field-level-encryption-csfle-and-key-management-architecture.md) (per-subject DEKs for GDPR crypto-shredding, zero `.NET IMemoryCache`, zero plaintext DEKs in Redis)
 
 **Acceptance Criteria:**
 - ✅ AWS KMS and Azure Key Vault implementations behind `IKeyManagementService`
@@ -2147,7 +2145,7 @@ public async Task<IActionResult> DeleteDataEncryptionKey(string tenantId)
 ```
 
 **Acceptance Criteria:**
-- ✅ DEK deletion confirmed from KMS (not just in-memory cache)
+- ✅ DEK deletion confirmed in Site Zone `__keyVault` & scoped CSFLE client handles notified (no `.NET IMemoryCache` used)
 - ✅ Audit trail entry recorded for the shred event itself (the event metadata is not encrypted)
 - ✅ Post-shred read: encrypted fields return appropriate error (GCM tag failure or key-not-found)
 - ✅ Accessible only to `PlatformAdmin` or `DataPrivacyOfficer` roles

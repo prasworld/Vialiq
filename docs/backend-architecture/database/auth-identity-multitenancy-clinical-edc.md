@@ -1,9 +1,9 @@
 # Authentication, Authorization, MFA, AD Integration, Multi-Tenancy & Audit Compliance
 ## Clinical EDC SaaS Platform — Deep Architecture Analysis
 
-**Date:** 31 May 2026
-**Status:** DISCUSSION DOCUMENT — Pre-Finalization
-**Scope:** Auth, AuthZ, MFA, Active Directory, Multi-Tenancy, Identity Server, Audit Compliance
+**Date:** 31 May 2026 (Updated November 2026 — Aligned with Canonical `.NET 9` API & `study_registry.identityConfig`)
+**Status:** Canonical Auth Reference (Section 18 + [`API 005`](../api/005-api-foundations-auth-override-engine-and-realtime-adr.md) — **Active**; Sections 1–17's early Node.js/React exploratory code snippets are superseded historical background)
+**Scope:** Auth, AuthZ, MFA, Active Directory, Okta/Entra/Email+Password, Multi-Tenancy, Identity Server, Audit Compliance
 **Clinical Context:** Electronic Data Capture (EDC) for Phase I–IV Clinical Trials
 **Regulatory Context:** 21 CFR Part 11, GDPR, HIPAA, ICH E6(R3), EMA Annex 11
 
@@ -12,10 +12,10 @@
 ## Table of Contents
 
 1. [The Hard Question First — What Is Our Clinical Trust Model?](#1-the-hard-question-first)
-2. [Multi-Tenancy: The Most Critical Decision](#2-multi-tenancy)
+2. [Multi-Tenancy: 3-Cluster Database-per-Study Architecture](#2-multi-tenancy)
 3. [GDPR, HIPAA & Data Protection Analysis](#3-gdpr-hipaa-data-protection)
 4. [Identity Server: Should We Use One? Which One?](#4-identity-server)
-5. [Authentication Architecture](#5-authentication)
+5. [Authentication Architecture & Tenant-Level Identity Modes (Email/Pwd, MFA, AD, Okta, OAuth2)](#5-authentication)
 6. [Authorization: RBAC vs ABAC — Clinical Context](#6-authorization)
 7. [MFA: Strategy, Types, Configuration](#7-mfa)
 8. [Active Directory Integration — Per-Client](#8-active-directory)
@@ -94,160 +94,150 @@ Before diving into technology choices, we must understand **who our users are** 
 
 ---
 
-## 2. Multi-Tenancy: The Most Critical Decision
+## 2. Multi-Tenancy: 3-Cluster Database-per-Study Architecture
 
-### 2.1 The Three Models — Deep Analysis
+### 2.1 Platform Topology — 3-Cluster Platform Model
+
+The platform is architected around a strict **3-Layer / 3-Cluster Topology** where **each study has a separate database and only user management is centralized**:
 
 ```
-MODEL A: SHARED EVERYTHING (Single Cluster, Single DB, Tenant ID column)
-┌────────────────────────────────────┐
-│     MongoDB Atlas Cluster          │
-│  ┌────────────────────────────┐   │
-│  │  shared_database           │   │
-│  │  ├── subjects {tenantId}   │   │
-│  │  ├── forms {tenantId}      │   │
-│  │  └── audit_log {tenantId}  │   │
-│  └────────────────────────────┘   │
-└────────────────────────────────────┘
-
-MODEL B: SHARED CLUSTER, SEPARATE DATABASES (Per-Client Database)
-┌────────────────────────────────────────────────────┐
-│           MongoDB Atlas Cluster                    │
-│  ┌──────────────┐  ┌──────────────┐              │
-│  │ client_A_db  │  │ client_B_db  │  ...         │
-│  │ ├── subjects │  │ ├── subjects │              │
-│  │ ├── forms    │  │ ├── forms    │              │
-│  │ └── audit    │  │ └── audit    │              │
-│  └──────────────┘  └──────────────┘              │
-└────────────────────────────────────────────────────┘
-
-MODEL C: SEPARATE CLUSTERS (Full Physical Isolation)
-┌──────────────┐  ┌──────────────┐  ┌──────────────┐
-│  Cluster A   │  │  Cluster B   │  │  Cluster C   │
-│ (Client A)   │  │ (Client B)   │  │ (Client C)   │
-│ Own region   │  │ Own region   │  │ Own region   │
-└──────────────┘  └──────────────┘  └──────────────┘
+CLUSTER 0: CENTRALIZED CONTROL PLANE (vialiq_control_plane)
+┌─────────────────────────────────────────────────────────────┐
+│ Keycloak / Identity Server                                  │
+│ ├── Centralized User Accounts & Global Credentials          │
+│ ├── Organization / Sponsor Registry                         │
+│ ├── Global Study Registry & Study-Site-User Mappings        │
+│ └── Auth & System Access Audit Trail (Zero Clinical Data)   │
+└─────────────────────────────────────────────────────────────┘
+                               │
+            ┌──────────────────┴──────────────────┐
+            ▼                                     ▼
+CLUSTER 1: NOT-LIVE CLUSTER               CLUSTER 2: LIVE PROD CLUSTER
+(DEV / UAT / Training)                    (Live GxP Clinical Trials)
+┌───────────────────────────────┐         ┌───────────────────────────────┐
+│ ┌───────────────────────────┐ │         │ ┌───────────────────────────┐ │
+│ │ study_alpha_dev           │ │         │ │ study_alpha_prod          │ │
+│ │ ├── forms / schemas       │ │         │ │ ├── subjects & eCRFs      │ │
+│ │ └── synthetic test data   │ │         │ │ ├── clinical audit_log    │ │
+│ └───────────────────────────┘ │         │ └── 21 CFR Part 11 records  │ │
+│ ┌───────────────────────────┐ │         │ └───────────────────────────┘ │
+│ │ study_alpha_uat           │ │         │ ┌───────────────────────────┐ │
+│ │ └── validator dry-runs    │ │         │ │ study_beta_prod           │ │
+│ └───────────────────────────┘ │         │ │ └── live trial records    │ │
+│ ┌───────────────────────────┐ │         │ └───────────────────────────┘ │
+│ │ study_beta_dev            │ │         │ ┌───────────────────────────┐ │
+│ │ └── site user training    │ │         │ │ study_gamma_prod          │ │
+│ └───────────────────────────┘ │         │ └── live trial records    │ │
+│ (Dedicated DB per study/env)  │         │ └───────────────────────────┘ │
+└───────────────────────────────┘         │ (Dedicated DB per live study) │
+                                          └───────────────────────────────┘
 ```
 
-### 2.2 Compliance Analysis — The Truth Table
+### 2.2 Database-per-Study Architecture (Centralized User Management)
 
-| Requirement | Model A | Model B | Model C |
-|-------------|---------|---------|---------|
-| **GDPR Art. 25** (data protection by design) | ⚠️ Risky | ✅ Good | ✅ Best |
-| **GDPR Art. 32** (appropriate security measures) | ⚠️ Risk if bug | ✅ Good | ✅ Best |
-| **GDPR Art. 17** (right to erasure — per client) | Complex | ✅ Drop database | ✅ Delete cluster |
-| **21 CFR Part 11** (audit trail per sponsor) | Complex | ✅ Per database | ✅ Per cluster |
-| **HIPAA PHI isolation** | ⚠️ Risky | ✅ Compliant | ✅ Best |
-| **Sponsor data confidentiality** | ⚠️ Bug risk | ✅ Strong | ✅ Strongest |
-| **FDA inspection (audit access per sponsor)** | Complex | ✅ Per database | ✅ Per cluster |
-| **ICH E6(R3) — data integrity per trial** | Risk | ✅ Good | ✅ Best |
-| **Data residency (EU vs US)** | Complex | ✅ Per client region | ✅ Per client region |
-| **Cost (MVP, <10 clients)** | ✅ $0 | ✅ ~$57/month | ❌ ~$180/client |
-| **Cost (production, 50 clients)** | ✅ Cheapest | ✅ $57/month shared | ⚠️ $9,000/month |
-| **Development complexity** | Complex (always filter) | ✅ Simple | ✅ Simplest |
-| **Risk of data leak (code bug)** | HIGH (missed tenantId) | Low | None |
-| **Backup per client** | Complex | ✅ Per database | ✅ Per cluster |
+1. **Every Study Has Its Own Database Everywhere:**
+   - Every clinical study is provisioned into its own completely isolated database namespace (`study_{id}_{env}`).
+   - There are **no shared clinical databases**, no `tenantId` / `studyId` column-filtered multi-tenant tables, and no artificial "Single-Tenant vs. Multi-Tenant" tiers.
+   - Non-production environments (DEV, UAT, Training) reside in **Cluster 1**.
+   - Production clinical operations reside in **Cluster 2**.
 
-### 2.3 Why Model A (Shared DB) Is DANGEROUS for Clinical Trials
+2. **Only User Management Is Centralized (Cluster 0):**
+   - User identity, credentials, multi-factor authentication, Keycloak realms, and global tenant associations exist solely in **Cluster 0** (`vialiq_control_plane`).
+   - Cluster 0 contains **ZERO clinical patient data** (no subjects, no CRF responses, no clinical queries, no unblinded medical data).
+   - This guarantees that user administration, password resets, and enterprise SSO federations never interact with or threaten the integrity of live clinical trial databases.
+
+### 2.3 Regulatory & Clinical Compliance Alignment
+
+| Regulatory Requirement | 3-Cluster Database-per-Study Evaluation | Compliance Rating |
+| :--- | :--- | :---: |
+| **21 CFR Part 11 § 11.10(e)** (Audit Trails) | Each study has its own dedicated, immutable audit log within its database. Zero risk of audit records intertwining across studies. | **Compliant (Highest)** |
+| **ICH E6(R3) § 2.12** (Data Integrity & Trial Governance) | Complete physical and logical segregation of clinical data per trial. Investigator site permissions and blinding are strictly scoped to the study database. | **Compliant (Highest)** |
+| **GDPR Art. 17** (Right to Erasure) | Erasure requests or study close-outs are executed strictly within that study's database without risk to neighboring clinical trials. | **Compliant** |
+| **GDPR Art. 25 & 32** (Data Protection by Design) | Database-level boundaries prevent cross-study and cross-sponsor data leakage by design. Code-level query filter bugs cannot leak adjacent studies. | **Compliant** |
+| **HIPAA Security Rule** (PHI Segregation) | Live clinical PHI is restricted to Cluster 2. Non-production environments (Cluster 1) contain strictly synthetic data, eliminating PHI exposure risk. | **Compliant** |
+| **Study Close-Out & Archival** | Study completion allows the specific study database to be set to read-only, archived, or exported for regulatory submission (eCTD) cleanly. | **Compliant** |
+| **Point-in-Time Recovery (PITR)** | Backup and restore operations are executed per study database, ensuring one study can be recovered without rolling back any other study. | **Compliant** |
+
+### 2.4 Dynamic Clinical Database Connection Routing
+
+When a request arrives at the API Gateway or EDC backend service, it is dynamically routed to the appropriate study database based on the authenticated user context and study identifier:
 
 ```typescript
-// THE DEADLY BUG — Happens in real applications
-// Developer forgets tenantId filter in ONE query
-const subjects = await db.collection('subjects').find({
-  studyId: studyId
-  // OOPS! forgot: tenantId: req.user.tenantId
-}).toArray();
+// clinical-database-resolver.ts
+// Resolves connections across Cluster 0 (Control Plane), Cluster 1 (Not-Live), and Cluster 2 (Live PROD)
 
-// Result: Sponsor A accidentally sees Sponsor B's patient data
-// Clinical consequence: Potential GDPR breach, regulatory action, trial invalidation
-// This is not hypothetical — it has happened to Medidata, Oracle Health Sciences
-```
+export interface ClinicalStudyContext {
+  studyId: string;
+  environment: 'dev' | 'uat' | 'prod';
+  databaseName: string;
+  clusterUri: string;
+}
 
-**Real-world incidents with shared-DB clinical systems:**
-- Missing row-level security filters exposing cross-tenant data
-- SQL injection bypassing tenant isolation
-- Cache poisoning returning wrong tenant's data
-- Misconfigured background jobs processing all tenants' data
-
-### 2.4 ✅ DECISION: Dual-Mode Tenancy — Model C Default, Model B Optional
-
-**Both models are supported. Model C (dedicated cluster per client) is the default.**
-
-```
-MODEL C — DEFAULT (Dedicated Cluster Per Client):
-  - Each client gets their own MongoDB Atlas cluster
-  - Full physical isolation — strongest regulatory position
-  - EU clients → EU-region Atlas cluster (GDPR data residency by default)
-  - US clients → US-region Atlas cluster (HIPAA BAA with MongoDB)
-  - Right to erasure = delete the entire cluster (unambiguous, clean)
-  - FDA inspection answer: "complete physical separation between clients"
-  - Cost: $180-540/month per client (passed through in subscription pricing)
-  - Provisioned via Atlas Admin API at client onboarding time
-
-MODEL B — OPTIONAL (Shared Cluster, Separate Databases):
-  - Available for: pilot clients, POC engagements, internal/demo tenants
-  - Clients who explicitly waive physical isolation in writing
-  - Academic sites with minimal data volume or early-phase trials
-  - Still provides logical isolation (separate database, zero risk of
-    "forgot tenantId" bugs — wrong database = connection error)
-  - Cost: shared platform M10 cluster ($57/month shared among Model B clients)
-
-UPGRADE PATH (Model B → Model C):
-  - mongodump from shared cluster → mongorestore to dedicated cluster
-  - Zero application code change — only connection string changes
-  - Can be triggered at any time (enterprise contract, regulatory requirement)
-```
-
-**Implementation Pattern — Dual-Mode Connection Manager:**
-
-```typescript
-// connection-manager.ts — dual-mode tenancy support
-// Model C: connect to client's own dedicated Atlas cluster
-// Model B: connect to shared cluster, client's database
-
-class TenantConnectionManager {
+export class ClinicalDatabaseResolver {
   private connections = new Map<string, mongoose.Connection>();
 
-  async getConnection(tenantId: string): Promise<mongoose.Connection> {
-    if (!this.connections.has(tenantId)) {
-      const config = await this.getTenantConfig(tenantId);
-      
-      let conn: mongoose.Connection;
-      if (config.isolationMode === 'dedicated-cluster') {
-        // Model C default: client has their own cluster URI
-        conn = await mongoose.createConnection(config.clusterUri!);
-      } else {
-        // Model B: shared cluster, per-client database
-        conn = await mongoose.createConnection(
-          process.env.SHARED_CLUSTER_URI! + `/${config.databaseName}`
-        );
-      }
-      
-      this.connections.set(tenantId, conn);
+  constructor(
+    private readonly controlPlaneConn: mongoose.Connection,
+    private readonly cluster1Uri: string, // Not-Live (DEV/UAT)
+    private readonly cluster2Uri: string  // Live PROD
+  ) {}
+
+  async resolveStudyDatabase(studyId: string, environment: 'dev' | 'uat' | 'prod'): Promise<mongoose.Connection> {
+    const cacheKey = `${studyId}_${environment}`;
+    if (this.connections.has(cacheKey)) {
+      return this.connections.get(cacheKey)!;
     }
-    return this.connections.get(tenantId)!;
+
+    // 1. Verify study registry in Cluster 0 (Control Plane)
+    const studyRecord = await this.controlPlaneConn.collection('study_registry').findOne({
+      studyId,
+      status: 'active'
+    });
+
+    if (!studyRecord) {
+      throw new Error(`Study ${studyId} not found in control plane registry`);
+    }
+
+    // 2. Determine target cluster: Cluster 1 for DEV/UAT, Cluster 2 for PROD
+    const targetClusterUri = environment === 'prod' ? this.cluster2Uri : this.cluster1Uri;
+    const databaseName = `study_${studyId}_${environment}`;
+
+    // 3. Obtain pooled connection to the study's dedicated database
+    const studyConn = await mongoose.createConnection(`${targetClusterUri}/${databaseName}`);
+    this.connections.set(cacheKey, studyConn);
+
+    return studyConn;
   }
 }
 
-// middleware/tenant-context.ts
-export const tenantMiddleware = async (req: Request, res: Response, next: NextFunction) => {
-  const tenantId = req.user?.tenantId; // from JWT claims
-  
-  if (!tenantId) {
-    return res.status(403).json({ error: 'No tenant context' });
-  }
-  
-  // Attach tenant-specific DB connection to request
-  // Works identically for Model B and Model C — calling code is unaware
-  req.db = await connectionManager.getConnection(tenantId);
-  next();
+// middleware/clinical-context.ts
+// Authenticates user against Cluster 0 and attaches study database connection
+export const createClinicalContextMiddleware = (resolver: ClinicalDatabaseResolver) => {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    const user = req.user; // Authenticated via Cluster 0 (Keycloak/Control Plane)
+    const studyId = req.params.studyId || req.headers['x-study-id'];
+    const env = (process.env.APP_ENV || 'prod') as 'dev' | 'uat' | 'prod';
+
+    if (!studyId) {
+      return res.status(400).json({ error: 'Clinical study context required' });
+    }
+
+    // Verify user authorization for this specific study
+    const hasAccess = user.studyMemberships?.some((m: any) => m.studyId === studyId);
+    if (!hasAccess && !user.roles?.includes('platform_admin')) {
+      return res.status(403).json({ error: 'Unauthorized for clinical study' });
+    }
+
+    // Attach study-specific database connection to request
+    req.studyDb = await resolver.resolveStudyDatabase(studyId as string, env);
+    next();
+  };
 };
 
-// routes/subjects.ts — tenant isolation is AUTOMATIC regardless of mode
-// Model C: different cluster → impossible to access another tenant's data
-// Model B: different database → wrong database = data not found
-const subjects = await req.db.collection('subjects').find({
-  studyId: studyId  // No tenantId needed — already isolated!
+// routes/subjects.ts — All queries execute directly in the study's dedicated database
+// Zero risk of cross-study data contamination
+const subjects = await req.studyDb.collection('subjects').find({
+  siteId: req.user.assignedSiteId // Filtered only by assigned clinical site
 }).toArray();
 ```
 
@@ -450,12 +440,12 @@ ANSWER: YES. Under GDPR:
 - We are the DATA PROCESSOR for each pharma client (DATA CONTROLLER)
 - We need a Data Processing Agreement (DPA) with each client
 - We must implement technical measures demonstrating GDPR compliance
-- Model B (separate databases) makes this much easier:
-  - Each client's data is physically separate
-  - Data export for one client doesn't risk exposing others
-  - Right to erasure: drop the database + delete Keycloak realm
-  - Data portability: export one database without touching others
-  - Audit for one client: one database, clean scope
+- The 3-Cluster Database-per-Study architecture enforces this cleanly:
+  - Each study has its own completely separate database namespace
+  - Data export for one study/sponsor has zero risk of exposing any other study
+  - Right to erasure / close-out: cleanly drop or archive the specific study database
+  - Data portability: export an isolated study database without touching other studies
+  - Regulatory inspection: precise audit trail within that study's database
 ```
 
 ---
@@ -891,6 +881,348 @@ const clinicalSessionPolicy: SessionPolicy = {
 // SSO Session Max: 12 hours
 // Login timeout: 5 minutes
 ```
+
+### 5.5 Comprehensive Tenant-Level Authentication Modes & Enterprise Identity Brokerage
+
+In clinical trials, identity management is inherently heterogeneous. Enterprise pharmaceutical sponsors, commercial CROs, academic medical centers, and independent investigator sites bring vastly different identity infrastructures. To avoid fragmented codebases, the platform leverages **Keycloak in Cluster 0 (`vialiq_control_plane`) as a Federated Identity Broker** using a strict **Realm-per-Tenant** architecture.
+
+```
+                                  CLUSTER 0: IDENTITY BROKER & FEDERATION PLANE
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ KEYCLOAK SERVER (vialiq_control_plane)                                                                 │
+│                                                                                                        │
+│  ┌────────────────────────┐  ┌────────────────────────┐  ┌────────────────────────┐                   │
+│  │ Realm: biotech-startup │  │ Realm: mayo-clinic     │  │ Realm: pfizer-pharma   │  ... (per-tenant)  │
+│  │ ├── Native Credential  │  │ ├── On-Premises AD/LDAP│  │ ├── Okta SAML 2.0 /    │                   │
+│  │ │   Store (Email/Pwd)  │  │ │   User Federation    │  │ │   OIDC Broker        │                   │
+│  │ └── Forced Keycloak MFA│  │ └── Hospital Kerberos  │  │ └── Delegated Okta MFA │                   │
+│  └───────────┬────────────┘  └───────────┬────────────┘  └───────────┬────────────┘                   │
+└──────────────┼───────────────────────────┼───────────────────────────┼─────────────────────────────────┘
+               │                           │                           │
+               ▼                           ▼                           ▼
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ UNIFIED APPLICATION LAYER & EDC API GATEWAY                                                            │
+│ - Single, standardized JWT validation (RS256, JWKS cached from Keycloak Realm)                         │
+│ - Normalized claims: tenantId, userId, userFullName, studyAccess, siteAccess, canSign, acr            │
+│ - Dynamic database routing to study_{id}_{env} on Cluster 1 (Not-Live) or Cluster 2 (Live PROD)       │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### 5.5.1 Tenant Authentication Configuration Schema (`vialiq_control_plane.tenants`)
+
+Each tenant’s authentication mechanism is declared in their tenant configuration in Cluster 0. When a tenant is onboarded, the control plane uses the Keycloak Admin REST API to provision their dedicated Realm and configure their identity providers automatically:
+
+```typescript
+// control-plane/tenant-auth-config.ts
+export type AuthMechanismType = 
+  | 'NATIVE_EMAIL_PASSWORD'       // Case 1: Self-registration / email invite
+  | 'NATIVE_PASSWORD_MFA'         // Case 2: Native credentials with enforced TOTP/WebAuthn
+  | 'ON_PREM_ACTIVE_DIRECTORY'    // Case 3: Hospital LDAP/LDAPS user federation
+  | 'OKTA_WORKFORCE_SSO'          // Case 4: Enterprise Okta SAML/OIDC federation
+  | 'AZURE_AD_ENTRA_ID'           // Case 5: Microsoft 365 / Entra ID OIDC federation
+  | 'CUSTOM_SAML_SHIBBOLETH';     // University / Academic Federation
+
+export interface TenantAuthConfiguration {
+  tenantId: string;
+  tenantSlug: string;             // e.g., 'pfizer', 'mayo-clinic'
+  keycloakRealm: string;          // e.g., 'vialiq_realm_pfizer'
+  primaryMechanism: AuthMechanismType;
+
+  // Configuration for External Federated IdPs (Okta, Azure AD, SAML, LDAP)
+  federationConfig?: {
+    // For Okta & Generic SAML 2.0
+    samlMetadataUrl?: string;
+    samlEntityId?: string;
+    
+    // For Azure AD / Entra ID & Generic OIDC
+    oidcDiscoveryUrl?: string;    // e.g. https://login.microsoftonline.com/{tenant}/v2.0/.well-known/openid-configuration
+    clientId?: string;
+    clientSecretEncrypted?: string;
+    scopes?: string[];            // ['openid', 'profile', 'email', 'groups']
+    
+    // For On-Premises Active Directory / LDAP (Hospitals)
+    ldapConnectionUrl?: string;   // ldaps://ad.hospital.org:636
+    ldapBindDn?: string;
+    ldapBindCredentialEncrypted?: string;
+    ldapUsersDn?: string;         // OU=ClinicalUsers,DC=hospital,DC=org
+    ldapSyncPeriodSeconds?: number;
+  };
+
+  // Multi-Factor Authentication Policies
+  mfaPolicy: {
+    loginEnforcement: 'NONE' | 'OPTIONAL' | 'MANDATORY' | 'DEFER_TO_CORPORATE_IDP';
+    allowedFactors: ('TOTP' | 'WEBAUTHN_FIDO2')[];
+    // 21 CFR Part 11 Electronic Signature Step-Up Challenge Policy
+    signingStepUpRequirement: 'MANDATORY_PASSWORD_REAUTH' | 'MANDATORY_TOTP_CHALLENGE' | 'MANDATORY_FIDO2_TOUCH';
+  };
+
+  // Attribute & Role Mappings
+  claimMappings: {
+    emailAttribute: string;
+    fullNameAttribute: string;
+    groupMembershipAttribute?: string; // e.g., 'memberOf', 'groups'
+    studyRoleMappings: Record<string, string>; // e.g. { 'Okta_CRA_Group': 'CRA', 'AD_PI_Group': 'PRINCIPAL_INVESTIGATOR' }
+  };
+}
+```
+
+---
+
+#### 5.5.2 Case 1: Email Registration & User-Created UserID/Password (Native Self-Service)
+
+* **Target Audience:** Small biotech sponsors, standalone investigator sites, phase-I specialized clinics, and independent clinical research coordinators without enterprise IT or corporate directory services.
+* **Authentication Architecture:** Keycloak Realm native user credential store (passwords hashed using Argon2id / PBKDF2-SHA512).
+
+```
+CLINICAL USER                          EDC FRONTEND / API                    KEYCLOAK REALM (CLUSTER 0)
+     │                                         │                                         │
+     │  1. Sponsor Admin invites user          │                                         │
+     │────────────────────────────────────────►│  2. Generate time-limited secure token  │
+     │                                         │────────────────────────────────────────►│
+     │                                         │                                         │
+     │  3. User receives email with signed link│                                         │
+     │◄────────────────────────────────────────│                                         │
+     │                                         │                                         │
+     │  4. User clicks link to set password    │                                         │
+     │──────────────────────────────────────────────────────────────────────────────────►│
+     │                                         │                                         │
+     │  5. Evaluates Password Policy:          │                                         │
+     │     - Minimum 12 characters             │                                         │
+     │     - Uppercase + Lowercase + Numbers   │                                         │
+     │     - Zxcvbn dictionary breach check    │                                         │
+     │     - Salted Argon2id hash stored in DB │                                         │
+     │                                         │                                         │
+     │  6. Account activated; redirect to login│                                         │
+     │◄──────────────────────────────────────────────────────────────────────────────────│
+```
+
+* **Clinical & Regulatory Controls (FDA 21 CFR Part 11 § 11.300 & NIST SP 800-63B):**
+  1. **Invitation Nonce Expiry:** Activation tokens expire strictly after 24 hours.
+  2. **Initial Password Creation:** Passwords are never sent via plain-text email; the user creates their own secret directly on Keycloak TLS 1.3 pages.
+  3. **Brute Force Protection:** 5 consecutive failed login attempts trigger an immediate 15-minute account lockout, generating an auditable security event in Cluster 0.
+  4. **Password Entropy:** Enforces minimum 12 characters with dictionary/breach validation (HaveIBeenPwned API check integrated via Keycloak SPI).
+
+---
+
+#### 5.5.3 Case 2: Native UserID/Password + Mandatory Multi-Factor Authentication (MFA)
+
+* **Target Audience:** Mid-sized CROs and clinical academic sponsors requiring strong multi-factor authentication for GxP operations, but lacking corporate single sign-on federation.
+* **Authentication Architecture:** Keycloak Realm native credential store with a mandatory **Conditional OTP / WebAuthn Execution Flow**.
+
+```
+CLINICAL USER                                        KEYCLOAK REALM (CLUSTER 0)
+     │                                                           │
+     │  1. Enters Username + Password                            │
+     │──────────────────────────────────────────────────────────►│
+     │                                                           │
+     │  2. Validates password credentials                        │
+     │     Checks user MFA enrollment status                     │
+     │                                                           │
+     │  [FIRST LOGIN: ENROLLMENT]                                │
+     │  3. Displays QR code (RFC 6238 TOTP)                      │
+     │◄──────────────────────────────────────────────────────────│
+     │  4. Scans via Google/MS Authenticator & enters 6-digit OTP│
+     │──────────────────────────────────────────────────────────►│
+     │  5. Verifies OTP & stores encrypted TOTP secret           │
+     │     Generates 8 single-use recovery backup codes          │
+     │                                                           │
+     │  [SUBSEQUENT LOGINS: CHALLENGE]                           │
+     │  6. Prompts for 6-digit TOTP or FIDO2 YubiKey Touch       │
+     │◄──────────────────────────────────────────────────────────│
+     │  7. Submits OTP code / WebAuthn cryptographic assertion   │
+     │──────────────────────────────────────────────────────────►│
+     │                                                           │
+     │  8. Mints JWT with claims: amr: ["pwd", "otp"], acr: "2"  │
+     │◄──────────────────────────────────────────────────────────│
+```
+
+* **Clinical & Regulatory Controls:**
+  1. **Strictly No SMS/Voice OTP:** Per NIST SP 800-63B guidelines for healthcare and FDA clinical systems, SMS and voice-based OTP are disabled due to SIM-swapping and SS7 interception risks.
+  2. **Supported Second Factors:** Software TOTP (Google Authenticator, Microsoft Authenticator, FreeOTP) and Hardware FIDO2/WebAuthn tokens (YubiKey 5 Series).
+  3. **Audit Evidence:** The issued JWT contains standard `amr: ["pwd", "otp"]` and `acr: "2"`, proving to downstream EDC microservices that multi-factor authentication was verified before data submission.
+
+---
+
+#### 5.5.4 Case 3: Enterprise UserID + On-Premises Active Directory (LDAP / LDAPS)
+
+* **Target Audience:** Academic Medical Centers (AMCs), university health systems, and hospital clinical research sites (e.g., Mayo Clinic, Johns Hopkins, Charité) that mandate central IT governance over all hospital employee accounts.
+* **Authentication Architecture:** Keycloak **LDAP/Active Directory User Federation Provider** configured within the hospital's dedicated Realm in Cluster 0.
+
+```
+HOSPITAL SITE USER                   KEYCLOAK REALM (CLUSTER 0)                 HOSPITAL AD / DOMAIN CONTROLLER
+     │                                           │                                              │
+     │  1. Navigates to EDC hospital login       │                                              │
+     │     Enters: sAMAccountName + Password     │                                              │
+     │──────────────────────────────────────────►│                                              │
+     │                                           │  2. Pass-through simple bind over LDAPS:636  │
+     │                                           │     (Encrypted TLS connection over VPN)      │
+     │                                           │─────────────────────────────────────────────►│
+     │                                           │                                              │
+     │                                           │  3. Active Directory validates credentials   │
+     │                                           │     Returns user attributes & memberOf groups│
+     │                                           │◄─────────────────────────────────────────────│
+     │                                           │                                              │
+     │                                           │  4. Keycloak maps AD attributes:             │
+     │                                           │     mail -> email                            │
+     │                                           │     displayName -> userFullName              │
+     │                                           │     OU=Investigators -> Role: PI             │
+     │                                           │                                              │
+     │  5. Issues standardized Vialiq JWT        │                                              │
+     │◄──────────────────────────────────────────│                                              │
+```
+
+* **Clinical & Regulatory Controls:**
+  1. **Credential Pass-Through (Zero Credential Storage):** The platform **never stores or hashes hospital Active Directory passwords**. Authentication is performed via real-time LDAP bind directly against the hospital's Domain Controllers.
+  2. **Automated Deprovisioning & Offboarding:**
+     - Keycloak runs a delta sync every 5 minutes.
+     - If a clinical coordinator or nurse is terminated or reassigned by hospital IT (disabled in AD), their access to the clinical EDC is **revoked immediately upon their next token refresh (within 15 minutes max)**.
+     - Eliminates orphaned user accounts in compliance with ICH E6(R3) Investigator Site Governance.
+  3. **Connection Security:** Mandatory LDAPS over TLS 1.3 (port 636) with mutual TLS or IPsec VPN tunnel between Cluster 0 and the hospital network.
+
+---
+
+#### 5.5.5 Case 4: Enterprise UserID + Corporate Okta (Workforce SSO via SAML 2.0 / OIDC)
+
+* **Target Audience:** Tier-1 and Tier-2 Global Pharmaceutical Sponsors (e.g., Pfizer, Novartis, Roche) and global CROs who manage clinical operations staff via corporate Okta Workforce Identity.
+* **Authentication Architecture:** Keycloak acts as an **Identity Broker (Service Provider / Relying Party)**, federating with the sponsor's **Okta Organization (Identity Provider)** via SAML 2.0 or OIDC.
+
+```
+SPONSOR CLINICAL MONITOR             EDC BROWSER / GATEWAY          KEYCLOAK (CLUSTER 0)          SPONSOR OKTA WORKFORCE
+          │                                   │                              │                             │
+          │  1. Navigates to edc.vialiq.com   │                              │                             │
+          │     Enters: monitor@pfizer.com    │                              │                             │
+          │──────────────────────────────────►│  2. Discovers realm: pfizer  │                             │
+          │                                   │─────────────────────────────►│                             │
+          │                                   │                              │  3. Initiates SAML/OIDC Auth│
+          │  4. Seamless Redirect to Okta SSO │◄─────────────────────────────│     Redirect with AuthnReq  │
+          │◄──────────────────────────────────│                              │                             │
+          │                                                                  │                             │
+          │  5. User logs in on Pfizer Corporate Okta Page                   │                             │
+          │     - Corporate Password                                         │                             │
+          │     - Corporate Okta Verify Push / FastPass Biometrics           │                             │
+          │     - Enforces Device Trust (Zscaler / Intune managed laptop)    │                             │
+          │───────────────────────────────────────────────────────────────────────────────────────────────►│
+          │                                                                                                │
+          │  6. Okta validates corporate identity & issues signed SAML Assertion / ID Token                │
+          │◄───────────────────────────────────────────────────────────────────────────────────────────────│
+          │                                                                  │                             │
+          │  7. Posts signed assertion back to Keycloak ACS endpoint         │                             │
+          │─────────────────────────────────────────────────────────────────►│                             │
+          │                                                                  │  8. Verifies Okta signature │
+          │                                                                  │     Extracts claims & groups│
+          │                                                                  │     Mints Vialiq JWT token  │
+          │  9. Returns Vialiq JWT with tenantId: 'pfizer', role: 'CRA'      │◄────────────────────────────│
+          │◄─────────────────────────────────────────────────────────────────│                             │
+```
+
+* **Clinical & Regulatory Controls:**
+  1. **Home Realm Discovery (HRD):** Users are routed automatically based on their email domain (`@pfizer.com`) or by visiting their dedicated sponsor tenant URL (`edc.vialiq.com/sso/pfizer`).
+  2. **Corporate Device Trust & Conditional Access:** The sponsor's corporate security controls (managed laptop validation, geolocation boundaries, Zscaler inspection) are executed entirely within Okta before the user ever touches the EDC.
+  3. **Group-to-Role Mapping:** Okta groups (e.g. `Pfizer_Oncology_CRAs`) are mapped automatically via Keycloak SAML/OIDC Mappers into clinical platform roles (`CRA`, `canSign: false`).
+
+---
+
+#### 5.5.6 Case 5: Enterprise UserID + Corporate OAuth2 / OpenID Connect (Azure AD / Entra ID)
+
+* **Target Audience:** Pharmaceutical sponsors, biotech enterprises, and CROs built on Microsoft 365, Microsoft Entra ID (formerly Azure AD), or PingFederate.
+* **Authentication Architecture:** Keycloak configured as an **OIDC Client** to the enterprise's Microsoft Entra ID tenant using the standard OAuth2 Authorization Code Flow with PKCE.
+
+```
+SPONSOR DATA MANAGER                 EDC FRONTEND                   KEYCLOAK (CLUSTER 0)          MICROSOFT ENTRA ID (AZURE AD)
+          │                                │                                │                                │
+          │  1. Click "Sign in with Entra" │                                │                                │
+          │───────────────────────────────►│  2. Redirect to Keycloak Auth  │                                │
+          │                                │───────────────────────────────►│  3. Builds Microsoft Auth URI │
+          │  4. Redirect to Microsoft Login│                                │     prompt=select_account      │
+          │◄───────────────────────────────│◄───────────────────────────────│───────────────────────────────►│
+          │                                                                                                  │
+          │  5. Authenticates via Microsoft Entra ID                                                         │
+          │     - Entra ID Password + Microsoft Authenticator App Push                                       │
+          │     - Evaluates Microsoft Conditional Access (Compliant Hybrid Join)                             │
+          │─────────────────────────────────────────────────────────────────────────────────────────────────►│
+          │                                                                                                  │
+          │  6. Entra ID redirects with Authorization Code                                                   │
+          │◄─────────────────────────────────────────────────────────────────────────────────────────────────│
+          │                                │                                │                                │
+          │  7. Exchanges auth code        │                                │                                │
+          │───────────────────────────────►│───────────────────────────────►│  8. POST /token (backchannel)  │
+          │                                │                                │───────────────────────────────►│
+          │                                │                                │  9. Returns Entra ID JWT       │
+          │                                │                                │◄───────────────────────────────│
+          │                                │                                │ 10. Maps Entra claims & groups │
+          │                                │  11. Standard Vialiq JWT token │     Mints Vialiq access token  │
+          │◄───────────────────────────────│◄───────────────────────────────│                                │
+```
+
+* **Clinical & Regulatory Controls:**
+  1. **Backchannel Token Exchange:** The authorization code is exchanged for an identity token directly over a secure server-to-server TLS connection between Cluster 0 and Microsoft endpoints (`login.microsoftonline.com`), preventing token interception.
+  2. **Microsoft Entra Security Group Synchronization:** Group claims (UUIDs) from Microsoft Entra are dynamically mapped to study access permissions in our database.
+
+---
+
+#### 5.5.7 Case 6: Cross-Provider 21 CFR Part 11 Step-Up Re-Authentication for Electronic Signatures
+
+* **The Core Regulatory Imperative:**
+  Under **FDA 21 CFR Part 11 § 11.200(a)(1)**:
+  > *"Electronic signatures that are not based upon biometrics shall employ at least two distinct identification components such as an identification code and password... When an individual executes a series of signings during a single continuous period of controlled system access, the first signing shall be executed using all electronic signature components; subsequent signings shall be executed using at least one electronic signature component that is only executable by, and designed to be used only by, the individual."*
+
+* **The Clinical Problem:**
+  If a physician logs in via corporate Okta or Azure AD in the morning, their SSO session remains active for 8 hours. **Simply clicking a "Sign" button with an active corporate token is ILLEGAL under 21 CFR Part 11.** The FDA requires that the investigator explicitly re-authenticate at the exact moment of signing to confirm intent and non-repudiation.
+
+* **The Architectural Solution Across All IdPs:**
+  Regardless of whether primary login was Okta, Azure AD, On-Premises LDAP, or native email/password, electronic signature execution enforces an **in-session Step-Up Challenge Flow**:
+
+```
+INVESTIGATOR (PI)                        EDC FRONTEND / API                    KEYCLOAK (CLUSTER 0)
+     │                                           │                                       │
+     │  1. Reviews eCRF clinical data            │                                       │
+     │     Clicks "Sign eCRF Casebook"           │                                       │
+     │──────────────────────────────────────────►│                                       │
+     │                                           │  2. Inspects JWT token:               │
+     │                                           │     Checks acr == "step-up"           │
+     │                                           │     Checks (now - auth_time) <= 300s  │
+     │                                           │                                       │
+     │                                           │  3. Token lacks step-up or is stale   │
+     │  4. Prompt: "21 CFR Part 11 Re-Auth Req"  │◄──────────────────────────────────────│
+     │◄──────────────────────────────────────────│                                       │
+     │                                                                                   │
+     │  5. STEP-UP CHALLENGE (Provider-Aware):                                           │
+     │     - If Native/LDAP: Re-enter password + TOTP code                               │
+     │     - If Okta/Azure AD: OIDC auth prompt with prompt=login & max_age=0, OR        │
+     │       independent Clinical Signing PIN / TOTP registered during PI qualification  │
+     │──────────────────────────────────────────────────────────────────────────────────►│
+     │                                                                                   │
+     │  6. Keycloak validates step-up credentials                                        │
+     │     Mints short-lived (5 min) Signing JWT:                                        │
+     │     acr: "step-up", auth_time: <current_timestamp>                                │
+     │◄──────────────────────────────────────────────────────────────────────────────────│
+     │                                           │                                       │
+     │  7. Submits eCRF signature with Sign Token│                                       │
+     │──────────────────────────────────────────►│  8. Validates acr == "step-up"        │
+     │                                           │     Hashes form data (SHA-256)        │
+     │                                           │     Writes 21 CFR §11.50 audit record │
+     │                                           │     (Who, When, Why, Meaning, Hash)   │
+     │                                           │     Directly into study_{id}_prod DB  │
+     │  9. Signature Verified & eCRF Locked      │                                       │
+     │◄──────────────────────────────────────────│                                       │
+```
+
+---
+
+#### 5.5.8 Comprehensive Comparison Matrix of Authentication Modes
+
+| Dimension | Case 1: Native Email / Pwd | Case 2: Native Pwd + MFA | Case 3: On-Premises AD (LDAP) | Case 4: Corporate Okta | Case 5: Azure AD / Entra ID |
+|:---|:---:|:---:|:---:|:---:|:---:|
+| **Primary Target** | Standalone sites, early startups | Mid-sized CROs, Phase-I clinics | Hospitals & Academic Medical Centers | Global Pharma Sponsors | M365 Enterprises & Biotech |
+| **Credential Storage** | Keycloak (Cluster 0 DB) | Keycloak (Cluster 0 DB) | Hospital Active Directory | Corporate Okta Cloud | Microsoft Entra Cloud |
+| **Password Storage** | Salted Argon2id / PBKDF2 | Salted Argon2id / PBKDF2 | **Zero storage** (Pass-through) | **Zero storage** (SAML assertion) | **Zero storage** (OIDC token) |
+| **Primary MFA Source** | None (Password only) | Keycloak TOTP / WebAuthn | Hospital VPN / DUO / Keycloak | Okta Verify / FastPass | Microsoft Authenticator / Intune |
+| **Integration Protocol** | OIDC Authorization Code | OIDC Authorization Code | LDAPS (TCP 636) + OIDC | SAML 2.0 / OIDC | OIDC with PKCE |
+| **User Provisioning** | Email invitation flow | Email invitation flow | Automated LDAP Delta Sync | JIT (Just-In-Time) / SCIM | JIT / SCIM 2.0 |
+| **Deprovisioning Speed** | Admin console revocation | Admin console revocation | Real-time (AD account disable) | Real-time (Okta deactivation) | Real-time (Entra disable) |
+| **21 CFR Part 11 Step-Up** | Password re-entry | Password + TOTP re-entry | Password + TOTP re-entry | Dedicated Signing PIN / TOTP | Dedicated Signing PIN / TOTP |
+| **Setup Lead Time** | Instant ($0 cost) | Instant ($0 cost) | 1–3 Days (VPN / Firewall config)| 1–2 Hours (Metadata exchange) | 30 Minutes (App Registration) |
+| **Regulatory Assessment** | Acceptable for non-signing | Fully compliant | Excellent (Institutional control) | Exceptional (Enterprise grade) | Exceptional (Enterprise grade) |
 
 ---
 
@@ -2373,109 +2705,91 @@ Month 11-12:
 │                          │ Satisfies 21 CFR Part 11 §11.200(a)          │
 │                          │ "two distinct identification components"      │
 ├──────────────────────────┼──────────────────────────────────────────────┤
-│ Q5: Multi-tenancy model  │ DUAL-MODE SUPPORTED                          │
-│                          │ DEFAULT: Model C — dedicated cluster per      │
-│                          │   client ($180-540/month per client)          │
-│                          │ OPTIONAL: Model B — shared cluster, separate  │
-│                          │   database ($57/month shared) for clients     │
-│                          │   who do not require full physical isolation  │
+│ Q5: Multi-tenancy model  │ 3-CLUSTER DATABASE-PER-STUDY PLATFORM        │
+│                          │ Cluster 0: Centralized User Mgmt & Control   │
+│                          │   Plane (Keycloak, no clinical data)         │
+│                          │ Cluster 1: Not-Live Cluster (DEV / UAT /     │
+│                          │   Training - separate DB per study)          │
+│                          │ Cluster 2: Live PROD Cluster (Live GxP       │
+│                          │   Trials - separate DB per live study)       │
+│                          │ Database-per-study everywhere; user mgmt     │
+│                          │ is strictly centralized in Cluster 0.        │
 ├──────────────────────────┼──────────────────────────────────────────────┤
 │ Q6: GDPR DPO             │ DEFER for MVP                                │
 │                          │ Plan and budget for DPO post-MVP             │
 │                          │ Outsource route likely (~$500-2000/month)    │
-│                          │ Ensure Data Processing Agreements signed      │
+│                          │ Ensure Data Processing Agreements signed     │
 │                          │ before any EU client goes live               │
+│                          │ (Clean boundaries per study database)        │
 └──────────────────────────┴──────────────────────────────────────────────┘
 ```
 
-### 16.2 Architectural Impact of Dual-Mode Tenancy Decision
+### 16.2 Architectural Impact of 3-Cluster Database-per-Study Architecture
 
-**Why defaulting to Model C (separate cluster per client) matters:**
+**Operational and architectural principles:**
 
 ```
-IMPLICATIONS OF MODEL C AS DEFAULT:
+IMPLICATIONS OF 3-CLUSTER DATABASE-PER-STUDY TOPOLOGY:
 
-1. CONNECTION MANAGEMENT
-   - TenantConnectionManager must store per-client MONGO_URI (not just DB name)
-   - Each client has their own Atlas cluster URI (stored encrypted in platform DB)
-   - Connection pool per client cluster (not per database)
+1. DYNAMIC CONNECTION RESOLUTION
+   - User identity & credentials reside exclusively in Cluster 0 (vialiq_control_plane).
+   - Clinical requests target dedicated database endpoints: study_{studyId}_{env}.
+   - Cluster 1 serves DEV, UAT, and Training databases.
+   - Cluster 2 serves live regulatory GxP clinical study databases.
+   - Connection pool cached per study database namespace.
 
-2. CLIENT ONBOARDING
-   - Provisioning step: create Atlas cluster → takes 3-5 minutes
-   - Automated via Atlas Admin API (or Terraform)
-   - Keycloak Realm creation + Atlas cluster creation are paired operations
+2. STUDY PROVISIONING & LIFECYCLE
+   - When a new study is created: provision database on Cluster 1 (dev/uat).
+   - Once validated and protocol approved: provision production database on Cluster 2.
+   - Study metadata, sites, and role assignments registered in Cluster 0.
 
-3. COST MODEL CHANGE
-   - Platform charges clients for their dedicated cluster (~$180/month M10 base)
-   - This is passed through or bundled into subscription pricing
-   - Model B clients (if any) share a platform-managed cluster at lower tier
-
-4. GDPR / 21 CFR Part 11 BENEFIT
-   - Physical cluster isolation = strongest possible data segregation
-   - Right to erasure = delete entire Atlas cluster (clean, unambiguous)
-   - FDA inspection: separate cluster = "complete physical separation" (strongest answer)
-   - EU clients: EU-region cluster by default (GDPR data residency)
-   - US clients: US-region cluster (HIPAA BAA with MongoDB)
-
-5. WHEN MODEL B IS OFFERED
-   - Small pilot clients / proof of concept
-   - Internal test/demo clients
-   - Clients who explicitly waive physical isolation in writing
-   - Academic sites with minimal data volume
-
-6. UPGRADE PATH
-   - Any Model B client can upgrade to Model C at any time
-   - Migration: mongodump from shared cluster → mongorestore to new cluster
-   - Zero application code change (connection string swap only)
+3. REGULATORY COMPLIANCE (21 CFR Part 11, ICH E6(R3), GDPR)
+   - Database-level isolation prevents cross-study data contamination by design.
+   - Point-in-time recovery (PITR) is scoped per study database.
+   - Study close-out / archival freezes the specific study database cleanly.
+   - Live clinical PHI/PII is quarantined strictly to Cluster 2.
 ```
 
-**Updated TenantConnectionManager for Dual-Mode:**
+**ClinicalDatabaseResolver Implementation:**
 
 ```typescript
-// connection-manager.ts — UPDATED for dual-mode tenancy
-interface TenantConfig {
-  tenantId: string;
-  isolationMode: 'dedicated-cluster' | 'shared-cluster';
-  // Model C: full cluster URI per client
-  clusterUri?: string;       // e.g. mongodb+srv://user:pass@client-a.abc.mongodb.net
-  // Model B: shared cluster, just the database name
-  databaseName?: string;     // e.g. edc_client-a-pharma
+// clinical-database-resolver.ts
+interface StudyMetadata {
+  studyId: string;
+  sponsorId: string;
+  environment: 'dev' | 'uat' | 'prod';
+  status: 'active' | 'locked' | 'archived';
 }
 
-class TenantConnectionManager {
+class ClinicalDatabaseResolver {
   private connections = new Map<string, mongoose.Connection>();
-  private configs = new Map<string, TenantConfig>();
 
-  async getConnection(tenantId: string): Promise<mongoose.Connection> {
-    if (!this.connections.has(tenantId)) {
-      const config = await this.getTenantConfig(tenantId);
-      
-      let conn: mongoose.Connection;
-      
-      if (config.isolationMode === 'dedicated-cluster') {
-        // Model C: connect to client's own cluster
-        conn = await mongoose.createConnection(config.clusterUri!);
-      } else {
-        // Model B: connect to shared cluster, client's database
-        const sharedUri = process.env.SHARED_CLUSTER_URI!;
-        conn = await mongoose.createConnection(
-          `${sharedUri}/${config.databaseName}`
-        );
-      }
-      
-      this.connections.set(tenantId, conn);
-    }
-    return this.connections.get(tenantId)!;
-  }
+  constructor(
+    private readonly controlPlaneConn: mongoose.Connection,
+    private readonly cluster1Uri: string, // Not-Live (DEV/UAT)
+    private readonly cluster2Uri: string  // Live PROD
+  ) {}
 
-  private async getTenantConfig(tenantId: string): Promise<TenantConfig> {
-    // Load from platform's own config database (not the tenant DB)
-    if (!this.configs.has(tenantId)) {
-      const config = await platformDb.collection('tenants').findOne({ tenantId });
-      if (!config) throw new Error(`Unknown tenant: ${tenantId}`);
-      this.configs.set(tenantId, config as TenantConfig);
+  async getStudyConnection(studyId: string, env: 'dev' | 'uat' | 'prod'): Promise<mongoose.Connection> {
+    const key = `${studyId}_${env}`;
+    if (this.connections.has(key)) {
+      return this.connections.get(key)!;
     }
-    return this.configs.get(tenantId)!;
+
+    // 1. Validate study from Cluster 0 registry
+    const study = await this.controlPlaneConn.collection('study_registry').findOne({ studyId });
+    if (!study) {
+      throw new Error(`Study not found: ${studyId}`);
+    }
+
+    // 2. Select appropriate cluster
+    const clusterUri = env === 'prod' ? this.cluster2Uri : this.cluster1Uri;
+    const dbName = `study_${studyId}_${env}`;
+
+    // 3. Connect to study-specific database
+    const conn = await mongoose.createConnection(`${clusterUri}/${dbName}`);
+    this.connections.set(key, conn);
+    return conn;
   }
 }
 ```
@@ -2492,12 +2806,12 @@ class TenantConnectionManager {
 ├───────────────────────────┬─────────────────────────────────────┤
 │ Decision                  │ Final Answer                        │
 ├───────────────────────────┼─────────────────────────────────────┤
-│ Multi-tenancy model       │ DUAL-MODE:                          │
-│                           │ DEFAULT: Model C — dedicated Atlas  │
-│                           │   cluster per client (full physical │
-│                           │   isolation; strongest reg. pos.)   │
-│                           │ OPTIONAL: Model B — shared cluster, │
-│                           │   separate DB (pilot/POC clients)   │
+│ Multi-tenancy model       │ 3-CLUSTER DATABASE-PER-STUDY:       │
+│                           │ Cluster 0: Centralized user mgmt    │
+│                           │ Cluster 1: Not-Live study DBs       │
+│                           │ Cluster 2: Live PROD study DBs      │
+│                           │ (Each study has its own DB; only    │
+│                           │  user management is centralized)    │
 ├───────────────────────────┼─────────────────────────────────────┤
 │ Identity Server           │ Keycloak (self-hosted on K8s)       │
 │                           │ One Realm per client                │
@@ -2621,11 +2935,12 @@ Authorization:   System RBAC (Keycloak) +
                  Study-level roles (our DB) +
                  Site-level permissions (our DB)
                  
-Multi-tenancy:   Keycloak: one realm per client (identity isolation)
-                 MongoDB: DEFAULT Model C — dedicated Atlas cluster per client
-                          OPTIONAL Model B — shared cluster, separate database
+Multi-tenancy:   Cluster 0: Keycloak & Centralized User Management
+                 Cluster 1: Not-Live Study Databases (DEV / UAT)
+                 Cluster 2: Live PROD Clinical Study Databases
+                 (Dedicated DB per study; centralized user management)
                  
-Audit:           Immutable event log (MongoDB, per-tenant DB)
+Audit:           Immutable event log (MongoDB, dedicated per-study DB)
                  Every action: WHO + WHAT + WHEN + WHY
                  Hash-chained for tamper detection
                  
@@ -2649,7 +2964,7 @@ Compliance:      21 CFR Part 11 ✅
 **Status:** ✅ FINALIZED — 2026-06-01
 
 **Decisions Confirmed:**
-- Multi-tenancy: Dual-mode (Model C dedicated cluster as default, Model B optional)
+- Multi-tenancy: 3-Cluster Platform with dedicated database per study (Cluster 0 Admin, Cluster 1 Not-Live, Cluster 2 Live PROD)
 - MFA: Opt-in per client; signing roles always required (Password + TOTP)
 - AD build order: On-premises LDAP first → Azure AD second
 - Electronic signatures: Password + TOTP (step-up, 5-min window)
@@ -2729,23 +3044,22 @@ This section covers the complete .NET/C# implementation of every auth, identity,
 
 **Tenant configs (per-client, stored in platform DB, NOT appsettings):**
 ```csharp
-// Stored in platform MongoDB collection: "tenants"
+// Stored in Cluster 0 (vialiq_control_plane) collections: "tenants" & "studies"
 public record TenantConfig
 {
     public string TenantId { get; init; } = default!;
-    public string RealmName { get; init; } = default!;          // Keycloak realm
-    public IsolationMode IsolationMode { get; init; }
-    public string? ClusterUri { get; init; }                    // Model C: encrypted at rest
-    public string? DatabaseName { get; init; }                  // Model B: shared cluster DB name
+    public string RealmName { get; init; } = default!;          // Keycloak realm in Cluster 0
     public string Region { get; init; } = "us-east-1";         // data residency
     public bool MfaRequiredForAll { get; init; } = false;       // client MFA policy
     public DateTime CreatedAt { get; init; }
 }
 
-public enum IsolationMode
+public record StudyConfig
 {
-    DedicatedCluster,   // Model C — default
-    SharedCluster       // Model B — opt-in
+    public string StudyId { get; init; } = default!;
+    public string TenantId { get; init; } = default!;
+    public string Environment { get; init; } = "prod";          // dev, uat, prod
+    public string DatabaseName => $"study_{StudyId}_{Environment.ToLowerInvariant()}";
 }
 ```
 
@@ -2799,8 +3113,8 @@ public class TenantJwtBearerConfigureOptions
                 // e.g. "https://keycloak.yourdomain.com/realms/client-a-pharma"
                 var jwksUrl = $"{issuer}/protocol/openid-connect/certs";
                 
-                // Fetch JWKS (cached via IMemoryCache — don't hammer Keycloak)
-                return JwksCache.GetKeys(jwksUrl);
+                // Resolve signing keys via ASP.NET Core standard OIDC metadata discovery + Distributed Redis
+                return await _jwksProvider.GetKeysAsync(jwksUrl);
             },
             
             // Validate that issuer matches a known Keycloak realm pattern
@@ -2819,22 +3133,28 @@ public class TenantJwtBearerConfigureOptions
 ```
 
 ```csharp
-// Auth/JwksCache.cs — in-memory JWKS key cache with 1hr TTL
-public static class JwksCache
+// Auth/JwksCache.cs — Distributed Redis JWKS key cache (1hr TTL; zero .NET IMemoryCache)
+public sealed class JwksProvider
 {
-    private static readonly MemoryCache _cache = new(new MemoryCacheOptions());
+    private readonly IScopedCacheService _cache;
+    private readonly HttpClient _http;
 
-    public static IEnumerable<SecurityKey> GetKeys(string jwksUrl)
+    public JwksProvider(IScopedCacheService cache, HttpClient http)
     {
-        return _cache.GetOrCreate(jwksUrl, entry =>
-        {
-            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1);
-            
-            using var http = new HttpClient();
-            var json = http.GetStringAsync(jwksUrl).GetAwaiter().GetResult();
-            var jwks = new JsonWebKeySet(json);
-            return jwks.GetSigningKeys();
-        })!;
+        _cache = cache;
+        _http = http;
+    }
+
+    public async Task<IEnumerable<SecurityKey>> GetKeysAsync(string jwksUrl, CancellationToken ct = default)
+    {
+        var json = await _cache.GetOrCreateGlobalAsync(
+            "oidc:jwks",
+            jwksUrl,
+            async token => await _http.GetStringAsync(jwksUrl, token),
+            ttl: TimeSpan.FromHours(1),
+            ct: ct);
+
+        return new JsonWebKeySet(json).GetSigningKeys();
     }
 }
 ```
@@ -2917,72 +3237,51 @@ public static class HttpContextExtensions
 
 ---
 
-### 18.5 Dual-Mode Tenant Connection Manager (Model B + Model C)
+### 18.5 3-Cluster Clinical Database Resolver (Database-per-Study)
 
 ```csharp
-// MultiTenancy/ITenantConnectionManager.cs
-public interface ITenantConnectionManager
+// MultiTenancy/IClinicalDatabaseResolver.cs
+public interface IClinicalDatabaseResolver
 {
-    Task<IMongoDatabase> GetDatabaseAsync(TenantConfig config);
+    Task<IMongoDatabase> GetStudyDatabaseAsync(string studyId, string environment);
 }
 
-// MultiTenancy/TenantConnectionManager.cs
-public class TenantConnectionManager : ITenantConnectionManager, IAsyncDisposable
+// MultiTenancy/ClinicalDatabaseResolver.cs
+public class ClinicalDatabaseResolver : IClinicalDatabaseResolver, IAsyncDisposable
 {
-    // Key = tenantId → MongoClient (one per tenant, thread-safe)
-    private readonly ConcurrentDictionary<string, MongoClient> _clients = new();
-    private readonly MongoClientSettings _sharedSettings;
-    private readonly string _sharedClusterUri;
+    // Caches MongoClient per cluster endpoint
+    private readonly ConcurrentDictionary<string, MongoClient> _clusterClients = new();
+    private readonly string _cluster1Uri; // Not-Live (DEV/UAT)
+    private readonly string _cluster2Uri; // Live PROD
 
-    public TenantConnectionManager(IOptions<MongoDbOptions> opts)
+    public ClinicalDatabaseResolver(IOptions<ClinicalClusterOptions> opts)
     {
-        _sharedClusterUri = opts.Value.SharedClusterUri;
-        _sharedSettings = MongoClientSettings.FromConnectionString(_sharedClusterUri);
-        _sharedSettings.MaxConnectionPoolSize = 100;
-        _sharedSettings.SslSettings = new SslSettings { EnabledSslProtocols = SslProtocols.Tls12 };
+        _cluster1Uri = opts.Value.NotLiveClusterUri;
+        _cluster2Uri = opts.Value.LiveProdClusterUri;
     }
 
-    public Task<IMongoDatabase> GetDatabaseAsync(TenantConfig config)
+    public Task<IMongoDatabase> GetStudyDatabaseAsync(string studyId, string environment)
     {
-        return config.IsolationMode switch
-        {
-            IsolationMode.DedicatedCluster => GetDedicatedClusterDatabaseAsync(config),
-            IsolationMode.SharedCluster => Task.FromResult(GetSharedClusterDatabase(config)),
-            _ => throw new NotSupportedException($"Unknown isolation mode: {config.IsolationMode}")
-        };
-    }
+        var env = environment.ToLowerInvariant();
+        var targetClusterUri = env == "prod" ? _cluster2Uri : _cluster1Uri;
+        var clusterKey = env == "prod" ? "prod_cluster" : "notlive_cluster";
 
-    // Model C — dedicated cluster per client (DEFAULT)
-    private Task<IMongoDatabase> GetDedicatedClusterDatabaseAsync(TenantConfig config)
-    {
-        var client = _clients.GetOrAdd(config.TenantId, _ =>
+        var client = _clusterClients.GetOrAdd(clusterKey, _ =>
         {
-            // ClusterUri is decrypted from vault before reaching here
-            var settings = MongoClientSettings.FromConnectionString(config.ClusterUri!);
-            settings.MaxConnectionPoolSize = 50;
+            var settings = MongoClientSettings.FromConnectionString(targetClusterUri);
+            settings.MaxConnectionPoolSize = 100;
             settings.SslSettings = new SslSettings { EnabledSslProtocols = SslProtocols.Tls12 };
             return new MongoClient(settings);
         });
 
-        // Database name is standardised — "edc" inside each client's own cluster
-        var db = client.GetDatabase("edc");
-        return Task.FromResult(db);
-    }
-
-    // Model B — shared cluster, per-client database
-    private IMongoDatabase GetSharedClusterDatabase(TenantConfig config)
-    {
-        var sharedClient = _clients.GetOrAdd("__shared__", _ =>
-            new MongoClient(_sharedSettings));
-
-        // Each client has their own database: edc_{tenantId}
-        return sharedClient.GetDatabase($"edc_{config.DatabaseName}");
+        // Dedicated database per study and environment: study_{id}_{env}
+        var databaseName = $"study_{studyId}_{env}";
+        return Task.FromResult(client.GetDatabase(databaseName));
     }
 
     public async ValueTask DisposeAsync()
     {
-        // MongoClient manages connection pool lifecycle — no explicit close needed
-        _clients.Clear();
+        _clusterClients.Clear();
         await Task.CompletedTask;
     }
 }
@@ -3723,10 +4022,10 @@ builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddSingleton<IActiveSessionStore, MongoActiveSessionStore>();
 
 // ── Health Checks ────────────────────────────────────────────────────────────
+// NOTE: Do NOT couple API pod /health/ready to Keycloak /health/ready — API pods cache
+// OIDC JWKS in Redis (1h TTL) so active users keep working smoothly during IdP restarts.
 builder.Services.AddHealthChecks()
-    .AddMongoDb(builder.Configuration["MongoDB:SharedClusterUri"]!, name: "mongodb-shared")
-    .AddUrlGroup(new Uri(builder.Configuration["Keycloak:BaseUrl"]! + "/health/ready"),
-                 name: "keycloak");
+    .AddMongoDb(builder.Configuration["MongoDB:SharedClusterUri"]!, name: "mongodb-shared");
 
 // ── CORS ─────────────────────────────────────────────────────────────────────
 builder.Services.AddCors(options =>
@@ -3842,26 +4141,32 @@ public class MongoIndexInitializer
 │                           │ .JwtBearer with dynamic issuer         │
 │                           │ resolution per Keycloak realm          │
 ├───────────────────────────┼────────────────────────────────────────┤
-│ JWKS key caching          │ IMemoryCache, 1hr TTL per realm        │
+│ JWKS key caching          │ Distributed Redis, 1hr TTL per realm   │
 ├───────────────────────────┼────────────────────────────────────────┤
 │ Claims mapping            │ IClaimsTransformation                  │
 │                           │ realm_access.roles → ClaimTypes.Role   │
 │                           │ canSign, mfaVerified → clinical claims │
 ├───────────────────────────┼────────────────────────────────────────┤
-│ Tenant resolution         │ Custom middleware: extracts tenantId   │
-│                           │ from JWT, looks up TenantConfig,       │
-│                           │ attaches IMongoDatabase to HttpContext  │
+│ Tenant resolution         │ Custom middleware (API 005): extracts  │
+│                           │ tenantId from JWT + X-Tenant-Id/Study, │
+│                           │ attaches IMongoDatabase to HttpContext │
 ├───────────────────────────┼────────────────────────────────────────┤
-│ Multi-tenancy DB          │ TenantConnectionManager:               │
-│                           │ Model C → MongoClient per cluster URI  │
-│                           │ Model B → shared MongoClient + per-DB  │
+│ Multi-tenancy DB          │ ClinicalDatabaseResolver:              │
+│                           │ Cluster 1 → DEV/UAT study databases    │
+│                           │ Cluster 2 → Live PROD study databases  │
 ├───────────────────────────┼────────────────────────────────────────┤
 │ System RBAC               │ RequireRole() + named policies         │
 │                           │ 10 clinical role constants             │
 ├───────────────────────────┼────────────────────────────────────────┤
-│ Study-level authz         │ StudyAccessHandler: checks             │
-│                           │ user_study_access MongoDB collection   │
-│                           │ per request; site-level restriction    │
+│ Study-level authz &       │ StudyAccessHandler: checks Redis-cached│
+│ Identity Policy           │ user_study_access (instant revocation) │
+│                           │ & non-secret study_registry.           │
+│                           │ identityConfig (Email/AD/Okta + MFA)   │
+├───────────────────────────┼────────────────────────────────────────┤
+│ Control Plane & IdP HA/DR │ Multi-AZ Keycloak + Managed Postgres   │
+│                           │ & Multi-AZ rs-admin (w: "majority") +  │
+│                           │ cross-region async DR (no API probe    │
+│                           │ dependency on Keycloak /health/ready)  │
 ├───────────────────────────┼────────────────────────────────────────┤
 │ Step-up auth              │ StepUpAuthHandler: checks acr="step-up"│
 │                           │ and auth_time within 300s              │

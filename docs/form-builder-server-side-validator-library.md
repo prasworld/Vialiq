@@ -1171,24 +1171,23 @@ private static readonly Func<AppDbContext, string, string, Task<FormData?>> GetB
 
 ### 7.4 Medical Coding Service Caching
 
-MedDRA/WHODrug lookups are cached:
+MedDRA/WHODrug lookups are cached strictly in **Single-Tier Distributed Redis** via `IScopedCacheService` (canonical standard in [ADR 007-A](./critical-problems-and-adrs/007-a-multitenant-cache-isolation-and-security-scoping-adr.md) & [Scale 004](./scaling-architecture/004-caching-queues-and-resilience-patterns.md); **zero `.NET IMemoryCache`**):
 
 ```csharp
 public class MedDRAService
 {
-    private readonly IMemoryCache _cache;
+    private readonly IScopedCacheService _cache;
     
-    public async Task<MedDRATerm?> GetPT(string ptCode, string version)
+    public async Task<MedDRATerm?> GetPT(string ptCode, string version, CancellationToken ct = default)
     {
-        var cacheKey = $"meddra:{version}:pt:{ptCode}";
-        
-        return await _cache.GetOrCreateAsync(cacheKey, async entry =>
-        {
-            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(24);
-            return await _db.MedDRATerms
+        return await _cache.GetOrCreateGlobalAsync(
+            "meddra:pt",
+            $"{version}:{ptCode}",
+            async token => await _db.MedDRATerms
                 .Where(t => t.Code == ptCode && t.Version == version && t.Level == "PT")
-                .FirstOrDefaultAsync();
-        });
+                .FirstOrDefaultAsync(token),
+            ttl: TimeSpan.FromHours(24),
+            ct: ct);
     }
 }
 ```
