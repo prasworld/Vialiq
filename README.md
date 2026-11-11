@@ -62,3 +62,12 @@ It will show tasks that you can run with Nx.
 - [Join the community](https://nx.dev/community)
 - [Subscribe to the Nx Youtube Channel](https://www.youtube.com/@nxdevtools)
 - [Follow us on Twitter](https://twitter.com/nxdevtools)
+
+---
+
+## License
+
+**Proprietary Copyright — All Rights Reserved.**  
+Copyright © 2024–2026 Prashant Gupta. All Rights Reserved.
+
+This repository grants **no public license**. Copying, modifying, distributing, or using any portion of this codebase or documentation requires express prior written approval from Prashant Gupta, and everything is provided **"AS IS"** with **zero warranty or liability**. See [LICENSE](./LICENSE) for software terms and [docs/LICENSE.md](./docs/LICENSE.md) for documentation terms.

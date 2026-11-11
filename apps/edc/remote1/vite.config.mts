@@ -7,12 +7,12 @@ import { resolve } from 'path';
 
 export default defineConfig(() => ({
   root: __dirname,
-  cacheDir: '../node_modules/.vite/remote1',
+  cacheDir: '../../../node_modules/.vite/apps/edc/remote1',
   plugins: [angular(), nxViteTsPaths(), nxCopyAssetsPlugin(['*.md'])],
   css: {
     preprocessorOptions: {
       scss: {
-        loadPaths: [resolve(__dirname, '../../libs')],
+        loadPaths: [resolve(__dirname, '../../../libs')],
       },
     },
   },
@@ -30,7 +30,7 @@ export default defineConfig(() => ({
     reporters: ['default'],
     passWithNoTests: true,
     coverage: {
-      reportsDirectory: '../coverage/remote1',
+      reportsDirectory: '../../../coverage/apps/edc/remote1',
       provider: 'v8' as const,
     },
   },

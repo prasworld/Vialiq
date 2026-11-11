@@ -169,8 +169,8 @@ By creating a dedicated `backend/api/` folder (rather than putting the API under
 ```
 /Users/prashantgupta/code/nx/
 ├── apps/                                  # Frontend Applications (Angular 21 / Lit 3)
-│   ├── shell/                             # Angular Host Application
-│   └── form-builder/                      # Angular Form Builder UI
+│   ├── shell/                             # Unified Host Shell Application
+│   └── edc/remote1/                       # EDC Federated Remote App (`apps/edc/remote1`)
 │
 ├── backend/                               # Dedicated Backend Tier (Multi-Solution Ready)
 │   └── api/                               # Core Web API Solution Root

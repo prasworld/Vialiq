@@ -14,13 +14,13 @@ This document describes the Module‑Federation (MF) architecture used in this r
 
 ## Current workspace (standard Nx MF layout)
 - apps/shell — Module‑Federation host (runs at http://localhost:4200)
-- apps/remote1 — example remote (runs at http://localhost:4201)
+- apps/edc/remote1 — example EDC remote (`remote1`, runs at http://localhost:4201)
 - apps/* projects use `@nx/angular` webpack executors + `@nx/module-federation` config files
 
 ## Key files to inspect
 - `apps/shell/module-federation.config.ts` — host remotes list
-- `apps/remote1/module-federation.config.ts` — remote `exposes` map
-- `apps/shell/webpack.config.ts` and `apps/remote1/webpack.config.ts` — custom webpack hooks
+- `apps/edc/remote1/module-federation.config.ts` — remote `exposes` map
+- `apps/shell/webpack.config.ts` and `apps/edc/remote1/webpack.config.ts` — custom webpack hooks
 - `tsconfig.base.json` — path mapping for remote exposes (e.g. `remote1/Routes`)
 
 ## How MF wiring works (high level)
@@ -56,7 +56,7 @@ This document describes the Module‑Federation (MF) architecture used in this r
 
 ## TypeScript path mapping (recommended)
 - Use `tsconfig.base.json` to map remote expose entrypoints for IDE/TS support:
-  - Example: "remote1/Routes": ["apps/remote1/src/app/remote-entry/entry.routes.ts"]
+  - Example: "remote1/Routes": ["apps/edc/remote1/src/app/remote-entry/entry.routes.ts"]
 
 ## Adding more remotes (quick)
 1. nx g @nx/angular:remote remoteX --directory=apps --host=shell

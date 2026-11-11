@@ -11,7 +11,7 @@
   },
   "type": "module",
   "description": "SVG icon definitions for the @vi design system",
-  "license": "MIT",
+  "license": "SEE LICENSE IN ../../LICENSE",
   "module": "./index.js",
   "types": "./index.d.ts",
   "exports": {

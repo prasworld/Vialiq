@@ -1,0 +1,94 @@
+VIALIQ — PROPRIETARY SOFTWARE LICENCE
+
+Copyright © 2024–2026 Prashant Gupta. All rights reserved.
+
+**Proprietary and confidential. No public licence is granted.**
+
+## 1. Scope and Owner
+"Software" means the Vialiq software identified in this repository, package description,
+relevant order form, subscription agreement, self-hosted software agreement, or other written
+agreement, including its source code, object code, APIs, schemas, interfaces, updates, and
+related materials, but excluding Third-Party Materials.
+
+The copyright owner is **Prashant Gupta**, [ADDRESS] ("Licensor").
+"Vialiq" is the product/brand name and is not, by itself, a legal person or copyright owner.
+
+## 2. No General Public Permission
+Except for rights expressly granted in a separate written agreement signed by Licensor, no
+person is authorised to access, use, copy, reproduce, modify, adapt, translate, publish,
+distribute, sublicense, sell, lease, host, make available, reverse engineer, or create
+derivative works from the Software or any part of it.
+
+Viewing, cloning, or downloading a repository, package, build, demo, or documentation does
+**not** grant a licence. Access credentials are personal to the authorised user and must not
+be shared.
+
+## 3. Customer Rights Only by Separate Agreement
+A customer receives only the limited rights expressly stated in a valid signed:
+* SaaS subscription / order form and applicable SaaS terms; or
+* self-hosted software agreement and applicable order form.
+
+The agreement must identify the licensed product, deployment model, permitted entities and
+users, licence metric, term, territory, environments, and any permitted copies. No implied
+licence is granted.
+
+## 4. Restrictions
+Unless the applicable customer agreement expressly permits it, the recipient must not:
+a. copy, reproduce, publish, distribute, sell, rent, lease, sublicense, or otherwise make
+   the Software available to a third party;
+b. modify, adapt, translate, or create derivative works from the Software;
+c. reverse engineer, decompile, or disassemble the Software, except to the limited extent
+   that applicable law does not permit this restriction to be enforced;
+d. remove or obscure copyright, trademark, confidentiality, or proprietary notices;
+e. bypass licence keys, technical restrictions, authentication, usage limits, or security
+   controls;
+f. use the Software to build, train, benchmark, or offer a competing product or service,
+   subject to applicable law;
+g. disclose source code, credentials, security information, or non-public technical
+   information to unauthorised persons; or
+h. use the Software in violation of applicable law or the applicable customer agreement.
+
+## 5. Ownership
+Licensor and its licensors retain all right, title, and interest in and to the Software,
+including all intellectual property rights. No sale or transfer of ownership occurs through
+access, subscription, delivery, or payment of fees.
+
+Feedback may be used by Licensor to improve its products, provided that this does not
+transfer ownership of the customer's confidential information or customer data.
+
+## 6. Third-Party Materials
+The Software may include or interoperate with third-party or open-source software. Those
+components remain subject to their own applicable licences. Where a third-party licence
+grants rights that conflict with this notice, the third-party licence governs that component
+to the extent of the conflict. Applicable notices are provided in the relevant notices file
+or distribution.
+
+## 7. No Warranty and Zero Liability Under This Notice
+TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, THIS SOFTWARE IS PROVIDED "AS IS" AND
+"AS AVAILABLE", WITHOUT WARRANTY OF ANY KIND (EXPRESS, IMPLIED, OR STATUTORY, INCLUDING
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, REGULATORY COMPLIANCE, OR
+NON-INFRINGEMENT), AND IN NO EVENT SHALL PRASHANT GUPTA BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, CONSEQUENTIAL, EXEMPLARY, OR PUNITIVE DAMAGES ARISING OUT OF OR IN
+CONNECTION WITH ANY UNAUTHORISED, UNAPPROVED, OR PERMITTED ACCESS TO OR USE OF THE SOFTWARE.
+
+This notice is not a customer service agreement and does not itself promise support,
+maintenance, availability, security certifications, or fitness for a particular purpose.
+Support, SLAs, warranties, indemnities, and liability allocation for authorised customers are
+governed strictly by the signed customer agreement to the extent permitted by law.
+
+## 8. Termination and Remedies
+Any rights granted under a separate customer agreement may be suspended or terminated as
+provided in that agreement. Unauthorised use may infringe intellectual property rights and
+may also breach applicable contract or confidentiality obligations. Licensor may pursue all
+remedies available under applicable law.
+
+## 9. Governing Law
+This notice is governed by the laws of **India**, subject to the dispute-resolution and
+jurisdiction provisions in the applicable signed agreement and mandatory applicable law.
+
+## 10. Contact
+For licensing permissions and written approval requests: **[LEGAL / LICENSING EMAIL]**.
+
+---
+*Important: This repository notice is not a substitute for a signed SaaS agreement or
+self-hosted licence. Do not rely on this file alone to license enterprise customers.*

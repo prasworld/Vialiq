@@ -5,7 +5,7 @@
 | **Status** | Accepted |
 | **Date** | 2026-09-06 |
 | **Author** | Prashant Gupta |
-| **Scope** | `@vialiq/icons`, `@vialiq/web-components` in `apps/remote1`, `apps/shell` |
+| **Scope** | `@vialiq/icons`, `@vialiq/web-components` in `apps/edc/remote1`, `apps/shell` |
 
 ---
 

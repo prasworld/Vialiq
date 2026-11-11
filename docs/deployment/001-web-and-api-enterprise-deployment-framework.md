@@ -5,7 +5,7 @@
 > **Version:** 1.0.0  
 > **Date:** November 3, 2026  
 > **Author:** Enterprise Architecture Team / Prashant Gupta  
-> **Target Systems:** Angular 21 Host (`apps/shell`), Remotes (`apps/remote1`), ASP.NET Core .NET 9 LTS Web API (`backend/api/`), Linux (Ubuntu/Alpine/Kubernetes), Windows Server (2022/2025/IIS 10)  
+> **Target Systems:** Angular 21 Host (`apps/shell`), Remotes (`apps/edc/remote1`), ASP.NET Core .NET 9 LTS Web API (`backend/api/`), Linux (Ubuntu/Alpine/Kubernetes), Windows Server (2022/2025/IIS 10)  
 > **Compliance Standards:** FDA 21 CFR Part 11, GAMP 5 Category 4/5, HIPAA Security Rule, EU GDPR, ICH GCP E6(R3)
 
 ---

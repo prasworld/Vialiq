@@ -5,7 +5,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { pathToFileURL } from 'url';
 
-const workspaceRoot = path.resolve(__dirname, '../..');
+const workspaceRoot = path.resolve(__dirname, '../../..');
 
 /**
  * Custom Sass importer that resolves @vialiq/<lib>/... imports to the local

@@ -1,30 +1,30 @@
 {
   "name": "remote1",
-  "$schema": "../node_modules/nx/schemas/project-schema.json",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
   "prefix": "app",
-  "sourceRoot": "apps/remote1/src",
+  "sourceRoot": "apps/edc/remote1/src",
   "tags": [],
   "targets": {
     "build": {
       "executor": "@nx/angular:webpack-browser",
       "outputs": ["{options.outputPath}"],
       "options": {
-        "outputPath": "dist/apps/remote1",
-        "index": "apps/remote1/src/index.html",
-        "main": "apps/remote1/src/main.ts",
-        "tsConfig": "apps/remote1/tsconfig.app.json",
+        "outputPath": "dist/apps/edc/remote1",
+        "index": "apps/edc/remote1/src/index.html",
+        "main": "apps/edc/remote1/src/main.ts",
+        "tsConfig": "apps/edc/remote1/tsconfig.app.json",
         "inlineStyleLanguage": "scss",
         "assets": [
           {
             "glob": "**/*",
-            "input": "apps/remote1/public"
+            "input": "apps/edc/remote1/public"
           }
         ],
-        "styles": ["apps/remote1/src/styles.scss"],
+        "styles": ["apps/edc/remote1/src/styles.scss"],
         "allowedCommonJsDependencies": ["flatpickr"],
         "customWebpackConfig": {
-          "path": "apps/remote1/webpack.config.ts"
+          "path": "apps/edc/remote1/webpack.config.ts"
         },
         "stylePreprocessorOptions": {
           "includePaths": ["libs"]
@@ -46,7 +46,7 @@
           ],
           "outputHashing": "all",
           "customWebpackConfig": {
-            "path": "apps/remote1/webpack.prod.config.ts"
+            "path": "apps/edc/remote1/webpack.prod.config.ts"
           }
         },
         "development": {
@@ -90,7 +90,7 @@
       "executor": "@nx/vitest:test",
       "outputs": ["{options.reportsDirectory}"],
       "options": {
-        "reportsDirectory": "../coverage/remote1"
+        "reportsDirectory": "../../../coverage/apps/edc/remote1"
       }
     },
     "serve-static": {

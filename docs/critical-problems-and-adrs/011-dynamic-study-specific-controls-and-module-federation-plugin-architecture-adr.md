@@ -104,7 +104,7 @@ Bespoke study-specific widgets are built as **Federated Remote Modules** (e.g., 
 │              CORE FORM BUILDER PLATFORM                 │            STUDY-SPECIFIC FEDERATED REMOTES            │
 │                 (GAMP 5 Category 4)                     │                  (GAMP 5 Category 5)                   │
 ├─────────────────────────────────────────────────────────┼────────────────────────────────────────────────────────┤
-│ • Package: `@vialiq/form-builder`                       │ • Package: `apps/remote1`, `apps/study-recist-remote`  │
+│ • Package: `@vialiq/form-builder`                       │ • Package: `apps/edc/remote1`, `apps/edc/study-recist-remote`│
 │ • Release Frequency: Quarterly / Bi-annually            │ • Release Frequency: Ad-hoc per study protocol         │
 │ • CSV Validation: Platform Validation Package           │ • CSV Validation: Scoped Study Validation Addendum     │
 │ • Scope: Shared across all 500+ studies globally        │ • Scope: Isolated strictly to Study #101               │
@@ -184,12 +184,12 @@ Vialiq enforces an end-to-end 3-tier security boundary:
 
 ## 3. Concrete Implementation Specifications
 
-### 3.1 The Remote Module Descriptor (`apps/remote1`)
+### 3.1 The Remote Module Descriptor (`apps/edc/remote1`)
 
 The remote only declares what is unique to its widget:
 
 ```typescript
-// apps/remote1/src/app/descriptors/lesion-map.descriptor.ts
+// apps/edc/remote1/src/app/descriptors/lesion-map.descriptor.ts
 import type { ComponentDescriptor, ComponentSchema } from '@vialiq/form-builder';
 
 export interface PasiLesionMapSchema extends ComponentSchema {

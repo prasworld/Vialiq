@@ -37,7 +37,7 @@ Vialiq EDC is a **modular monorepo** (`nx`) separating the user-facing web tier,
 ```
 
 ### The 3 Local Layers:
-1. **Frontend Tier (`apps/shell`, `apps/remote1`):** Runs on the host via `nx serve shell` with instant TypeScript/SCSS hot module reloading at `http://localhost:4200`.
+1. **Frontend Tier (`apps/shell`, `apps/edc/remote1`):** Runs on the host via `nx serve shell` with instant TypeScript/SCSS hot module reloading at `http://localhost:4200`.
 2. **Backend API Tier (`backend/api/src/Vialiq.Api`):** Runs on the host via `dotnet watch` with instant C# hot reloading at `http://localhost:5000` (Swagger UI at `/swagger`).
 3. **Infrastructure Tier (Docker Compose):** Runs in the background with zero maintenance:
    - **3 Independent MongoDB Replica Sets:** Providing real-time Oplog Change Streams and multi-document ACID transactions.

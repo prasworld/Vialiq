@@ -19,7 +19,7 @@
     "baseUrl": ".",
     "paths": {
       "remote1/Routes": [
-        "apps/remote1/src/app/remote-entry/entry.routes.ts"
+        "apps/edc/remote1/src/app/remote-entry/entry.routes.ts"
       ],
       "@vialiq/flux-ui": [
         "libs/flux-ui/src/index.ts"
