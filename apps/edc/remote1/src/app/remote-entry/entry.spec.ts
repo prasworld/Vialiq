@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import {
@@ -9,18 +9,6 @@ import {
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { RemoteEntry, STUDY_DESCRIPTORS } from './entry';
 import { remoteRoutes } from './entry.routes';
-
-@Component({ selector: 'vi-palette', standalone: true, template: '' })
-class MockPaletteComponent {}
-
-@Component({ selector: 'vi-canvas', standalone: true, template: '' })
-class MockCanvasComponent {}
-
-@Component({ selector: 'vi-builder-toolbar', standalone: true, template: '' })
-class MockBuilderToolbarComponent {}
-
-@Component({ selector: 'vi-properties-panel', standalone: true, template: '' })
-class MockPropertiesPanelComponent {}
 
 describe('RemoteEntry & STUDY_DESCRIPTORS contract', () => {
   afterEach(() => {
@@ -47,12 +35,7 @@ describe('RemoteEntry & STUDY_DESCRIPTORS contract', () => {
     })
       .overrideComponent(FormBuilderComponent, {
         set: {
-          imports: [
-            MockPaletteComponent,
-            MockCanvasComponent,
-            MockBuilderToolbarComponent,
-            MockPropertiesPanelComponent,
-          ],
+          imports: [CommonModule],
         },
       })
       .compileComponents();
