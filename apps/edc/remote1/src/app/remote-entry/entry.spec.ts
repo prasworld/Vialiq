@@ -3,6 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import {
   BUILDER_COMPONENTS,
+  BuilderRegistryService,
   FormBuilderComponent,
   TEXT_INPUT_DESCRIPTOR,
 } from '@vialiq/form-builder';
@@ -49,8 +50,8 @@ describe('RemoteEntry & STUDY_DESCRIPTORS contract', () => {
     const providedGroups = builderEl.injector.get(BUILDER_COMPONENTS);
     expect(providedGroups).toContain(STUDY_DESCRIPTORS);
 
-    const builder = builderEl.componentInstance as FormBuilderComponent;
-    expect(builder.registry.getByType(TEXT_INPUT_DESCRIPTOR.type)).toBe(
+    const registry = builderEl.injector.get(BuilderRegistryService);
+    expect(registry.getByType(TEXT_INPUT_DESCRIPTOR.type)).toBe(
       TEXT_INPUT_DESCRIPTOR,
     );
 
