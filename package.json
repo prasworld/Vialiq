@@ -1,7 +1,7 @@
 {
   "name": "@vialiq/workspace",
   "version": "0.0.0",
-  "license": "MIT",
+  "license": "SEE LICENSE IN LICENSE",
   "packageManager": "npm@11.11.0",
   "scripts": {
     "prepare": "node tools/scripts/setup-hooks.mjs",

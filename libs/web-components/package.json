@@ -12,7 +12,7 @@
   "type": "module",
   "sideEffects": true,
   "description": "Lit web component library built on @vialiq/flux-ui design tokens",
-  "license": "SEE LICENSE IN ../../LICENSE",
+  "license": "SEE LICENSE IN LICENSE",
   "module": "./index.js",
   "types": "./index.d.ts",
   "exports": {
@@ -442,6 +442,7 @@
     "label/",
     "link/",
     "README.md",
+    "LICENSE",
     "accordion/",
     "alert/",
     "animation/",

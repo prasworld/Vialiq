@@ -31,25 +31,24 @@ This document describes the Module‑Federation (MF) architecture used in this r
 
 ## Commands — generate / run / test
 - Create host under `apps/`:
-  - nx g @nx/angular:host shell --directory=apps --remotes=remote1
-  - or: nx g @nx/angular:host apps/shell --remotes=apps/remote1
+  - nx g @nx/angular:host apps/shell --name=shell --remotes=remote1
 
-- Create a remote and attach to a host:
-  - nx g @nx/angular:remote remote2 --directory=apps --host=shell
+- Create a remote under a product folder (e.g. `apps/edc/remote2`) and attach to a host:
+  - nx g @nx/angular:remote apps/edc/remote2 --name=remote2 --host=shell
 
 - Run locally (dev):
-  - Start remote(s): `npx nx serve apps/remote1 --port=4201`
-  - Start host: `npx nx serve apps/shell --port=4200`
+  - Start remote (`apps/edc/remote1`): `npx nx serve remote1 --port=4201`
+  - Start host (`apps/shell`): `npx nx serve shell --port=4200`
   - Open host and verify it lazy‑loads remotes (http://localhost:4200)
 
 - Production build:
-  - nx build apps/remote1 --configuration=production
-  - nx build apps/shell --configuration=production
+  - nx build remote1 --configuration=production
+  - nx build shell --configuration=production
   - Serve production artifacts with `nx run <project>:serve-static`
 
 - Unit tests (remote/host):
-  - nx test apps/remote1
-  - nx test apps/shell
+  - nx test remote1
+  - nx test shell
 
 - E2E (Playwright):
   - Add an `e2e` project for the host (if needed) and run `nx e2e <host>-e2e`
@@ -59,7 +58,7 @@ This document describes the Module‑Federation (MF) architecture used in this r
   - Example: "remote1/Routes": ["apps/edc/remote1/src/app/remote-entry/entry.routes.ts"]
 
 ## Adding more remotes (quick)
-1. nx g @nx/angular:remote remoteX --directory=apps --host=shell
+1. nx g @nx/angular:remote apps/edc/remoteX --name=remoteX --host=shell
 2. Add route in `apps/shell/src/app/app.routes.ts` to lazy‑load `remoteX` via the mapped import.
 3. Start remote & host and verify.
 

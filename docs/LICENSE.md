@@ -66,5 +66,5 @@ AUTHORISED OR UNAUTHORISED USE OF THE DOCUMENTATION.
 This licence is governed by the laws of **India**, subject to mandatory applicable law and
 the dispute provisions of the applicable signed agreement.
 
-Permissions & written approval requests: **[LEGAL / LICENSING EMAIL]**.
+Permissions & written approval requests: **scor.prashant@gmail.com**.
 

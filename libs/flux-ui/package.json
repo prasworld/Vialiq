@@ -11,7 +11,7 @@
   },
   "type": "module",
   "description": "Custom minimal CSS/SASS framework for microfrontend product",
-  "license": "SEE LICENSE IN ../../LICENSE",
+  "license": "SEE LICENSE IN LICENSE",
   "module": "./index.js",
   "types": "./index.d.ts",
   "exports": {
@@ -43,6 +43,7 @@
     "tokens/",
     "flux-ui.css",
     "flux-ui.css.map",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ]
 }

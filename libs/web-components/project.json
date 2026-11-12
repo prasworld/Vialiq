@@ -32,7 +32,8 @@
         "commands": [
           "cp libs/web-components/package.json dist/libs/web-components/package.json",
           "node tools/scripts/sync-peer-deps.mjs dist/libs/web-components/package.json",
-          "cp libs/web-components/README.md dist/libs/web-components/README.md"
+          "cp libs/web-components/README.md dist/libs/web-components/README.md",
+          "cp libs/web-components/LICENSE dist/libs/web-components/LICENSE"
         ],
         "parallel": false
       },
@@ -42,6 +43,7 @@
       "outputs": [
         "{workspaceRoot}/dist/libs/web-components/package.json",
         "{workspaceRoot}/dist/libs/web-components/README.md",
+        "{workspaceRoot}/dist/libs/web-components/LICENSE",
         "{workspaceRoot}/dist/libs/web-components/**/*.d.ts",
         "{workspaceRoot}/dist/libs/web-components/**/*.d.ts.map"
       ]
