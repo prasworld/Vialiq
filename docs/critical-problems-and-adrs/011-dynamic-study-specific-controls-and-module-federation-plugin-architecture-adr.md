@@ -39,7 +39,7 @@ VIALIQ DYNAMIC MODULE FEDERATION PLUGIN ARCHITECTURE (ADR 011)
 Core Principle                     Technical Specification                   Operational & Compliance Benefit
 -------------------------------------------------------------------------------------------------------------
 1. Module Federation Remotes       Bespoke study widgets live in isolated    Zero bundle bloat for other studies;
-   (e.g., `remote1`)               micro-frontends (e.g. `apps/remote1`).    100% decoupled compilation.
+   (e.g., `remote1`)               micro-frontends (e.g. `apps/edc/remote1`). 100% decoupled compilation.
 -------------------------------------------------------------------------------------------------------------
 2. Eager Study-Scoped Loading      Remotes loaded dynamically only when the  Zero palette pollution; strict
                                    authenticated study/tenant mounts.        multi-tenant client isolation.
@@ -67,7 +67,7 @@ Core Principle                     Technical Specification                   Ope
 
 The base form builder (`@vialiq/form-builder`) and form renderer (`@vialiq/form-renderer`) remain **100% domain-agnostic, stable, and version-frozen**.
 
-Bespoke study-specific widgets are built as **Federated Remote Modules** (e.g., `apps/remote1`):
+Bespoke study-specific widgets are built as **Federated Remote Modules** (e.g., `apps/edc/remote1`):
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
@@ -83,7 +83,7 @@ Bespoke study-specific widgets are built as **Federated Remote Modules** (e.g., 
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
 │ DYNAMIC REMOTE LOADER (Module Federation)                                              │
 │ • Fetches `https://cdn.vialiq.io/plugins/study-101/remoteEntry.js`                     │
-│ • Mounts `apps/remote1` into Angular Dependency Injection context                      │
+│ • Mounts `apps/edc/remote1` into Angular Dependency Injection context                  │
 └───────────────────────────────────────────┬────────────────────────────────────────────┘
                                             │
                                             ▼
@@ -104,7 +104,7 @@ Bespoke study-specific widgets are built as **Federated Remote Modules** (e.g., 
 │              CORE FORM BUILDER PLATFORM                 │            STUDY-SPECIFIC FEDERATED REMOTES            │
 │                 (GAMP 5 Category 4)                     │                  (GAMP 5 Category 5)                   │
 ├─────────────────────────────────────────────────────────┼────────────────────────────────────────────────────────┤
-│ • Package: `@vialiq/form-builder`                       │ • Package: `apps/remote1`, `apps/study-recist-remote`  │
+│ • Package: `@vialiq/form-builder`                       │ • Package: `apps/edc/remote1`, `apps/edc/study-recist-remote`│
 │ • Release Frequency: Quarterly / Bi-annually            │ • Release Frequency: Ad-hoc per study protocol         │
 │ • CSV Validation: Platform Validation Package           │ • CSV Validation: Scoped Study Validation Addendum     │
 │ • Scope: Shared across all 500+ studies globally        │ • Scope: Isolated strictly to Study #101               │
@@ -184,12 +184,12 @@ Vialiq enforces an end-to-end 3-tier security boundary:
 
 ## 3. Concrete Implementation Specifications
 
-### 3.1 The Remote Module Descriptor (`apps/remote1`)
+### 3.1 The Remote Module Descriptor (`apps/edc/remote1`)
 
 The remote only declares what is unique to its widget:
 
 ```typescript
-// apps/remote1/src/app/descriptors/lesion-map.descriptor.ts
+// apps/edc/remote1/src/app/descriptors/lesion-map.descriptor.ts
 import type { ComponentDescriptor, ComponentSchema } from '@vialiq/form-builder';
 
 export interface PasiLesionMapSchema extends ComponentSchema {
@@ -259,9 +259,9 @@ export const PasiLesionMapDescriptor: ComponentDescriptor = {
 > 
 > To cross this boundary cleanly, remotes export an explicit array of `STUDY_DESCRIPTORS`, and the host shell injects them directly via the `BuilderRegistryService.registerDynamicComponents` API or `<vi-form-builder [customComponents]="...">`.
 
-#### A. Remote Module Export Contract (`apps/remote1/src/app/remote-entry/plugin.ts`)
+#### A. Remote Module Export Contract (`apps/edc/remote1/src/app/remote-entry/plugin.ts`)
 ```typescript
-// apps/remote1/src/app/remote-entry/plugin.ts (Exposed as './PluginModule')
+// apps/edc/remote1/src/app/remote-entry/plugin.ts (Exposed as './PluginModule')
 import type { ComponentDescriptor } from '@vialiq/form-builder';
 import { PasiLesionMapDescriptor } from '../descriptors/lesion-map.descriptor';
 
@@ -420,7 +420,7 @@ STUDY-SPECIFIC PLUGIN ISOLATION & COMPLIANCE MATRIX
 =============================================================================================================
 Dimension                      Core Form Builder                  Study Remote (`remote1`)
 -------------------------------------------------------------------------------------------------------------
-Repository Location            `libs/form-builder` (Monorepo)     `apps/remote1` (Isolated Remote)
+Repository Location            `libs/form-builder` (Monorepo)     `apps/edc/remote1` (Isolated Remote)
 Deployment Artifact            Core Web App / Library Bundle      Standalone CDN remoteEntry.js
 Multi-Tenant Visibility        Available to all tenants/studies   Mounted ONLY for authorized Study ID
 Bundle Size Impact             Zero extra bytes in core bundle    Loaded on-demand only when study opened

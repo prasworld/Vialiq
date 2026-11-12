@@ -34,7 +34,8 @@
       "options": {
         "commands": [
           "npx tsc -p libs/icons/tsconfig.lib.json --emitDeclarationOnly --noEmit false",
-          "cp libs/icons/package.json dist/libs/icons/package.json"
+          "cp libs/icons/package.json dist/libs/icons/package.json",
+          "cp libs/icons/LICENSE dist/libs/icons/LICENSE"
         ],
         "parallel": false
       },
@@ -43,6 +44,7 @@
       },
       "outputs": [
         "{workspaceRoot}/dist/libs/icons/package.json",
+        "{workspaceRoot}/dist/libs/icons/LICENSE",
         "{workspaceRoot}/dist/libs/icons/**/*.d.ts",
         "{workspaceRoot}/dist/libs/icons/**/*.d.ts.map"
       ]

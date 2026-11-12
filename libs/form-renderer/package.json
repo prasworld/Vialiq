@@ -1,6 +1,8 @@
 {
   "name": "@vialiq/form-renderer",
   "version": "0.0.1",
+  "license": "SEE LICENSE IN ../../LICENSE",
+  "private": true,
   "peerDependencies": {
     "@angular/common": "^21.1.0",
     "@angular/core": "^21.1.0"

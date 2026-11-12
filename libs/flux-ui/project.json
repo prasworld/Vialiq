@@ -62,6 +62,7 @@
       "options": {
         "commands": [
           "cp libs/flux-ui/package.json dist/libs/flux-ui/package.json",
+          "cp libs/flux-ui/LICENSE dist/libs/flux-ui/LICENSE",
           "[ -f dist/libs/flux-ui/src/index.d.ts ] && cp dist/libs/flux-ui/src/index.d.ts dist/libs/flux-ui/index.d.ts || true",
           "[ -f dist/libs/flux-ui/src/index.d.ts.map ] && cp dist/libs/flux-ui/src/index.d.ts.map dist/libs/flux-ui/index.d.ts.map || true",
           "[ -f dist/libs/flux-ui/src/tokens/index.d.ts ] && cp dist/libs/flux-ui/src/tokens/index.d.ts dist/libs/flux-ui/tokens/index.d.ts || true",
@@ -74,7 +75,7 @@
       "configurations": {
         "production": {}
       },
-      "outputs": ["{workspaceRoot}/dist/libs/flux-ui/package.json"]
+      "outputs": ["{workspaceRoot}/dist/libs/flux-ui/package.json", "{workspaceRoot}/dist/libs/flux-ui/LICENSE"]
     },
     "lint": {
       "executor": "@nx/eslint:lint",

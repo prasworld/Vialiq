@@ -421,7 +421,7 @@ To add a new token or component:
 
 ## License
 
-MIT
+Proprietary Copyright — All Rights Reserved. Copyright © 2024–2026 Prashant Gupta. See package [LICENSE](./LICENSE).
 
 ## Questions?
 

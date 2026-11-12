@@ -539,4 +539,4 @@ Do **not** add `exports` to the source `package.json` — they belong only in `p
 
 ## License
 
-MIT © vi
+Proprietary Copyright — All Rights Reserved. Copyright © 2024–2026 Prashant Gupta. See [LICENSE](./LICENSE).
