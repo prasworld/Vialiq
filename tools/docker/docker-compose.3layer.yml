@@ -1,0 +1,209 @@
+# ==============================================================================
+# Vialiq EDC — 3-Layer MongoDB Cluster Topology (Docker Compose)
+# ==============================================================================
+# Architecture:
+#   Layer 1 (Admin):   Port 27017 | Replica Set: rs-admin | Control Plane (Zero clinical data)
+#   Layer 2 (Dev/UAT): Port 27027 | Replica Set: rs-dev   | Not-Live Study Databases
+#   Layer 3 (Prod):    Port 27037 | Replica Set: rs-prod  | Live GxP Clinical Trials
+#
+# Hardware Targets:
+#   - Apple Silicon M1 Pro / M2 / M3 / M4 / M5 Pro (ARM64 native)
+#   - Memory optimized: WiredTiger cache clamped to 512MB per layer
+#
+# Profiles (Phased Activation):
+#   - Phase 1 (Admin only):     docker compose -f tools/docker/docker-compose.3layer.yml --profile admin up -d
+#   - Phase 2 (Admin + Dev):    docker compose -f tools/docker/docker-compose.3layer.yml --profile dev-phase up -d
+#   - Phase 3 (Prod only):      docker compose -f tools/docker/docker-compose.3layer.yml --profile prod up -d
+#   - All 3 Layers (Full):      docker compose -f tools/docker/docker-compose.3layer.yml --profile all up -d
+# ==============================================================================
+
+services:
+  # ============================================================================
+  # LAYER 1: ADMIN LAYER (Cluster 0 — Centralized Control Plane)
+  # ============================================================================
+  mongo-layer1-admin:
+    image: mongo:7.0
+    container_name: vialiq-mongo-layer1-admin
+    restart: unless-stopped
+    platform: linux/arm64
+    profiles: ["admin", "dev-phase", "all"]
+    command: [
+      "mongod",
+      "--replSet", "rs-admin",
+      "--bind_ip_all",
+      "--port", "27017",
+      "--wiredTigerCacheSizeGB", "0.5"
+    ]
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_admin_data:/data/db
+    networks:
+      - vialiq-3layer-net
+    healthcheck:
+      test: ["CMD", "mongosh", "--port", "27017", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 15s
+
+  init-layer1-admin:
+    image: mongo:7.0
+    container_name: vialiq-init-layer1-admin
+    restart: "no"
+    platform: linux/arm64
+    profiles: ["admin", "dev-phase", "all"]
+    depends_on:
+      mongo-layer1-admin:
+        condition: service_healthy
+    networks:
+      - vialiq-3layer-net
+    entrypoint:
+      - bash
+      - -c
+      - |
+        mongosh --host mongo-layer1-admin:27017 --eval '
+          try {
+            rs.status();
+            console.log("[Layer 1 Admin] Replica set rs-admin already initialized.");
+          } catch (e) {
+            rs.initiate({
+              _id: "rs-admin",
+              members: [
+                { _id: 0, host: "mongo-layer1-admin:27017" }
+              ]
+            });
+            console.log("[Layer 1 Admin] Replica set rs-admin initialized successfully.");
+          }
+        '
+
+  # ============================================================================
+  # LAYER 2: DEV ENVIRONMENT (Cluster 1 — Not-Live DEV & UAT Study Databases)
+  # ============================================================================
+  mongo-layer2-dev:
+    image: mongo:7.0
+    container_name: vialiq-mongo-layer2-dev
+    restart: unless-stopped
+    platform: linux/arm64
+    profiles: ["dev", "dev-phase", "all"]
+    command: [
+      "mongod",
+      "--replSet", "rs-dev",
+      "--bind_ip_all",
+      "--port", "27027",
+      "--wiredTigerCacheSizeGB", "0.5"
+    ]
+    ports:
+      - "27027:27027"
+    volumes:
+      - mongo_dev_data:/data/db
+    networks:
+      - vialiq-3layer-net
+    healthcheck:
+      test: ["CMD", "mongosh", "--port", "27027", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 15s
+
+  init-layer2-dev:
+    image: mongo:7.0
+    container_name: vialiq-init-layer2-dev
+    restart: "no"
+    platform: linux/arm64
+    profiles: ["dev", "dev-phase", "all"]
+    depends_on:
+      mongo-layer2-dev:
+        condition: service_healthy
+    networks:
+      - vialiq-3layer-net
+    entrypoint:
+      - bash
+      - -c
+      - |
+        mongosh --host mongo-layer2-dev:27027 --eval '
+          try {
+            rs.status();
+            console.log("[Layer 2 Dev] Replica set rs-dev already initialized.");
+          } catch (e) {
+            rs.initiate({
+              _id: "rs-dev",
+              members: [
+                { _id: 0, host: "mongo-layer2-dev:27027" }
+              ]
+            });
+            console.log("[Layer 2 Dev] Replica set rs-dev initialized successfully.");
+          }
+        '
+
+  # ============================================================================
+  # LAYER 3: PRODUCTION (Cluster 2 — Live Operational Clinical Trials)
+  # ============================================================================
+  mongo-layer3-prod:
+    image: mongo:7.0
+    container_name: vialiq-mongo-layer3-prod
+    restart: unless-stopped
+    platform: linux/arm64
+    profiles: ["prod", "all"]
+    command: [
+      "mongod",
+      "--replSet", "rs-prod",
+      "--bind_ip_all",
+      "--port", "27037",
+      "--wiredTigerCacheSizeGB", "0.5"
+    ]
+    ports:
+      - "27037:27037"
+    volumes:
+      - mongo_prod_data:/data/db
+    networks:
+      - vialiq-3layer-net
+    healthcheck:
+      test: ["CMD", "mongosh", "--port", "27037", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 15s
+
+  init-layer3-prod:
+    image: mongo:7.0
+    container_name: vialiq-init-layer3-prod
+    restart: "no"
+    platform: linux/arm64
+    profiles: ["prod", "all"]
+    depends_on:
+      mongo-layer3-prod:
+        condition: service_healthy
+    networks:
+      - vialiq-3layer-net
+    entrypoint:
+      - bash
+      - -c
+      - |
+        mongosh --host mongo-layer3-prod:27037 --eval '
+          try {
+            rs.status();
+            console.log("[Layer 3 Prod] Replica set rs-prod already initialized.");
+          } catch (e) {
+            rs.initiate({
+              _id: "rs-prod",
+              members: [
+                { _id: 0, host: "mongo-layer3-prod:27037" }
+              ]
+            });
+            console.log("[Layer 3 Prod] Replica set rs-prod initialized successfully.");
+          }
+        '
+
+networks:
+  vialiq-3layer-net:
+    name: vialiq-3layer-net
+    driver: bridge
+
+volumes:
+  mongo_admin_data:
+    name: vialiq_mongo_admin_data
+  mongo_dev_data:
+    name: vialiq_mongo_dev_data
+  mongo_prod_data:
+    name: vialiq_mongo_prod_data
