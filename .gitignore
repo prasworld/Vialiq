@@ -54,3 +54,50 @@ node_modules/.vitest
 
 # npm registry configuration (created by actions/setup-node in CI; may contain auth tokens locally)
 .npmrc
+
+# ==============================================================================
+# .NET / C# Build Artifacts & Binaries
+# ==============================================================================
+**/[Bb]in/
+**/[Oo]bj/
+**/[Ll]og/
+**/[Ll]ogs/
+[Bb]uild[Ll]og.*
+
+# Visual Studio / Rider / Omnisharp cache
+.vs/
+.idea/
+*.user
+*.userosscache
+*.suo
+*.userprefs
+*.sln.docstates
+.ionide/
+.dotnet/
+
+# Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+[Tt]est[Rr]esult*/
+
+# Compiled files
+*.dll
+*.exe
+*.pdb
+*.cache
+*.rsp
+*.snupkg
+*.nupkg
+
+# NuGet
+project.lock.json
+project.fragment.lock.json
+artifacts/
+**/packages/
+!**/packages/build/
+*.nuget.props
+*.nuget.targets

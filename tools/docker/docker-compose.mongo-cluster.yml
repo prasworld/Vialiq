@@ -1,0 +1,80 @@
+# Vialiq EDC - Local Development 3-Node MongoDB Replica Set Cluster
+# Supports multi-document ACID transactions and Change Streams at $0 cost.
+
+services:
+  mongo1:
+    image: mongo:7.0
+    container_name: edc-mongo1
+    restart: always
+    command: ["mongod", "--replSet", "rs-edc", "--bind_ip_all", "--port", "27017"]
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo1_data:/data/db
+    networks:
+      - edc-net
+
+  mongo2:
+    image: mongo:7.0
+    container_name: edc-mongo2
+    restart: always
+    command: ["mongod", "--replSet", "rs-edc", "--bind_ip_all", "--port", "27018"]
+    ports:
+      - "27018:27018"
+    volumes:
+      - mongo2_data:/data/db
+    networks:
+      - edc-net
+
+  mongo3:
+    image: mongo:7.0
+    container_name: edc-mongo3
+    restart: always
+    command: ["mongod", "--replSet", "rs-edc", "--bind_ip_all", "--port", "27019"]
+    ports:
+      - "27019:27019"
+    volumes:
+      - mongo3_data:/data/db
+    networks:
+      - edc-net
+
+  # Auto-initializer: Runs once, registers the 3 nodes into the replica set, and exits cleanly.
+  mongo-init:
+    image: mongo:7.0
+    depends_on:
+      - mongo1
+      - mongo2
+      - mongo3
+    networks:
+      - edc-net
+    restart: "no"
+    entrypoint:
+      - bash
+      - -c
+      - |
+        sleep 3;
+        mongosh --host mongo1:27017 --eval '
+          try {
+            rs.status();
+            console.log("Replica set already initialized.");
+          } catch (e) {
+            rs.initiate({
+              _id: "rs-edc",
+              members: [
+                { _id: 0, host: "mongo1:27017" },
+                { _id: 1, host: "mongo2:27018" },
+                { _id: 2, host: "mongo3:27019" }
+              ]
+            });
+            console.log("Replica set initialized successfully.");
+          }
+        ';
+
+networks:
+  edc-net:
+    driver: bridge
+
+volumes:
+  mongo1_data:
+  mongo2_data:
+  mongo3_data:
