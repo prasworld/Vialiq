@@ -9,56 +9,112 @@ set -euo pipefail
 
 REDIS_SECRET="VialiqDevSecret123!"
 
-echo "=================================================================="
-echo " [STEP 1/5] Verifying Initial Primary-Replica Topology..."
-echo "=================================================================="
-PRIMARY_ROLE=$(docker exec vialiq-redis-primary redis-cli -a "$REDIS_SECRET" 2>/dev/null | grep -A 10 "replication" || docker exec vialiq-redis-primary redis-cli -a "$REDIS_SECRET" INFO replication | grep "role:" | tr -d '\r')
-echo "Primary status: $PRIMARY_ROLE"
+# Ensure HA Sentinel topology is running before executing drill
+if ! docker ps --format '{{.Names}}' | grep -q "^vialiq-sentinel-1$"; then
+    echo ">> HA Sentinel topology is not running. Stopping standalone and booting tools/docker/docker-compose.redis-ha.yml..."
+    docker compose -f tools/docker/docker-compose.redis-dev.yml stop 2>/dev/null || true
+    docker compose -f tools/docker/docker-compose.redis-ha.yml up -d
+    echo ">> Waiting 4 seconds for Sentinel quorum initialization..."
+    sleep 4
+fi
 
-REPLICA_ROLE=$(docker exec vialiq-redis-replica redis-cli -p 6380 -a "$REDIS_SECRET" INFO replication | grep "role:" | tr -d '\r')
-echo "Replica status: $REPLICA_ROLE"
+echo "=================================================================="
+echo " [STEP 1/5] Verifying Initial Primary-Replica Topology via Sentinel..."
+echo "=================================================================="
+MASTER_PORT=""
+for i in $(seq 1 10); do
+    MASTER_PORT=$(docker exec vialiq-sentinel-1 redis-cli -p 26379 sentinel get-master-addr-by-name mymaster 2>/dev/null | sed -n '2p' | tr -d '\r' || true)
+    if [ "$MASTER_PORT" == "6379" ] || [ "$MASTER_PORT" == "6380" ]; then
+        break
+    fi
+    sleep 1
+done
 
-echo ""
-echo "=================================================================="
-echo " [STEP 2/5] Simulating Primary Hardware Crash (Stopping Master)..."
-echo "=================================================================="
-docker stop vialiq-redis-primary
-echo "Primary stopped. Waiting 3.5 seconds for Sentinel quorum failover..."
-sleep 3.5
-
-echo ""
-echo "=================================================================="
-echo " [STEP 3/5] Verifying Automatic Secondary Promotion to Master..."
-echo "=================================================================="
-NEW_MASTER_ROLE=$(docker exec vialiq-redis-replica redis-cli -p 6380 -a "$REDIS_SECRET" INFO replication | grep "role:" | tr -d '\r')
-echo "Promoted node role: $NEW_MASTER_ROLE"
-
-if [ "$NEW_MASTER_ROLE" == "role:master" ]; then
-    echo ">> SUCCESS: Replica was automatically promoted to Master!"
+if [ "$MASTER_PORT" == "6379" ]; then
+    CRASH_CONTAINER="vialiq-redis-primary"
+    CRASH_PORT="6379"
+    SURVIVING_CONTAINER="vialiq-redis-replica"
+    SURVIVING_PORT="6380"
+    echo "Current Master: vialiq-redis-primary (Port 6379)"
+    echo "Current Replica: vialiq-redis-replica (Port 6380)"
+elif [ "$MASTER_PORT" == "6380" ]; then
+    CRASH_CONTAINER="vialiq-redis-replica"
+    CRASH_PORT="6380"
+    SURVIVING_CONTAINER="vialiq-redis-primary"
+    SURVIVING_PORT="6379"
+    echo "Current Master: vialiq-redis-replica (Port 6380)"
+    echo "Current Replica: vialiq-redis-primary (Port 6379)"
 else
-    echo ">> FAILURE: Expected role:master but got $NEW_MASTER_ROLE"
+    echo ">> FAILURE: Sentinel failed to resolve master address within 10s. Reported port: '$MASTER_PORT'"
     exit 1
 fi
 
 echo ""
 echo "=================================================================="
-echo " [STEP 4/5] Rebooting Old Primary (Simulating Node Recovery)..."
+echo " [STEP 2/5] Simulating Master Hardware Crash (Stopping $CRASH_CONTAINER)..."
 echo "=================================================================="
-docker start vialiq-redis-primary
-echo "Old primary restarted. Waiting 3.0 seconds for Sentinel re-configuration..."
-sleep 3.0
+docker stop "$CRASH_CONTAINER"
+echo "$CRASH_CONTAINER stopped. Waiting for Sentinel quorum failover & leader election..."
 
 echo ""
 echo "=================================================================="
-echo " [STEP 5/5] Verifying Self-Healing Reconnection & Demotion..."
+echo " [STEP 3/5] Verifying Automatic Secondary Promotion to Master..."
 echo "=================================================================="
-RECOVERED_ROLE=$(docker exec vialiq-redis-primary redis-cli -a "$REDIS_SECRET" INFO replication | grep "role:" | tr -d '\r')
-echo "Recovered node role: $RECOVERED_ROLE"
+PROMOTED=0
+NEW_MASTER_ROLE=""
+for i in $(seq 1 20); do
+    NEW_MASTER_ROLE=$(docker exec "$SURVIVING_CONTAINER" redis-cli -p "$SURVIVING_PORT" -a "$REDIS_SECRET" INFO replication 2>/dev/null | grep "role:" | tr -d '\r' || true)
+    if [ "$NEW_MASTER_ROLE" == "role:master" ]; then
+        PROMOTED=1
+        echo "Promoted node role: $NEW_MASTER_ROLE (verified on attempt $i)"
+        break
+    fi
+    sleep 1
+done
 
-if [ "$RECOVERED_ROLE" == "role:slave" ]; then
-    echo ">> SUCCESS: Old primary auto-demoted to replica and rejoined cluster via PSYNC!"
+if [ "$PROMOTED" -eq 1 ]; then
+    echo ">> SUCCESS: $SURVIVING_CONTAINER was automatically promoted to Master!"
 else
-    echo ">> NOTE: Role is $RECOVERED_ROLE. Checking sync state..."
+    echo ">> FAILURE: Expected role:master within 20s window, but node remained: '$NEW_MASTER_ROLE'"
+    exit 1
+fi
+
+echo ""
+echo "=================================================================="
+echo " [STEP 4/5] Rebooting Old Master (Simulating Node Recovery)..."
+echo "=================================================================="
+docker start "$CRASH_CONTAINER"
+echo "$CRASH_CONTAINER restarted. Polling Sentinel reconfiguration & PSYNC replication stream..."
+
+echo ""
+echo "=================================================================="
+echo " [STEP 5/5] Verifying Self-Healing Reconnection, Demotion & Sync State..."
+echo "=================================================================="
+DEMOTED=0
+SYNCED=0
+RECOVERED_ROLE=""
+MASTER_LINK=""
+for i in $(seq 1 20); do
+    INFO_REP=$(docker exec "$CRASH_CONTAINER" redis-cli -p "$CRASH_PORT" -a "$REDIS_SECRET" INFO replication 2>/dev/null || true)
+    RECOVERED_ROLE=$(echo "$INFO_REP" | grep "^role:" | tr -d '\r' || true)
+    MASTER_LINK=$(echo "$INFO_REP" | grep "^master_link_status:" | tr -d '\r' || true)
+
+    if [ "$RECOVERED_ROLE" == "role:slave" ] && [ "$MASTER_LINK" == "master_link_status:up" ]; then
+        DEMOTED=1
+        SYNCED=1
+        echo "Recovered node state: $RECOVERED_ROLE, $MASTER_LINK (verified on attempt $i)"
+        break
+    elif [ "$RECOVERED_ROLE" == "role:slave" ]; then
+        DEMOTED=1
+    fi
+    sleep 1
+done
+
+if [ "$SYNCED" -eq 1 ]; then
+    echo ">> SUCCESS: $CRASH_CONTAINER auto-demoted to replica and synchronized via PSYNC (master_link_status:up)!"
+else
+    echo ">> FAILURE: Node failed to re-synchronize as replica within 20s window. Final state: '$RECOVERED_ROLE', '$MASTER_LINK'"
+    exit 1
 fi
 
 echo ""

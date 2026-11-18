@@ -38,7 +38,7 @@ try {
 try {
   const dotnetVersion = execSync('dotnet --version', { stdio: ['pipe', 'pipe', 'ignore'] }).toString().trim();
   if (dotnetVersion.startsWith('9.')) {
-    console.log(`${CHECK} .NET SDK: ${dotnetVersion} (.NET 9 LTS verified)`);
+    console.log(`${CHECK} .NET SDK: ${dotnetVersion} (.NET 9 verified)`);
   } else {
     console.log(`${WARN} .NET SDK: ${dotnetVersion} (Recommended .NET 9.0+)`);
   }
@@ -100,9 +100,10 @@ for (const svc of services) {
   } else if (svc.isApp) {
     console.log(` - ${svc.name.padEnd(32)} Port ${svc.port}: OFFLINE (Start via npm start / npm run api:watch)`);
   } else if (svc.required) {
-    console.log(`${WARN} ${svc.name.padEnd(32)} Port ${svc.port}: NOT REACHABLE`);
+    console.log(`${FAIL} ${svc.name.padEnd(32)} Port ${svc.port}: NOT REACHABLE (Required)`);
+    hasErrors = true;
   } else {
-    console.log(` - ${svc.name.padEnd(32)} Port ${svc.port}: NOT REACHABLE`);
+    console.log(` - ${svc.name.padEnd(32)} Port ${svc.port}: NOT REACHABLE (Optional / HA Mode)`);
   }
 }
 
@@ -110,7 +111,12 @@ console.log(`\n${BOLD}----------------------------------------------------------
 if (!hasErrors) {
   console.log(`\x1b[32mEnvironment check completed successfully! Ready for development.\x1b[0m`);
 } else {
-  console.log(`\x1b[33mEnvironment needs attention. Run 'npm run dev:infra' to start background services.\x1b[0m`);
+  console.log(`\x1b[31mEnvironment check failed! Required services are offline.\x1b[0m`);
+  console.log(`\x1b[33mFix: Run 'npm run dev:infra' to start background MongoDB and Redis containers.\x1b[0m`);
+  console.log(`  Or start manually via Docker Compose:`);
+  console.log(`    - MongoDB: docker compose -f tools/docker/docker-compose.3layer.yml --profile all up -d`);
+  console.log(`    - Redis:   docker compose -f tools/docker/docker-compose.redis-dev.yml up -d`);
+  process.exitCode = 1;
 }
 console.log(`${BOLD}================================================================${RESET}\n`);
 

@@ -102,20 +102,20 @@ docker exec -it vialiq-mongo-layer3-prod mongosh --port 27037 --eval "rs.status(
 
 ```env
 # Layer 1: Admin / Control Plane
-MONGODB_URI_ADMIN="mongodb://localhost:27017/vialiq_control_plane?replicaSet=rs-admin&directConnection=true"
+MONGODB_URI_ADMIN="mongodb://localhost:27017/vialiq_control_plane?replicaSet=rs-admin"
 
 # Layer 2: Dev & UAT Study Sandbox
-MONGODB_URI_DEV="mongodb://localhost:27027/study_dev_sandbox?replicaSet=rs-dev&directConnection=true"
+MONGODB_URI_DEV="mongodb://localhost:27027/study_dev_sandbox?replicaSet=rs-dev"
 
 # Layer 3: Production Isolation (Simulated)
-MONGODB_URI_PROD="mongodb://localhost:27037/study_prod_sandbox?replicaSet=rs-prod&directConnection=true"
+MONGODB_URI_PROD="mongodb://localhost:27037/study_prod_sandbox?replicaSet=rs-prod"
 ```
 
 ### 5.2 MongoDB Compass (GUI)
 Copy-paste these connection URIs into MongoDB Compass:
-- **Layer 1 (Admin):** `mongodb://localhost:27017/?replicaSet=rs-admin&directConnection=true`
-- **Layer 2 (Dev):** `mongodb://localhost:27027/?replicaSet=rs-dev&directConnection=true`
-- **Layer 3 (Prod):** `mongodb://localhost:27037/?replicaSet=rs-prod&directConnection=true`
+- **Layer 1 (Admin):** `mongodb://localhost:27017/?replicaSet=rs-admin`
+- **Layer 2 (Dev):** `mongodb://localhost:27027/?replicaSet=rs-dev`
+- **Layer 3 (Prod):** `mongodb://localhost:27037/?replicaSet=rs-prod`
 
 ---
 
@@ -125,7 +125,7 @@ Test that Layer 1 Admin and Layer 2 Dev accept multi-document ACID transactions:
 
 ### Step 1: Seed a Tenant in Layer 1 Admin
 ```bash
-mongosh "mongodb://localhost:27017/vialiq_control_plane?replicaSet=rs-admin&directConnection=true" --quiet --eval '
+mongosh "mongodb://localhost:27017/vialiq_control_plane?replicaSet=rs-admin" --quiet --eval '
   db.tenants.updateOne(
     { tenantId: "sponsor-astra" },
     {
@@ -145,7 +145,7 @@ mongosh "mongodb://localhost:27017/vialiq_control_plane?replicaSet=rs-admin&dire
 ### Step 2: Run an ACID Transaction in Layer 2 Dev
 Verify that session transactions work on the replica set:
 ```bash
-mongosh "mongodb://localhost:27027/study_oncology_101_dev?replicaSet=rs-dev&directConnection=true" --quiet --eval '
+mongosh "mongodb://localhost:27027/study_oncology_101_dev?replicaSet=rs-dev" --quiet --eval '
   const session = db.getMongo().startSession();
   session.startTransaction();
   try {
@@ -219,8 +219,8 @@ docker logs -f vialiq-mongo-layer3-prod
 - **Fix:** Wait 5 seconds for healthchecks to turn green. Run `npm run docker:mongo:status` to verify containers say `(healthy)`.
 
 ### 2. `NotWritablePrimary` or `Cannot run command against a replica set member in state SECONDARY`
-- **Cause:** Missing `directConnection=true` or replica set initialization in progress.
-- **Fix:** Ensure your connection URI includes `?replicaSet=rs-admin&directConnection=true` when connecting to localhost.
+- **Cause:** Replica set election in progress or node startup lag.
+- **Fix:** Wait for the bounded readiness check to finish. Run `npm run docker:mongo:status` to ensure containers are `(healthy)` and verify with `docker logs vialiq-init-layer1-admin`. Connection URI: `mongodb://localhost:27017/?replicaSet=rs-admin`.
 
 ### 3. Port Already Allocated (`bind: address already in use`)
 - **Fix:** Kill the process holding the port:

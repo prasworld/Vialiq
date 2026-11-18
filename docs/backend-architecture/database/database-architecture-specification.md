@@ -65,14 +65,16 @@ In compliance with **21 CFR Part 11, ICH E6(R3), and GDPR Art. 17**, the Vialiq 
    - When requests arrive with authenticated clinical user context, connections are resolved dynamically to the study's dedicated database on either Cluster 1 (if DEV/UAT) or Cluster 2 (if PROD).
 
 ### 1.2 Local Development Cluster Deployment ($0 Dev Cost)
-To enable multi-document ACID transactions and Change Streams during local development without cloud costs, a local 3-node replica set is defined in [`tools/docker/docker-compose.mongo-cluster.yml`](../../tools/docker/docker-compose.mongo-cluster.yml):
+To enable multi-document ACID transactions and Change Streams during local development without cloud costs, the 3-layer cluster topology is defined in [`tools/docker/docker-compose.3layer.yml`](../../tools/docker/docker-compose.3layer.yml):
 
 ```bash
-# Start the local 3-node MongoDB Replica Set cluster
-docker compose -f tools/docker/docker-compose.mongo-cluster.yml up -d
+# Start all 3 local MongoDB Replica Set layers
+npm run docker:mongo:all
 
-# Application connection string:
-# mongodb://localhost:27017,localhost:27018,localhost:27019/?replicaSet=rs-edc
+# Host connection strings:
+# Admin (Layer 1): mongodb://localhost:27017/?replicaSet=rs-admin
+# Dev   (Layer 2): mongodb://localhost:27027/?replicaSet=rs-dev
+# Prod  (Layer 3): mongodb://localhost:27037/?replicaSet=rs-prod
 ```
 
 ---

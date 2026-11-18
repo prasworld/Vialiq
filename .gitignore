@@ -55,6 +55,12 @@ node_modules/.vitest
 # npm registry configuration (created by actions/setup-node in CI; may contain auth tokens locally)
 .npmrc
 
+# Local environment secrets & overrides
+.env
+.env.*
+*.env
+!.env.example
+
 # ==============================================================================
 # .NET / C# Build Artifacts & Binaries
 # ==============================================================================

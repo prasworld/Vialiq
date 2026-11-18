@@ -11,7 +11,7 @@
 > - [002: API Stack Discussion Agenda & Framework Evaluation](./002-api-stack-discussion-agenda-and-evaluation-framework.md)
 > - [003: DTO Architecture Strategy & Rejection of GraphQL](./003-dto-design-and-graphql-evaluation-adr.md)
 > - [002: 3-Cluster & Flexible Tenancy Architecture](../database/002-3-cluster-and-flexible-tenancy-architecture.md)
-> - [010: Docker Compose Environments Guide](../database/010-docker-compose-3layer-vs-mongo-cluster-guide.md)
+> - [3-Layer MongoDB Docker Setup Guide](../database/mongodb-3layer-docker-setup-guide.md)
 
 ---
 
@@ -201,7 +201,7 @@ By creating a dedicated `backend/api/` folder (rather than putting the API under
 │   └── compliance/                        # 21 CFR Part 11, GAMP 5, and ICH E6(R3)
 │
 └── tools/
-    └── docker/                            # docker-compose.3layer.yml & redis-dev.yml
+    └── docker/                            # docker-compose.3layer.yml, redis.yml & redis-ha.yml
 ```
 
 ---

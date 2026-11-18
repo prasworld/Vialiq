@@ -7,6 +7,7 @@
 > **Author:** Architecture Team / Prashant Gupta  
 > **Target Systems:** MongoDB 7.0+ Replica Sets (`rs-admin:27017`, `rs-dev:27027`, `rs-prod:27037`), Microsoft SQL Server 2022+ (Reporting & CDISC Warehouse), ASP.NET Core 8/9 LTS API (`backend/api/`), Kubernetes / Docker  
 > **Related Documents:**
+>
 > - [Database Spec 001: Database Selection ADR](../database/001-database-selection-adr.md)
 > - [Database Spec 002: 3-Cluster & Flexible Tenancy Architecture](../database/002-3-cluster-and-flexible-tenancy-architecture.md)
 > - [Database Spec 005: Operational Pillars, Backup, Locking & Archival](../database/005-database-operational-pillars-backup-locking-dictionaries-and-archival.md)
@@ -18,6 +19,7 @@
 ## 1. Executive Summary & Context
 
 The Vialiq Clinical EDC platform operates a **Heterogeneous Polyglot Datastore Architecture**:
+
 1. **Primary Operational Datastore (MongoDB 7.0+ Replica Sets)**: Manages dynamic Case Report Forms (CRFs), polymorphic visit data, Client-Side Field-Level Encryption (CSFLE), 4-tier locking, and 21 CFR Part 11 append-only audit trails across three physically isolated clusters (`rs-admin:27017`, `rs-dev:27027`, `rs-prod:27037`).
 2. **Secondary Relational Datastore (Microsoft SQL Server 2022+)**: Serves as the asynchronous reporting warehouse, hosting Change Data Capture (CDC) ETL pipelines, CDISC SDTM/ADaM statistical datasets, SAS/R extract views, and sponsor-mandated relational SQL querying.
 3. **Disparate Target Deployments**: The platform must deploy consistently across:
@@ -38,6 +40,7 @@ MongoDB 7.0+ Replica Sets (3 Clusters)                           Microsoft SQL S
 ```
 
 ### The Core Architectural Mandates:
+
 - **Zero In-House Wheel Reinvention**: Standard distributed migration problems (concurrency races, deadlocks, stale locks, checksum validation, out-of-order branch merges) must be solved by an established, battle-tested industry standard tool.
 - **Polyglot Unified Governance**: A single migration toolchain and pipeline must manage both MongoDB and SQL Server. Maintaining disconnected tools creates split audit histories and doubles GAMP 5 validation overhead.
 - **Self-Healing, Fault-Tolerant Dedicated Deployments**: Automated deployments must be resilient against network partitions, replica set failovers, and container restarts without manual DBA intervention.
@@ -57,7 +60,7 @@ Building a naive in-house database migration script runner inevitably encounters
 1. Pod Race     2. Stale Lock     3. Polyglot       4. Least-       5. ALCOA+
    Deadlocks       Orphaning         Drift             Privilege       Audit Loss
    (Multi-Pod)     (OOM Crashes)     (Mongo vs SQL)    Violation       (Drop Col)
-   
+
    ▼               ▼                 ▼
 6. Out-of-Order 7. Zero-Downtime  8. GAMP 5
    Git Merges      Rolling Break     Validation
@@ -65,27 +68,35 @@ Building a naive in-house database migration script runner inevitably encounters
 ```
 
 ### Failure Mode 1: Distributed Pod Concurrency Race Conditions
+
 When Kubernetes scales or rolls out a new deployment, 5 to 20 API pods boot simultaneously. If application code triggers migrations on startup, all instances compete to execute DDL simultaneously. In MongoDB, concurrent `createIndex` or `collMod` operations cause resource contention and replica set synchronization locks. In SQL Server, concurrent DDL commands cause schema-lock deadlocks (`LCK_M_SCH_M`).
 
 ### Failure Mode 2: Deadlocks from Stale / Abandoned Locks
+
 If a migration runner crashes mid-execution (e.g., due to an out-of-memory `OOMKilled` eviction, node draining, or spot instance termination), a distributed lock flag is left set to `locked = true`. Without automated heartbeat TTLs and self-healing lock expiration, the entire production deployment deadlocks permanently, requiring emergency DBA manual surgery.
 
 ### Failure Mode 3: Heterogeneous Polyglot Schema Drift
+
 When schema evolution is tracked in separate tools, an update applied to MongoDB (e.g., adding an `adverse_event_grade` field to the CRF) can easily fail to be synchronized with the corresponding SQL Server reporting table (`sdtm_ae`). Reports silently produce nulls or crash ETL pipelines, invalidating clinical trial safety analytics.
 
 ### Failure Mode 4: Violation of the Principle of Least Privilege
+
 If the main web API pod runs database migrations on startup, the API's database user credentials must possess administrative DDL privileges (`dbOwner` in MongoDB, `db_ddladmin` in SQL Server). In FDA 21 CFR Part 11 and HIPAA compliance, granting web-facing applications DDL permissions is an unacceptable vulnerability. A compromised web container could alter collections, drop indexes, or tamper with security validators.
 
 ### Failure Mode 5: Destructive Migration & ALCOA+ Audit Trail Destruction
+
 Relational developers frequently perform destructive DDL (e.g., `ALTER TABLE DROP COLUMN` or changing a column type from `NVARCHAR` to `INT`). In clinical EDC, **destructive operations are strictly illegal under 21 CFR Part 11 § 11.10(e)**. Historical patient data and audit records must be preserved exactly as entered for 25+ years. Migrations must be strictly additive.
 
 ### Failure Mode 6: Out-of-Order Git Feature Branch Merges
+
 Developer Alice creates migration `005` on Monday. Developer Bob creates migration `006` on Tuesday and merges to `main` first. When Alice merges on Thursday, a naive sequential counter ignores migration `005` because `006` was already applied. Migrations must be identified by unique, immutable IDs and checksums rather than volatile sequential integers.
 
 ### Failure Mode 7: Zero-Downtime Rolling Deployment Incompatibility
+
 During a Kubernetes rolling deployment, old pods (Version N) and new pods (Version N+1) run concurrently for 10 to 15 minutes. If a migration immediately removes or mutates a field expected by Version N, the running application throws runtime exceptions for active clinical users.
 
 ### Failure Mode 8: GAMP 5 Computer System Validation (CSV) Burden
+
 Under GAMP 5 (Good Automated Manufacturing Practice), custom-written migration tools are classified as **Category 5 (Custom Software)**, requiring extensive User Requirements Specifications (URS), Functional Specifications (FS), Installation Qualification (IQ), Operational Qualification (OQ), and Performance Qualification (PQ). Adopting an industry-standard, widely proven tool reclassifies the engine as **Category 4 (Configured Product)** or **Category 1 (Infrastructure Software)**, eliminating hundreds of pages of custom validation overhead.
 
 ---
@@ -96,15 +107,15 @@ To resolve all eight failure modes without maintaining proprietary migration plu
 
 ### 3.1 Why Liquibase Decisively Wins Over Alternatives
 
-| Evaluation Dimension | Homegrown C# Runner | Flyway | **Liquibase (Accepted)** |
-|---|---|---|---|
-| **Multi-Engine Support** | Must build both engines | SQL Server only; MongoDB is secondary/poor | **Native Polyglot**: Official MongoDB Extension + SQL Server JDBC |
-| **Distributed Locking** | High risk of edge cases | Relational table lock | **Built-in `DATABASECHANGELOGLOCK`** with self-healing lock timeouts |
-| **Tamper-Detection** | Must maintain custom hashing | MD5 Checksums | **Cryptographic SHA-256 Checksums** on every changeset |
-| **Preconditions & Guards** | Custom C# reflection | SQL scripts | **Rich declarative preconditions** (e.g. check collection, table, role) |
-| **Dry-Run Inspection** | None | Limited | **`update-sql` & dry-run validation** for formal Sponsor QA sign-off |
-| **Execution Modality** | Inside API process | CLI / Java API | **Container-Native**: Runs as K8s `initContainer` or standalone CLI |
-| **GAMP 5 CSV Precedent** | Extreme audit risk (Cat 5) | Medium (Cat 4) | **Industry Standard** (Pre-qualified at Novartis, Roche, Pfizer, GSK) |
+| Evaluation Dimension       | Homegrown C# Runner          | Flyway                                     | **Liquibase (Accepted)**                                                |
+| -------------------------- | ---------------------------- | ------------------------------------------ | ----------------------------------------------------------------------- |
+| **Multi-Engine Support**   | Must build both engines      | SQL Server only; MongoDB is secondary/poor | **Native Polyglot**: Official MongoDB Extension + SQL Server JDBC       |
+| **Distributed Locking**    | High risk of edge cases      | Relational table lock                      | **Built-in `DATABASECHANGELOGLOCK`** with self-healing lock timeouts    |
+| **Tamper-Detection**       | Must maintain custom hashing | MD5 Checksums                              | **Cryptographic SHA-256 Checksums** on every changeset                  |
+| **Preconditions & Guards** | Custom C# reflection         | SQL scripts                                | **Rich declarative preconditions** (e.g. check collection, table, role) |
+| **Dry-Run Inspection**     | None                         | Limited                                    | **`update-sql` & dry-run validation** for formal Sponsor QA sign-off    |
+| **Execution Modality**     | Inside API process           | CLI / Java API                             | **Container-Native**: Runs as K8s `initContainer` or standalone CLI     |
+| **GAMP 5 CSV Precedent**   | Extreme audit risk (Cat 5)   | Medium (Cat 4)                             | **Industry Standard** (Pre-qualified at Novartis, Roche, Pfizer, GSK)   |
 
 ---
 
@@ -159,7 +170,7 @@ All database migrations reside within a unified folder hierarchy in the reposito
 
     <!-- Layer 1 Admin Control Plane -->
     <include file="admin-control/20261021_001_admin_init.xml" relativeToChangelogFile="true"/>
-    
+
     <!-- Study Datastores Template -->
     <include file="study-template/20261021_001_crf_entries_indexes.json" relativeToChangelogFile="true"/>
     <include file="study-template/20261021_002_audit_trail_immutable.json" relativeToChangelogFile="true"/>
@@ -327,7 +338,7 @@ CREATE TABLE sdtm.DM (
     ARM             VARCHAR(100)     NULL, -- Treatment Arm Description
     COUNTRY         VARCHAR(3)       NOT NULL,
     DMDTC           VARCHAR(25)      NOT NULL, -- Date/Time of Collection
-    
+
     -- ETL Watermarking & Audit Metadata
     ETL_INSERTED_AT_UTC DATETIME2(3) NOT NULL DEFAULT SYSUTCDATETIME(),
     ETL_SOURCE_CRF_ID   VARCHAR(100) NOT NULL,
@@ -364,7 +375,7 @@ CREATE TABLE sdtm.AE (
     AESTDTC         VARCHAR(25)      NULL,     -- AE Start Date/Time
     AEENDTC         VARCHAR(25)      NULL,     -- AE End Date/Time
     AEOUT           VARCHAR(50)      NULL,     -- Outcome
-    
+
     -- ETL Audit Metadata
     ETL_INSERTED_AT_UTC DATETIME2(3) NOT NULL DEFAULT SYSUTCDATETIME(),
     ETL_SOURCE_CRF_ID   VARCHAR(100) NOT NULL,
@@ -438,12 +449,12 @@ spec:
         - name: liquibase-polyglot-migrator
           image: liquibase/liquibase:4.29-alpine
           imagePullPolicy: IfNotPresent
-          command: ["/bin/sh", "-c"]
+          command: ['/bin/sh', '-c']
           args:
             - |
               set -e
               echo "Starting Pre-Flight Polyglot Migration..."
-              
+
               # 1. Run MongoDB Migrations (Official MongoDB Liquibase Extension)
               liquibase \
                 --changelog-file=/liquibase/changelogs/mongo/changelog-master.xml \
@@ -488,11 +499,11 @@ spec:
               readOnly: true
           resources:
             limits:
-              cpu: "500m"
-              memory: "512Mi"
+              cpu: '500m'
+              memory: '512Mi'
             requests:
-              cpu: "100m"
-              memory: "256Mi"
+              cpu: '100m'
+              memory: '256Mi'
 
       # ========================================================================
       # PHASE 2: RUNTIME APPLICATION CONTAINER (readWrite Least-Privilege Only)
@@ -506,7 +517,7 @@ spec:
               name: http
           env:
             - name: ASPNETCORE_ENVIRONMENT
-              value: "Production"
+              value: 'Production'
             # Runtime connection strings have ZERO DDL permissions (cannot drop or create indexes)
             - name: ConnectionStrings__MongoAdmin
               valueFrom:
@@ -542,11 +553,11 @@ spec:
             periodSeconds: 15
           resources:
             limits:
-              cpu: "2000m"
-              memory: "2048Mi"
+              cpu: '2000m'
+              memory: '2048Mi'
             requests:
-              cpu: "500m"
-              memory: "512Mi"
+              cpu: '500m'
+              memory: '512Mi'
       volumes:
         - name: migration-changelogs
           configMap:
@@ -554,8 +565,10 @@ spec:
 ```
 
 ### 6.2 Self-Healing Lock Management: Resolving Deadlocks Automatically
+
 If an initContainer is terminated mid-migration (e.g. node eviction or OOM kill), Liquibase records a lock in `DATABASECHANGELOGLOCK`.
 To make the deployment **100% self-healing without manual DBA intervention**:
+
 1. We configure a **Lock Timeout Policy** in `liquibase.properties`:
    ```properties
    # Self-Healing Lock Lease: If lock is older than 300 seconds, force release
@@ -596,8 +609,9 @@ Phase 1: Expand (Additive)        Phase 2: Transition (Rolling)     Phase 3: Con
 ## 8. The 3-Tier Seeding Architecture & Data Fixture Engine
 
 We establish a clear boundary:
-* **Liquibase owns Structure & Reference Codelists** (System Roles, CDISC Terminology Codelists, Regulatory Constraints).
-* **`DevelopmentSeeder` (in .NET) owns Mock Clinical Data** (Patients, Mock Forms, Simulated Signatures).
+
+- **Liquibase owns Structure & Reference Codelists** (System Roles, CDISC Terminology Codelists, Regulatory Constraints).
+- **`DevelopmentSeeder` (in .NET) owns Mock Clinical Data** (Patients, Mock Forms, Simulated Signatures).
 
 ```
                                3-TIER SEEDING ARCHITECTURE
@@ -615,6 +629,7 @@ Tier 1: Platform Bootstrap          Tier 2: Study Template Seeding       Tier 3:
 ```
 
 ### 8.1 The Hard GxP Port-Lock Guard
+
 In `backend/api/src/Vialiq.Infrastructure/Data/DevelopmentSeeder.cs`:
 
 ```csharp
@@ -632,8 +647,8 @@ public sealed class DevelopmentSeeder : IDevelopmentSeeder
     private readonly ILogger<DevelopmentSeeder> _logger;
 
     public DevelopmentSeeder(
-        IConnectionPoolManager poolManager, 
-        IHostEnvironment env, 
+        IConnectionPoolManager poolManager,
+        IHostEnvironment env,
         ILogger<DevelopmentSeeder> logger)
     {
         _poolManager = poolManager;
@@ -671,7 +686,7 @@ public sealed class DevelopmentSeeder : IDevelopmentSeeder
 
 ## 9. Development Mode Architecture & Local Developer Ergonomics
 
-A critical requirement of the Vialiq engineering ecosystem is **frictionless local development**. Developers on macOS (Apple Silicon ARM64) or Linux must not be burdened with installing Java runtimes, JDBC drivers, or standalone Liquibase CLI tools on their host operating systems. 
+A critical requirement of the Vialiq engineering ecosystem is **frictionless local development**. Developers on macOS (Apple Silicon ARM64) or Linux must not be burdened with installing Java runtimes, JDBC drivers, or standalone Liquibase CLI tools on their host operating systems.
 
 Development Mode is designed to be **100% offline, local-first, zero-install, and self-healing**.
 
@@ -704,6 +719,7 @@ npm run api:watch
 ```
 
 #### What Occurs Automatically During `npm run db:setup`:
+
 1. Liquibase launches inside an ephemeral Docker container (`liquibase/liquibase:4.29-alpine`).
 2. Connects to local Layer 1 Admin (`localhost:27017`) and creates collections, system roles, and CSFLE Key Vault indexes.
 3. Connects to local Layer 2 Dev (`localhost:27027`) and applies compound indexes on `crf_entries` and `audit_trail`.
@@ -722,11 +738,12 @@ docker run --rm \
   -v $(pwd)/database/migrations:/liquibase/changelogs \
   liquibase/liquibase:4.29-alpine \
   --changelog-file=/liquibase/changelogs/mongo/changelog-master.xml \
-  --url="mongodb://localhost:27017/vialiq_control_plane?directConnection=true" \
+  --url="mongodb://localhost:27017/vialiq_control_plane?replicaSet=rs-admin" \
   update
 ```
 
 #### Why `--network host` is Essential:
+
 By specifying `--network host`, the container shares the host network namespace directly. This allows Liquibase running inside the container to connect to `localhost:27017`, `localhost:27027`, and `localhost:1433` without configuring custom Docker bridges, port forwards, or container IP aliases.
 
 ---
@@ -735,12 +752,12 @@ By specifying `--network host`, the container shares the host network namespace 
 
 To conserve memory on developer workstations (especially laptops with 16GB or 18GB Unified Memory), Development Mode supports two operational profiles:
 
-| Profile | Target Developers | Datastores Running | Memory Footprint | Commands Used |
-|---|---|---|---|---|
-| **Profile A: Core EDC** *(Default 90%)* | UI Engineers, Form Builder, CRF Data Capture, e-Signatures, Validation AST | MongoDB Only (Ports `27017`, `27027`, `27037`) | ~2.5 GB RAM total | `npm run docker:mongo:all`<br/>`npm run db:migrate:mongo`<br/>`npm run api:watch` |
-| **Profile B: Reporting & ETL** *(Optional 10%)* | Statistical Programmers, CDISC SDTM Mappers, BI Dashboard Developers | MongoDB + Microsoft SQL Server 2022 Linux Container (Port `1433`) | ~5.0 GB RAM total | `npm run docker:mongo:all`<br/>`npm run docker:sqlserver:up`<br/>`npm run db:migrate:all` |
+| Profile                                         | Target Developers                                                          | Datastores Running                                                | Memory Footprint  | Commands Used                                                                             |
+| ----------------------------------------------- | -------------------------------------------------------------------------- | ----------------------------------------------------------------- | ----------------- | ----------------------------------------------------------------------------------------- |
+| **Profile A: Core EDC** _(Default 90%)_         | UI Engineers, Form Builder, CRF Data Capture, e-Signatures, Validation AST | MongoDB Only (Ports `27017`, `27027`, `27037`)                    | ~2.5 GB RAM total | `npm run docker:mongo:all`<br/>`npm run db:migrate:mongo`<br/>`npm run api:watch`         |
+| **Profile B: Reporting & ETL** _(Optional 10%)_ | Statistical Programmers, CDISC SDTM Mappers, BI Dashboard Developers       | MongoDB + Microsoft SQL Server 2022 Linux Container (Port `1433`) | ~5.0 GB RAM total | `npm run docker:mongo:all`<br/>`npm run docker:sqlserver:up`<br/>`npm run db:migrate:all` |
 
-* **Rule**: Core EDC feature development never requires SQL Server running locally. Only engineers actively developing the CDC pipeline or SDTM relational views need to launch the SQL Server container.
+- **Rule**: Core EDC feature development never requires SQL Server running locally. Only engineers actively developing the CDC pipeline or SDTM relational views need to launch the SQL Server container.
 
 ---
 
@@ -749,6 +766,7 @@ To conserve memory on developer workstations (especially laptops with 16GB or 18
 When a developer needs to introduce a new compound index, collection validator, or reporting table:
 
 #### Step 1: Create the Forward-Only Changeset File
+
 Create a new file in `database/migrations/mongo/study-template/`:  
 `20261022_001_subject_status_index.json`
 
@@ -784,19 +802,25 @@ Create a new file in `database/migrations/mongo/study-template/`:
 ```
 
 #### Step 2: Register in Master Changelog
+
 Add a single include entry to `database/migrations/mongo/changelog-master.xml`:
+
 ```xml
 <include file="study-template/20261022_001_subject_status_index.json" relativeToChangelogFile="true"/>
 ```
 
 #### Step 3: Apply and Verify Locally
+
 ```bash
 npm run db:migrate:mongo
 ```
+
 Liquibase checks `DATABASECHANGELOG` on `localhost:27027`, detects the new unapplied changeset, executes the `createIndex` command in ~1.5 seconds, and records the SHA-256 hash.
 
 #### Step 4: Verify Dry-Run Rollback
+
 Developers test rollback resilience locally before submitting a Pull Request:
+
 ```bash
 npm run db:rollback:count 1
 # Confirms that the <rollback> definition safely drops the index without side effects
@@ -815,6 +839,7 @@ npm run db:reset
 ```
 
 #### What Occurs Automatically in Under 5 Seconds:
+
 1. **Targeted Teardown**: Drops the local Dev study database (`vialiq_ten_novartis_global_std_onco101_dev` on port `27027`). Layer 1 Admin and Layer 3 remain untouched.
 2. **Re-Migration Sweep**: Runs Liquibase in Docker to re-create all collections, schema validators, and compound indexes from scratch.
 3. **Re-Seed Fixtures**: Executes .NET `DevelopmentSeeder` to re-populate standard test subjects (`SUBJ-001`, `SUBJ-002`) and draft forms.
@@ -842,7 +867,7 @@ Development Mode enforces strict guardrails to prevent accidental pollution or d
    - Subjects: `SUBJ-001`, `SUBJ-002`
    - Test Users: `dr.smith@clinic.org` (PIN: `123456` for 21 CFR Part 11 re-authentication testing).
 3. **Local Encryption Keys**:
-   Uses the 96-byte local master key seeded in `tools/docker/mongo/` for CSFLE encryption, eliminating any requirement to connect to AWS KMS or Azure Key Vault during local development.
+   Uses the 96-byte local master key seeded via environment variables (e.g. `LOCAL_MASTER_KEY`) or ASP.NET Core user-secrets for CSFLE encryption, eliminating any requirement to connect to AWS KMS or Azure Key Vault during local development.
 
 ---
 
@@ -855,7 +880,7 @@ Development Mode enforces strict guardrails to prevent accidental pollution or d
     "docker:mongo:clean": "docker compose -f tools/docker/docker-compose.3layer.yml --profile all down -v",
     "docker:sqlserver:up": "docker compose -f tools/docker/docker-compose.sqlserver.yml up -d",
     "db:setup": "npm run db:migrate:all && npm run db:seed",
-    "db:migrate:mongo": "docker run --rm --network host -v $(pwd)/database/migrations:/liquibase/changelogs liquibase/liquibase:4.29-alpine --changelog-file=/liquibase/changelogs/mongo/changelog-master.xml --url=\"mongodb://localhost:27017/vialiq_control_plane?directConnection=true\" update",
+    "db:migrate:mongo": "docker run --rm --network host -v $(pwd)/database/migrations:/liquibase/changelogs liquibase/liquibase:4.29-alpine --changelog-file=/liquibase/changelogs/mongo/changelog-master.xml --url=\"mongodb://localhost:27017/vialiq_control_plane?replicaSet=rs-admin\" update",
     "db:migrate:sql": "docker run --rm --network host -v $(pwd)/database/migrations:/liquibase/changelogs liquibase/liquibase:4.29-alpine --changelog-file=/liquibase/changelogs/sqlserver/changelog-master.xml --url=\"jdbc:sqlserver://localhost:1433;databaseName=vialiq_reporting;encrypt=false\" --username=sa --password=\"VialiqDevPass123!\" update",
     "db:migrate:all": "npm run db:migrate:mongo && npm run db:migrate:sql",
     "db:seed": "dotnet run --project backend/api/src/Vialiq.Api -- --seed-only",

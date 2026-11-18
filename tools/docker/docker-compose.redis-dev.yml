@@ -1,141 +1,55 @@
 # ==============================================================================
-# Vialiq EDC — Redis High-Availability Cluster Topology (Docker Compose)
+# Vialiq EDC — Lightweight Standalone Redis (Docker Compose)
 # ==============================================================================
-# Architecture:
-#   - Primary (Master):      Port 6379  | Handles writes (locks, cache invalidations)
-#   - Replica (Secondary):   Port 6380  | Streaming async replication (PSYNC), auto-promotes
-#   - Sentinel 1:            Port 26379 | Quorum = 2, down-after = 2000ms
-#   - Sentinel 2:            Port 26380 | Quorum = 2, down-after = 2000ms
-#   - Sentinel 3:            Port 26381 | Quorum = 2, down-after = 2000ms
+# Purpose:
+#   Fast, minimal single-node Redis instance for local feature development
+#   (ASP.NET Core Web API, Angular UI, distributed locking, caching, and auth sessions).
 #
-# Standards & References:
-#   - ADR 007-A: Multi-Tenant Cache Isolation & Security Scoping
-#   - ENG 007-B: High-Availability Redis Cluster Architecture & Scaling Guide
+# Ports:
+#   - 6379:6379 (Standard Redis Port)
 #
-# Operational Commands:
-#   - Start HA Cluster:         npm run docker:redis:up
-#                               (or docker compose -f tools/docker/docker-compose.redis-dev.yml up -d)
-#   - View Cluster Status:      npm run docker:redis:status
-#   - Stop Cluster:             npm run docker:redis:stop
-#   - Tear Down:                npm run docker:redis:down
-#   - Run Chaos Failover Drill: npm run docker:redis:test-failover
-#                               (or bash tools/scripts/test-redis-ha-failover.sh)
+# Credentials (12-Factor Environment Secret with Safe Dev Fallback):
+#   - Default: VialiqDevSecret123!
+#   - Override: export VIALIQ_REDIS_PASSWORD="YourCustomSecret"
+#
+# Connection Strings:
+#   - Host connection: localhost:6379,password=VialiqDevSecret123!
+#
+# For High-Availability, Replication, and Sentinel Chaos Failover Drills:
+#   - Use: tools/docker/docker-compose.redis-ha.yml
+#   - Command: npm run docker:redis:ha
 # ==============================================================================
 
 services:
-  # 1. Primary Redis Node
-  redis-primary:
+  redis:
     image: redis:7.2-alpine
-    container_name: vialiq-redis-primary
+    container_name: vialiq-redis
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6379:6379"
     command: >
       redis-server
       --port 6379
-      --requirepass VialiqDevSecret123!
-      --masterauth VialiqDevSecret123!
+      --requirepass ${VIALIQ_REDIS_PASSWORD:-VialiqDevSecret123!}
       --maxmemory 512mb
       --maxmemory-policy volatile-lru
       --appendonly yes
-    ports:
-      - "6379:6379"
+    volumes:
+      - redis_dev_data:/data
+    networks:
+      - vialiq-dev-net
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "VialiqDevSecret123!", "ping"]
-      interval: 3s
-      timeout: 2s
+      test: ["CMD", "redis-cli", "-a", "${VIALIQ_REDIS_PASSWORD:-VialiqDevSecret123!}", "ping"]
+      interval: 5s
+      timeout: 3s
       retries: 5
-    networks:
-      - vialiq-dev-net
-
-  # 2. Secondary Redis Replica
-  redis-replica:
-    image: redis:7.2-alpine
-    container_name: vialiq-redis-replica
-    command: >
-      redis-server
-      --port 6380
-      --replicaof redis-primary 6379
-      --requirepass VialiqDevSecret123!
-      --masterauth VialiqDevSecret123!
-      --maxmemory 512mb
-      --maxmemory-policy volatile-lru
-    ports:
-      - "6380:6380"
-    depends_on:
-      redis-primary:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "redis-cli", "-p", "6380", "-a", "VialiqDevSecret123!", "ping"]
-      interval: 3s
-      timeout: 2s
-      retries: 5
-    networks:
-      - vialiq-dev-net
-
-  # 3. Sentinel 1
-  redis-sentinel-1:
-    image: redis:7.2-alpine
-    container_name: vialiq-sentinel-1
-    command: >
-      sh -c "echo 'port 26379' > /tmp/sentinel.conf &&
-             echo 'sentinel resolve-hostnames yes' >> /tmp/sentinel.conf &&
-             echo 'sentinel announce-hostnames yes' >> /tmp/sentinel.conf &&
-             echo 'sentinel monitor mymaster redis-primary 6379 2' >> /tmp/sentinel.conf &&
-             echo 'sentinel auth-pass mymaster VialiqDevSecret123!' >> /tmp/sentinel.conf &&
-             echo 'sentinel down-after-milliseconds mymaster 2000' >> /tmp/sentinel.conf &&
-             echo 'sentinel failover-timeout mymaster 5000' >> /tmp/sentinel.conf &&
-             echo 'sentinel parallel-syncs mymaster 1' >> /tmp/sentinel.conf &&
-             redis-sentinel /tmp/sentinel.conf"
-    ports:
-      - "26379:26379"
-    depends_on:
-      - redis-primary
-      - redis-replica
-    networks:
-      - vialiq-dev-net
-
-  # 4. Sentinel 2
-  redis-sentinel-2:
-    image: redis:7.2-alpine
-    container_name: vialiq-sentinel-2
-    command: >
-      sh -c "echo 'port 26380' > /tmp/sentinel.conf &&
-             echo 'sentinel resolve-hostnames yes' >> /tmp/sentinel.conf &&
-             echo 'sentinel announce-hostnames yes' >> /tmp/sentinel.conf &&
-             echo 'sentinel monitor mymaster redis-primary 6379 2' >> /tmp/sentinel.conf &&
-             echo 'sentinel auth-pass mymaster VialiqDevSecret123!' >> /tmp/sentinel.conf &&
-             echo 'sentinel down-after-milliseconds mymaster 2000' >> /tmp/sentinel.conf &&
-             echo 'sentinel failover-timeout mymaster 5000' >> /tmp/sentinel.conf &&
-             echo 'sentinel parallel-syncs mymaster 1' >> /tmp/sentinel.conf &&
-             redis-sentinel /tmp/sentinel.conf"
-    ports:
-      - "26380:26380"
-    depends_on:
-      - redis-primary
-      - redis-replica
-    networks:
-      - vialiq-dev-net
-
-  # 5. Sentinel 3
-  redis-sentinel-3:
-    image: redis:7.2-alpine
-    container_name: vialiq-sentinel-3
-    command: >
-      sh -c "echo 'port 26381' > /tmp/sentinel.conf &&
-             echo 'sentinel resolve-hostnames yes' >> /tmp/sentinel.conf &&
-             echo 'sentinel announce-hostnames yes' >> /tmp/sentinel.conf &&
-             echo 'sentinel monitor mymaster redis-primary 6379 2' >> /tmp/sentinel.conf &&
-             echo 'sentinel auth-pass mymaster VialiqDevSecret123!' >> /tmp/sentinel.conf &&
-             echo 'sentinel down-after-milliseconds mymaster 2000' >> /tmp/sentinel.conf &&
-             echo 'sentinel failover-timeout mymaster 5000' >> /tmp/sentinel.conf &&
-             echo 'sentinel parallel-syncs mymaster 1' >> /tmp/sentinel.conf &&
-             redis-sentinel /tmp/sentinel.conf"
-    ports:
-      - "26381:26381"
-    depends_on:
-      - redis-primary
-      - redis-replica
-    networks:
-      - vialiq-dev-net
 
 networks:
   vialiq-dev-net:
+    name: vialiq-dev-net
     driver: bridge
+
+volumes:
+  redis_dev_data:
+    name: vialiq_redis_dev_data
+

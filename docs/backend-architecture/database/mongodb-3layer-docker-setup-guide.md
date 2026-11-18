@@ -21,8 +21,7 @@
    - [2.3 WiredTiger Memory Tuning (Preventing Contention)](#23-wiredtiger-memory-tuning-preventing-contention)
 3. [Configuration Files & Architecture Breakdown](#3-configuration-files--architecture-breakdown)
    - [3.1 Multi-Layer Docker Compose Specification (`tools/docker/docker-compose.3layer.yml`)](#31-multi-layer-docker-compose-specification-toolsdockerdocker-compose3layeryml)
-   - [3.2 Custom Production Dockerfile (`tools/docker/mongo/Dockerfile`)](#32-custom-production-dockerfile-toolsdockermongodockerfile)
-   - [3.3 Custom mongod.conf Template](#33-custom-mongodconf-template)
+   - [3.2 Single Source of Truth: Command-Line Flags vs Custom Dockerfiles](#32-single-source-of-truth-command-line-flags-vs-custom-dockerfiles)
 4. [Step-by-Step Instructions: From Image to Running Locally](#4-step-by-step-instructions-from-image-to-running-locally)
    - [Step 0: Verify Local macOS Environment](#step-0-verify-local-macos-environment)
    - [Step 1: Pull the Native ARM64 MongoDB 7.0 Image](#step-1-pull-the-native-arm64-mongodb-70-image)
@@ -190,22 +189,39 @@ services:
         condition: service_healthy
     networks:
       - vialiq-3layer-net
-    entrypoint: [ "bash", "-c", "
-      mongosh --host mongo-layer1-admin:27017 --eval '
-        try {
-          rs.status();
-          console.log(\"[Layer 1 Admin] Replica set rs-admin already initialized.\");
-        } catch (e) {
-          rs.initiate({
-            _id: \"rs-admin\",
-            members: [
-              { _id: 0, host: \"mongo-layer1-admin:27017\" }
-            ]
-          });
-          console.log(\"[Layer 1 Admin] Replica set rs-admin initialized successfully.\");
-        }
-      ';
-    "]
+    entrypoint:
+      - bash
+      - -c
+      - |
+        echo "Waiting for mongo-layer1-admin:27017 to accept connections..."
+        for i in $$(seq 1 30); do
+          if mongosh --host mongo-layer1-admin:27017 --quiet --eval "db.adminCommand('ping')" > /dev/null 2>&1; then
+            READY=1
+            break
+          fi
+          sleep 1
+        done
+
+        if [ -z "$$READY" ]; then
+          echo "ERROR: Timed out waiting for mongo-layer1-admin:27017 after 30 seconds"
+          exit 1
+        fi
+
+        echo "[Layer 1 Admin] Connected. Verifying replica set rs-admin..."
+        mongosh --host mongo-layer1-admin:27017 --eval '
+          try {
+            rs.status();
+            console.log("[Layer 1 Admin] Replica set rs-admin already initialized.");
+          } catch (e) {
+            rs.initiate({
+              _id: "rs-admin",
+              members: [
+                { _id: 0, host: "localhost:27017" }
+              ]
+            });
+            console.log("[Layer 1 Admin] Replica set rs-admin initialized successfully.");
+          }
+        '
 
   # ============================================================================
   # LAYER 2: DEV ENVIRONMENT (Cluster 1 — Not-Live DEV & UAT Study Databases)
@@ -231,10 +247,10 @@ services:
       - vialiq-3layer-net
     healthcheck:
       test: ["CMD", "mongosh", "--port", "27027", "--eval", "db.adminCommand('ping')"]
-      interval: 5s
-      timeout: 5s
+      interval: 10s
+      timeout: 10s
       retries: 5
-      start_period: 5s
+      start_period: 15s
 
   init-layer2-dev:
     image: mongo:7.0
@@ -247,22 +263,39 @@ services:
         condition: service_healthy
     networks:
       - vialiq-3layer-net
-    entrypoint: [ "bash", "-c", "
-      mongosh --host mongo-layer2-dev:27027 --eval '
-        try {
-          rs.status();
-          console.log(\"[Layer 2 Dev] Replica set rs-dev already initialized.\");
-        } catch (e) {
-          rs.initiate({
-            _id: \"rs-dev\",
-            members: [
-              { _id: 0, host: \"mongo-layer2-dev:27027\" }
-            ]
-          });
-          console.log(\"[Layer 2 Dev] Replica set rs-dev initialized successfully.\");
-        }
-      ';
-    "]
+    entrypoint:
+      - bash
+      - -c
+      - |
+        echo "Waiting for mongo-layer2-dev:27027 to accept connections..."
+        for i in $$(seq 1 30); do
+          if mongosh --host mongo-layer2-dev:27027 --quiet --eval "db.adminCommand('ping')" > /dev/null 2>&1; then
+            READY=1
+            break
+          fi
+          sleep 1
+        done
+
+        if [ -z "$$READY" ]; then
+          echo "ERROR: Timed out waiting for mongo-layer2-dev:27027 after 30 seconds"
+          exit 1
+        fi
+
+        echo "[Layer 2 Dev] Connected. Verifying replica set rs-dev..."
+        mongosh --host mongo-layer2-dev:27027 --eval '
+          try {
+            rs.status();
+            console.log("[Layer 2 Dev] Replica set rs-dev already initialized.");
+          } catch (e) {
+            rs.initiate({
+              _id: "rs-dev",
+              members: [
+                { _id: 0, host: "localhost:27027" }
+              ]
+            });
+            console.log("[Layer 2 Dev] Replica set rs-dev initialized successfully.");
+          }
+        '
 
   # ============================================================================
   # LAYER 3: PRODUCTION (Cluster 2 — Live Operational Clinical Trials)
@@ -288,10 +321,10 @@ services:
       - vialiq-3layer-net
     healthcheck:
       test: ["CMD", "mongosh", "--port", "27037", "--eval", "db.adminCommand('ping')"]
-      interval: 5s
-      timeout: 5s
+      interval: 10s
+      timeout: 10s
       retries: 5
-      start_period: 5s
+      start_period: 15s
 
   init-layer3-prod:
     image: mongo:7.0
@@ -304,22 +337,39 @@ services:
         condition: service_healthy
     networks:
       - vialiq-3layer-net
-    entrypoint: [ "bash", "-c", "
-      mongosh --host mongo-layer3-prod:27037 --eval '
-        try {
-          rs.status();
-          console.log(\"[Layer 3 Prod] Replica set rs-prod already initialized.\");
-        } catch (e) {
-          rs.initiate({
-            _id: \"rs-prod\",
-            members: [
-              { _id: 0, host: \"mongo-layer3-prod:27037\" }
-            ]
-          });
-          console.log(\"[Layer 3 Prod] Replica set rs-prod initialized successfully.\");
-        }
-      ';
-    "]
+    entrypoint:
+      - bash
+      - -c
+      - |
+        echo "Waiting for mongo-layer3-prod:27037 to accept connections..."
+        for i in $$(seq 1 30); do
+          if mongosh --host mongo-layer3-prod:27037 --quiet --eval "db.adminCommand('ping')" > /dev/null 2>&1; then
+            READY=1
+            break
+          fi
+          sleep 1
+        done
+
+        if [ -z "$$READY" ]; then
+          echo "ERROR: Timed out waiting for mongo-layer3-prod:27037 after 30 seconds"
+          exit 1
+        fi
+
+        echo "[Layer 3 Prod] Connected. Verifying replica set rs-prod..."
+        mongosh --host mongo-layer3-prod:27037 --eval '
+          try {
+            rs.status();
+            console.log("[Layer 3 Prod] Replica set rs-prod already initialized.");
+          } catch (e) {
+            rs.initiate({
+              _id: "rs-prod",
+              members: [
+                { _id: 0, host: "localhost:27037" }
+              ]
+            });
+            console.log("[Layer 3 Prod] Replica set rs-prod initialized successfully.");
+          }
+        '
 
 networks:
   vialiq-3layer-net:
@@ -335,44 +385,15 @@ volumes:
     name: vialiq_mongo_prod_data
 ```
 
-### 3.2 Custom Production Dockerfile (`tools/docker/mongo/Dockerfile`)
+### 3.2 Single Source of Truth: Command-Line Flags vs Custom Dockerfiles
 
-For teams that prefer to build a custom enterprise image pre-packaged with diagnostic tools and custom templates:
+Rather than maintaining custom Dockerfiles with static configuration templates (`mongod.conf`) that risk configuration drift, port mismatches, and healthcheck divergence across environments, Vialiq EDC standardizes on the official upstream **`mongo:7.0`** image.
 
-[`tools/docker/mongo/Dockerfile`](../../../tools/docker/mongo/Dockerfile):
-```dockerfile
-FROM mongo:7.0
-
-LABEL maintainer="Vialiq EDC Platform Engineering <devops@vialiq.health>"
-LABEL description="Optimized MongoDB 7.0 container for Vialiq EDC 3-Layer Cluster"
-LABEL architecture="arm64"
-
-# Set default environment variables
-ENV MONGO_REPLICA_SET_NAME="rs-admin" \
-    MONGO_PORT=27017 \
-    WIREDTIGER_CACHE_SIZE_GB=0.5
-
-# Install diagnostic utilities
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl \
-    ca-certificates \
-    procps \
-    net-tools \
-    dnsutils \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN mkdir -p /etc/mongo /docker-entrypoint-initdb.d
-COPY mongod.conf /etc/mongo/mongod.conf
-COPY healthcheck.sh /usr/local/bin/healthcheck.sh
-RUN chmod +x /usr/local/bin/healthcheck.sh
-
-EXPOSE 27017
-
-HEALTHCHECK --interval=5s --timeout=5s --retries=5 --start-period=10s \
-    CMD /usr/local/bin/healthcheck.sh
-
-CMD ["mongod", "--config", "/etc/mongo/mongod.conf"]
-```
+All layer-specific parameters are injected directly as runtime arguments in [`tools/docker/docker-compose.3layer.yml`](../../../tools/docker/docker-compose.3layer.yml):
+* **Replica Set Name**: Passed explicitly via `--replSet rs-admin`, `--replSet rs-dev`, or `--replSet rs-prod`.
+* **Port Binding**: Set via `--port 27017` (Admin), `--port 27027` (Dev), and `--port 27037` (Prod).
+* **WiredTiger Memory Clamp**: Clamped per layer via `--wiredTigerCacheSizeGB 0.5`.
+* **Healthcheck Alignment**: The healthcheck probe (`mongosh --port <PORT> --eval "db.adminCommand('ping')"`) directly probes the identical port configured in `command`, ensuring zero divergence between server startup and readiness checks.
 
 ---
 
@@ -484,7 +505,7 @@ Download and open **[MongoDB Compass](https://www.mongodb.com/products/tools/com
 #### Connecting to Layer 1 (Admin / Control Plane):
 - **URI Connection String:**
   ```text
-  mongodb://localhost:27017/?directConnection=true
+  mongodb://localhost:27017/?replicaSet=rs-admin
   ```
 - Click **Save & Connect**. Name the favorite: `Vialiq — Layer 1 (Admin)`.
 - Compass displays replica set status `PRIMARY (rs-admin)`.
@@ -492,7 +513,7 @@ Download and open **[MongoDB Compass](https://www.mongodb.com/products/tools/com
 #### Connecting to Layer 2 (Dev Environment):
 - **URI Connection String:**
   ```text
-  mongodb://localhost:27027/?directConnection=true
+  mongodb://localhost:27027/?replicaSet=rs-dev
   ```
 - Click **Save & Connect**. Name the favorite: `Vialiq — Layer 2 (Dev Sandbox)`.
 - Compass displays replica set status `PRIMARY (rs-dev)`.
@@ -500,14 +521,14 @@ Download and open **[MongoDB Compass](https://www.mongodb.com/products/tools/com
 #### Connecting to Layer 3 (Production):
 - **URI Connection String:**
   ```text
-  mongodb://localhost:27037/?directConnection=true
+  mongodb://localhost:27037/?replicaSet=rs-prod
   ```
 - Click **Save & Connect**. Name the favorite: `Vialiq — Layer 3 (Production)`.
 - Compass displays replica set status `PRIMARY (rs-prod)`.
 
-> [!NOTE]
-> **Why `?directConnection=true`?**  
-> When connecting to a single-node replica set from the host machine (macOS) through Docker port forwarding, `directConnection=true` tells the MongoDB driver to speak directly to `localhost:<port>` rather than trying to resolve the internal container hostnames (`mongo-layer1-admin`).
+> [!TIP]
+> **Native Replica Set Discovery (No `directConnection=true` Required)**  
+> Because each single-node replica set initiates and advertises `localhost:<port>` rather than internal Docker DNS names, host clients (.NET API, Compass, mongosh, Liquibase) discover and track the replica set topology natively without requiring `?directConnection=true`. Multi-document ACID transactions and Change Streams work out of the box.
 
 ---
 
@@ -696,16 +717,23 @@ npm run docker:mongo:clean    # Complete reset (wipes volumes for clean DB)
      ```
   2. In Docker Desktop Settings -> Resources -> Virtual disk: Ensure **VirtioFS** is selected.
 
-### 3. Replica Set Not Recognized in MongoDB Compass
-- **Symptoms:** Compass connects as standalone and throws `Transaction numbers are only allowed on a replica set member or mongos`.
-- **Fix:** Append `?directConnection=true` to your connection string:
-  ```text
-  mongodb://localhost:27017/?directConnection=true
-  ```
-  Or connect with the replica set parameter:
-  ```text
-  mongodb://127.0.0.1:27017/?replicaSet=rs-admin&directConnection=true
-  ```
+### 3. Replica Set Initialization Timeout or Offline
+- **Symptoms:** Connection fails or transactions throw `Transaction numbers are only allowed on a replica set member or mongos`.
+- **Cause:** Cold-boot startup race or missing replica set initialization.
+- **Fix:** 
+  1. Inspect initializer container logs to verify bounded readiness check completed:
+     ```bash
+     docker logs vialiq-init-layer1-admin
+     ```
+  2. Verify member status via `docker exec`:
+     ```bash
+     docker exec -it vialiq-mongo-layer1-admin mongosh --quiet --eval "rs.status().members[0].stateStr"
+     # Must return: PRIMARY
+     ```
+  3. Connect using standard replica set URI (clean native discovery):
+     ```text
+     mongodb://localhost:27017/?replicaSet=rs-admin
+     ```
 
 ---
 *End of Setup Guide. You are now running the complete 3-Layer Vialiq EDC MongoDB cluster topology locally.*
