@@ -58,7 +58,7 @@ try {
   hasErrors = true;
 }
 
-// 4. Check Port Reachability
+// 4. Check Port Reachability & Service Readiness
 async function checkPort(host, port) {
   return new Promise((resolve) => {
     const socket = new net.Socket();
@@ -78,12 +78,24 @@ async function checkPort(host, port) {
   });
 }
 
+function checkMongoPrimary(containerName, port) {
+  try {
+    const res = execSync(
+      `docker exec ${containerName} mongosh --port ${port} --quiet --eval "db.hello().isWritablePrimary"`,
+      { stdio: ['pipe', 'pipe', 'ignore'], timeout: 3000 }
+    ).toString().trim();
+    return res.includes('true');
+  } catch {
+    return false;
+  }
+}
+
 console.log(`\n${BOLD}Infrastructure Services & Ports:${RESET}`);
 
 const services = [
-  { name: 'Layer 1 Admin Mongo (rs-admin)', host: 'localhost', port: 27017, required: true },
-  { name: 'Layer 2 Dev Mongo   (rs-dev)',   host: 'localhost', port: 27027, required: true },
-  { name: 'Layer 3 Prod Mongo  (rs-prod)',  host: 'localhost', port: 27037, required: true },
+  { name: 'Layer 1 Admin Mongo (rs-admin)', host: 'localhost', port: 27017, required: true, isMongo: true, container: 'vialiq-mongo-layer1-admin' },
+  { name: 'Layer 2 Dev Mongo   (rs-dev)',   host: 'localhost', port: 27027, required: true, isMongo: true, container: 'vialiq-mongo-layer2-dev' },
+  { name: 'Layer 3 Prod Mongo  (rs-prod)',  host: 'localhost', port: 27037, required: true, isMongo: true, container: 'vialiq-mongo-layer3-prod' },
   { name: 'Redis Primary Cache',            host: 'localhost', port: 6379,  required: true },
   { name: 'Redis Replica Cache',            host: 'localhost', port: 6380,  required: false },
   { name: 'Redis Sentinel Quorum 1',        host: 'localhost', port: 26379, required: false },
@@ -96,7 +108,17 @@ const services = [
 for (const svc of services) {
   const isUp = await checkPort(svc.host, svc.port);
   if (isUp) {
-    console.log(`${CHECK} ${svc.name.padEnd(32)} Port ${svc.port}: ONLINE`);
+    if (svc.isMongo && dockerRunning) {
+      const isPrimary = checkMongoPrimary(svc.container, svc.port);
+      if (isPrimary) {
+        console.log(`${CHECK} ${svc.name.padEnd(32)} Port ${svc.port}: ONLINE (PRIMARY - Ready for writes)`);
+      } else {
+        console.log(`${FAIL} ${svc.name.padEnd(32)} Port ${svc.port}: ONLINE (NOT PRIMARY - Replica set initializing)`);
+        hasErrors = true;
+      }
+    } else {
+      console.log(`${CHECK} ${svc.name.padEnd(32)} Port ${svc.port}: ONLINE`);
+    }
   } else if (svc.isApp) {
     console.log(` - ${svc.name.padEnd(32)} Port ${svc.port}: OFFLINE (Start via npm start / npm run api:watch)`);
   } else if (svc.required) {
@@ -104,6 +126,30 @@ for (const svc of services) {
     hasErrors = true;
   } else {
     console.log(` - ${svc.name.padEnd(32)} Port ${svc.port}: NOT REACHABLE (Optional / HA Mode)`);
+  }
+}
+
+// 5. Check Initializer Containers Status
+if (dockerRunning) {
+  try {
+    const exitedInits = execSync(
+      'docker ps -a --filter "name=vialiq-init" --filter "status=exited" --format "{{.Names}}\t{{.Status}}"',
+      { stdio: ['pipe', 'pipe', 'ignore'] }
+    ).toString().trim();
+
+    if (exitedInits) {
+      const failed = exitedInits.split('\n').filter(line => !line.includes('Exited (0)'));
+      if (failed.length > 0) {
+        console.log(`\n${BOLD}Failed Initializer Containers:${RESET}`);
+        for (const f of failed) {
+          const [name, status] = f.split('\t');
+          console.log(`${FAIL} ${name.padEnd(32)} ${status} (Initialization Failed)`);
+        }
+        hasErrors = true;
+      }
+    }
+  } catch {
+    // Docker command errors ignored
   }
 }
 

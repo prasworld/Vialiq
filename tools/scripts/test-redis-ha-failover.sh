@@ -7,7 +7,19 @@
 
 set -euo pipefail
 
-REDIS_SECRET="VialiqDevSecret123!"
+REDIS_SECRET="${VIALIQ_REDIS_PASSWORD:-VialiqDevSecret123!}"
+
+CLEANUP_NEEDED=0
+CRASH_CONTAINER=""
+
+cleanup() {
+    if [ "$CLEANUP_NEEDED" -eq 1 ] && [ -n "$CRASH_CONTAINER" ]; then
+        echo ""
+        echo ">> CLEANUP TRAP: Restoring stopped master ($CRASH_CONTAINER) to maintain cluster availability..."
+        docker start "$CRASH_CONTAINER" >/dev/null 2>&1 || true
+    fi
+}
+trap cleanup EXIT INT TERM
 
 # Ensure HA Sentinel topology is running before executing drill
 if ! docker ps --format '{{.Names}}' | grep -q "^vialiq-sentinel-1$"; then
@@ -23,7 +35,7 @@ echo " [STEP 1/5] Verifying Initial Primary-Replica Topology via Sentinel..."
 echo "=================================================================="
 MASTER_PORT=""
 for i in $(seq 1 10); do
-    MASTER_PORT=$(docker exec vialiq-sentinel-1 redis-cli -p 26379 sentinel get-master-addr-by-name mymaster 2>/dev/null | sed -n '2p' | tr -d '\r' || true)
+    MASTER_PORT=$(docker exec vialiq-sentinel-1 redis-cli -p 26379 -a "$REDIS_SECRET" sentinel get-master-addr-by-name mymaster 2>/dev/null | sed -n '2p' | tr -d '\r' || true)
     if [ "$MASTER_PORT" == "6379" ] || [ "$MASTER_PORT" == "6380" ]; then
         break
     fi
@@ -53,6 +65,7 @@ echo ""
 echo "=================================================================="
 echo " [STEP 2/5] Simulating Master Hardware Crash (Stopping $CRASH_CONTAINER)..."
 echo "=================================================================="
+CLEANUP_NEEDED=1
 docker stop "$CRASH_CONTAINER"
 echo "$CRASH_CONTAINER stopped. Waiting for Sentinel quorum failover & leader election..."
 
@@ -76,6 +89,9 @@ if [ "$PROMOTED" -eq 1 ]; then
     echo ">> SUCCESS: $SURVIVING_CONTAINER was automatically promoted to Master!"
 else
     echo ">> FAILURE: Expected role:master within 20s window, but node remained: '$NEW_MASTER_ROLE'"
+    echo ">> RESTORING: Restarting stopped master ($CRASH_CONTAINER) before exiting to prevent cluster outage..."
+    docker start "$CRASH_CONTAINER" >/dev/null 2>&1 || true
+    CLEANUP_NEEDED=0
     exit 1
 fi
 
@@ -84,6 +100,7 @@ echo "=================================================================="
 echo " [STEP 4/5] Rebooting Old Master (Simulating Node Recovery)..."
 echo "=================================================================="
 docker start "$CRASH_CONTAINER"
+CLEANUP_NEEDED=0
 echo "$CRASH_CONTAINER restarted. Polling Sentinel reconfiguration & PSYNC replication stream..."
 
 echo ""

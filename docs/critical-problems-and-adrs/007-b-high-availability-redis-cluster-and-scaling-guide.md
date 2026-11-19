@@ -63,7 +63,7 @@ In high-stakes clinical research running 24/7/365 across global clinical sites (
 
 To enable developers to run and test the complete High-Availability Primary-Replica + Sentinel topology locally on macOS, Linux, or Windows without cloud dependencies, the following configuration is provided.
 
-### 2.1 Developer Docker Compose File (`tools/docker/docker-compose.redis-dev.yml`)
+### 2.1 Developer Docker Compose File (`tools/docker/docker-compose.redis-ha.yml`)
 
 ```yaml
 version: '3.8'
@@ -120,14 +120,22 @@ services:
   redis-sentinel-1:
     image: redis:7.2-alpine
     container_name: vialiq-sentinel-1
+    volumes:
+      - sentinel_1_data:/etc/redis
     command: >
-      sh -c "echo 'port 26379' > /tmp/sentinel.conf &&
-             echo 'sentinel monitor mymaster redis-primary 6379 2' >> /tmp/sentinel.conf &&
-             echo 'sentinel auth-pass mymaster VialiqDevSecret123!' >> /tmp/sentinel.conf &&
-             echo 'sentinel down-after-milliseconds mymaster 2000' >> /tmp/sentinel.conf &&
-             echo 'sentinel failover-timeout mymaster 5000' >> /tmp/sentinel.conf &&
-             echo 'sentinel parallel-syncs mymaster 1' >> /tmp/sentinel.conf &&
-             redis-sentinel /tmp/sentinel.conf"
+      sh -c "mkdir -p /etc/redis &&
+             if [ ! -f /etc/redis/sentinel.conf ]; then
+               echo 'port 26379' > /etc/redis/sentinel.conf &&
+               echo 'requirepass VialiqDevSecret123!' >> /etc/redis/sentinel.conf &&
+               echo 'sentinel sentinel-pass VialiqDevSecret123!' >> /etc/redis/sentinel.conf &&
+               echo 'sentinel monitor mymaster redis-primary 6379 2' >> /etc/redis/sentinel.conf &&
+               echo 'sentinel auth-pass mymaster VialiqDevSecret123!' >> /etc/redis/sentinel.conf &&
+               echo 'sentinel down-after-milliseconds mymaster 2000' >> /etc/redis/sentinel.conf &&
+               echo 'sentinel failover-timeout mymaster 5000' >> /etc/redis/sentinel.conf &&
+               echo 'sentinel parallel-syncs mymaster 1' >> /etc/redis/sentinel.conf;
+             fi &&
+             chmod 777 /etc/redis /etc/redis/sentinel.conf 2>/dev/null || true &&
+             redis-sentinel /etc/redis/sentinel.conf"
     ports:
       - "26379:26379"
     depends_on:
@@ -140,14 +148,22 @@ services:
   redis-sentinel-2:
     image: redis:7.2-alpine
     container_name: vialiq-sentinel-2
+    volumes:
+      - sentinel_2_data:/etc/redis
     command: >
-      sh -c "echo 'port 26380' > /tmp/sentinel.conf &&
-             echo 'sentinel monitor mymaster redis-primary 6379 2' >> /tmp/sentinel.conf &&
-             echo 'sentinel auth-pass mymaster VialiqDevSecret123!' >> /tmp/sentinel.conf &&
-             echo 'sentinel down-after-milliseconds mymaster 2000' >> /tmp/sentinel.conf &&
-             echo 'sentinel failover-timeout mymaster 5000' >> /tmp/sentinel.conf &&
-             echo 'sentinel parallel-syncs mymaster 1' >> /tmp/sentinel.conf &&
-             redis-sentinel /tmp/sentinel.conf"
+      sh -c "mkdir -p /etc/redis &&
+             if [ ! -f /etc/redis/sentinel.conf ]; then
+               echo 'port 26380' > /etc/redis/sentinel.conf &&
+               echo 'requirepass VialiqDevSecret123!' >> /etc/redis/sentinel.conf &&
+               echo 'sentinel sentinel-pass VialiqDevSecret123!' >> /etc/redis/sentinel.conf &&
+               echo 'sentinel monitor mymaster redis-primary 6379 2' >> /etc/redis/sentinel.conf &&
+               echo 'sentinel auth-pass mymaster VialiqDevSecret123!' >> /etc/redis/sentinel.conf &&
+               echo 'sentinel down-after-milliseconds mymaster 2000' >> /etc/redis/sentinel.conf &&
+               echo 'sentinel failover-timeout mymaster 5000' >> /etc/redis/sentinel.conf &&
+               echo 'sentinel parallel-syncs mymaster 1' >> /etc/redis/sentinel.conf;
+             fi &&
+             chmod 777 /etc/redis /etc/redis/sentinel.conf 2>/dev/null || true &&
+             redis-sentinel /etc/redis/sentinel.conf"
     ports:
       - "26380:26380"
     depends_on:
@@ -160,14 +176,22 @@ services:
   redis-sentinel-3:
     image: redis:7.2-alpine
     container_name: vialiq-sentinel-3
+    volumes:
+      - sentinel_3_data:/etc/redis
     command: >
-      sh -c "echo 'port 26381' > /tmp/sentinel.conf &&
-             echo 'sentinel monitor mymaster redis-primary 6379 2' >> /tmp/sentinel.conf &&
-             echo 'sentinel auth-pass mymaster VialiqDevSecret123!' >> /tmp/sentinel.conf &&
-             echo 'sentinel down-after-milliseconds mymaster 2000' >> /tmp/sentinel.conf &&
-             echo 'sentinel failover-timeout mymaster 5000' >> /tmp/sentinel.conf &&
-             echo 'sentinel parallel-syncs mymaster 1' >> /tmp/sentinel.conf &&
-             redis-sentinel /tmp/sentinel.conf"
+      sh -c "mkdir -p /etc/redis &&
+             if [ ! -f /etc/redis/sentinel.conf ]; then
+               echo 'port 26381' > /etc/redis/sentinel.conf &&
+               echo 'requirepass VialiqDevSecret123!' >> /etc/redis/sentinel.conf &&
+               echo 'sentinel sentinel-pass VialiqDevSecret123!' >> /etc/redis/sentinel.conf &&
+               echo 'sentinel monitor mymaster redis-primary 6379 2' >> /etc/redis/sentinel.conf &&
+               echo 'sentinel auth-pass mymaster VialiqDevSecret123!' >> /etc/redis/sentinel.conf &&
+               echo 'sentinel down-after-milliseconds mymaster 2000' >> /etc/redis/sentinel.conf &&
+               echo 'sentinel failover-timeout mymaster 5000' >> /etc/redis/sentinel.conf &&
+               echo 'sentinel parallel-syncs mymaster 1' >> /etc/redis/sentinel.conf;
+             fi &&
+             chmod 777 /etc/redis /etc/redis/sentinel.conf 2>/dev/null || true &&
+             redis-sentinel /etc/redis/sentinel.conf"
     ports:
       - "26381:26381"
     depends_on:
@@ -177,6 +201,13 @@ services:
       - vialiq-dev-net
 
 networks:
+  vialiq-dev-net:
+    driver: bridge
+
+volumes:
+  sentinel_1_data:
+  sentinel_2_data:
+  sentinel_3_data:
   vialiq-dev-net:
     driver: bridge
 ```
@@ -204,7 +235,7 @@ npm run docker:redis:down
 #### Option B: Step-by-Step Manual Drill
 ```bash
 # 1. Start the complete HA Redis cluster locally
-docker compose -f tools/docker/docker-compose.redis-dev.yml up -d
+docker compose -f tools/docker/docker-compose.redis-ha.yml up -d
 
 # 2. Verify Primary replication status
 docker exec -it vialiq-redis-primary redis-cli -a VialiqDevSecret123! INFO replication
@@ -248,7 +279,8 @@ For self-hosted Linux VMs or Kubernetes StatefulSets, apply these hardened produ
 
 ```ini
 # --- NETWORK & SECURITY ---
-bind 0.0.0.0
+# Restrict to trusted loopback interfaces by default to prevent unauthenticated remote exposure
+bind 127.0.0.1 -::1
 protected-mode yes
 port 6379
 requirepass "${VIALIQ_REDIS_PASSWORD}"

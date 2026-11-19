@@ -264,14 +264,22 @@ services:
   redis-sentinel-1:
     image: redis:7.2-alpine
     container_name: vialiq-sentinel-1
+    volumes:
+      - sentinel_1_data:/etc/redis
     command: >
-      sh -c "echo 'port 26379' > /tmp/sentinel.conf &&
-             echo 'sentinel monitor mymaster redis-primary 6379 2' >> /tmp/sentinel.conf &&
-             echo 'sentinel auth-pass mymaster VialiqDevSecret123!' >> /tmp/sentinel.conf &&
-             echo 'sentinel down-after-milliseconds mymaster 2000' >> /tmp/sentinel.conf &&
-             echo 'sentinel failover-timeout mymaster 5000' >> /tmp/sentinel.conf &&
-             echo 'sentinel parallel-syncs mymaster 1' >> /tmp/sentinel.conf &&
-             redis-sentinel /tmp/sentinel.conf"
+      sh -c "mkdir -p /etc/redis &&
+             if [ ! -f /etc/redis/sentinel.conf ]; then
+               echo 'port 26379' > /etc/redis/sentinel.conf &&
+               echo 'requirepass VialiqDevSecret123!' >> /etc/redis/sentinel.conf &&
+               echo 'sentinel sentinel-pass VialiqDevSecret123!' >> /etc/redis/sentinel.conf &&
+               echo 'sentinel monitor mymaster redis-primary 6379 2' >> /etc/redis/sentinel.conf &&
+               echo 'sentinel auth-pass mymaster VialiqDevSecret123!' >> /etc/redis/sentinel.conf &&
+               echo 'sentinel down-after-milliseconds mymaster 2000' >> /etc/redis/sentinel.conf &&
+               echo 'sentinel failover-timeout mymaster 5000' >> /etc/redis/sentinel.conf &&
+               echo 'sentinel parallel-syncs mymaster 1' >> /etc/redis/sentinel.conf;
+             fi &&
+             chmod 777 /etc/redis /etc/redis/sentinel.conf 2>/dev/null || true &&
+             redis-sentinel /etc/redis/sentinel.conf"
     ports:
       - "26379:26379"
     depends_on:
@@ -284,14 +292,22 @@ services:
   redis-sentinel-2:
     image: redis:7.2-alpine
     container_name: vialiq-sentinel-2
+    volumes:
+      - sentinel_2_data:/etc/redis
     command: >
-      sh -c "echo 'port 26380' > /tmp/sentinel.conf &&
-             echo 'sentinel monitor mymaster redis-primary 6379 2' >> /tmp/sentinel.conf &&
-             echo 'sentinel auth-pass mymaster VialiqDevSecret123!' >> /tmp/sentinel.conf &&
-             echo 'sentinel down-after-milliseconds mymaster 2000' >> /tmp/sentinel.conf &&
-             echo 'sentinel failover-timeout mymaster 5000' >> /tmp/sentinel.conf &&
-             echo 'sentinel parallel-syncs mymaster 1' >> /tmp/sentinel.conf &&
-             redis-sentinel /tmp/sentinel.conf"
+      sh -c "mkdir -p /etc/redis &&
+             if [ ! -f /etc/redis/sentinel.conf ]; then
+               echo 'port 26380' > /etc/redis/sentinel.conf &&
+               echo 'requirepass VialiqDevSecret123!' >> /etc/redis/sentinel.conf &&
+               echo 'sentinel sentinel-pass VialiqDevSecret123!' >> /etc/redis/sentinel.conf &&
+               echo 'sentinel monitor mymaster redis-primary 6379 2' >> /etc/redis/sentinel.conf &&
+               echo 'sentinel auth-pass mymaster VialiqDevSecret123!' >> /etc/redis/sentinel.conf &&
+               echo 'sentinel down-after-milliseconds mymaster 2000' >> /etc/redis/sentinel.conf &&
+               echo 'sentinel failover-timeout mymaster 5000' >> /etc/redis/sentinel.conf &&
+               echo 'sentinel parallel-syncs mymaster 1' >> /etc/redis/sentinel.conf;
+             fi &&
+             chmod 777 /etc/redis /etc/redis/sentinel.conf 2>/dev/null || true &&
+             redis-sentinel /etc/redis/sentinel.conf"
     ports:
       - "26380:26380"
     depends_on:
@@ -304,14 +320,22 @@ services:
   redis-sentinel-3:
     image: redis:7.2-alpine
     container_name: vialiq-sentinel-3
+    volumes:
+      - sentinel_3_data:/etc/redis
     command: >
-      sh -c "echo 'port 26381' > /tmp/sentinel.conf &&
-             echo 'sentinel monitor mymaster redis-primary 6379 2' >> /tmp/sentinel.conf &&
-             echo 'sentinel auth-pass mymaster VialiqDevSecret123!' >> /tmp/sentinel.conf &&
-             echo 'sentinel down-after-milliseconds mymaster 2000' >> /tmp/sentinel.conf &&
-             echo 'sentinel failover-timeout mymaster 5000' >> /tmp/sentinel.conf &&
-             echo 'sentinel parallel-syncs mymaster 1' >> /tmp/sentinel.conf &&
-             redis-sentinel /tmp/sentinel.conf"
+      sh -c "mkdir -p /etc/redis &&
+             if [ ! -f /etc/redis/sentinel.conf ]; then
+               echo 'port 26381' > /etc/redis/sentinel.conf &&
+               echo 'requirepass VialiqDevSecret123!' >> /etc/redis/sentinel.conf &&
+               echo 'sentinel sentinel-pass VialiqDevSecret123!' >> /etc/redis/sentinel.conf &&
+               echo 'sentinel monitor mymaster redis-primary 6379 2' >> /etc/redis/sentinel.conf &&
+               echo 'sentinel auth-pass mymaster VialiqDevSecret123!' >> /etc/redis/sentinel.conf &&
+               echo 'sentinel down-after-milliseconds mymaster 2000' >> /etc/redis/sentinel.conf &&
+               echo 'sentinel failover-timeout mymaster 5000' >> /etc/redis/sentinel.conf &&
+               echo 'sentinel parallel-syncs mymaster 1' >> /etc/redis/sentinel.conf;
+             fi &&
+             chmod 777 /etc/redis /etc/redis/sentinel.conf 2>/dev/null || true &&
+             redis-sentinel /etc/redis/sentinel.conf"
     ports:
       - "26381:26381"
     depends_on:
@@ -323,6 +347,12 @@ services:
 networks:
   vialiq-dev-net:
     driver: bridge
+
+volumes:
+  sentinel_1_data:
+  sentinel_2_data:
+  sentinel_3_data:
+    driver: bridge
 ```
 
 ---
@@ -333,12 +363,17 @@ For cloud virtual machines or self-hosted bare metal deployments, the production
 
 ```ini
 # --- NETWORK & SECURITY ---
-bind 0.0.0.0
+# Restrict to trusted loopback interfaces by default. This ensures Redis never opens
+# unauthenticated network listeners to remote actors if started without credentials.
+# In production private VPCs or container overlays, operators explicitly bind to trusted
+# private interfaces alongside mandatory credentials or ACLs via startup arguments:
+#   redis-server /path/to/redis-prod.conf --bind <trusted-private-ip> 127.0.0.1 --requirepass "$VIALIQ_REDIS_PASSWORD" --masterauth "$VIALIQ_REDIS_PASSWORD"
+bind 127.0.0.1 -::1
 protected-mode yes
 port 6379
 # NOTE: In production, credentials are NEVER stored in this static file (the Redis config parser
 # does not expand shell environment variables). Inject passwords at runtime via startup CLI flags:
-#   --requirepass "$VIALIQ_REDIS_PASSWORD" --masterauth "$VIALIQ_REDIS_PASSWORD"
+#   redis-server /path/to/redis-prod.conf --bind <trusted-private-ip> 127.0.0.1 --requirepass "$VIALIQ_REDIS_PASSWORD" --masterauth "$VIALIQ_REDIS_PASSWORD"
 # Or configure Redis 7.2 ACLs via:
 #   aclfile /etc/redis/users.acl
 timeout 300
@@ -467,7 +502,7 @@ master_link_status:up
 
 #### Connect to Sentinel (Port 26379):
 ```bash
-docker exec -it vialiq-sentinel-1 redis-cli -p 26379
+docker exec -it vialiq-sentinel-1 redis-cli -p 26379 -a VialiqDevSecret123!
 ```
 Execute commands:
 ```text

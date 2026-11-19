@@ -101,12 +101,12 @@ Local development across the Vialiq engineering team runs on Apple Silicon archi
 
 Running 3 concurrent database instances on a workstation requires deliberate configuration to ensure low battery drain, near-instant query execution, and zero memory thrashing.
 
-### 2.1 Apple Silicon Architecture (ARM64 Native vs Rosetta 2)
+### 2.1 Cross-Platform Multi-Arch Architecture (ARM64 & x86-64 Native)
 
-By default, Docker Desktop on macOS can run both `linux/amd64` (emulated via Rosetta 2 or QEMU) and `linux/arm64` (native).
-- **CRITICAL:** Always run MongoDB with `platform: linux/arm64`.
-- Under Rosetta 2 emulation (`linux/amd64`), MongoDB WiredTiger experiences memory bloat, high CPU cycles during page eviction, and slow sync-to-disk times.
-- With native `linux/arm64`, MongoDB instructions execute directly on Apple Silicon CPU performance and efficiency cores with **zero emulation overhead**.
+The official `mongo:7.0` image is a multi-architecture manifest supporting both `linux/arm64/v8` (Apple Silicon M-series, AWS Graviton) and `linux/amd64` (Intel/AMD x86-64, CI/CD runners).
+- **Auto-Detection:** By omitting hardcoded `platform:` directives, Docker Compose automatically selects the native image matching the host kernel with **zero emulation overhead**.
+- On Apple Silicon (`linux/arm64`), MongoDB executes directly on M-series CPU performance and efficiency cores.
+- On x86-64 Linux and CI runners (`linux/amd64`), MongoDB executes native 64-bit x86 instructions, avoiding `exec format error` and eliminating slow QEMU/Rosetta emulation.
 
 ### 2.2 macOS Docker Desktop Configuration (VirtioFS & Memory)
 
@@ -156,7 +156,6 @@ services:
     image: mongo:7.0
     container_name: vialiq-mongo-layer1-admin
     restart: unless-stopped
-    platform: linux/arm64
     profiles: ["admin", "dev-phase", "all"]
     command: [
       "mongod",
@@ -170,25 +169,24 @@ services:
     volumes:
       - mongo_admin_data:/data/db
     networks:
-      - vialiq-3layer-net
+      - vialiq-mongo-admin-net
     healthcheck:
-      test: ["CMD", "mongosh", "--port", "27017", "--eval", "db.adminCommand('ping')"]
+      test: ["CMD", "mongosh", "--port", "27017", "--quiet", "--eval", "db.hello().isWritablePrimary || quit(1)"]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
       start_period: 5s
 
   init-layer1-admin:
     image: mongo:7.0
     container_name: vialiq-init-layer1-admin
     restart: "no"
-    platform: linux/arm64
     profiles: ["admin", "dev-phase", "all"]
     depends_on:
       mongo-layer1-admin:
-        condition: service_healthy
+        condition: service_started
     networks:
-      - vialiq-3layer-net
+      - vialiq-mongo-admin-net
     entrypoint:
       - bash
       - -c
@@ -223,6 +221,18 @@ services:
           }
         '
 
+        echo "[Layer 1 Admin] Waiting for PRIMARY election..."
+        for i in $$(seq 1 30); do
+          if mongosh --host mongo-layer1-admin:27017 --quiet --eval "db.hello().isWritablePrimary" 2>/dev/null | grep -q "true"; then
+            echo "[Layer 1 Admin] Verified: Node is PRIMARY and ready for writes."
+            exit 0
+          fi
+          sleep 1
+        done
+
+        echo "ERROR: Timed out waiting for PRIMARY election on rs-admin after 30 seconds"
+        exit 1
+
   # ============================================================================
   # LAYER 2: DEV ENVIRONMENT (Cluster 1 — Not-Live DEV & UAT Study Databases)
   # ============================================================================
@@ -230,7 +240,6 @@ services:
     image: mongo:7.0
     container_name: vialiq-mongo-layer2-dev
     restart: unless-stopped
-    platform: linux/arm64
     profiles: ["dev", "dev-phase", "all"]
     command: [
       "mongod",
@@ -244,25 +253,24 @@ services:
     volumes:
       - mongo_dev_data:/data/db
     networks:
-      - vialiq-3layer-net
+      - vialiq-mongo-dev-net
     healthcheck:
-      test: ["CMD", "mongosh", "--port", "27027", "--eval", "db.adminCommand('ping')"]
-      interval: 10s
-      timeout: 10s
-      retries: 5
-      start_period: 15s
+      test: ["CMD", "mongosh", "--port", "27027", "--quiet", "--eval", "db.hello().isWritablePrimary || quit(1)"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
 
   init-layer2-dev:
     image: mongo:7.0
     container_name: vialiq-init-layer2-dev
     restart: "no"
-    platform: linux/arm64
     profiles: ["dev", "dev-phase", "all"]
     depends_on:
       mongo-layer2-dev:
-        condition: service_healthy
+        condition: service_started
     networks:
-      - vialiq-3layer-net
+      - vialiq-mongo-dev-net
     entrypoint:
       - bash
       - -c
@@ -297,6 +305,18 @@ services:
           }
         '
 
+        echo "[Layer 2 Dev] Waiting for PRIMARY election..."
+        for i in $$(seq 1 30); do
+          if mongosh --host mongo-layer2-dev:27027 --quiet --eval "db.hello().isWritablePrimary" 2>/dev/null | grep -q "true"; then
+            echo "[Layer 2 Dev] Verified: Node is PRIMARY and ready for writes."
+            exit 0
+          fi
+          sleep 1
+        done
+
+        echo "ERROR: Timed out waiting for PRIMARY election on rs-dev after 30 seconds"
+        exit 1
+
   # ============================================================================
   # LAYER 3: PRODUCTION (Cluster 2 — Live Operational Clinical Trials)
   # ============================================================================
@@ -304,7 +324,6 @@ services:
     image: mongo:7.0
     container_name: vialiq-mongo-layer3-prod
     restart: unless-stopped
-    platform: linux/arm64
     profiles: ["prod", "all"]
     command: [
       "mongod",
@@ -318,25 +337,24 @@ services:
     volumes:
       - mongo_prod_data:/data/db
     networks:
-      - vialiq-3layer-net
+      - vialiq-mongo-prod-net
     healthcheck:
-      test: ["CMD", "mongosh", "--port", "27037", "--eval", "db.adminCommand('ping')"]
-      interval: 10s
-      timeout: 10s
-      retries: 5
-      start_period: 15s
+      test: ["CMD", "mongosh", "--port", "27037", "--quiet", "--eval", "db.hello().isWritablePrimary || quit(1)"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
 
   init-layer3-prod:
     image: mongo:7.0
     container_name: vialiq-init-layer3-prod
     restart: "no"
-    platform: linux/arm64
     profiles: ["prod", "all"]
     depends_on:
       mongo-layer3-prod:
-        condition: service_healthy
+        condition: service_started
     networks:
-      - vialiq-3layer-net
+      - vialiq-mongo-prod-net
     entrypoint:
       - bash
       - -c
@@ -371,9 +389,27 @@ services:
           }
         '
 
+        echo "[Layer 3 Prod] Waiting for PRIMARY election..."
+        for i in $$(seq 1 30); do
+          if mongosh --host mongo-layer3-prod:27037 --quiet --eval "db.hello().isWritablePrimary" 2>/dev/null | grep -q "true"; then
+            echo "[Layer 3 Prod] Verified: Node is PRIMARY and ready for writes."
+            exit 0
+          fi
+          sleep 1
+        done
+
+        echo "ERROR: Timed out waiting for PRIMARY election on rs-prod after 30 seconds"
+        exit 1
+
 networks:
-  vialiq-3layer-net:
-    name: vialiq-3layer-net
+  vialiq-mongo-admin-net:
+    name: vialiq-mongo-admin-net
+    driver: bridge
+  vialiq-mongo-dev-net:
+    name: vialiq-mongo-dev-net
+    driver: bridge
+  vialiq-mongo-prod-net:
+    name: vialiq-mongo-prod-net
     driver: bridge
 
 volumes:
@@ -393,7 +429,7 @@ All layer-specific parameters are injected directly as runtime arguments in [`to
 * **Replica Set Name**: Passed explicitly via `--replSet rs-admin`, `--replSet rs-dev`, or `--replSet rs-prod`.
 * **Port Binding**: Set via `--port 27017` (Admin), `--port 27027` (Dev), and `--port 27037` (Prod).
 * **WiredTiger Memory Clamp**: Clamped per layer via `--wiredTigerCacheSizeGB 0.5`.
-* **Healthcheck Alignment**: The healthcheck probe (`mongosh --port <PORT> --eval "db.adminCommand('ping')"`) directly probes the identical port configured in `command`, ensuring zero divergence between server startup and readiness checks.
+* **Healthcheck Alignment**: The healthcheck probe (`mongosh --port <PORT> --quiet --eval "db.hello().isWritablePrimary || quit(1)"`) gates container health strictly on writable PRIMARY status, ensuring zero divergence between server startup, replica set initialization, and client write readiness.
 
 ---
 
@@ -421,20 +457,20 @@ docker compose version
 
 ---
 
-### Step 1: Pull the Native ARM64 MongoDB 7.0 Image
+### Step 1: Pull the Multi-Architecture MongoDB 7.0 Image
 
 Download the official image directly from Docker Hub:
 
 ```bash
-docker pull --platform linux/arm64 mongo:7.0
+docker pull mongo:7.0
 ```
 
 To verify the downloaded image architecture:
 ```bash
 docker inspect mongo:7.0 --format '{{.Architecture}}'
-# Expected Output: arm64
+# Expected Output: arm64 (on Apple Silicon / ARM) or amd64 (on Intel/AMD x86-64)
 ```
-*(If output is `arm64`, you are running natively with 0% Rosetta emulation overhead).*
+*(Docker automatically selects your host CPU architecture with 0% emulation overhead).*
 
 ---
 
@@ -707,13 +743,13 @@ npm run docker:mongo:clean    # Complete reset (wipes volumes for clean DB)
   lsof -i :27017
   ```
 
-### 2. High Memory or CPU Usage on M1 Pro / M5 Pro
-- **Cause:** Docker Desktop may be running x86 emulation or Rosetta translation without VirtioFS.
+### 2. High Memory or CPU Usage on Workstations
+- **Cause:** Docker Desktop may be running x86 emulation on ARM (or vice-versa) or missing VirtioFS.
 - **Fix:**
-  1. Verify container platform is `linux/arm64`:
+  1. Verify container platform matches your host architecture:
      ```bash
      docker inspect vialiq-mongo-layer1-admin --format '{{.Platform}}'
-     # Must return: linux/arm64
+     # Expected: linux/arm64 (on Apple Silicon) or linux/amd64 (on Intel/AMD)
      ```
   2. In Docker Desktop Settings -> Resources -> Virtual disk: Ensure **VirtioFS** is selected.
 

@@ -151,7 +151,8 @@ All connection strings are pre-configured in [`backend/api/src/Vialiq.Api/appset
 | Task | Command | Purpose |
 |---|---|---|
 | **Health Diagnostic** | `npm run dev:doctor` | Validates Node, .NET SDK, Docker daemon, and port bindings. |
-| **Start All Infra** | `npm run dev:infra` | Boots Mongo 3-layer clusters and Redis HA Sentinel in background. |
+| **Start All Infra** | `npm run dev:infra` | Boots Mongo 3-layer clusters and Redis HA Sentinel cluster in background. |
+| **Start Standalone Infra** | `npm run dev:infra:standalone` | Boots Mongo 3-layer clusters and standalone Redis (lightweight option). |
 | **Stop All Infra** | `npm run dev:infra:down` | Gracefully stops and shuts down all containers. |
 | **Check Infra Status** | `npm run dev:infra:status` | Shows running containers, health states, and port maps. |
 | **Clean Wipe Volumes** | `npm run dev:infra:clean` | Destroys local database volumes (resets to a fresh baseline). |

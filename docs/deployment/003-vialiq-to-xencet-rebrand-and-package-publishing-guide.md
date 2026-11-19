@@ -398,9 +398,9 @@ Update connection namespaces and prefixes:
      * `vialiq-mongo-layer1-admin` $\longrightarrow$ `xencet-mongo-layer1-admin`
      * `vialiq-mongo-layer2-dev` $\longrightarrow$ `xencet-mongo-layer2-dev`
      * `vialiq-mongo-layer3-prod` $\longrightarrow$ `xencet-mongo-layer3-prod`
-   * Network: `vialiq-3layer-net` $\longrightarrow$ `xencet-3layer-net`
+   * Networks: `vialiq-mongo-admin-net`, `vialiq-mongo-dev-net`, `vialiq-mongo-prod-net` $\longrightarrow$ `xencet-mongo-admin-net`, `xencet-mongo-dev-net`, `xencet-mongo-prod-net`
    * Named Volumes: `xencet_mongo_admin_data`, `xencet_mongo_dev_data`, `xencet_mongo_prod_data`
-2. **Redis High-Availability Cluster (`tools/docker/docker-compose.redis-dev.yml`):**
+2. **Redis High-Availability Cluster (`tools/docker/docker-compose.redis-ha.yml`):**
    * Container names:
      * `vialiq-redis-primary` $\longrightarrow$ `xencet-redis-primary`
      * `vialiq-redis-replica` $\longrightarrow$ `xencet-redis-replica`
@@ -548,7 +548,7 @@ flowchart LR
 - [ ] **Verification Command:** `dotnet test backend/api/Xencet.Api.sln` (All unit tests pass).
 
 ### Phase D: Docker & Dev Scripts (in `xencet` repo)
-- [ ] Update container and network names in `tools/docker/docker-compose.3layer.yml` and `docker-compose.redis-dev.yml`.
+- [ ] Update container and network names in `tools/docker/docker-compose.3layer.yml` and `docker-compose.redis-ha.yml`.
 - [ ] Update npm scripts in root `package.json`.
 - [ ] **Verification Command:** `npm run dev:infra && npm run dev:doctor` (All services healthy).
 

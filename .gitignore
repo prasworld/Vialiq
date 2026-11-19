@@ -61,6 +61,13 @@ node_modules/.vitest
 *.env
 !.env.example
 
+# Cryptographic keys and certificates
+*.key
+*.pem
+*.pfx
+*.pkcs12
+*.crt
+
 # ==============================================================================
 # .NET / C# Build Artifacts & Binaries
 # ==============================================================================

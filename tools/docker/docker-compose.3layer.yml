@@ -38,7 +38,6 @@ services:
     image: mongo:7.0
     container_name: vialiq-mongo-layer1-admin
     restart: unless-stopped
-    platform: linux/arm64
     profiles: ["admin", "dev-phase", "all"]
     command: [
       "mongod",
@@ -52,20 +51,19 @@ services:
     volumes:
       - mongo_admin_data:/data/db
     networks:
-      - vialiq-3layer-net
+      - vialiq-mongo-admin-net
     healthcheck:
-      test: ["CMD", "mongosh", "--port", "27017", "--eval", "db.adminCommand('ping')"]
-      interval: 10s
-      timeout: 10s
-      retries: 5
-      start_period: 15s
+      test: ["CMD", "mongosh", "--port", "27017", "--quiet", "--eval", "db.hello().isWritablePrimary || quit(1)"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
 
   # ── HA secondaries for rs-admin (uncomment to enable 3-node HA) ───────────
   # mongo-layer1-admin-2:
   #   image: mongo:7.0
   #   container_name: vialiq-mongo-layer1-admin-2
   #   restart: unless-stopped
-  #   platform: linux/arm64
   #   profiles: ["admin", "dev-phase", "all"]
   #   command: [
   #     "mongod",
@@ -79,7 +77,7 @@ services:
   #   volumes:
   #     - mongo_admin_2_data:/data/db
   #   networks:
-  #     - vialiq-3layer-net
+  #     - vialiq-mongo-admin-net
   #   healthcheck:
   #     test: ["CMD", "mongosh", "--port", "27017", "--eval", "db.adminCommand('ping')"]
   #     interval: 10s
@@ -91,7 +89,6 @@ services:
   #   image: mongo:7.0
   #   container_name: vialiq-mongo-layer1-admin-3
   #   restart: unless-stopped
-  #   platform: linux/arm64
   #   profiles: ["admin", "dev-phase", "all"]
   #   command: [
   #     "mongod",
@@ -105,7 +102,7 @@ services:
   #   volumes:
   #     - mongo_admin_3_data:/data/db
   #   networks:
-  #     - vialiq-3layer-net
+  #     - vialiq-mongo-admin-net
   #   healthcheck:
   #     test: ["CMD", "mongosh", "--port", "27017", "--eval", "db.adminCommand('ping')"]
   #     interval: 10s
@@ -117,13 +114,12 @@ services:
     image: mongo:7.0
     container_name: vialiq-init-layer1-admin
     restart: "no"
-    platform: linux/arm64
     profiles: ["admin", "dev-phase", "all"]
     depends_on:
       mongo-layer1-admin:
-        condition: service_healthy
+        condition: service_started
     networks:
-      - vialiq-3layer-net
+      - vialiq-mongo-admin-net
     entrypoint:
       - bash
       - -c
@@ -162,6 +158,18 @@ services:
           }
         '
 
+        echo "[Layer 1 Admin] Waiting for PRIMARY election..."
+        for i in $$(seq 1 30); do
+          if mongosh --host mongo-layer1-admin:27017 --quiet --eval "db.hello().isWritablePrimary" 2>/dev/null | grep -q "true"; then
+            echo "[Layer 1 Admin] Verified: Node is PRIMARY and ready for writes."
+            exit 0
+          fi
+          sleep 1
+        done
+
+        echo "ERROR: Timed out waiting for PRIMARY election on rs-admin after 30 seconds"
+        exit 1
+
   # ============================================================================
   # LAYER 2: DEV ENVIRONMENT (Cluster 1 — Not-Live DEV & UAT Study Databases)
   # ============================================================================
@@ -169,7 +177,6 @@ services:
     image: mongo:7.0
     container_name: vialiq-mongo-layer2-dev
     restart: unless-stopped
-    platform: linux/arm64
     profiles: ["dev", "dev-phase", "all"]
     command: [
       "mongod",
@@ -183,20 +190,19 @@ services:
     volumes:
       - mongo_dev_data:/data/db
     networks:
-      - vialiq-3layer-net
+      - vialiq-mongo-dev-net
     healthcheck:
-      test: ["CMD", "mongosh", "--port", "27027", "--eval", "db.adminCommand('ping')"]
-      interval: 10s
-      timeout: 10s
-      retries: 5
-      start_period: 15s
+      test: ["CMD", "mongosh", "--port", "27027", "--quiet", "--eval", "db.hello().isWritablePrimary || quit(1)"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
 
   # ── HA secondaries for rs-dev (uncomment to enable 3-node HA) ─────────────
   # mongo-layer2-dev-2:
   #   image: mongo:7.0
   #   container_name: vialiq-mongo-layer2-dev-2
   #   restart: unless-stopped
-  #   platform: linux/arm64
   #   profiles: ["dev", "dev-phase", "all"]
   #   command: [
   #     "mongod",
@@ -210,7 +216,7 @@ services:
   #   volumes:
   #     - mongo_dev_2_data:/data/db
   #   networks:
-  #     - vialiq-3layer-net
+  #     - vialiq-mongo-dev-net
   #   healthcheck:
   #     test: ["CMD", "mongosh", "--port", "27027", "--eval", "db.adminCommand('ping')"]
   #     interval: 10s
@@ -222,7 +228,6 @@ services:
   #   image: mongo:7.0
   #   container_name: vialiq-mongo-layer2-dev-3
   #   restart: unless-stopped
-  #   platform: linux/arm64
   #   profiles: ["dev", "dev-phase", "all"]
   #   command: [
   #     "mongod",
@@ -236,7 +241,7 @@ services:
   #   volumes:
   #     - mongo_dev_3_data:/data/db
   #   networks:
-  #     - vialiq-3layer-net
+  #     - vialiq-mongo-dev-net
   #   healthcheck:
   #     test: ["CMD", "mongosh", "--port", "27027", "--eval", "db.adminCommand('ping')"]
   #     interval: 10s
@@ -248,13 +253,12 @@ services:
     image: mongo:7.0
     container_name: vialiq-init-layer2-dev
     restart: "no"
-    platform: linux/arm64
     profiles: ["dev", "dev-phase", "all"]
     depends_on:
       mongo-layer2-dev:
-        condition: service_healthy
+        condition: service_started
     networks:
-      - vialiq-3layer-net
+      - vialiq-mongo-dev-net
     entrypoint:
       - bash
       - -c
@@ -293,6 +297,18 @@ services:
           }
         '
 
+        echo "[Layer 2 Dev] Waiting for PRIMARY election..."
+        for i in $$(seq 1 30); do
+          if mongosh --host mongo-layer2-dev:27027 --quiet --eval "db.hello().isWritablePrimary" 2>/dev/null | grep -q "true"; then
+            echo "[Layer 2 Dev] Verified: Node is PRIMARY and ready for writes."
+            exit 0
+          fi
+          sleep 1
+        done
+
+        echo "ERROR: Timed out waiting for PRIMARY election on rs-dev after 30 seconds"
+        exit 1
+
   # ============================================================================
   # LAYER 3: PRODUCTION (Cluster 2 — Live Operational Clinical Trials)
   # ============================================================================
@@ -300,7 +316,6 @@ services:
     image: mongo:7.0
     container_name: vialiq-mongo-layer3-prod
     restart: unless-stopped
-    platform: linux/arm64
     profiles: ["prod", "all"]
     command: [
       "mongod",
@@ -314,20 +329,19 @@ services:
     volumes:
       - mongo_prod_data:/data/db
     networks:
-      - vialiq-3layer-net
+      - vialiq-mongo-prod-net
     healthcheck:
-      test: ["CMD", "mongosh", "--port", "27037", "--eval", "db.adminCommand('ping')"]
-      interval: 10s
-      timeout: 10s
-      retries: 5
-      start_period: 15s
+      test: ["CMD", "mongosh", "--port", "27037", "--quiet", "--eval", "db.hello().isWritablePrimary || quit(1)"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
 
   # ── HA secondaries for rs-prod (uncomment to enable 3-node HA) ────────────
   # mongo-layer3-prod-2:
   #   image: mongo:7.0
   #   container_name: vialiq-mongo-layer3-prod-2
   #   restart: unless-stopped
-  #   platform: linux/arm64
   #   profiles: ["prod", "all"]
   #   command: [
   #     "mongod",
@@ -341,7 +355,7 @@ services:
   #   volumes:
   #     - mongo_prod_2_data:/data/db
   #   networks:
-  #     - vialiq-3layer-net
+  #     - vialiq-mongo-prod-net
   #   healthcheck:
   #     test: ["CMD", "mongosh", "--port", "27037", "--eval", "db.adminCommand('ping')"]
   #     interval: 10s
@@ -353,7 +367,6 @@ services:
   #   image: mongo:7.0
   #   container_name: vialiq-mongo-layer3-prod-3
   #   restart: unless-stopped
-  #   platform: linux/arm64
   #   profiles: ["prod", "all"]
   #   command: [
   #     "mongod",
@@ -367,7 +380,7 @@ services:
   #   volumes:
   #     - mongo_prod_3_data:/data/db
   #   networks:
-  #     - vialiq-3layer-net
+  #     - vialiq-mongo-prod-net
   #   healthcheck:
   #     test: ["CMD", "mongosh", "--port", "27037", "--eval", "db.adminCommand('ping')"]
   #     interval: 10s
@@ -379,13 +392,12 @@ services:
     image: mongo:7.0
     container_name: vialiq-init-layer3-prod
     restart: "no"
-    platform: linux/arm64
     profiles: ["prod", "all"]
     depends_on:
       mongo-layer3-prod:
-        condition: service_healthy
+        condition: service_started
     networks:
-      - vialiq-3layer-net
+      - vialiq-mongo-prod-net
     entrypoint:
       - bash
       - -c
@@ -424,9 +436,27 @@ services:
           }
         '
 
+        echo "[Layer 3 Prod] Waiting for PRIMARY election..."
+        for i in $$(seq 1 30); do
+          if mongosh --host mongo-layer3-prod:27037 --quiet --eval "db.hello().isWritablePrimary" 2>/dev/null | grep -q "true"; then
+            echo "[Layer 3 Prod] Verified: Node is PRIMARY and ready for writes."
+            exit 0
+          fi
+          sleep 1
+        done
+
+        echo "ERROR: Timed out waiting for PRIMARY election on rs-prod after 30 seconds"
+        exit 1
+
 networks:
-  vialiq-3layer-net:
-    name: vialiq-3layer-net
+  vialiq-mongo-admin-net:
+    name: vialiq-mongo-admin-net
+    driver: bridge
+  vialiq-mongo-dev-net:
+    name: vialiq-mongo-dev-net
+    driver: bridge
+  vialiq-mongo-prod-net:
+    name: vialiq-mongo-prod-net
     driver: bridge
 
 volumes:

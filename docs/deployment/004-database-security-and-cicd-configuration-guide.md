@@ -65,12 +65,20 @@ To prevent unauthorized network actors on the same LAN/Wi-Fi from connecting to 
 * Binding to `127.0.0.1` ensures that host network listeners are completely closed to external traffic on the local network, preventing adjacent network devices from attempting to authenticate with dev fallback credentials.
 * In conjunction with `.gitignore` rules for `.env` files, developers can provide per-environment secrets via untracked `.env` files or CLI environment exports (`VIALIQ_REDIS_PASSWORD`) with zero risk of repository leakage.
 
+### 2.2.2 Sentinel Control Plane Authentication (`requirepass` & `sentinel-pass`)
+To prevent unauthorized or untrusted local processes from tampering with Sentinel monitors (`sentinel monitor`, `sentinel remove`, `sentinel set`):
+* **Sentinel Control Ports Require Authentication**: Sentinels 1–3 enforce `requirepass ${VIALIQ_REDIS_PASSWORD:-VialiqDevSecret123!}` on their control ports (`26379`, `26380`, `26381`). Unauthenticated commands receive `NOAUTH Authentication required`.
+* **Inter-Sentinel Communication**: Sentinels authenticate to each other during leader election and quorum voting via `sentinel sentinel-pass ${VIALIQ_REDIS_PASSWORD:-VialiqDevSecret123!}`.
+* **Client Authentication**: Application and worker clients connect using Sentinel connection strings that provide the shared secret (e.g. `localhost:26379,localhost:26380,localhost:26381,serviceName=mymaster,password=<secret>`), allowing clients to authenticate against both Sentinel control endpoints and Redis primary/replica nodes.
+
 ### 2.3 Production Runtime Injection (`tools/docker/redis-prod.conf`)
 For production cloud virtual machines, containers, or Kubernetes pods, the static configuration file (`redis-prod.conf`) omits all credentials. Credentials are fed via startup command-line arguments, which override any static directives:
 
 ```bash
 # Production Container / VM Startup Command
+# Note: Bind is explicitly expanded from the safe loopback default to include the private VPC interface
 redis-server /etc/redis/redis-prod.conf \
+  --bind <trusted-private-ip> 127.0.0.1 \
   --requirepass "$VIALIQ_REDIS_PASSWORD" \
   --masterauth "$VIALIQ_REDIS_PASSWORD"
 ```
@@ -85,13 +93,23 @@ user vialiq_api on #2bb80e5e7a9b6c4e09f58597400494cf8129a6e60b134d1b82 ~* +@all
 user sentinel_monitor on #5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8 allchannels +ping +sentinel|*
 ```
 
+### 2.5 Failover Durability & Monotonic Fencing Tokens (Mitigating Split-Brain Lock Loss)
+In high-availability Redis topologies (Sentinel or Cloud Multi-AZ), streaming replication is asynchronous (`PSYNC`). Under theoretical edge conditions, if a Redis Primary crashes ungracefully before an acknowledged form-lock write reaches the replica, Sentinel promotes a replica that lacks the lock key.
+
+As formalized in **ADR 003 Decision 7**, Vialiq EDC defends against data loss or concurrent overwrite through a **3-Tier Defense-in-Depth Architecture**:
+1. **Clinical Domain Boundaries**: Case Report Forms (CRFs) are isolated by Subject, Visit, and Site, rendering concurrent edit attempts during sub-millisecond failovers statistically negligible ($P \ll 10^{-7}$).
+2. **Tier 1 Canonical Authority (`study_edit_leases`)**: Redis is strictly a performance fast-path. Form leases are authoritatively recorded in MongoDB with a partial unique index on `{ studyId: 1, targetCrfId: 1 }`.
+3. **Monotonic Fencing Tokens (OCC `_version`)**: Mutations to clinical entities enforce document-level Optimistic Concurrency Control (`_version: long`). If an editor attempts to commit with a stale version token, MongoDB atomically rejects the write with an `OptimisticConcurrencyException` (HTTP 409 Conflict). Stale or duplicate edits cannot corrupt trial data.
+4. **Continuous AOF Fsync (`no-appendfsync-on-rewrite no`)**: In `redis-prod.conf`, fsync suppression during background rewrites is explicitly disabled. Redis continues issuing 1-second fsyncs even during `BGREWRITEAOF`, bounding crash loss to $\le 1$ second rather than 30 seconds of unwritten dirty OS page buffers.
+
 ---
 
 ## 3. MongoDB 3-Layer GxP Security Architecture
 
 ### 3.1 Local Development (Speed & Turnaround First)
 In local development, the 3 MongoDB clusters (`rs-admin:27017`, `rs-dev:27027`, `rs-prod:27037`) run:
-* **Loopback Bound**: Bound exclusively to Docker bridge and forwarded to `localhost:27017`, `localhost:27027`, and `localhost:27037`. They are inaccessible from external network interfaces.
+* **Isolated Container Networks**: Each layer runs on its own dedicated Docker bridge network (`vialiq-mongo-admin-net`, `vialiq-mongo-dev-net`, `vialiq-mongo-prod-net`). Containers on one layer cannot route or connect to other layers, preventing compromised dev/test containers from crossing into the admin or prod layers.
+* **Loopback Bound**: Host port mappings explicitly bind to loopback (`127.0.0.1:27017`, `127.0.0.1:27027`, and `127.0.0.1:27037`), ensuring they are completely inaccessible to adjacent network actors.
 * **Unauthenticated**: Zero `--auth` flags in dev.
 * **Why this is critical for velocity**: MongoDB replica sets enforce authentication via shared `--keyFile` volumes requiring strict POSIX `chmod 400` permissions. macOS Docker Desktop mounts (VirtioFS / gRPC-FUSE) routinely fail POSIX permission checks, causing `mongod` crashloops that waste hours of engineering time.
 
