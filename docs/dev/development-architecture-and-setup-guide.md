@@ -134,9 +134,9 @@ All connection strings are pre-configured in [`backend/api/src/Vialiq.Api/appset
 
 | Service | Port | Replica Set / Name | Local Connection String / URL | Default DB Name |
 |---|---|---|---|---|
-| **Layer 1 Admin Mongo** | `27017` | `rs-admin` | `mongodb://localhost:27017/?replicaSet=rs-admin&directConnection=true` | `vialiq_control_plane` |
-| **Layer 2 Dev Mongo** | `27027` | `rs-dev` | `mongodb://localhost:27027/?replicaSet=rs-dev&directConnection=true` | `vialiq_study_sandbox` |
-| **Layer 3 Prod Mongo** | `27037` | `rs-prod` | `mongodb://localhost:27037/?replicaSet=rs-prod&directConnection=true` | `vialiq_study_prod` |
+| **Layer 1 Admin Mongo** | `27017` | `rs-admin` | `mongodb://localhost:27017/?replicaSet=rs-admin` | `vialiq_control_plane` |
+| **Layer 2 Dev Mongo** | `27027` | `rs-dev` | `mongodb://localhost:27027/?replicaSet=rs-dev` | `vialiq_study_sandbox` |
+| **Layer 3 Prod Mongo** | `27037` | `rs-prod` | `mongodb://localhost:27037/?replicaSet=rs-prod` | `vialiq_study_prod` |
 | **Redis Primary Cache** | `6379` | `mymaster` | `localhost:6379,password=VialiqDevSecret123!` | DB `0` (Cache/Locks) |
 | **Redis Replica Cache** | `6380` | `mymaster` | `localhost:6380,password=VialiqDevSecret123!` | Read Replica |
 | **Redis Sentinel Quorum**| `26379`–`26381` | Quorum = 2 | `localhost:26379,localhost:26380,localhost:26381` | N/A |
@@ -151,7 +151,8 @@ All connection strings are pre-configured in [`backend/api/src/Vialiq.Api/appset
 | Task | Command | Purpose |
 |---|---|---|
 | **Health Diagnostic** | `npm run dev:doctor` | Validates Node, .NET SDK, Docker daemon, and port bindings. |
-| **Start All Infra** | `npm run dev:infra` | Boots Mongo 3-layer clusters and Redis HA Sentinel in background. |
+| **Start All Infra** | `npm run dev:infra` | Boots Mongo 3-layer clusters and Redis HA Sentinel cluster in background. |
+| **Start Standalone Infra** | `npm run dev:infra:standalone` | Boots Mongo 3-layer clusters and standalone Redis (lightweight option). |
 | **Stop All Infra** | `npm run dev:infra:down` | Gracefully stops and shuts down all containers. |
 | **Check Infra Status** | `npm run dev:infra:status` | Shows running containers, health states, and port maps. |
 | **Clean Wipe Volumes** | `npm run dev:infra:clean` | Destroys local database volumes (resets to a fresh baseline). |

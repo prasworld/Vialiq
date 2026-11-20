@@ -8,7 +8,7 @@
 > - [Auth, Identity & Multi-Tenancy Architecture](../../auth-identity-multitenancy-clinical-edc.md)
 > - [Database Architecture Specification](./database-architecture-specification.md)
 > - [ADR: Database Selection (SQL Server vs MongoDB)](./001-database-selection-adr.md)
-> - [Docker Cluster Config](../../../tools/docker/docker-compose.mongo-cluster.yml)
+> - [Production 3-Layer Docker Cluster Config](../../../tools/docker/docker-compose.3layer.yml)
 
 ---
 
@@ -144,7 +144,7 @@ docker compose -f docker-compose.mongo-single.yml up -d
 
 This simulates a real production setup. It runs 3 separate MongoDB containers (`mongo1`, `mongo2`, `mongo3`) communicating over an internal virtual network.
 
-This configuration is already included in your project at [`tools/docker/docker-compose.mongo-cluster.yml`](../../../tools/docker/docker-compose.mongo-cluster.yml).
+The project standardizes local multi-cluster development in [`tools/docker/docker-compose.3layer.yml`](../../../tools/docker/docker-compose.3layer.yml) (launched via `npm run docker:mongo:all`). Below is the conceptual replica set configuration for reference:
 
 ```yaml
 version: '3.8'
@@ -197,7 +197,12 @@ services:
       - edc-net
     restart: "no"
     entrypoint: [ "bash", "-c", "
-      sleep 3;
+      for i in $$(seq 1 30); do
+        if mongosh --host mongo1:27017 --quiet --eval \"db.adminCommand('ping')\" > /dev/null 2>&1; then
+          READY=1; break;
+        fi
+        sleep 1;
+      done
       mongosh --host mongo1:27017 --eval '
         try {
           rs.status();
@@ -228,24 +233,26 @@ volumes:
 
 * **Start the Cluster**:
   ```bash
-  docker compose -f tools/docker/docker-compose.mongo-cluster.yml up -d
+  docker compose -f tools/docker/docker-compose.3layer.yml --profile all up -d
+  # Or via npm shortcut:
+  npm run docker:mongo:all
   ```
 * **Check Status**:
   ```bash
   docker ps
-  # You will see edc-mongo1, edc-mongo2, edc-mongo3 running
+  # You will see vialiq-mongo-layer1-admin, vialiq-mongo-layer2-dev, vialiq-mongo-layer3-prod running
   ```
 * **Stop the Cluster (Preserves Data)**:
   ```bash
-  docker compose -f tools/docker/docker-compose.mongo-cluster.yml stop
+  npm run docker:mongo:stop
   ```
 * **Wipe Clean & Reset State (Fresh DB for testing)**:
   ```bash
-  docker compose -f tools/docker/docker-compose.mongo-cluster.yml down -v
+  npm run docker:mongo:clean
   ```
 * **Application Connection String**:
   ```
-  mongodb://localhost:27017,localhost:27018,localhost:27019/vialiq_edc?replicaSet=rs-edc
+  mongodb://localhost:27017/?replicaSet=rs-admin
   ```
 
 ---
@@ -267,14 +274,8 @@ To replicate this exact multi-cluster physical separation locally on your laptop
 
 #### Run all 3 platform clusters simultaneously:
 ```bash
-# 1. Start Cluster 0 (Admin / Control Plane on 27017-27019)
-docker compose -p edc-cluster0 -f tools/docker/docker-compose.mongo-cluster.yml up -d
-
-# 2. Start Cluster 1 (Not-Live DEV/UAT on 27027-27029)
-docker compose -p edc-cluster1 -f tools/docker/docker-compose.cluster1.yml up -d
-
-# 3. Start Cluster 2 (Live / PROD on 27037-27039)
-docker compose -p edc-cluster2 -f tools/docker/docker-compose.cluster2.yml up -d
+# Start all 3 platform layers simultaneously (Admin: 27017, Dev: 27027, Prod: 27037)
+npm run docker:mongo:all
 ```
 All 3 clusters run completely isolated from each other in separate RAM sandboxes with zero possibility of cross-cluster data leakage.
 
@@ -398,7 +399,7 @@ If your team wants a shared remote development cluster without using Atlas:
    ```bash
    curl -fsSL https://get.docker.com | sh
    ```
-3. Copy `tools/docker/docker-compose.mongo-cluster.yml` to the VM and run:
+3. Copy `tools/docker/docker-compose.3layer.yml` to the VM and run:
    ```bash
    docker compose up -d
    ```

@@ -154,6 +154,9 @@
         },
         "chore": {
           "semverBump": "none"
+        },
+        "docs": {
+          "semverBump": "none"
         }
       }
     },

@@ -11,7 +11,7 @@
 > - [API Specification & Endpoint Contracts](./api-specification-and-contracts.md)
 > - [Database Specification](../database/database-architecture-specification.md)
 > - [002: 3-Cluster & Flexible Tenancy Architecture](../database/002-3-cluster-and-flexible-tenancy-architecture.md)
-> - [010: Docker Compose Environments Guide](../database/010-docker-compose-3layer-vs-mongo-cluster-guide.md)
+> - [3-Layer MongoDB Docker Setup Guide](../database/mongodb-3layer-docker-setup-guide.md)
 
 ---
 

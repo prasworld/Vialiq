@@ -1,0 +1,62 @@
+# ==============================================================================
+# Vialiq EDC — Optional Lightweight Standalone Redis (Docker Compose Fallback)
+# ==============================================================================
+# Purpose:
+#   Fast, minimal single-node Redis instance for constrained environments
+#   (Runs via `npm run dev:infra:standalone` or `npm run docker:redis:up`).
+#
+# Endpoints Provided:
+#   - 127.0.0.1:6379 (Single Standalone Node)
+#   NOTE: This file does NOT provide replica (6380) or Sentinel quorum (26379-26381).
+#
+# Standard Development Infrastructure:
+#   - Default setup (`npm run dev:infra` / `npm run docker:redis:ha`) orchestrates
+#     `tools/docker/docker-compose.redis-ha.yml`, providing the full High-Availability
+#     Sentinel quorum required by `RedisSentinel` in `appsettings.Development.json`.
+#
+# Credentials (12-Factor Environment Secret with Safe Dev Fallback):
+#   - Default: VialiqDevSecret123!
+#   - Override: export VIALIQ_REDIS_PASSWORD="YourCustomSecret"
+#
+# Connection Strings:
+#   - Standalone Host: localhost:6379,password=VialiqDevSecret123!
+# ==============================================================================
+
+services:
+  redis:
+    image: redis:7.2-alpine
+    container_name: vialiq-redis
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6379:6379"
+    command:
+      - redis-server
+      - --port
+      - "6379"
+      - --requirepass
+      - "${VIALIQ_REDIS_PASSWORD:-VialiqDevSecret123!}"
+      - --maxmemory
+      - 512mb
+      - --maxmemory-policy
+      - volatile-lru
+      - --appendonly
+      - "yes"
+    volumes:
+      - redis_dev_data:/data
+    networks:
+      - vialiq-dev-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${VIALIQ_REDIS_PASSWORD:-VialiqDevSecret123!}", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+networks:
+  vialiq-dev-net:
+    name: vialiq-dev-net
+    driver: bridge
+
+volumes:
+  redis_dev_data:
+    name: vialiq_redis_dev_data
+

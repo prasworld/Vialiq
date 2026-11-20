@@ -11,7 +11,8 @@ docs/deployment/
 ├── README.md                                                     # You are here (Master Index & Architecture Overview)
 ├── 001-web-and-api-enterprise-deployment-framework.md           # VIALIQ-DEPLOY-001: Web & API Enterprise Deployment Framework
 ├── 002-load-balancer-ingress-and-traffic-routing-guide.md      # VIALIQ-DEPLOY-002: Load Balancer, Ingress & Traffic Routing
-└── 003-vialiq-to-xencet-rebrand-and-package-publishing-guide.md  # XC-DEP-003: Rebrand, NPM Publishing & Infrastructure Transition
+├── 003-vialiq-to-xencet-rebrand-and-package-publishing-guide.md  # XC-DEP-003: Rebrand, NPM Publishing & Infrastructure Transition
+└── 004-database-security-and-cicd-configuration-guide.md       # VIALIQ-DEPLOY-004: Database Secrets, Security & CI/CD Config
 ```
 
 ---
@@ -57,6 +58,19 @@ docs/deployment/
   * **Docker Dev Topology:** Container and network renaming (`xencet-mongo-*`, `xencet-redis-*`, `xencet-network`) and package script updates.
   * **Ingress & TLS:** `*.xencet.com` wildcard certificate provisioning, dual-host ingress routing, and sponsor IdP redirect URI whitelisting.
   * **21 CFR Part 11 Audit Integrity:** Formal GxP Change Control procedure (`CR-XC-2026-001`) and dual-trust verification ensuring historical audit logs signed by `vialiq-api` remain valid.
+
+---
+
+### 📄 [004: Database Security, Secrets Management & CI/CD Configuration Guide](./004-database-security-and-cicd-configuration-guide.md)
+* **Document ID:** `VIALIQ-DEPLOY-004`
+* **Status:** Sealed & Approved Blueprint
+* **Key Scope:**
+  * **12-Factor Secrets Architecture:** Zero hardcoded passwords in Git, source code, or static `.conf` files. Runtime injection via Secret Managers (AWS, Azure, K8s).
+  * **Zero-Friction Dev Turnaround:** Instant local developer onboarding with Compose fallbacks (`${VIALIQ_REDIS_PASSWORD:-VialiqDevSecret123!}`) and unauthenticated `localhost` loopback MongoDB (sub-3s boot time).
+  * **Redis Production Hardening:** Removal of literal placeholders in `redis-prod.conf`; CLI runtime injection and Redis 7.2 SHA-256 ACL configuration.
+  * **MongoDB GxP Isolation & Production RBAC:** Managed cloud cluster architecture (Atlas/DocumentDB) with TLS 1.3 and least-privilege database user scoping.
+  * **ASP.NET Core 9 Configuration Mapping:** Standard `ConnectionStrings__*` environment variable overrides for zero-code promotion from local laptops to production.
+  * **Turnkey CI/CD Workflow:** Reference GitHub Actions / GitLab CI pipeline with ephemeral test infrastructure and secrets injection.
 
 ---
 
