@@ -29,13 +29,18 @@ services:
     restart: unless-stopped
     ports:
       - "127.0.0.1:6379:6379"
-    command: >
-      redis-server
-      --port 6379
-      --requirepass ${VIALIQ_REDIS_PASSWORD:-VialiqDevSecret123!}
-      --maxmemory 512mb
-      --maxmemory-policy volatile-lru
-      --appendonly yes
+    command:
+      - redis-server
+      - --port
+      - "6379"
+      - --requirepass
+      - "${VIALIQ_REDIS_PASSWORD:-VialiqDevSecret123!}"
+      - --maxmemory
+      - 512mb
+      - --maxmemory-policy
+      - volatile-lru
+      - --appendonly
+      - "yes"
     volumes:
       - redis_dev_data:/data
     networks:

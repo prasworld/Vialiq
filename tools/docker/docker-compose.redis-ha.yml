@@ -33,6 +33,26 @@
 #   - Command: npm run docker:redis:up
 # ==============================================================================
 
+# ==============================================================================
+# Reusable Sentinel Bootstrap Anchor
+# Conditionally generates /etc/redis/sentinel.conf on initial volume creation.
+# Securely handles arbitrary secrets via in-container environment variables (escaping \ to \\ and " to \").
+# ==============================================================================
+x-sentinel-bootstrap: &sentinel-bootstrap
+  - sh
+  - -c
+  - |
+    mkdir -p /etc/redis
+    if [ ! -f /etc/redis/sentinel.conf ]; then
+      ESC_PASS=$$(printf '%s' "$$VIALIQ_REDIS_PASSWORD" | sed 's/\\/\\\\/g; s/"/\\"/g')
+      printf "port %s\nsentinel monitor mymaster 127.0.0.1 6379 2\nsentinel down-after-milliseconds mymaster 2000\nsentinel failover-timeout mymaster 5000\nsentinel parallel-syncs mymaster 1\nsentinel announce-ip 127.0.0.1\nsentinel announce-port %s\n" "$$SENTINEL_PORT" "$$SENTINEL_PORT" > /etc/redis/sentinel.conf
+      if [ -n "$$ESC_PASS" ]; then
+        printf "requirepass \"%s\"\nsentinel sentinel-pass \"%s\"\nsentinel auth-pass mymaster \"%s\"\n" "$$ESC_PASS" "$$ESC_PASS" "$$ESC_PASS" >> /etc/redis/sentinel.conf
+      fi
+    fi
+    chmod 777 /etc/redis /etc/redis/sentinel.conf 2>/dev/null || true
+    exec redis-sentinel /etc/redis/sentinel.conf
+
 services:
   # 0. Network Anchor Container (holds published ports and network namespace)
   redis-net:
@@ -66,14 +86,20 @@ services:
     # Note on Failover & Lock Durability (ADR 003 Decision 7):
     # Redis replication is asynchronous (PSYNC). Form edit locks are defended by Tier 1 MongoDB canonical
     # leases (study_edit_leases) and clinical document mutations enforce monotonic fencing tokens (_version OCC).
-    command: >
-      redis-server
-      --port 6379
-      --requirepass ${VIALIQ_REDIS_PASSWORD:-VialiqDevSecret123!}
-      --masterauth ${VIALIQ_REDIS_PASSWORD:-VialiqDevSecret123!}
-      --maxmemory 512mb
-      --maxmemory-policy volatile-lru
-      --appendonly yes
+    command:
+      - redis-server
+      - --port
+      - "6379"
+      - --requirepass
+      - "${VIALIQ_REDIS_PASSWORD:-VialiqDevSecret123!}"
+      - --masterauth
+      - "${VIALIQ_REDIS_PASSWORD:-VialiqDevSecret123!}"
+      - --maxmemory
+      - 512mb
+      - --maxmemory-policy
+      - volatile-lru
+      - --appendonly
+      - "yes"
     healthcheck:
       test: ["CMD", "redis-cli", "-a", "${VIALIQ_REDIS_PASSWORD:-VialiqDevSecret123!}", "ping"]
       interval: 3s
@@ -89,17 +115,27 @@ services:
     depends_on:
       redis-primary:
         condition: service_healthy
-    command: >
-      redis-server
-      --port 6380
-      --replicaof 127.0.0.1 6379
-      --replica-announce-ip 127.0.0.1
-      --replica-announce-port 6380
-      --requirepass ${VIALIQ_REDIS_PASSWORD:-VialiqDevSecret123!}
-      --masterauth ${VIALIQ_REDIS_PASSWORD:-VialiqDevSecret123!}
-      --maxmemory 512mb
-      --maxmemory-policy volatile-lru
-      --appendonly yes
+    command:
+      - redis-server
+      - --port
+      - "6380"
+      - --replicaof
+      - 127.0.0.1
+      - "6379"
+      - --replica-announce-ip
+      - 127.0.0.1
+      - --replica-announce-port
+      - "6380"
+      - --requirepass
+      - "${VIALIQ_REDIS_PASSWORD:-VialiqDevSecret123!}"
+      - --masterauth
+      - "${VIALIQ_REDIS_PASSWORD:-VialiqDevSecret123!}"
+      - --maxmemory
+      - 512mb
+      - --maxmemory-policy
+      - volatile-lru
+      - --appendonly
+      - "yes"
     healthcheck:
       test: ["CMD", "redis-cli", "-p", "6380", "-a", "${VIALIQ_REDIS_PASSWORD:-VialiqDevSecret123!}", "ping"]
       interval: 3s
@@ -117,22 +153,10 @@ services:
       - redis-replica
     volumes:
       - sentinel_1_data:/etc/redis
-    command: >
-      sh -c "mkdir -p /etc/redis &&
-             if [ ! -f /etc/redis/sentinel.conf ]; then
-               echo 'port 26379' > /etc/redis/sentinel.conf &&
-               echo 'requirepass ${VIALIQ_REDIS_PASSWORD:-VialiqDevSecret123!}' >> /etc/redis/sentinel.conf &&
-               echo 'sentinel sentinel-pass ${VIALIQ_REDIS_PASSWORD:-VialiqDevSecret123!}' >> /etc/redis/sentinel.conf &&
-               echo 'sentinel monitor mymaster 127.0.0.1 6379 2' >> /etc/redis/sentinel.conf &&
-               echo 'sentinel announce-ip 127.0.0.1' >> /etc/redis/sentinel.conf &&
-               echo 'sentinel announce-port 26379' >> /etc/redis/sentinel.conf &&
-               echo 'sentinel auth-pass mymaster ${VIALIQ_REDIS_PASSWORD:-VialiqDevSecret123!}' >> /etc/redis/sentinel.conf &&
-               echo 'sentinel down-after-milliseconds mymaster 2000' >> /etc/redis/sentinel.conf &&
-               echo 'sentinel failover-timeout mymaster 5000' >> /etc/redis/sentinel.conf &&
-               echo 'sentinel parallel-syncs mymaster 1' >> /etc/redis/sentinel.conf;
-             fi &&
-             chmod 777 /etc/redis /etc/redis/sentinel.conf 2>/dev/null || true &&
-             redis-sentinel /etc/redis/sentinel.conf"
+    environment:
+      SENTINEL_PORT: 26379
+      VIALIQ_REDIS_PASSWORD: ${VIALIQ_REDIS_PASSWORD:-VialiqDevSecret123!}
+    command: *sentinel-bootstrap
     healthcheck:
       test: ["CMD", "redis-cli", "-p", "26379", "-a", "${VIALIQ_REDIS_PASSWORD:-VialiqDevSecret123!}", "ping"]
       interval: 3s
@@ -150,22 +174,10 @@ services:
       - redis-replica
     volumes:
       - sentinel_2_data:/etc/redis
-    command: >
-      sh -c "mkdir -p /etc/redis &&
-             if [ ! -f /etc/redis/sentinel.conf ]; then
-               echo 'port 26380' > /etc/redis/sentinel.conf &&
-               echo 'requirepass ${VIALIQ_REDIS_PASSWORD:-VialiqDevSecret123!}' >> /etc/redis/sentinel.conf &&
-               echo 'sentinel sentinel-pass ${VIALIQ_REDIS_PASSWORD:-VialiqDevSecret123!}' >> /etc/redis/sentinel.conf &&
-               echo 'sentinel monitor mymaster 127.0.0.1 6379 2' >> /etc/redis/sentinel.conf &&
-               echo 'sentinel announce-ip 127.0.0.1' >> /etc/redis/sentinel.conf &&
-               echo 'sentinel announce-port 26380' >> /etc/redis/sentinel.conf &&
-               echo 'sentinel auth-pass mymaster ${VIALIQ_REDIS_PASSWORD:-VialiqDevSecret123!}' >> /etc/redis/sentinel.conf &&
-               echo 'sentinel down-after-milliseconds mymaster 2000' >> /etc/redis/sentinel.conf &&
-               echo 'sentinel failover-timeout mymaster 5000' >> /etc/redis/sentinel.conf &&
-               echo 'sentinel parallel-syncs mymaster 1' >> /etc/redis/sentinel.conf;
-             fi &&
-             chmod 777 /etc/redis /etc/redis/sentinel.conf 2>/dev/null || true &&
-             redis-sentinel /etc/redis/sentinel.conf"
+    environment:
+      SENTINEL_PORT: 26380
+      VIALIQ_REDIS_PASSWORD: ${VIALIQ_REDIS_PASSWORD:-VialiqDevSecret123!}
+    command: *sentinel-bootstrap
     healthcheck:
       test: ["CMD", "redis-cli", "-p", "26380", "-a", "${VIALIQ_REDIS_PASSWORD:-VialiqDevSecret123!}", "ping"]
       interval: 3s
@@ -183,22 +195,10 @@ services:
       - redis-replica
     volumes:
       - sentinel_3_data:/etc/redis
-    command: >
-      sh -c "mkdir -p /etc/redis &&
-             if [ ! -f /etc/redis/sentinel.conf ]; then
-               echo 'port 26381' > /etc/redis/sentinel.conf &&
-               echo 'requirepass ${VIALIQ_REDIS_PASSWORD:-VialiqDevSecret123!}' >> /etc/redis/sentinel.conf &&
-               echo 'sentinel sentinel-pass ${VIALIQ_REDIS_PASSWORD:-VialiqDevSecret123!}' >> /etc/redis/sentinel.conf &&
-               echo 'sentinel monitor mymaster 127.0.0.1 6379 2' >> /etc/redis/sentinel.conf &&
-               echo 'sentinel announce-ip 127.0.0.1' >> /etc/redis/sentinel.conf &&
-               echo 'sentinel announce-port 26381' >> /etc/redis/sentinel.conf &&
-               echo 'sentinel auth-pass mymaster ${VIALIQ_REDIS_PASSWORD:-VialiqDevSecret123!}' >> /etc/redis/sentinel.conf &&
-               echo 'sentinel down-after-milliseconds mymaster 2000' >> /etc/redis/sentinel.conf &&
-               echo 'sentinel failover-timeout mymaster 5000' >> /etc/redis/sentinel.conf &&
-               echo 'sentinel parallel-syncs mymaster 1' >> /etc/redis/sentinel.conf;
-             fi &&
-             chmod 777 /etc/redis /etc/redis/sentinel.conf 2>/dev/null || true &&
-             redis-sentinel /etc/redis/sentinel.conf"
+    environment:
+      SENTINEL_PORT: 26381
+      VIALIQ_REDIS_PASSWORD: ${VIALIQ_REDIS_PASSWORD:-VialiqDevSecret123!}
+    command: *sentinel-bootstrap
     healthcheck:
       test: ["CMD", "redis-cli", "-p", "26381", "-a", "${VIALIQ_REDIS_PASSWORD:-VialiqDevSecret123!}", "ping"]
       interval: 3s
