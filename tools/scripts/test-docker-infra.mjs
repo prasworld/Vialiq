@@ -15,7 +15,7 @@
  * ==============================================================================
  */
 
-import { execSync } from 'node:child_process';
+import { execFileSync, execSync } from 'node:child_process';
 import net from 'node:net';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -80,9 +80,13 @@ async function testTcpConnect(host, port, timeoutMs = 1500) {
   });
 }
 
-function runDockerExec(containerName, command, timeoutMs = 8000) {
+function runDockerExec(containerName, cmdOrArgs, timeoutMs = 8000) {
   try {
-    return execSync(`docker exec ${containerName} ${command}`, {
+    const args = Array.isArray(cmdOrArgs)
+      ? ['exec', containerName, ...cmdOrArgs]
+      : ['exec', containerName, 'sh', '-c', cmdOrArgs];
+
+    return execFileSync('docker', args, {
       stdio: ['pipe', 'pipe', 'pipe'],
       timeout: timeoutMs
     }).toString().trim();
@@ -138,11 +142,11 @@ async function runMongoSuite() {
     try {
       const isPrimary = runDockerExec(
         layer.container,
-        `mongosh --port ${layer.port} --quiet --eval "db.hello().isWritablePrimary"`
+        ['mongosh', '--port', String(layer.port), '--quiet', '--eval', 'db.hello().isWritablePrimary']
       );
       const setName = runDockerExec(
         layer.container,
-        `mongosh --port ${layer.port} --quiet --eval "db.hello().setName"`
+        ['mongosh', '--port', String(layer.port), '--quiet', '--eval', 'db.hello().setName']
       );
 
       if (isPrimary.includes('true') && setName.includes(layer.setName)) {
@@ -182,7 +186,7 @@ async function runMongoSuite() {
 
       const out = runDockerExec(
         layer.container,
-        `mongosh --port ${layer.port} --quiet --eval "${acidJs}"`
+        ['mongosh', '--port', String(layer.port), '--quiet', '--eval', acidJs]
       );
 
       if (out.includes('TX_COMMITTED')) {
@@ -202,7 +206,7 @@ async function runMongoSuite() {
   try {
     let devCanReachAdmin = false;
     try {
-      runDockerExec('vialiq-mongo-layer2-dev', 'mongosh --host mongo-layer1-admin:27017 --quiet --eval "db.adminCommand(\'ping\')"', 3000);
+      runDockerExec('vialiq-mongo-layer2-dev', ['mongosh', '--host', 'mongo-layer1-admin:27017', '--quiet', '--eval', 'db.adminCommand("ping")'], 3000);
       devCanReachAdmin = true;
     } catch {
       devCanReachAdmin = false;
@@ -220,7 +224,7 @@ async function runMongoSuite() {
   try {
     let devCanReachProd = false;
     try {
-      runDockerExec('vialiq-mongo-layer2-dev', 'mongosh --host mongo-layer3-prod:27037 --quiet --eval "db.adminCommand(\'ping\')"', 3000);
+      runDockerExec('vialiq-mongo-layer2-dev', ['mongosh', '--host', 'mongo-layer3-prod:27037', '--quiet', '--eval', 'db.adminCommand("ping")'], 3000);
       devCanReachProd = true;
     } catch {
       devCanReachProd = false;
@@ -237,8 +241,9 @@ async function runMongoSuite() {
 
   // 1.5 Initializer Containers Clean Exit
   try {
-    const initPs = execSync(
-      'docker ps -a --filter "name=vialiq-init" --format "{{.Names}}\t{{.Status}}"',
+    const initPs = execFileSync(
+      'docker',
+      ['ps', '-a', '--filter', 'name=vialiq-init', '--format', '{{.Names}}\t{{.Status}}'],
       { stdio: ['pipe', 'pipe', 'ignore'] }
     ).toString().trim();
 
@@ -277,7 +282,7 @@ async function runRedisSuite() {
   try {
     const sentinelOut = runDockerExec(
       'vialiq-sentinel-1',
-      `redis-cli -p 26379 -a "${REDIS_SECRET}" sentinel get-master-addr-by-name mymaster`,
+      ['redis-cli', '-p', '26379', '-a', REDIS_SECRET, 'sentinel', 'get-master-addr-by-name', 'mymaster'],
       2000
     );
     if (sentinelOut.includes('6380')) {
@@ -289,7 +294,7 @@ async function runRedisSuite() {
     }
   } catch {
     // Standalone dev mode
-    const standalone = execSync('docker ps --filter "name=vialiq-redis" --format "{{.Names}}"', { stdio: ['pipe', 'pipe', 'ignore'] })
+    const standalone = execFileSync('docker', ['ps', '--filter', 'name=vialiq-redis', '--format', '{{.Names}}'], { stdio: ['pipe', 'pipe', 'ignore'] })
       .toString()
       .trim()
       .split('\n')
@@ -311,7 +316,7 @@ async function runRedisSuite() {
   try {
     let unauthSuccess = false;
     try {
-      const res = runDockerExec(activeMasterContainer, `redis-cli -p ${activeMasterPort} ping`);
+      const res = runDockerExec(activeMasterContainer, ['redis-cli', '-p', String(activeMasterPort), 'ping']);
       if (res.includes('PONG')) {
         unauthSuccess = true;
       }
@@ -334,7 +339,7 @@ async function runRedisSuite() {
 
   // 2.3 Authenticated Access
   try {
-    const pong = runDockerExec(activeMasterContainer, `redis-cli -p ${activeMasterPort} -a "${REDIS_SECRET}" ping`);
+    const pong = runDockerExec(activeMasterContainer, ['redis-cli', '-p', String(activeMasterPort), '-a', REDIS_SECRET, 'ping']);
     if (pong.includes('PONG')) {
       recordPass('Authentication Gate: Authenticated PING Accepted', 'Redis returned PONG with valid credentials');
     } else {
@@ -349,9 +354,18 @@ async function runRedisSuite() {
     const testKey = 'edc:form_lock:suite_test_study:form_001';
     const testVal = JSON.stringify({ lockedBy: 'suite_agent', ts: Date.now() });
 
-    const setRes = runDockerExec(activeMasterContainer, `redis-cli -p ${activeMasterPort} -a "${REDIS_SECRET}" SET "${testKey}" '${testVal}' EX 30 NX`);
-    const getRes = runDockerExec(activeMasterContainer, `redis-cli -p ${activeMasterPort} -a "${REDIS_SECRET}" GET "${testKey}"`);
-    const delRes = runDockerExec(activeMasterContainer, `redis-cli -p ${activeMasterPort} -a "${REDIS_SECRET}" DEL "${testKey}"`);
+    const setRes = runDockerExec(activeMasterContainer, [
+      'redis-cli', '-p', String(activeMasterPort), '-a', REDIS_SECRET,
+      'SET', testKey, testVal, 'EX', '30', 'NX'
+    ]);
+    const getRes = runDockerExec(activeMasterContainer, [
+      'redis-cli', '-p', String(activeMasterPort), '-a', REDIS_SECRET,
+      'GET', testKey
+    ]);
+    const delRes = runDockerExec(activeMasterContainer, [
+      'redis-cli', '-p', String(activeMasterPort), '-a', REDIS_SECRET,
+      'DEL', testKey
+    ]);
 
     if (setRes.includes('OK') && getRes.includes('suite_agent') && delRes.includes('1')) {
       recordPass(`Fast-Path Edit Lease Simulation (${activeMasterContainer}:${activeMasterPort})`, 'SET NX EX, GET, DEL dual-write functional');
@@ -364,7 +378,10 @@ async function runRedisSuite() {
 
   // 2.5 GxP Memory Policy Invariant (volatile-lru)
   try {
-    const memPolicy = runDockerExec(activeMasterContainer, `redis-cli -p ${activeMasterPort} -a "${REDIS_SECRET}" CONFIG GET maxmemory-policy`);
+    const memPolicy = runDockerExec(activeMasterContainer, [
+      'redis-cli', '-p', String(activeMasterPort), '-a', REDIS_SECRET,
+      'CONFIG', 'GET', 'maxmemory-policy'
+    ]);
     if (memPolicy.includes('volatile-lru')) {
       recordPass('GxP Compliance Invariant: maxmemory-policy volatile-lru', 'Invariant dictionaries cannot be evicted');
     } else {
@@ -376,7 +393,10 @@ async function runRedisSuite() {
 
   // 2.6 AOF Persistence Verification
   try {
-    const aof = runDockerExec(activeMasterContainer, `redis-cli -p ${activeMasterPort} -a "${REDIS_SECRET}" CONFIG GET appendonly`);
+    const aof = runDockerExec(activeMasterContainer, [
+      'redis-cli', '-p', String(activeMasterPort), '-a', REDIS_SECRET,
+      'CONFIG', 'GET', 'appendonly'
+    ]);
     if (aof.includes('yes')) {
       recordPass('Disaster Recovery Persistence: appendonly yes', 'AOF write stream active');
     } else {
@@ -440,13 +460,13 @@ async function runSentinelSuite() {
     try {
       let unauthPass = false;
       try {
-        const res = runDockerExec(s.container, `redis-cli -p ${s.port} ping`);
+        const res = runDockerExec(s.container, ['redis-cli', '-p', String(s.port), 'ping']);
         if (res.includes('PONG')) unauthPass = true;
       } catch (e) {
         if (e.message.includes('NOAUTH')) unauthPass = false;
       }
 
-      const authPong = runDockerExec(s.container, `redis-cli -p ${s.port} -a "${REDIS_SECRET}" ping`);
+      const authPong = runDockerExec(s.container, ['redis-cli', '-p', String(s.port), '-a', REDIS_SECRET, 'ping']);
 
       if (!unauthPass && authPong.includes('PONG')) {
         recordPass(`Sentinel Control Auth: ${s.name}`, `Port ${s.port} requires password; NOAUTH enforced`);
@@ -462,7 +482,7 @@ async function runSentinelSuite() {
   try {
     const masterAddr = runDockerExec(
       'vialiq-sentinel-1',
-      `redis-cli -p 26379 -a "${REDIS_SECRET}" sentinel get-master-addr-by-name mymaster`
+      ['redis-cli', '-p', '26379', '-a', REDIS_SECRET, 'sentinel', 'get-master-addr-by-name', 'mymaster']
     );
 
     if (masterAddr.includes('6379') || masterAddr.includes('6380')) {
@@ -477,7 +497,7 @@ async function runSentinelSuite() {
 
   // 3.3 Sentinel Volume & Config File Persistence
   try {
-    const confCheck = runDockerExec('vialiq-sentinel-1', 'ls -la /etc/redis/sentinel.conf');
+    const confCheck = runDockerExec('vialiq-sentinel-1', ['ls', '-la', '/etc/redis/sentinel.conf']);
     if (confCheck.includes('sentinel.conf')) {
       recordPass('Sentinel Config Persistence', '/etc/redis/sentinel.conf persisted across restarts');
     } else {
