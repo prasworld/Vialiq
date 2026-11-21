@@ -26,7 +26,7 @@
    - [2.3 Redis Memory Clamping & GxP Eviction Policy (`volatile-lru`)](#23-redis-memory-clamping--gxp-eviction-policy-volatile-lru)
    - [2.4 macOS Kernel Tuning (`vm.overcommit_memory = 1`)](#24-macos-kernel-tuning-vmovercommit_memory--1)
 3. [Configuration Files & Architecture Breakdown](#3-configuration-files--architecture-breakdown)
-   - [3.1 Developer Compose Specification (`tools/docker/docker-compose.redis-dev.yml`)](#31-developer-compose-specification-toolsdockerdocker-composeredis-devyml)
+   - [3.1 Developer Compose Specifications (docker-compose.redis-dev.yml & docker-compose.redis-ha.yml)](#3-configuration-files--architecture-breakdown)
    - [3.2 Production Hardened Configuration (`tools/docker/redis-prod.conf`)](#32-production-hardened-configuration-toolsdockerredis-prodconf)
    - [3.3 Sentinel Quorum Mechanics & Failure Detection](#33-sentinel-quorum-mechanics--failure-detection)
 4. [Step-by-Step Instructions: From Zero to Running Locally](#4-step-by-step-instructions-from-zero-to-running-locally)
@@ -173,9 +173,41 @@ The Docker VM image provided by Docker Desktop automatically manages memory over
 
 ## 3. Configuration Files & Architecture Breakdown
 
-### 3.1 Developer Compose Specification (`tools/docker/docker-compose.redis-dev.yml`)
+Vialiq EDC provides **two distinct Redis configurations**:
 
-The developer environment is declared in [`tools/docker/docker-compose.redis-dev.yml`](../../../tools/docker/docker-compose.redis-dev.yml):
+### 3.1.1 Lightweight Standalone Redis (`tools/docker/docker-compose.redis-dev.yml`)
+> **Default for Day-to-Day Feature Development**: Spins up **1 single container** (`vialiq-redis` on port 6379). Consumes <15MB RAM and provides instant sub-second startups without Sentinel overhead.
+
+```yaml
+services:
+  redis:
+    image: redis:7.2-alpine
+    container_name: vialiq-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: >
+      redis-server
+      --port 6379
+      --requirepass ${VIALIQ_REDIS_PASSWORD:-VialiqDevSecret123!}
+      --maxmemory 512mb
+      --maxmemory-policy volatile-lru
+      --appendonly yes
+    volumes:
+      - redis_dev_data:/data
+    networks:
+      - vialiq-dev-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${VIALIQ_REDIS_PASSWORD:-VialiqDevSecret123!}", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+```
+
+### 3.1.2 High-Availability Sentinel Topology (`tools/docker/docker-compose.redis-ha.yml`)
+> **For Chaos Testing & Production Parity**: Runs 1 Primary (6379), 1 Replica (6380), and 3 Sentinels (26379–26381) attached to a unified `redis-net` anchor on `127.0.0.1`. Enables automated failover verification.
+
+Declared in [`tools/docker/docker-compose.redis-ha.yml`](../../../tools/docker/docker-compose.redis-ha.yml):
 
 ```yaml
 version: '3.8'
@@ -232,14 +264,22 @@ services:
   redis-sentinel-1:
     image: redis:7.2-alpine
     container_name: vialiq-sentinel-1
+    volumes:
+      - sentinel_1_data:/etc/redis
     command: >
-      sh -c "echo 'port 26379' > /tmp/sentinel.conf &&
-             echo 'sentinel monitor mymaster redis-primary 6379 2' >> /tmp/sentinel.conf &&
-             echo 'sentinel auth-pass mymaster VialiqDevSecret123!' >> /tmp/sentinel.conf &&
-             echo 'sentinel down-after-milliseconds mymaster 2000' >> /tmp/sentinel.conf &&
-             echo 'sentinel failover-timeout mymaster 5000' >> /tmp/sentinel.conf &&
-             echo 'sentinel parallel-syncs mymaster 1' >> /tmp/sentinel.conf &&
-             redis-sentinel /tmp/sentinel.conf"
+      sh -c "mkdir -p /etc/redis &&
+             if [ ! -f /etc/redis/sentinel.conf ]; then
+               echo 'port 26379' > /etc/redis/sentinel.conf &&
+               echo 'requirepass VialiqDevSecret123!' >> /etc/redis/sentinel.conf &&
+               echo 'sentinel sentinel-pass VialiqDevSecret123!' >> /etc/redis/sentinel.conf &&
+               echo 'sentinel monitor mymaster redis-primary 6379 2' >> /etc/redis/sentinel.conf &&
+               echo 'sentinel auth-pass mymaster VialiqDevSecret123!' >> /etc/redis/sentinel.conf &&
+               echo 'sentinel down-after-milliseconds mymaster 2000' >> /etc/redis/sentinel.conf &&
+               echo 'sentinel failover-timeout mymaster 5000' >> /etc/redis/sentinel.conf &&
+               echo 'sentinel parallel-syncs mymaster 1' >> /etc/redis/sentinel.conf;
+             fi &&
+             chmod 777 /etc/redis /etc/redis/sentinel.conf 2>/dev/null || true &&
+             redis-sentinel /etc/redis/sentinel.conf"
     ports:
       - "26379:26379"
     depends_on:
@@ -252,14 +292,22 @@ services:
   redis-sentinel-2:
     image: redis:7.2-alpine
     container_name: vialiq-sentinel-2
+    volumes:
+      - sentinel_2_data:/etc/redis
     command: >
-      sh -c "echo 'port 26380' > /tmp/sentinel.conf &&
-             echo 'sentinel monitor mymaster redis-primary 6379 2' >> /tmp/sentinel.conf &&
-             echo 'sentinel auth-pass mymaster VialiqDevSecret123!' >> /tmp/sentinel.conf &&
-             echo 'sentinel down-after-milliseconds mymaster 2000' >> /tmp/sentinel.conf &&
-             echo 'sentinel failover-timeout mymaster 5000' >> /tmp/sentinel.conf &&
-             echo 'sentinel parallel-syncs mymaster 1' >> /tmp/sentinel.conf &&
-             redis-sentinel /tmp/sentinel.conf"
+      sh -c "mkdir -p /etc/redis &&
+             if [ ! -f /etc/redis/sentinel.conf ]; then
+               echo 'port 26380' > /etc/redis/sentinel.conf &&
+               echo 'requirepass VialiqDevSecret123!' >> /etc/redis/sentinel.conf &&
+               echo 'sentinel sentinel-pass VialiqDevSecret123!' >> /etc/redis/sentinel.conf &&
+               echo 'sentinel monitor mymaster redis-primary 6379 2' >> /etc/redis/sentinel.conf &&
+               echo 'sentinel auth-pass mymaster VialiqDevSecret123!' >> /etc/redis/sentinel.conf &&
+               echo 'sentinel down-after-milliseconds mymaster 2000' >> /etc/redis/sentinel.conf &&
+               echo 'sentinel failover-timeout mymaster 5000' >> /etc/redis/sentinel.conf &&
+               echo 'sentinel parallel-syncs mymaster 1' >> /etc/redis/sentinel.conf;
+             fi &&
+             chmod 777 /etc/redis /etc/redis/sentinel.conf 2>/dev/null || true &&
+             redis-sentinel /etc/redis/sentinel.conf"
     ports:
       - "26380:26380"
     depends_on:
@@ -272,14 +320,22 @@ services:
   redis-sentinel-3:
     image: redis:7.2-alpine
     container_name: vialiq-sentinel-3
+    volumes:
+      - sentinel_3_data:/etc/redis
     command: >
-      sh -c "echo 'port 26381' > /tmp/sentinel.conf &&
-             echo 'sentinel monitor mymaster redis-primary 6379 2' >> /tmp/sentinel.conf &&
-             echo 'sentinel auth-pass mymaster VialiqDevSecret123!' >> /tmp/sentinel.conf &&
-             echo 'sentinel down-after-milliseconds mymaster 2000' >> /tmp/sentinel.conf &&
-             echo 'sentinel failover-timeout mymaster 5000' >> /tmp/sentinel.conf &&
-             echo 'sentinel parallel-syncs mymaster 1' >> /tmp/sentinel.conf &&
-             redis-sentinel /tmp/sentinel.conf"
+      sh -c "mkdir -p /etc/redis &&
+             if [ ! -f /etc/redis/sentinel.conf ]; then
+               echo 'port 26381' > /etc/redis/sentinel.conf &&
+               echo 'requirepass VialiqDevSecret123!' >> /etc/redis/sentinel.conf &&
+               echo 'sentinel sentinel-pass VialiqDevSecret123!' >> /etc/redis/sentinel.conf &&
+               echo 'sentinel monitor mymaster redis-primary 6379 2' >> /etc/redis/sentinel.conf &&
+               echo 'sentinel auth-pass mymaster VialiqDevSecret123!' >> /etc/redis/sentinel.conf &&
+               echo 'sentinel down-after-milliseconds mymaster 2000' >> /etc/redis/sentinel.conf &&
+               echo 'sentinel failover-timeout mymaster 5000' >> /etc/redis/sentinel.conf &&
+               echo 'sentinel parallel-syncs mymaster 1' >> /etc/redis/sentinel.conf;
+             fi &&
+             chmod 777 /etc/redis /etc/redis/sentinel.conf 2>/dev/null || true &&
+             redis-sentinel /etc/redis/sentinel.conf"
     ports:
       - "26381:26381"
     depends_on:
@@ -291,6 +347,11 @@ services:
 networks:
   vialiq-dev-net:
     driver: bridge
+
+volumes:
+  sentinel_1_data:
+  sentinel_2_data:
+  sentinel_3_data:
 ```
 
 ---
@@ -301,11 +362,19 @@ For cloud virtual machines or self-hosted bare metal deployments, the production
 
 ```ini
 # --- NETWORK & SECURITY ---
-bind 0.0.0.0
+# Restrict to trusted loopback interfaces by default. This ensures Redis never opens
+# unauthenticated network listeners to remote actors if started without credentials.
+# In production private VPCs or container overlays, operators explicitly bind to trusted
+# private interfaces alongside mandatory credentials or ACLs via startup arguments:
+#   redis-server /path/to/redis-prod.conf --bind <trusted-private-ip> 127.0.0.1 --requirepass "$VIALIQ_REDIS_PASSWORD" --masterauth "$VIALIQ_REDIS_PASSWORD"
+bind 127.0.0.1 -::1
 protected-mode yes
 port 6379
-requirepass "${VIALIQ_REDIS_PASSWORD}"
-masterauth "${VIALIQ_REDIS_PASSWORD}"
+# NOTE: In production, credentials are NEVER stored in this static file (the Redis config parser
+# does not expand shell environment variables). Inject passwords at runtime via startup CLI flags:
+#   redis-server /path/to/redis-prod.conf --bind <trusted-private-ip> 127.0.0.1 --requirepass "$VIALIQ_REDIS_PASSWORD" --masterauth "$VIALIQ_REDIS_PASSWORD"
+# Or configure Redis 7.2 ACLs via:
+#   aclfile /etc/redis/users.acl
 timeout 300
 tcp-keepalive 60
 
@@ -376,6 +445,9 @@ npm run docker:redis:up
 
 # Option B: Direct docker compose
 docker compose -f tools/docker/docker-compose.redis-dev.yml up -d
+
+# For HA Chaos Testing:
+npm run docker:redis:ha
 ```
 
 ---
@@ -429,7 +501,7 @@ master_link_status:up
 
 #### Connect to Sentinel (Port 26379):
 ```bash
-docker exec -it vialiq-sentinel-1 redis-cli -p 26379
+docker exec -it vialiq-sentinel-1 redis-cli -p 26379 -a VialiqDevSecret123!
 ```
 Execute commands:
 ```text
@@ -523,20 +595,21 @@ var redis = ConnectionMultiplexer.SentinelConnect(configOptions);
 ### Step 8: Lifecycle Management (Stop, Restart, Logs, and Clean Wipe)
 
 ```bash
-# View live logs across all nodes
+# View live logs
 docker compose -f tools/docker/docker-compose.redis-dev.yml logs -f
 
-# Temporarily stop all nodes (preserves keys and volumes)
+# Temporarily stop standalone node (preserves keys and volumes)
 npm run docker:redis:stop
 
-# Resume stopped nodes
+# Resume stopped node
 docker compose -f tools/docker/docker-compose.redis-dev.yml start
 
-# Tear down containers (clean shutdown)
+# Tear down standalone container (clean shutdown)
 npm run docker:redis:down
 
-# Clean reset: wipe all keys and volumes from scratch
-docker compose -f tools/docker/docker-compose.redis-dev.yml down -v
+# HA equivalents:
+npm run docker:redis:ha:stop
+npm run docker:redis:ha:down
 ```
 
 ---
@@ -545,13 +618,16 @@ docker compose -f tools/docker/docker-compose.redis-dev.yml down -v
 
 All Redis operational commands are unified under standard npm scripts in `package.json`:
 
-| Task | npm Shortcut | Direct Command Equivalent |
-|---|---|---|
-| **Start HA Cluster** | `npm run docker:redis:up` | `docker compose -f tools/docker/docker-compose.redis-dev.yml up -d` |
-| **Check Health & Status** | `npm run docker:redis:status` | `docker ps --filter 'name=vialiq-redis' --filter 'name=vialiq-sentinel'` |
-| **Run Chaos Failover Drill** | `npm run docker:redis:test-failover` | `bash tools/scripts/test-redis-ha-failover.sh` |
-| **Stop Nodes (Preserve Data)** | `npm run docker:redis:stop` | `docker compose -f tools/docker/docker-compose.redis-dev.yml stop` |
-| **Tear Down Containers** | `npm run docker:redis:down` | `docker compose -f tools/docker/docker-compose.redis-dev.yml down` |
+| Task | npm Shortcut | Direct Command Equivalent | Notes |
+|---|---|---|---|
+| **Start Standalone Redis** | `npm run docker:redis:up` | `docker compose -f tools/docker/docker-compose.redis-dev.yml up -d` | 1 container (`vialiq-redis` on 6379), fast daily dev |
+| **Stop Standalone Redis** | `npm run docker:redis:stop` | `docker compose -f tools/docker/docker-compose.redis-dev.yml stop` | Preserves dev cache volume |
+| **Tear Down Standalone** | `npm run docker:redis:down` | `docker compose -f tools/docker/docker-compose.redis-dev.yml down` | Cleans up container & network |
+| **Start HA Sentinel Cluster** | `npm run docker:redis:ha` | `docker compose -f tools/docker/docker-compose.redis-ha.yml up -d` | Primary, Replica, 3 Sentinels, `redis-net` anchor |
+| **Stop HA Cluster** | `npm run docker:redis:ha:stop` | `docker compose -f tools/docker/docker-compose.redis-ha.yml stop` | Preserves data |
+| **Tear Down HA Cluster** | `npm run docker:redis:ha:down` | `docker compose -f tools/docker/docker-compose.redis-ha.yml down` | Cleans up HA containers |
+| **Run Chaos Failover Drill** | `npm run docker:redis:test-failover` | `bash tools/scripts/test-redis-ha-failover.sh` | Auto-boots HA & executes 5-step test |
+| **Check Health & Status** | `npm run docker:redis:status` | `docker ps --filter 'name=vialiq-redis' --filter 'name=vialiq-sentinel'` | Inspects all active Redis nodes |
 
 ---
 

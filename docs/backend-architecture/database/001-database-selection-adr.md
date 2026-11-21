@@ -146,7 +146,7 @@ Our finalization of MongoDB as the operational database is grounded in the thoro
 To support local multi-cluster development at **$0 cost** with full multi-document ACID transactions and Change Streams, developers use the following 3-node replica set configuration:
 
 ```yaml
-# tools/docker/docker-compose.mongo-cluster.yml
+# tools/docker/docker-compose.3layer.yml (or canonical 3-node HA replica set definition)
 version: '3.8'
 
 services:
@@ -197,7 +197,12 @@ services:
       - edc-net
     restart: "no"
     entrypoint: [ "bash", "-c", "
-      sleep 3;
+      for i in $$(seq 1 30); do
+        if mongosh --host mongo1:27017 --quiet --eval \"db.adminCommand('ping')\" > /dev/null 2>&1; then
+          READY=1; break;
+        fi
+        sleep 1;
+      done
       mongosh --host mongo1:27017 --eval '
         rs.initiate({
           _id: \"rs-edc\",
@@ -223,11 +228,8 @@ volumes:
 ### Running Multiple Isolated Clusters Simultaneously
 Developers can run multiple independent clusters for different studies or tenants on the same machine:
 ```bash
-# Start Cluster for Study A (Project isolation)
-docker compose -p edc-study-a -f tools/docker/docker-compose.mongo-cluster.yml up -d
-
-# Start Cluster for Study B (Using alternative port mapping)
-docker compose -p edc-study-b -f tools/docker/docker-compose.mongo-cluster.study-b.yml up -d
+# Start 3-layer local MongoDB cluster topology (Admin: 27017, Dev: 27027, Prod: 27037)
+npm run docker:mongo:all
 ```
 
 ---

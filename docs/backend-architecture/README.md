@@ -20,7 +20,6 @@ docs/backend-architecture/
 │   ├── 007-database-administration-and-mongosh-command-glossary.md # DBA Operations Playbook & mongosh Command Glossary (Locking, RBAC, Diagnostics & DR)
 │   ├── 008-architectural-benchmark-and-peer-comparison.md # Real-World Peer Benchmark & Industry Evaluation (vs. Medidata, Veeva, Oracle)
 │   ├── 009-developer-3-cluster-setup-quickstart.md # Developer Quickstart: Minimal Theory, Copy-Paste CLI Setup from Scratch
-│   ├── 010-docker-compose-3layer-vs-mongo-cluster-guide.md # Docker Environments: 3-Layer GxP Architecture vs. 3-Node HA Cluster
 │   ├── database-architecture-specification.md # MongoDB Collections, ACID Transactions & Schemas
 │   ├── mongodb-cluster-setup-guide.md         # Step-by-Step Cluster Guide: Docker ($0) & Atlas Cloud
 │   └── mongodb-3layer-docker-setup-guide.md   # Phased 3-Layer Cluster Setup for Apple Silicon (M1 Pro / M5 Pro)
@@ -55,8 +54,6 @@ docs/backend-architecture/
   Authoritative **Real-World Architectural Benchmark & Industry Peer Comparison**: Exhaustive technical and commercial evaluation comparing Vialiq EDC (**Composite Score: 9.78/10 — Grade A+**) against industry incumbents (**Medidata Rave EDC, Veeva Vault EDC, and Oracle Clinical One**). Features a 15-dimension capability matrix; 7 deep-dive clinical scenario walkthroughs (Phase 3 Adaptive Oncology Protocol Amendments, Multi-Sponsor BYOK Sovereign Isolation, GDPR Article 17 Crypto-Shredding vs. FDA 21 CFR Part 11 Audit Retention, 4-Layer Defense-in-Depth Locking, Double-Blind RTSM Treatment Arm Security, 25-Year WORM Archival Decommissioning, and Apple Silicon ARM64 local developer ergonomics); a 3-Year Enterprise TCO Model demonstrating an **88.4% cost reduction** across 100 concurrent trials; and an honest architect critique of technical trade-offs and mitigations.
 * **[009-developer-3-cluster-setup-quickstart.md](./database/009-developer-3-cluster-setup-quickstart.md)**:
   Developer-first, minimal-theory **Local Setup Quickstart & CLI Runbook**: Pragmatic commands to spin up the 3-Layer MongoDB cluster topology from scratch via npm and Docker, one-line health checks, copy-paste `.env` and Compass connection strings, ACID transaction smoke tests, clean-slate reset commands, and an evolution roadmap as the backend matures.
-* **[010-docker-compose-3layer-vs-mongo-cluster-guide.md](./database/010-docker-compose-3layer-vs-mongo-cluster-guide.md)**:
-  Comparative architectural and operational guide: Detailed breakdown of **when and how** to use `docker-compose.3layer.yml` (multi-cluster GxP physical isolation, default for 95% of EDC development) versus `docker-compose.mongo-cluster.yml` (single-cluster 3-node HA failover & chaos testing), complete with connection strings, failover drill commands, and the port 27017 mutual exclusion rule.
 * **[database-architecture-specification.md](./database/database-architecture-specification.md)**:
   Comprehensive data layer specification detailing:
   - Complete TypeScript document models for `study_protocols`, `form_definitions`, `crf_entries`, `audit_trail`, `clinical_queries`, and `electronic_signatures`.
@@ -98,6 +95,9 @@ docs/backend-architecture/
 ---
 
 ## Related System Documentation
+- **[ADR-005: Multi-Product Platform Architecture & Mirrored Workspace Layout](../adr/005-multi-product-platform-and-workspace-layout-adr.md)** (`apps/` ↔ `backend/` separation, Super Admin vs. Tenant Admin vs. Products)
+- **[FTS-004: Super Admin Control Plane & Tenant Provisioning](../functional-and-technical-specs/004-super-admin-control-plane-and-tenant-provisioning-specification.md)**
+- **[FTS-005: Tenant Platform Admin & Multi-Product Console](../functional-and-technical-specs/005-tenant-platform-admin-multi-product-console-specification.md)**
 - **[Platform Scaling Architecture](../scaling-architecture/README.md)** (Sharding, Load Balancing, Wildcard TLS & Caching)
 - [Form Builder JSON Schema Specification](../form-builder-schema.md)
 - [Form Builder Validation & Edit Checks](../form-builder-validation.md)

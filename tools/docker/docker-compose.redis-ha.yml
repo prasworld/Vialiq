@@ -1,0 +1,219 @@
+# ==============================================================================
+# Vialiq EDC — Redis High-Availability Cluster Topology (Docker Compose)
+# ==============================================================================
+# Architecture:
+#   - Primary (Master):      Port 6379  | Handles writes (locks, cache invalidations)
+#   - Replica (Secondary):   Port 6380  | Streaming async replication (PSYNC), auto-promotes
+#   - Sentinel 1:            Port 26379 | Quorum = 2, down-after = 2000ms
+#   - Sentinel 2:            Port 26380 | Quorum = 2, down-after = 2000ms
+#   - Sentinel 3:            Port 26381 | Quorum = 2, down-after = 2000ms
+#
+# Networking & Host Discovery:
+#   - Uses redis-net anchor container with published ports 6379, 6380, 26379-26381.
+#   - Redis nodes and Sentinels advertise 127.0.0.1 (externally reachable by host .NET clients)
+#   - Container-hostname announcements (announce-hostnames yes) are disabled so host clients
+#     never receive unresolvable container-internal hostnames upon discovery or failover.
+#   - Docker network aliases (redis-primary, redis-replica) allow container-to-container access by name.
+#
+# Standards & References:
+#   - ADR 007-A: Multi-Tenant Cache Isolation & Security Scoping
+#   - ENG 007-B: High-Availability Redis Cluster Architecture & Scaling Guide
+#
+# Operational Commands:
+#   - Start HA Cluster:         npm run docker:redis:ha
+#                               (or docker compose -f tools/docker/docker-compose.redis-ha.yml up -d)
+#   - View Cluster Status:      npm run docker:redis:status
+#   - Stop HA Cluster:          npm run docker:redis:ha:stop
+#   - Tear Down HA:             npm run docker:redis:ha:down
+#   - Run Chaos Failover Drill: npm run docker:redis:test-failover
+#                               (or bash tools/scripts/test-redis-ha-failover.sh)
+#
+# For Lightweight Single-Node Dev (1 container on port 6379):
+#   - Use: tools/docker/docker-compose.redis-dev.yml
+#   - Command: npm run docker:redis:up
+# ==============================================================================
+
+# ==============================================================================
+# Reusable Sentinel Bootstrap Anchor
+# Conditionally generates /etc/redis/sentinel.conf on initial volume creation.
+# Securely handles arbitrary secrets via in-container environment variables (escaping \ to \\ and " to \").
+# ==============================================================================
+x-sentinel-bootstrap: &sentinel-bootstrap
+  - sh
+  - -c
+  - |
+    mkdir -p /etc/redis
+    if [ ! -f /etc/redis/sentinel.conf ]; then
+      ESC_PASS=$$(printf '%s' "$$VIALIQ_REDIS_PASSWORD" | sed 's/\\/\\\\/g; s/"/\\"/g')
+      printf "port %s\nsentinel monitor mymaster 127.0.0.1 6379 2\nsentinel down-after-milliseconds mymaster 2000\nsentinel failover-timeout mymaster 5000\nsentinel parallel-syncs mymaster 1\nsentinel announce-ip 127.0.0.1\nsentinel announce-port %s\n" "$$SENTINEL_PORT" "$$SENTINEL_PORT" > /etc/redis/sentinel.conf
+      if [ -n "$$ESC_PASS" ]; then
+        printf "requirepass \"%s\"\nsentinel sentinel-pass \"%s\"\nsentinel auth-pass mymaster \"%s\"\n" "$$ESC_PASS" "$$ESC_PASS" "$$ESC_PASS" >> /etc/redis/sentinel.conf
+      fi
+    fi
+    chmod 777 /etc/redis /etc/redis/sentinel.conf 2>/dev/null || true
+    exec redis-sentinel /etc/redis/sentinel.conf
+
+services:
+  # 0. Network Anchor Container (holds published ports and network namespace)
+  redis-net:
+    image: redis:7.2-alpine
+    container_name: vialiq-redis-net
+    restart: always
+    command: ["sleep", "infinity"]
+    ports:
+      - "127.0.0.1:6379:6379"
+      - "127.0.0.1:6380:6380"
+      - "127.0.0.1:26379:26379"
+      - "127.0.0.1:26380:26380"
+      - "127.0.0.1:26381:26381"
+    networks:
+      vialiq-dev-net:
+        aliases:
+          - redis-primary
+          - redis-replica
+          - redis-sentinel-1
+          - redis-sentinel-2
+          - redis-sentinel-3
+
+  # 1. Primary Redis Node
+  redis-primary:
+    image: redis:7.2-alpine
+    container_name: vialiq-redis-primary
+    restart: always
+    network_mode: "service:redis-net"
+    depends_on:
+      - redis-net
+    # Note on Failover & Lock Durability (ADR 003 Decision 7):
+    # Redis replication is asynchronous (PSYNC). Form edit locks are defended by Tier 1 MongoDB canonical
+    # leases (study_edit_leases) and clinical document mutations enforce monotonic fencing tokens (_version OCC).
+    command:
+      - redis-server
+      - --port
+      - "6379"
+      - --requirepass
+      - "${VIALIQ_REDIS_PASSWORD:-VialiqDevSecret123!}"
+      - --masterauth
+      - "${VIALIQ_REDIS_PASSWORD:-VialiqDevSecret123!}"
+      - --maxmemory
+      - 512mb
+      - --maxmemory-policy
+      - volatile-lru
+      - --appendonly
+      - "yes"
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${VIALIQ_REDIS_PASSWORD:-VialiqDevSecret123!}", "ping"]
+      interval: 3s
+      timeout: 2s
+      retries: 5
+
+  # 2. Secondary Redis Replica
+  redis-replica:
+    image: redis:7.2-alpine
+    container_name: vialiq-redis-replica
+    restart: always
+    network_mode: "service:redis-net"
+    depends_on:
+      redis-primary:
+        condition: service_healthy
+    command:
+      - redis-server
+      - --port
+      - "6380"
+      - --replicaof
+      - 127.0.0.1
+      - "6379"
+      - --replica-announce-ip
+      - 127.0.0.1
+      - --replica-announce-port
+      - "6380"
+      - --requirepass
+      - "${VIALIQ_REDIS_PASSWORD:-VialiqDevSecret123!}"
+      - --masterauth
+      - "${VIALIQ_REDIS_PASSWORD:-VialiqDevSecret123!}"
+      - --maxmemory
+      - 512mb
+      - --maxmemory-policy
+      - volatile-lru
+      - --appendonly
+      - "yes"
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "6380", "-a", "${VIALIQ_REDIS_PASSWORD:-VialiqDevSecret123!}", "ping"]
+      interval: 3s
+      timeout: 2s
+      retries: 5
+
+  # 3. Sentinel 1
+  redis-sentinel-1:
+    image: redis:7.2-alpine
+    container_name: vialiq-sentinel-1
+    restart: always
+    network_mode: "service:redis-net"
+    depends_on:
+      - redis-primary
+      - redis-replica
+    volumes:
+      - sentinel_1_data:/etc/redis
+    environment:
+      SENTINEL_PORT: 26379
+      VIALIQ_REDIS_PASSWORD: ${VIALIQ_REDIS_PASSWORD:-VialiqDevSecret123!}
+    command: *sentinel-bootstrap
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "26379", "-a", "${VIALIQ_REDIS_PASSWORD:-VialiqDevSecret123!}", "ping"]
+      interval: 3s
+      timeout: 2s
+      retries: 5
+
+  # 4. Sentinel 2
+  redis-sentinel-2:
+    image: redis:7.2-alpine
+    container_name: vialiq-sentinel-2
+    restart: always
+    network_mode: "service:redis-net"
+    depends_on:
+      - redis-primary
+      - redis-replica
+    volumes:
+      - sentinel_2_data:/etc/redis
+    environment:
+      SENTINEL_PORT: 26380
+      VIALIQ_REDIS_PASSWORD: ${VIALIQ_REDIS_PASSWORD:-VialiqDevSecret123!}
+    command: *sentinel-bootstrap
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "26380", "-a", "${VIALIQ_REDIS_PASSWORD:-VialiqDevSecret123!}", "ping"]
+      interval: 3s
+      timeout: 2s
+      retries: 5
+
+  # 5. Sentinel 3
+  redis-sentinel-3:
+    image: redis:7.2-alpine
+    container_name: vialiq-sentinel-3
+    restart: always
+    network_mode: "service:redis-net"
+    depends_on:
+      - redis-primary
+      - redis-replica
+    volumes:
+      - sentinel_3_data:/etc/redis
+    environment:
+      SENTINEL_PORT: 26381
+      VIALIQ_REDIS_PASSWORD: ${VIALIQ_REDIS_PASSWORD:-VialiqDevSecret123!}
+    command: *sentinel-bootstrap
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "26381", "-a", "${VIALIQ_REDIS_PASSWORD:-VialiqDevSecret123!}", "ping"]
+      interval: 3s
+      timeout: 2s
+      retries: 5
+
+networks:
+  vialiq-dev-net:
+    driver: bridge
+    name: vialiq-dev-net
+
+volumes:
+  sentinel_1_data:
+    name: vialiq-sentinel-1-data
+  sentinel_2_data:
+    name: vialiq-sentinel-2-data
+  sentinel_3_data:
+    name: vialiq-sentinel-3-data

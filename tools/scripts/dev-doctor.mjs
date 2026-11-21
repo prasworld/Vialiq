@@ -1,0 +1,168 @@
+#!/usr/bin/env node
+
+/**
+ * Vialiq EDC - Local Development Environment Doctor
+ * Verifies system prerequisites, container health, and port bindings.
+ */
+
+import { execSync } from 'node:child_process';
+import net from 'node:net';
+
+const CHECK = ' \x1b[32m✔\x1b[0m';
+const WARN = ' \x1b[33m⚠\x1b[0m';
+const FAIL = ' \x1b[31m✖\x1b[0m';
+const BOLD = '\x1b[1m';
+const RESET = '\x1b[0m';
+
+console.log(`\n${BOLD}================================================================${RESET}`);
+console.log(`${BOLD}  VIALIQ EDC — LOCAL DEVELOPMENT ENVIRONMENT DOCTOR             ${RESET}`);
+console.log(`${BOLD}================================================================${RESET}\n`);
+
+let hasErrors = false;
+
+// 1. Check Node.js
+try {
+  const nodeVersion = process.version;
+  const major = parseInt(nodeVersion.replace('v', '').split('.')[0], 10);
+  if (major >= 20) {
+    console.log(`${CHECK} Node.js: ${nodeVersion} (Supported >= v20)`);
+  } else {
+    console.log(`${WARN} Node.js: ${nodeVersion} (Recommended v20 or higher)`);
+  }
+} catch {
+  console.log(`${FAIL} Node.js: Not detected`);
+  hasErrors = true;
+}
+
+// 2. Check .NET SDK
+try {
+  const dotnetVersion = execSync('dotnet --version', { stdio: ['pipe', 'pipe', 'ignore'] }).toString().trim();
+  if (dotnetVersion.startsWith('9.')) {
+    console.log(`${CHECK} .NET SDK: ${dotnetVersion} (.NET 9 verified)`);
+  } else {
+    console.log(`${WARN} .NET SDK: ${dotnetVersion} (Recommended .NET 9.0+)`);
+  }
+} catch {
+  console.log(`${FAIL} .NET SDK: Not found. Install .NET 9 SDK from https://dotnet.microsoft.com/download`);
+  hasErrors = true;
+}
+
+// 3. Check Docker Daemon
+let dockerRunning = false;
+try {
+  execSync('docker info', { stdio: ['pipe', 'pipe', 'ignore'] });
+  console.log(`${CHECK} Docker Daemon: Running and responsive`);
+  dockerRunning = true;
+} catch {
+  console.log(`${FAIL} Docker Daemon: Not running. Please start Docker Desktop.`);
+  hasErrors = true;
+}
+
+// 4. Check Port Reachability & Service Readiness
+async function checkPort(host, port) {
+  return new Promise((resolve) => {
+    const socket = new net.Socket();
+    socket.setTimeout(1000);
+    socket.on('connect', () => {
+      socket.destroy();
+      resolve(true);
+    });
+    socket.on('timeout', () => {
+      socket.destroy();
+      resolve(false);
+    });
+    socket.on('error', () => {
+      resolve(false);
+    });
+    socket.connect(port, host);
+  });
+}
+
+function checkMongoPrimary(containerName, port) {
+  try {
+    const res = execSync(
+      `docker exec ${containerName} mongosh --port ${port} --quiet --eval "db.hello().isWritablePrimary"`,
+      { stdio: ['pipe', 'pipe', 'ignore'], timeout: 3000 }
+    ).toString().trim();
+    return res.includes('true');
+  } catch {
+    return false;
+  }
+}
+
+console.log(`\n${BOLD}Infrastructure Services & Ports:${RESET}`);
+
+const services = [
+  { name: 'Layer 1 Admin Mongo (rs-admin)', host: 'localhost', port: 27017, required: true, isMongo: true, container: 'vialiq-mongo-layer1-admin' },
+  { name: 'Layer 2 Dev Mongo   (rs-dev)',   host: 'localhost', port: 27027, required: true, isMongo: true, container: 'vialiq-mongo-layer2-dev' },
+  { name: 'Layer 3 Prod Mongo  (rs-prod)',  host: 'localhost', port: 27037, required: true, isMongo: true, container: 'vialiq-mongo-layer3-prod' },
+  { name: 'Redis Primary Cache',            host: 'localhost', port: 6379,  required: true },
+  { name: 'Redis Replica Cache',            host: 'localhost', port: 6380,  required: false },
+  { name: 'Redis Sentinel Quorum 1',        host: 'localhost', port: 26379, required: false },
+  { name: 'Redis Sentinel Quorum 2',        host: 'localhost', port: 26380, required: false },
+  { name: 'Redis Sentinel Quorum 3',        host: 'localhost', port: 26381, required: false },
+  { name: 'ASP.NET Core Web API',           host: 'localhost', port: 5000,  required: false, isApp: true },
+  { name: 'Angular Web Shell',              host: 'localhost', port: 4200,  required: false, isApp: true }
+];
+
+for (const svc of services) {
+  const isUp = await checkPort(svc.host, svc.port);
+  if (isUp) {
+    if (svc.isMongo && dockerRunning) {
+      const isPrimary = checkMongoPrimary(svc.container, svc.port);
+      if (isPrimary) {
+        console.log(`${CHECK} ${svc.name.padEnd(32)} Port ${svc.port}: ONLINE (PRIMARY - Ready for writes)`);
+      } else {
+        console.log(`${FAIL} ${svc.name.padEnd(32)} Port ${svc.port}: ONLINE (NOT PRIMARY - Replica set initializing)`);
+        hasErrors = true;
+      }
+    } else {
+      console.log(`${CHECK} ${svc.name.padEnd(32)} Port ${svc.port}: ONLINE`);
+    }
+  } else if (svc.isApp) {
+    console.log(` - ${svc.name.padEnd(32)} Port ${svc.port}: OFFLINE (Start via npm start / npm run api:watch)`);
+  } else if (svc.required) {
+    console.log(`${FAIL} ${svc.name.padEnd(32)} Port ${svc.port}: NOT REACHABLE (Required)`);
+    hasErrors = true;
+  } else {
+    console.log(` - ${svc.name.padEnd(32)} Port ${svc.port}: NOT REACHABLE (Optional / HA Mode)`);
+  }
+}
+
+// 5. Check Initializer Containers Status
+if (dockerRunning) {
+  try {
+    const exitedInits = execSync(
+      'docker ps -a --filter "name=vialiq-init" --filter "status=exited" --format "{{.Names}}\t{{.Status}}"',
+      { stdio: ['pipe', 'pipe', 'ignore'] }
+    ).toString().trim();
+
+    if (exitedInits) {
+      const failed = exitedInits.split('\n').filter(line => !line.includes('Exited (0)'));
+      if (failed.length > 0) {
+        console.log(`\n${BOLD}Failed Initializer Containers:${RESET}`);
+        for (const f of failed) {
+          const [name, status] = f.split('\t');
+          console.log(`${FAIL} ${name.padEnd(32)} ${status} (Initialization Failed)`);
+        }
+        hasErrors = true;
+      }
+    }
+  } catch {
+    // Docker command errors ignored
+  }
+}
+
+console.log(`\n${BOLD}----------------------------------------------------------------${RESET}`);
+if (!hasErrors) {
+  console.log(`\x1b[32mEnvironment check completed successfully! Ready for development.\x1b[0m`);
+} else {
+  console.log(`\x1b[31mEnvironment check failed! Required services are offline.\x1b[0m`);
+  console.log(`\x1b[33mFix: Run 'npm run dev:infra' to start background MongoDB and Redis containers.\x1b[0m`);
+  console.log(`  Or start manually via Docker Compose:`);
+  console.log(`    - MongoDB: docker compose -f tools/docker/docker-compose.3layer.yml --profile all up -d`);
+  console.log(`    - Redis:   docker compose -f tools/docker/docker-compose.redis-dev.yml up -d`);
+  process.exitCode = 1;
+}
+console.log(`${BOLD}================================================================${RESET}\n`);
+

@@ -474,7 +474,7 @@ Vialiq EDC maintains single-editor form-level lock notifications (`ADR 003`) and
 * **Windows Server Environments:** Installed using the official MongoDB Windows MSI installer (`mongodb-windows-x86_64-7.0.x-signed.msi`). Registered as an automatic Windows Service (`mongod.exe --service --config C:\mongodb\mongod.cfg`).
 
 ### 7.2 Redis 7.2 Sentinel High-Availability Tier
-* **Linux Environments:** Deployed as **Non-Clustered Redis Sentinel HA (`Cluster Mode: Disabled`, `min-replicas-to-write 1`)**: production runs **1 Primary + 2 Replicas + 3 Sentinels** (preventing a 1-replica write stall), while local Docker tests **1 Primary + 1 Replica + 3 Sentinels** via `tools/docker/docker-compose.redis-dev.yml`.
+* **Linux Environments:** Deployed as **Non-Clustered Redis Sentinel HA (`Cluster Mode: Disabled`, `min-replicas-to-write 1`)**: production runs **1 Primary + 2 Replicas + 3 Sentinels** (preventing a 1-replica write stall), while local Docker tests **1 Primary + 1 Replica + 3 Sentinels** via `tools/docker/docker-compose.redis-ha.yml`.
 * **Windows Server Environments:** Redis officially does not maintain native Windows binaries past 3.2. For Windows environments:
   1. **Tier 1 Recommendation:** Managed cloud cache (**Azure Cache for Redis** or **AWS ElastiCache**).
   2. **Tier 2 Recommendation (Air-Gapped / On-Premise Windows):** Deploy **Microsoft Garnet** (open-source C# caching engine developed by Microsoft Research), running as a Windows Service and offering 100% Redis wire-protocol compatibility.

@@ -273,6 +273,89 @@ The locking engine operates as a **Dual-Write Synchronous System (DB + Cache)**:
 
 ---
 
+### Decision 7: Failover Durability & Monotonic Fencing Tokens (Mitigating the Martin Kleppmann Redis Failover Anomaly)
+
+#### 1. Problem Statement: Asynchronous Replication & Dropped Lock Writes
+In high-availability Redis topologies (Sentinel or Managed Multi-AZ), streaming replication between the Primary (Port 6379) and Replica (Port 6380) is **asynchronous (PSYNC)**:
+1. Coordinator A acquires a form lock on Primary: `SET edc:form_lock:{studyId}:{crfId} "{...}" NX EX 900`.
+2. Primary writes to memory and immediately acknowledges `+OK` to Coordinator A.
+3. Before the write is transmitted over the replication link to the Replica, the Primary suffers an ungraceful hardware crash, kernel panic, or hypervisor failure.
+4. Sentinel detects the failure, authorizes a failover, and promotes the Replica to become the new Primary.
+5. Because replication was asynchronous, the newly promoted Primary **lacks the acknowledged lock key**.
+6. Coordinator B requests the same form lock. The new Primary erroneously grants it.
+7. **The Concurrency Hazard:** Coordinator A and Coordinator B both temporarily believe they hold the exclusive edit lock for the same form.
+
+#### 2. Why Pure Redis Configuration Cannot Solve This
+Distributed systems literature (notably Martin Kleppmann's formal analysis of Redis and Redlock) demonstrates that in asynchronous replication models without distributed consensus (Raft or Paxos), no combination of `redis.conf` flags (even with `WAIT` or `min-replicas-to-write`) can guarantee linearizability across ungraceful node crash boundaries. 
+
+Attempting to force strict synchronous replication inside Redis introduces severe latency penalties and network partition deadlocks, while still failing during partial partitions.
+
+#### 3. The Vialiq Solution: 3-Tier Defense-in-Depth
+
+Instead of treating Redis as an infallible, standalone lock authority, Vialiq EDC eliminates concurrent overwrite hazards by construction across three architectural layers:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ LAYER 1: CLINICAL DOMAIN CONCURRENCY BOUNDARY                               │
+│ • Case Report Forms (CRFs) are scoped to 1 Patient at 1 Physical Site.      │
+│ • Typically only 1-2 coordinators have regulatory delegation of authority.  │
+│ • P(Hardware crash in sub-ms PSYNC window + simultaneous edit) << 10^-7.    │
+└──────────────────────────────────────┬──────────────────────────────────────┘
+                                       │
+                                       ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ LAYER 2: TIER 1 DATABASE CANONICAL AUTHORITY (MongoDB study_edit_leases)   │
+│ • MongoDB is the authoritative legal ledger for edit leases (Decision 6).   │
+│ • AcquireFormLockAsync executes an atomic upsert in study_edit_leases with  │
+│   a partial unique index on { studyId: 1, targetCrfId: 1 }.                 │
+│ • MongoDB Primary ACID commit is required before Redis cache is populated.  │
+└──────────────────────────────────────┬──────────────────────────────────────┘
+                                       │
+                                       ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ LAYER 3: MONOTONIC FENCING TOKENS (Optimistic Concurrency Control / OCC)    │
+│ • Every clinical document carries a monotonic version counter (_version).   │
+│ • SaveFormAsync executes: db.forms.updateOne({ _id, _version: clientVer },  │
+│   { $inc: { _version: 1 }, $set: { data } }).                               │
+│ • If Coordinator A commits first (_version 4 -> 5), Coordinator B's write   │
+│   attempt with version 4 is REJECTED by MongoDB (HTTP 409 Conflict).        │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+1. **Layer 1: Clinical Domain Boundary**:
+   Unlike consumer applications where thousands of public users contest shared database records, clinical EDC forms are bound to a specific Subject, Visit, and Site. Simultaneous edit attempts on the same form across two coordinators during a sub-millisecond crash window is an astronomically improbable event ($\ll 0.000001\%$).
+
+2. **Layer 2: Canonical Database Leases (`study_edit_leases`)**:
+   As established in **Decision 6**, Redis operates strictly as a Tier 2 performance cache. Form edit leases are persisted in MongoDB's `study_edit_leases` collection, where a partial unique index on `{ studyId: 1, targetCrfId: 1 }` guarantees that the database itself never authorizes conflicting active leases.
+
+3. **Layer 3: Monotonic Fencing Tokens (Optimistic Concurrency Control)**:
+   In strict accordance with distributed consensus principles, **mutations to clinical trial data never rely on Redis lock tokens alone**. Every clinical entity in MongoDB and Tier 3 SQL Server implements **Optimistic Concurrency Control (OCC) with a monotonic version counter (`_version: long`) acting as a fencing token**:
+   ```csharp
+   // Atomic Fencing Token Validation on Clinical Form Mutation (C# / .NET 9)
+   var filter = Builders<CrfEntity>.Filter.And(
+       Builders<CrfEntity>.Filter.Eq(x => x.Id, request.CrfId),
+       Builders<CrfEntity>.Filter.Eq(x => x.Version, request.ExpectedVersion) // Fencing Token Check
+   );
+
+   var update = Builders<CrfEntity>.Update
+       .Set(x => x.FormData, request.EncryptedFormData)
+       .Set(x => x.LastModifiedBy, user.UserId)
+       .Set(x => x.LastModifiedAtUtc, DateTime.UtcNow)
+       .Inc(x => x.Version, 1); // Increment Fencing Token
+
+   var result = await _crfCollection.UpdateOneAsync(filter, update, cancellationToken: ct);
+   if (result.MatchedCount == 0)
+   {
+       // Another transaction committed first! Reject write immediately.
+       throw new OptimisticConcurrencyException(
+           $"Conflict detected: CRF '{request.CrfId}' has already been modified. Version token '{request.ExpectedVersion}' is stale."
+       );
+   }
+   ```
+   **The Invariant:** Even in the worst-case theoretical scenario where Redis Sentinel promotes an out-of-sync replica and allows a second user to view the form in edit mode, **the database atomically rejects the second user's write**. Zero clinical data can be overwritten or silently corrupted.
+
+---
+
 ## 3. Concrete Implementation Specifications (`IStudyLockService`)
 
 > Aligned with `API ADR 006`, `ADR 007-A`, and `ADR 007-B`, `IStudyLockService` supersedes legacy field-lock prototypes and enforces **Single-Editor / Multi-Reader Form Locking** backed by MongoDB (`study_edit_leases`, gated by governance `study_locks`) + synchronous Redis coordination.

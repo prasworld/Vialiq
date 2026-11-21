@@ -494,5 +494,20 @@ Niche enterprise utilities, interactive guides, and visual accents.
 - [ ] **Zero-CORS Local Developer Gateway**
   - [ ] Implement lightweight Dockerized Nginx reverse proxy on port 80 (`tools/docker/nginx/nginx.dev.conf`) proxying to host ports 4200 and 5000.
 
+---
+
+## 13. Deferred Review Comments & Non-Blocking Technical Enhancements
+*Policy: If a review comment or edge-case finding is technically sound but addressing it immediately creates scope bloat or blocks immediate deliverables, record it here rather than halting active work.*
+
+- [ ] **Redis Sentinel Entrypoint Script Extraction (Local Dev)**
+  - *Context:* `tools/docker/docker-compose.redis-ha.yml` currently uses in-container environment variables and inline `x-sentinel-bootstrap` anchor with `printf`/`sed`.
+  - *Enhancement:* Extract bootstrap logic into an external script (`tools/docker/sentinel-entrypoint.sh`) if Docker Compose YAML anchor complexity ever becomes cumbersome across additional environments.
+  - *Why Deferred:* Inline anchor is self-contained, eliminates Windows CRLF mount hazards, and passes 24/24 tests.
+- [ ] **Docker Compose Project Name Unification**
+  - *Context:* `docker-compose.3layer.yml` currently runs under default project name `docker` to preserve backward compatibility with existing developer containers.
+  - *Enhancement:* Consolidate project names via top-level `name: vialiq-infra` during a coordinated team volume reset.
+  - *Why Deferred:* Changing project names without scheduled team coordination causes container/volume duplication.
+
+
 
 

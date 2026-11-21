@@ -34,3 +34,11 @@ This rule enforces a strict protocol for analyzing side-effects, edge cases, and
 ## 6. Rigorous Unit Test Verification
 - **Directive**: Prove the logic handles the edge cases.
 - **Action**: For every identified scenario, edge case, and corner case, ensure there is a corresponding unit test. Verify that the tests actually assert the edge-case behavior and not just the happy path. Run the tests to confirm.
+
+## 7. Pragmatic Scope Control & Deferred Review Backlog
+- **Directive**: Never let non-critical review comments or edge-case polish derail the primary goal or cause scope bloat.
+- **Action**: When a review comment, optimization idea, or edge-case finding is technically valid but addressing it immediately constitutes unnecessary overhead, distraction, or over-engineering:
+  1. **Do not drop current work** or stall delivery.
+  2. **Log it immediately** into `docs/dev/to-do-task-list.md` under Section 13 (*Deferred Review Comments & Non-Blocking Technical Enhancements*).
+  3. Include the context, affected files, proposed solution, and reason for deferral.
+  4. Continue driving the current task to its planned completion.

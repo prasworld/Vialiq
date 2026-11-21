@@ -2,27 +2,29 @@
 
 > **Document ID:** `VIALIQ-ARCH-API-004`  
 > **Domain:** Backend Architecture — Repository & Solution Structure  
-> **Status:** Accepted  
-> **Date:** October 20, 2026  
+> **Status:** Accepted (Updated & Extended by [ADR-005](../../adr/005-multi-product-platform-and-workspace-layout-adr.md))  
+> **Date:** October 20, 2026 (Updated November 20, 2026)  
 > **Author:** Architecture Team / Prashant Gupta  
-> **Target Systems:** ASP.NET Core 9.0 LTS Web API (`backend/api/`), Angular 21 Host (`apps/shell/`), Nx Monorepo  
+> **Target Systems:** ASP.NET Core 9.0 LTS Platform & Product APIs (`backend/apps/platform/`, `backend/apps/edc/`, `backend/libs/`, `backend/Vialiq.Platform.sln`), Angular 21 Host (`apps/`), Nx Monorepo  
 > **Related Documents:**
+> - [ADR-005: Multi-Product Platform Architecture & Mirrored Workspace Layout](../../adr/005-multi-product-platform-and-workspace-layout-adr.md)
 > - [001: EDC API Architecture ADR](./001-api-architecture-adr.md)
 > - [002: API Stack Discussion Agenda & Framework Evaluation](./002-api-stack-discussion-agenda-and-evaluation-framework.md)
 > - [003: DTO Architecture Strategy & Rejection of GraphQL](./003-dto-design-and-graphql-evaluation-adr.md)
 > - [002: 3-Cluster & Flexible Tenancy Architecture](../database/002-3-cluster-and-flexible-tenancy-architecture.md)
-> - [010: Docker Compose Environments Guide](../database/010-docker-compose-3layer-vs-mongo-cluster-guide.md)
+> - [3-Layer MongoDB Docker Setup Guide](../database/mongodb-3layer-docker-setup-guide.md)
+> - [Redis High-Availability Setup Guide](../database/redis-setup-guide.md)
 
 ---
 
 ## 1. Context & Problem Statement
 
-Following the architectural decision to build the core EDC API using **ASP.NET Core 9.0 (.NET 9 LTS)** alongside the **Angular 21 (Signals)** frontend in our Nx workspace, we evaluated how to manage source code, Git repositories, team workflows, and regulatory documentation:
+Following the architectural decision to build the core EDC and multi-product platform APIs using **ASP.NET Core 9.0 (.NET 9 LTS)** alongside the **Angular 21 (Signals)** frontend in our Nx workspace, we evaluated how to manage source code, Git repositories, team workflows, and regulatory documentation:
 
 ### The Architectural Dilemma:
 Should the .NET backend API live as:
 1. **Option A: A Git Submodule** (a separate Git repository linked via a Git commit pointer into the parent workspace), OR
-2. **Option B: A Dedicated Top-Level Folder (`backend/api/`)** within a **Unified Monorepo**?
+2. **Option B: A Dedicated Top-Level Folder (`backend/apps/` & `backend/libs/` via `backend/Vialiq.Platform.sln`)** within a **Unified Monorepo**?
 
 ### Real-World Team & Operational Context:
 Our architectural evaluation explicitly accounts for the following real-world organizational realities:
@@ -34,11 +36,18 @@ Our architectural evaluation explicitly accounts for the following real-world or
 
 ## 2. Decision Summary
 
-We **accept Option B: Unified Monorepo with a Dedicated `backend/` Folder Hierarchy**, and **reject Git Submodules**.
+We **accept Option B: Unified Monorepo with a Dedicated `backend/` Folder Hierarchy and Mirrored Workspace Layout**, and **reject Git Submodules**.
 
-Specifically:
-1. **The .NET API Solution is located at `backend/api/Vialiq.Api.sln`**: We place the solution in `backend/api/` (rather than under `apps/`) to provide room for future backend solutions (e.g., `backend/workers/` for CDISC exports, `backend/ai-engine/`).
-2. **Independent CI/CD via Path Filtering**: We implement path-filtered CI/CD workflows so that frontend and backend builds, tests, and deployments remain 100% decoupled.
+As further formalized in [ADR-005: Multi-Product Platform Architecture & Mirrored Workspace Layout](../../adr/005-multi-product-platform-and-workspace-layout-adr.md), the codebase enforces a symmetrical 1:1 structure between frontend (`apps/` & `libs/`) and backend (`backend/apps/` & `backend/libs/`):
+
+1. **Unified .NET Solution (`backend/Vialiq.Platform.sln`) with Mirrored Hierarchy**:
+   - Rather than a single flat `backend/api/` solution or co-mingling backend projects under frontend `apps/`, the backend mirrors the frontend `apps/` vs `libs/` boundary:
+     - **`backend/apps/platform/`**: Platform control-plane APIs (`Vialiq.SuperAdmin.Api`, `Vialiq.TenantAdmin.Api`) mirroring `apps/platform/` (Tier 1 & Tier 2).
+     - **`backend/apps/edc/`**: Clinical EDC API host (`Vialiq.Edc.Api`) and future batch workers (`Vialiq.Edc.Worker`) mirroring `apps/edc/` (Tier 3).
+     - **`backend/libs/`**: Non-deployable shared class libraries (`Vialiq.Core`, `Vialiq.Platform.Core`, `Vialiq.Infrastructure`, `Vialiq.Caching`, `Vialiq.Validation`).
+     - **`backend/tests/`**: Mirrored test projects (`tests/platform/`, `tests/edc/`, `tests/libs/`).
+   - This architecture maintains clean regulatory audit boundaries (zero clinical study DB access in Super Admin API) and leaves clear runways for future product APIs (`backend/apps/ctms/`, `backend/apps/rtsm/`).
+2. **Independent CI/CD via Path Filtering**: We implement path-filtered CI/CD workflows so that frontend and backend builds, tests, and deployments remain 100% decoupled (`backend/apps/**`, `backend/libs/**`, `apps/**`, `libs/**`).
 3. **Intentional Model Asymmetry & `@vialiq/automapper` Boundary Projection**: 
    - In accordance with [ADR 005 (Intentional Model Asymmetry)](../../critical-problems-and-adrs/005-model-decoupling-and-intentional-asymmetry-adr.md), **we formally reject NSwag, code-generation drift tooling, and synthetic 1:1 contract parity**.
    - Clinical EDC payloads are metadata-driven (`formData: Record<string, unknown>`). The wire contract between Kestrel and Angular consists exclusively of stable, minimal transport envelopes (`FormSubmissionDto`, `FormLockDto`, `AuditQueryDto`).
@@ -56,7 +65,7 @@ Git submodules are frequently considered by teams with separate frontend and bac
         ┌────────────────────────────────┴────────────────────────────────┐
         ▼                                                                 ▼
 Git Submodule (Rejected)                                         Unified Monorepo (Accepted)
-• 2 Repositories + 1 Pointer SHA                                 • 1 Repository with backend/api/
+• 2 Repositories + 1 Pointer SHA                                 • 1 Repository with backend/apps/ & backend/libs/
 • Unpushed Submodule Trap ("reference is not a tree")            • Atomic Breaking Change Detection
 • Detached HEAD commits                                          • Shared Golden Validation Parity Suite
 • Two-PR Dance for every DTO change                              • Single Immutable SHA for 21 CFR Part 11
@@ -89,7 +98,7 @@ Consider a common clinical EDC feature: *Adding an `investigatorNpiNumber` to th
   6. Commits UI changes + submodule pointer bump $\rightarrow$ opens **PR #2 (Parent Repo)**.
   7. Team reviews and merges PR #2.
   *Result:* A simple contract update requires coordinating two separate Pull Requests, two review cycles, and careful merge order synchronization.
-* **With a Monorepo (`backend/api/`)**:
+* **With a Monorepo (`backend/`)**:
   1. Backend DTO + Angular UI component + `@vialiq/automapper` profile are updated in **1 single branch**.
   2. **1 Pull Request $\rightarrow$ 1 Review $\rightarrow$ Atomic Merge.** Zero cross-repo coordination.
 
@@ -119,28 +128,39 @@ Even with separate team members, independent CI/CD, and decoupled deployments, t
     // TS2345: Property 'reasonForChange' does not exist on type 'FormSubmissionDto'!
   });
   ```
-  The TypeScript compiler catches breaking contract changes at the mapping boundary before PRs are ever merged or deployed, without requiring fragile NSwag code generators or synthetic contract drift tooling ([ADR 005](../../critical-problems-and-adrs/005-model-decoupling-and-intentional-asymmetry-adr.md)).
+  The TypeScript compiler catches breaking contract changes at the mapping boundary before PRs are ever merged or deployed, without requiring fragile NSwag code generators or synthetic contract drift tooling ([ADR 005 (Model Decoupling)](../../critical-problems-and-adrs/005-model-decoupling-and-intentional-asymmetry-adr.md)).
 
 ### Justification 2: The Golden Parity Test Suite (`parity-tests.json`)
 * In [003-dto-design-and-graphql-evaluation-adr.md](./003-dto-design-and-graphql-evaluation-adr.md), we established a shared test suite of 500+ clinical edit-check rules (`parity-tests.json`).
-* Both the **Angular Vitest suite** (`libs/form-builder-validation`) and the **.NET xUnit suite** (`backend/api/tests/Vialiq.Validation.Tests`) must execute this *exact same file*.
+* Both the **Angular Vitest suite** (`libs/form-builder-validation`) and the **.NET xUnit suite** (`backend/tests/libs/Vialiq.Validation.Tests`) must execute this *exact same file*.
 * In a monorepo, `parity-tests.json` lives in a shared location that both test runners execute on every commit, guaranteeing 100% mathematical parity without copying files across repos.
 
 ### Justification 3: Shared Infrastructure & Single-Command Onboarding
-* Our local 3-Layer MongoDB Cluster ([docker-compose.3layer.yml](../../../tools/docker/docker-compose.3layer.yml)) lives in `tools/docker/`.
-* Any new developer—whether backend, frontend, or QA—clones one repository, runs `npm run docker:mongo:all`, and has the entire database tier, API, and UI operational in minutes.
+* Our local 3-Layer MongoDB Cluster ([docker-compose.3layer.yml](../../../tools/docker/docker-compose.3layer.yml)) and High-Availability Redis Sentinel topology ([docker-compose.redis-ha.yml](../../../tools/docker/docker-compose.redis-ha.yml)) live in `tools/docker/`.
+* Any new developer—whether backend, frontend, or QA—clones one repository, runs `npm run dev:infra`, and has the entire database tier, caching tier, and local infrastructure operational in seconds.
 
 ### Justification 4: Independent CI/CD is Native in Monorepos (Path Filtering)
-A monorepo does **not** mean monolithic deployments. We configure modern CI/CD path filters to ensure complete deployment independence:
+A monorepo does **not** mean monolithic deployments. We configure modern CI/CD path filters to ensure complete deployment independence across platform, product, and frontend boundaries:
 
 ```yaml
-# .github/workflows/api-deploy.yml (Deploys API to Kubernetes / Docker)
-name: Deploy Backend API
+# .github/workflows/edc-api-deploy.yml (Deploys EDC API to Kubernetes / Docker)
+name: Deploy EDC Backend API
 on:
   push:
     branches: [main]
     paths:
-      - 'backend/api/**' # Only redeploys if API code changes
+      - 'backend/apps/edc/**'
+      - 'backend/libs/**'
+
+# .github/workflows/super-admin-api-deploy.yml (Deploys Super Admin API to Internal Kubernetes / VPN)
+name: Deploy Super Admin API
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/apps/platform/Vialiq.SuperAdmin.Api/**'
+      - 'backend/libs/Vialiq.Platform.Core/**'
+      - 'backend/libs/Vialiq.Infrastructure/**'
 
 # .github/workflows/ui-deploy.yml (Deploys UI to Cloudflare / S3 CDN)
 name: Deploy Frontend UI
@@ -149,18 +169,19 @@ on:
     branches: [main]
     paths:
       - 'apps/**'
-      - 'libs/form-renderer/**'
-      - 'libs/web-components/**' # Only redeploys if UI code changes
+      - 'libs/**'
 ```
 
 * Pushing a UI CSS fix **never** triggers an API build or deployment.
-* Pushing an API performance fix **never** triggers a frontend build or deployment.
+* Pushing an EDC API performance fix **never** triggers a Super Admin deployment or frontend redeployment.
 
-### Justification 5: Future-Proof Multi-Solution Backend Hierarchy (`backend/api/`)
-By creating a dedicated `backend/api/` folder (rather than putting the API under `apps/`), the repository provides clean room for future backend services:
-- `backend/api/` $\rightarrow$ Core transactional Web API (`Vialiq.Api.sln`).
-- `backend/workers/` $\rightarrow$ Background BullMQ / Hangfire worker for CDISC ODM batch exports.
-- `backend/ai-engine/` $\rightarrow$ AI anomaly detection and clinical query auto-generation service.
+### Justification 5: Future-Proof Mirrored Backend Hierarchy (`backend/apps/` & `backend/libs/`)
+By organizing the backend in a mirrored structure corresponding to the frontend `apps/` and `libs/` (as codified in [ADR-005: Multi-Product Platform Architecture & Mirrored Workspace Layout](../../adr/005-multi-product-platform-and-workspace-layout-adr.md)), the repository establishes clear, scalable boundaries:
+- `backend/apps/platform/` $\rightarrow$ Platform control plane APIs (`Vialiq.SuperAdmin.Api`, `Vialiq.TenantAdmin.Api`).
+- `backend/apps/edc/` $\rightarrow$ Core transactional clinical EDC API (`Vialiq.Edc.Api`) and batch workers (`Vialiq.Edc.Worker`).
+- `backend/apps/<future-product>/` $\rightarrow$ Future product suites (`Vialiq.Ctms.Api`, `Vialiq.Rtsm.Api`).
+- `backend/libs/` $\rightarrow$ Shared class libraries (`Vialiq.Core`, `Vialiq.Platform.Core`, `Vialiq.Infrastructure`, `Vialiq.Caching`, `Vialiq.Validation`).
+- `backend/tests/` $\rightarrow$ Mirrored unit, integration, and parity test projects.
 
 ---
 
@@ -169,50 +190,68 @@ By creating a dedicated `backend/api/` folder (rather than putting the API under
 ```
 /Users/prashantgupta/code/nx/
 ├── apps/                                  # Frontend Applications (Angular 21 / Lit 3)
-│   ├── shell/                             # Unified Host Shell Application
-│   └── edc/remote1/                       # EDC Federated Remote App (`apps/edc/remote1`)
+│   ├── platform/                          # Product-Agnostic Control Plane UIs (ADR-005)
+│   │   ├── super-admin/                   # Standalone Angular host (Platform Ops / Alpha)
+│   │   └── tenant-admin/                  # Standalone Angular host (Tenant Org Admin)
+│   ├── edc/                               # Clinical Electronic Data Capture (EDC)
+│   │   ├── remote1/                       # EDC Federated Micro-Frontend Remote
+│   │   └── shell/                         # EDC Host Shell (or apps/shell)
+│   └── shell/                             # Unified Host Shell Application
 │
-├── backend/                               # Dedicated Backend Tier (Multi-Solution Ready)
-│   └── api/                               # Core Web API Solution Root
-│       ├── Vialiq.Api.sln                 # Visual Studio / Rider Solution File
-│       ├── Directory.Build.props          # Central TargetFramework net9.0 & Analyzer Rules
-│       ├── Directory.Packages.props       # Central Package Management (CPM)
-│       ├── src/
-│       │   ├── Vialiq.Core/               # Domain Models, Aggregates, Enums, Interfaces
-│       │   ├── Vialiq.Validation/         # C# JsonLogic Engine & AST Evaluator
-│       │   ├── Vialiq.Infrastructure/     # MongoDB 3-Layer Drivers, CSFLE, Key Vault
-│       │   ├── Vialiq.Caching/            # Redis Cluster HA, Mutex & Scoped Caching Tier
-│       │   └── Vialiq.Api/                # Host Web API (Controllers, Kestrel, SignalR)
-│       └── tests/
+├── backend/                               # Dedicated Backend Tier (Mirrored Structure per ADR-005)
+│   ├── Vialiq.Platform.sln                # Unified Solution File (13 Projects)
+│   ├── Directory.Build.props              # Central TargetFramework net9.0 & Analyzer Rules
+│   ├── Directory.Packages.props           # Central Package Management (CPM)
+│   ├── nuget.config                       # NuGet Package Sources & Package Source Mapping
+│   ├── apps/                              # Deployable API Hosts (Mirrored 1:1 with apps/)
+│   │   ├── platform/
+│   │   │   ├── Vialiq.SuperAdmin.Api/     # Super Admin Control Plane API (Cluster 0 / admin_db)
+│   │   │   └── Vialiq.TenantAdmin.Api/    # Tenant Admin Console API (Cluster 0 / admin_db)
+│   │   └── edc/
+│   │       └── Vialiq.Edc.Api/            # Clinical EDC API (Clusters 0, 1 & 2)
+│   ├── libs/                              # Shared Class Libraries (Domain & Cross-Cutting)
+│   │   ├── Vialiq.Core/                   # Shared Kernel: Audit Primitives, GxP 428 Models, Base Entities
+│   │   ├── Vialiq.Platform.Core/          # Control Plane Domain: Tenant, Product, Entitlement, OrgUser
+│   │   ├── Vialiq.Infrastructure/         # MongoDB 3-Layer Drivers, Keycloak Client, CSFLE
+│   │   ├── Vialiq.Caching/                # Redis Sentinel HA, Mutex & Scoped Caching Tier
+│   │   └── Vialiq.Validation/             # C# JsonLogic Engine & AST Evaluator
+│   └── tests/                             # Mirrored Unit & Integration Test Suites
+│       ├── platform/
+│       │   ├── Vialiq.SuperAdmin.Api.Tests/
+│       │   └── Vialiq.TenantAdmin.Api.Tests/
+│       ├── edc/
+│       │   └── Vialiq.Edc.Api.Tests/      # WebApplicationFactory Integration Tests
+│       └── libs/
 │           ├── Vialiq.Validation.Tests/   # Golden Parity Test Suite (json-logic parity)
-│           ├── Vialiq.Caching.Tests/      # Redis Sentinel Failover & Stampede Mutex Tests
-│           └── Vialiq.Api.Tests/          # WebApplicationFactory Integration Tests
+│           └── Vialiq.Caching.Tests/      # Redis Sentinel Failover & Mutex Tests
 │
-├── libs/                                  # Shared Libraries
+├── libs/                                  # Shared Frontend Libraries
 │   ├── automapper/                        # @vialiq/automapper (TypeScript Model & Envelope Mapper)
 │   ├── form-renderer/                     # Angular Form Renderer Component
 │   ├── form-builder/                      # Angular Form Builder Component & Palette
 │   └── web-components/                    # Lit 3 Core UI Components (<vi-*>)
 │
 ├── docs/                                  # Single Source of Truth
+│   ├── adr/                               # Cross-Cutting Architectural Decision Records (ADR-005)
 │   ├── backend-architecture/
-│   │   ├── database/                      # 10 Database Architecture Specs & Docker Guides
-│   │   └── api/                           # API ADRs, Swagger Specs & .NET Blueprints
+│   │   ├── database/                      # Database Architecture Specs & Docker Guides
+│   │   └── api/                           # API Architecture ADRs & .NET Blueprints
 │   └── compliance/                        # 21 CFR Part 11, GAMP 5, and ICH E6(R3)
 │
 └── tools/
-    └── docker/                            # docker-compose.3layer.yml & redis-dev.yml
+    ├── docker/                            # docker-compose.3layer.yml, docker-compose.redis-ha.yml, docker-compose.redis-dev.yml
+    └── scripts/                           # test-docker-infra.mjs, test-redis-ha-failover.sh, dev-doctor.mjs
 ```
 
 ---
 
 ## 6. Verification & Build Status
 
-The `backend/api/Vialiq.Api.sln` solution and all 8 projects have been initialized, linked, and verified on Apple Silicon (macOS ARM64):
+The `backend/Vialiq.Platform.sln` solution and all 13 projects have been initialized, linked, and verified on Apple Silicon (macOS ARM64):
 
 ```bash
-dotnet build backend/api/Vialiq.Api.sln
+dotnet build backend/Vialiq.Platform.sln
 ```
 * **Target Framework:** .NET 9.0 LTS (`net9.0`)
-* **Projects Compiled:** 8 of 8 (`Vialiq.Core`, `Vialiq.Validation`, `Vialiq.Infrastructure`, `Vialiq.Caching`, `Vialiq.Api`, `Vialiq.Validation.Tests`, `Vialiq.Caching.Tests`, `Vialiq.Api.Tests`)
+* **Projects Compiled:** 13 of 13 (`Vialiq.Core`, `Vialiq.Validation`, `Vialiq.Platform.Core`, `Vialiq.Caching`, `Vialiq.Infrastructure`, `Vialiq.Edc.Api`, `Vialiq.SuperAdmin.Api`, `Vialiq.TenantAdmin.Api`, `Vialiq.Validation.Tests`, `Vialiq.Caching.Tests`, `Vialiq.Edc.Api.Tests`, `Vialiq.SuperAdmin.Api.Tests`, `Vialiq.TenantAdmin.Api.Tests`)
 * **Build Result:** ✅ **0 Warning(s), 0 Error(s)**
