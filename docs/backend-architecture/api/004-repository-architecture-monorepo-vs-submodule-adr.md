@@ -239,7 +239,7 @@ By organizing the backend in a mirrored structure corresponding to the frontend 
 │   └── compliance/                        # 21 CFR Part 11, GAMP 5, and ICH E6(R3)
 │
 └── tools/
-    ├── docker/                            # docker-compose.3layer.yml, redis-ha.yml, redis-dev.yml
+    ├── docker/                            # docker-compose.3layer.yml, docker-compose.redis-ha.yml, docker-compose.redis-dev.yml
     └── scripts/                           # test-docker-infra.mjs, test-redis-ha-failover.sh, dev-doctor.mjs
 ```
 

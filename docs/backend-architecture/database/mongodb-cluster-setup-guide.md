@@ -144,7 +144,7 @@ docker compose -f docker-compose.mongo-single.yml up -d
 
 This simulates a real production setup. It runs 3 separate MongoDB containers (`mongo1`, `mongo2`, `mongo3`) communicating over an internal virtual network.
 
-The project standardizes local multi-cluster development in [`tools/docker/docker-compose.3layer.yml`](../../../tools/docker/docker-compose.3layer.yml) (launched via `npm run docker:mongo:all`). Below is the conceptual replica set configuration for reference:
+The project standardizes local multi-cluster development in [`tools/docker/docker-compose.3layer.yml`](../../../tools/docker/docker-compose.3layer.yml) (launched via `npm run docker:mongo:all`), providing 3-layer replica sets (Layer 1 Admin, Layer 2 Dev, Layer 3 Prod) with documented configuration blocks for enabling 3-node HA replica sets per layer. Below is the conceptual replica set configuration for reference:
 
 ```yaml
 version: '3.8'

@@ -208,8 +208,6 @@ volumes:
   sentinel_1_data:
   sentinel_2_data:
   sentinel_3_data:
-  vialiq-dev-net:
-    driver: bridge
 ```
 
 ### 2.2 Developer Verification & Chaos Failover Drill Script

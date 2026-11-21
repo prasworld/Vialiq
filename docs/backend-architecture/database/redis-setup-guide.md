@@ -26,7 +26,7 @@
    - [2.3 Redis Memory Clamping & GxP Eviction Policy (`volatile-lru`)](#23-redis-memory-clamping--gxp-eviction-policy-volatile-lru)
    - [2.4 macOS Kernel Tuning (`vm.overcommit_memory = 1`)](#24-macos-kernel-tuning-vmovercommit_memory--1)
 3. [Configuration Files & Architecture Breakdown](#3-configuration-files--architecture-breakdown)
-   - [3.1 Developer Compose Specifications (`redis.yml` & `redis-ha.yml`)](#3-configuration-files--architecture-breakdown)
+   - [3.1 Developer Compose Specifications (docker-compose.redis-dev.yml & docker-compose.redis-ha.yml)](#3-configuration-files--architecture-breakdown)
    - [3.2 Production Hardened Configuration (`tools/docker/redis-prod.conf`)](#32-production-hardened-configuration-toolsdockerredis-prodconf)
    - [3.3 Sentinel Quorum Mechanics & Failure Detection](#33-sentinel-quorum-mechanics--failure-detection)
 4. [Step-by-Step Instructions: From Zero to Running Locally](#4-step-by-step-instructions-from-zero-to-running-locally)
@@ -352,7 +352,6 @@ volumes:
   sentinel_1_data:
   sentinel_2_data:
   sentinel_3_data:
-    driver: bridge
 ```
 
 ---
