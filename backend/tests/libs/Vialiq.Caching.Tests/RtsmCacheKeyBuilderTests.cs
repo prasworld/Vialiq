@@ -6,25 +6,27 @@ using Xunit;
 
 public class RtsmCacheKeyBuilderTests
 {
+    private const string TenantId = "roche";
+    private const string StudyId = "onco-101";
+    private const string Environment = "prod";
+    private const string Version = "v2.0";
+    private const string FormId = "pharmacy-dispensation";
+    private const string BlindedExpectedKey = "vialiq:study:roche:onco-101:prod:v2.0:scope:blinded:form:pharmacy-dispensation:schema";
+    private const string UnblindedExpectedKey = "vialiq:study:roche:onco-101:prod:v2.0:scope:unblinded:form:pharmacy-dispensation:schema";
+
     [Fact]
     public void BuildSchemaKey_ShouldProduceDisjointKeys_ForBlindedAndUnblindedRoles()
     {
-        // Arrange
-        const string tenantId = "roche";
-        const string studyId = "onco-101";
-        const string version = "v2.0";
-        const string formId = "pharmacy-dispensation";
-
         // Act
         var blindedKey = RtsmCacheKeyBuilder.BuildSchemaKey(
-            tenantId, studyId, version, BlindingScope.Blinded, formId);
+            TenantId, StudyId, Environment, Version, BlindingScope.Blinded, FormId);
 
         var unblindedKey = RtsmCacheKeyBuilder.BuildSchemaKey(
-            tenantId, studyId, version, BlindingScope.Unblinded, formId);
+            TenantId, StudyId, Environment, Version, BlindingScope.Unblinded, FormId);
 
         // Assert
         Assert.NotEqual(blindedKey, unblindedKey);
-        Assert.Equal("vialiq:study:roche:onco-101:v2.0:scope:blinded:form:pharmacy-dispensation:schema", blindedKey);
-        Assert.Equal("vialiq:study:roche:onco-101:v2.0:scope:unblinded:form:pharmacy-dispensation:schema", unblindedKey);
+        Assert.Equal(BlindedExpectedKey, blindedKey);
+        Assert.Equal(UnblindedExpectedKey, unblindedKey);
     }
 }

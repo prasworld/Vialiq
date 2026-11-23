@@ -5,6 +5,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
 using Vialiq.Caching.Abstractions;
+using Vialiq.Caching.Constants;
+using Vialiq.Core.Constants;
 
 public sealed class RedisConnectionFactory : IRedisConnectionFactory, IDisposable
 {
@@ -13,7 +15,7 @@ public sealed class RedisConnectionFactory : IRedisConnectionFactory, IDisposabl
 
     public RedisConnectionFactory(IConfiguration config, ILogger<RedisConnectionFactory> logger)
     {
-        _logger = logger;
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _connection = new Lazy<ConnectionMultiplexer>(() => CreateConnection(config));
     }
 
@@ -23,8 +25,17 @@ public sealed class RedisConnectionFactory : IRedisConnectionFactory, IDisposabl
 
     private ConnectionMultiplexer CreateConnection(IConfiguration config)
     {
-        var connectionString = config.GetConnectionString("Redis") 
-            ?? "localhost:6379,password=VialiqDevSecret123!";
+        var sentinelConnectionString = config.GetConnectionString(ConfigurationConstants.Keys.RedisSentinelConnectionString);
+        var redisConnectionString = config.GetConnectionString(ConfigurationConstants.Keys.RedisConnectionString);
+
+        var connectionString = !string.IsNullOrWhiteSpace(sentinelConnectionString)
+            ? sentinelConnectionString
+            : redisConnectionString;
+
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            throw new InvalidOperationException(InfrastructureErrorMessages.RedisConnectionStringNotConfigured);
+        }
 
         var options = ConfigurationOptions.Parse(connectionString);
         options.AbortOnConnectFail = false;
@@ -37,13 +48,13 @@ public sealed class RedisConnectionFactory : IRedisConnectionFactory, IDisposabl
         var multiplexer = ConnectionMultiplexer.Connect(options);
 
         multiplexer.ConnectionFailed += (s, e) =>
-            _logger.LogError(e.Exception, "Redis connection failed on endpoint {Endpoint}. Type: {FailureType}", e.EndPoint, e.FailureType);
+            _logger.LogError(e.Exception, CachingLogMessages.RedisConnectionFailed, e.EndPoint, e.FailureType);
 
         multiplexer.ConnectionRestored += (s, e) =>
-            _logger.LogInformation("Redis connection restored on endpoint {Endpoint}.", e.EndPoint);
+            _logger.LogInformation(CachingLogMessages.RedisConnectionRestored, e.EndPoint);
 
         multiplexer.ErrorMessage += (s, e) =>
-            _logger.LogWarning("Redis server error on endpoint {Endpoint}: {Message}", e.EndPoint, e.Message);
+            _logger.LogWarning(CachingLogMessages.RedisServerError, e.EndPoint, e.Message);
 
         return multiplexer;
     }

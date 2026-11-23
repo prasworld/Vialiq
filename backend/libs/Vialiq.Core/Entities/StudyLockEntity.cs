@@ -12,11 +12,12 @@ public enum LockStatus
 
 /// <summary>
 /// MongoDB canonical durable source of truth for clinical form concurrency locks.
-/// Stored in study_{id}_prod.study_locks collection.
+/// Stored in study_{id}_prod.study_edit_leases collection.
 /// </summary>
 public sealed class StudyLockEntity
 {
     public string Id { get; set; } = string.Empty;
+    public string TenantId { get; set; } = string.Empty;
     public string StudyId { get; set; } = string.Empty;
     public string TargetCrfId { get; set; } = string.Empty;
     public string LockedByUserId { get; set; } = string.Empty;

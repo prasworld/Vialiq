@@ -4,6 +4,7 @@ using System;
 using System.Threading.Tasks;
 using Vialiq.Caching.Abstractions;
 using Vialiq.Caching.InMemory;
+using Vialiq.Core.Constants;
 using Vialiq.Core.Models;
 using Xunit;
 
@@ -15,7 +16,7 @@ public class StudyLockServiceTests
         UserId: "user-crc-001",
         FullName: "Dr. Alice Smith",
         Email: "alice@site101.org",
-        Role: "Investigator",
+        Role: ClinicalUserRoles.Investigator,
         TenantId: "tenant-novartis"
     );
 
@@ -23,8 +24,24 @@ public class StudyLockServiceTests
         UserId: "user-crc-002",
         FullName: "Bob Jones, CRC",
         Email: "bob@site101.org",
-        Role: "CRC",
+        Role: ClinicalUserRoles.Crc,
         TenantId: "tenant-novartis"
+    );
+
+    private readonly UserContext _unauthorizedUser = new(
+        UserId: "user-auditor-001",
+        FullName: "Auditor John",
+        Email: "auditor@compliance.org",
+        Role: ClinicalUserRoles.Auditor,
+        TenantId: "tenant-novartis"
+    );
+
+    private readonly UserContext _differentTenantUser = new(
+        UserId: "user-roche-001",
+        FullName: "Dr. Carol Danvers",
+        Email: "carol@roche-site.org",
+        Role: ClinicalUserRoles.Investigator,
+        TenantId: "tenant-roche"
     );
 
     [Fact]
@@ -55,6 +72,20 @@ public class StudyLockServiceTests
     }
 
     [Fact]
+    public async Task AcquireFormLockAsync_DifferentTenants_DoNotBlockEachOther()
+    {
+        // Arrange - User 1 in Tenant Novartis acquires lock
+        var result1 = await _lockService.AcquireFormLockAsync("study-101", "crf-vitals-01", _user1);
+        Assert.True(result1.IsAcquired);
+
+        // Act - User in Tenant Roche acquires the exact same study and CRF ID
+        var resultRoche = await _lockService.AcquireFormLockAsync("study-101", "crf-vitals-01", _differentTenantUser);
+
+        // Assert - Both should succeed because they are in different tenants
+        Assert.True(resultRoche.IsAcquired);
+    }
+
+    [Fact]
     public async Task ReleaseFormLockAsync_AllowsAnotherUserToAcquire()
     {
         // Arrange
@@ -77,6 +108,17 @@ public class StudyLockServiceTests
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentException>(() =>
             _lockService.BreakFormLockAsync("study-101", "crf-vitals-01", "", _user2));
+    }
+
+    [Fact]
+    public async Task BreakFormLockAsync_UnauthorizedRole_ThrowsUnauthorizedAccessException()
+    {
+        // Arrange
+        await _lockService.AcquireFormLockAsync("study-101", "crf-vitals-01", _user1);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+            _lockService.BreakFormLockAsync("study-101", "crf-vitals-01", "Valid audit reason here", _unauthorizedUser));
     }
 
     [Fact]

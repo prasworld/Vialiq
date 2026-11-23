@@ -28,7 +28,11 @@ public sealed record AuditTimestampMetadata(
         DateTime? clientLocalTime = null,
         string? clientTimeZoneId = null)
     {
-        if (databaseCommitTimestampUtc.Kind != DateTimeKind.Utc)
+        if (databaseCommitTimestampUtc.Kind == DateTimeKind.Local)
+        {
+            databaseCommitTimestampUtc = databaseCommitTimestampUtc.ToUniversalTime();
+        }
+        else if (databaseCommitTimestampUtc.Kind == DateTimeKind.Unspecified)
         {
             databaseCommitTimestampUtc = DateTime.SpecifyKind(databaseCommitTimestampUtc, DateTimeKind.Utc);
         }

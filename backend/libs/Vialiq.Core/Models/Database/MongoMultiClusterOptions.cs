@@ -96,12 +96,29 @@ public sealed class MongoMultiClusterOptions
         if (string.IsNullOrWhiteSpace(clusterId)) return false;
 
         var trimmed = clusterId.Trim();
-        return Clusters.ContainsKey(trimmed) ||
-               string.Equals(trimmed, MongoClusterConstants.CanonicalClusterIds.Admin, StringComparison.OrdinalIgnoreCase) ||
-               string.Equals(trimmed, MongoClusterConstants.Aliases.AdminAlias, StringComparison.OrdinalIgnoreCase) ||
-               string.Equals(trimmed, MongoClusterConstants.CanonicalClusterIds.Dev, StringComparison.OrdinalIgnoreCase) ||
-               string.Equals(trimmed, MongoClusterConstants.Aliases.DevAlias, StringComparison.OrdinalIgnoreCase) ||
-               string.Equals(trimmed, MongoClusterConstants.CanonicalClusterIds.Prod, StringComparison.OrdinalIgnoreCase) ||
-               string.Equals(trimmed, MongoClusterConstants.Aliases.ProdAlias, StringComparison.OrdinalIgnoreCase);
+        if (Clusters.TryGetValue(trimmed, out var customEndpoint))
+        {
+            return !string.IsNullOrWhiteSpace(customEndpoint.ConnectionString);
+        }
+
+        if (string.Equals(trimmed, MongoClusterConstants.CanonicalClusterIds.Admin, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(trimmed, MongoClusterConstants.Aliases.AdminAlias, StringComparison.OrdinalIgnoreCase))
+        {
+            return !string.IsNullOrWhiteSpace(Admin.ConnectionString);
+        }
+
+        if (string.Equals(trimmed, MongoClusterConstants.CanonicalClusterIds.Dev, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(trimmed, MongoClusterConstants.Aliases.DevAlias, StringComparison.OrdinalIgnoreCase))
+        {
+            return !string.IsNullOrWhiteSpace(Dev.ConnectionString);
+        }
+
+        if (string.Equals(trimmed, MongoClusterConstants.CanonicalClusterIds.Prod, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(trimmed, MongoClusterConstants.Aliases.ProdAlias, StringComparison.OrdinalIgnoreCase))
+        {
+            return !string.IsNullOrWhiteSpace(Prod.ConnectionString);
+        }
+
+        return false;
     }
 }

@@ -150,4 +150,32 @@ public class MongoMultiClusterOptionsTests
 
         Assert.Same(options.Clusters[CnClusterId], options.GetEndpoint(CnClusterId));
     }
+
+    [Fact]
+    public void HasCluster_WhenUnconfigured_ReturnsFalse()
+    {
+        var options = new MongoMultiClusterOptions();
+
+        Assert.False(options.HasCluster(MongoClusterConstants.CanonicalClusterIds.Admin));
+        Assert.False(options.HasCluster(MongoClusterConstants.Aliases.AdminAlias));
+        Assert.False(options.HasCluster(MongoClusterConstants.CanonicalClusterIds.Dev));
+        Assert.False(options.HasCluster(MongoClusterConstants.Aliases.DevAlias));
+        Assert.False(options.HasCluster(MongoClusterConstants.CanonicalClusterIds.Prod));
+        Assert.False(options.HasCluster(MongoClusterConstants.Aliases.ProdAlias));
+        Assert.False(options.HasCluster("nonexistent"));
+        Assert.False(options.HasCluster(string.Empty));
+    }
+
+    [Fact]
+    public void HasCluster_WhenConfigured_ReturnsTrue()
+    {
+        var options = new MongoMultiClusterOptions
+        {
+            Admin = new MongoClusterEndpointOptions { ConnectionString = AdminConn }
+        };
+
+        Assert.True(options.HasCluster(MongoClusterConstants.CanonicalClusterIds.Admin));
+        Assert.True(options.HasCluster(MongoClusterConstants.Aliases.AdminAlias));
+        Assert.False(options.HasCluster(MongoClusterConstants.CanonicalClusterIds.Dev));
+    }
 }

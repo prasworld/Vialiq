@@ -58,13 +58,15 @@ public sealed class MongoConnectionPoolManager : IConnectionPoolManager
         await initLock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
+            ThrowIfDisposed();
+
             // Double-checked locking under semaphore
             if (_clientPool.TryGetValue(key, out var clientUnderLock))
             {
                 return clientUnderLock;
             }
 
-            var newClient = CreateClient(clusterId);
+            var newClient = CreateClient(key);
             _clientPool[key] = newClient;
             return newClient;
         }
@@ -95,12 +97,14 @@ public sealed class MongoConnectionPoolManager : IConnectionPoolManager
         initLock.Wait();
         try
         {
+            ThrowIfDisposed();
+
             if (_clientPool.TryGetValue(key, out var clientUnderLock))
             {
                 return clientUnderLock;
             }
 
-            var newClient = CreateClient(clusterId);
+            var newClient = CreateClient(key);
             _clientPool[key] = newClient;
             return newClient;
         }
@@ -226,6 +230,10 @@ public sealed class MongoConnectionPoolManager : IConnectionPoolManager
             await adminDatabase.RunCommandAsync<BsonDocument>(pingCommand, cancellationToken: cts.Token).ConfigureAwait(false);
             return Result<bool, string>.Success(true);
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, InfrastructureLogMessages.PingFailedWarning, clusterId);
@@ -255,7 +263,7 @@ public sealed class MongoConnectionPoolManager : IConnectionPoolManager
 
         _logger.LogInformation(
             InfrastructureLogMessages.InitializingPooledClient,
-            clusterId, endpointOptions.ReplicaSetName, endpointOptions.ConnectionString);
+            clusterId, endpointOptions.ReplicaSetName, SanitizeEndpoints(endpointOptions.ConnectionString));
 
         var settings = MongoConnectionConfigurator.BuildClientSettings(endpointOptions, cb =>
         {
@@ -269,7 +277,47 @@ public sealed class MongoConnectionPoolManager : IConnectionPoolManager
         return new MongoClient(settings);
     }
 
-    private static string NormalizeClusterKey(string clusterId) => clusterId.Trim();
+    private static string NormalizeClusterKey(string clusterId)
+    {
+        var trimmed = clusterId.Trim();
+        if (string.Equals(trimmed, MongoClusterConstants.Aliases.AdminAlias, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(trimmed, MongoClusterConstants.CanonicalClusterIds.Admin, StringComparison.OrdinalIgnoreCase))
+        {
+            return MongoClusterConstants.CanonicalClusterIds.Admin;
+        }
+
+        if (string.Equals(trimmed, MongoClusterConstants.Aliases.DevAlias, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(trimmed, MongoClusterConstants.CanonicalClusterIds.Dev, StringComparison.OrdinalIgnoreCase))
+        {
+            return MongoClusterConstants.CanonicalClusterIds.Dev;
+        }
+
+        if (string.Equals(trimmed, MongoClusterConstants.Aliases.ProdAlias, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(trimmed, MongoClusterConstants.CanonicalClusterIds.Prod, StringComparison.OrdinalIgnoreCase))
+        {
+            return MongoClusterConstants.CanonicalClusterIds.Prod;
+        }
+
+        return trimmed;
+    }
+
+    private static string SanitizeEndpoints(string connectionString)
+    {
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            return MongoClusterConstants.Redacted;
+        }
+
+        try
+        {
+            var url = new MongoUrl(connectionString);
+            return string.Join(MongoClusterConstants.Delimiters.Comma, url.Servers);
+        }
+        catch
+        {
+            return MongoClusterConstants.Redacted;
+        }
+    }
 
     private void ThrowIfDisposed()
     {
@@ -298,7 +346,14 @@ public sealed class MongoConnectionPoolManager : IConnectionPoolManager
 
         foreach (var initLock in _initLocks.Values)
         {
-            initLock.Dispose();
+            try
+            {
+                initLock.Dispose();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, InfrastructureLogMessages.ErrorDisposingLock);
+            }
         }
 
         _clientPool.Clear();
@@ -338,7 +393,14 @@ public sealed class MongoConnectionPoolManager : IConnectionPoolManager
 
         foreach (var initLock in _initLocks.Values)
         {
-            initLock.Dispose();
+            try
+            {
+                initLock.Dispose();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, InfrastructureLogMessages.ErrorDisposingLock);
+            }
         }
 
         _clientPool.Clear();

@@ -259,6 +259,35 @@ public class MongoConnectionPoolManagerTests : IDisposable
         Assert.Contains(NonexistentCluster, ex.Message);
     }
 
+    [Fact]
+    public async Task GetClientAsync_WhenCalledWithAliases_ReturnsSameSingletonAsCanonicalId()
+    {
+        var canonicalClient = await _poolManager.GetClientAsync(MongoClusterConstants.CanonicalClusterIds.Admin);
+        var aliasClient = await _poolManager.GetClientAsync(MongoClusterConstants.Aliases.AdminAlias);
+
+        Assert.Same(canonicalClient, aliasClient);
+
+        var canonicalDev = await _poolManager.GetClientAsync(MongoClusterConstants.CanonicalClusterIds.Dev);
+        var aliasDev = await _poolManager.GetClientAsync(MongoClusterConstants.Aliases.DevAlias);
+
+        Assert.Same(canonicalDev, aliasDev);
+
+        var canonicalProd = await _poolManager.GetClientAsync(MongoClusterConstants.CanonicalClusterIds.Prod);
+        var aliasProd = await _poolManager.GetClientAsync(MongoClusterConstants.Aliases.ProdAlias);
+
+        Assert.Same(canonicalProd, aliasProd);
+    }
+
+    [Fact]
+    public async Task PingClusterAsync_WhenCancelled_PropagatesOperationCanceledException()
+    {
+        using var cts = new System.Threading.CancellationTokenSource();
+        cts.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            _poolManager.PingClusterAsync(MongoClusterTier.Admin, cts.Token));
+    }
+
     public void Dispose()
     {
         _poolManager.Dispose();

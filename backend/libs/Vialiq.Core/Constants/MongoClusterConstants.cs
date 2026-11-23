@@ -42,4 +42,26 @@ public static class MongoClusterConstants
     {
         public const string Ping = "ping";
     }
+
+    /// <summary>
+    /// Placeholder for redacted credentials in structured logs.
+    /// </summary>
+    public const string Redacted = "[REDACTED]";
+
+    /// <summary>
+    /// Well-known character delimiters.
+    /// </summary>
+    public static class Delimiters
+    {
+        public const string Comma = ",";
+        public const string Colon = ":";
+    }
+
+    /// <summary>
+    /// Canonical collection names across study databases.
+    /// </summary>
+    public static class CollectionNames
+    {
+        public const string StudyEditLeases = "study_edit_leases";
+    }
 }

@@ -23,4 +23,13 @@ public static class InfrastructureErrorMessages
 
     public static string UnsupportedClusterTier(MongoClusterTier tier) =>
         $"Unsupported cluster tier: {tier}";
+
+    public const string RedisConnectionStringNotConfigured =
+        "Redis connection string is not configured. Please configure ConnectionStrings:Redis or ConnectionStrings:RedisSentinel.";
+
+    public const string AuditReasonRequired =
+        "A mandatory 21 CFR Part 11 audit reason is required to break a form lock.";
+
+    public static string UnauthorizedBreakLock(string role) =>
+        $"User role '{role}' is not authorized to break form locks.";
 }

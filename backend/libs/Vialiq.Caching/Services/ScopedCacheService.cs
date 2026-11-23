@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
 using Vialiq.Caching.Abstractions;
+using Vialiq.Caching.Constants;
 using Vialiq.Core.Interfaces;
 
 public sealed class ScopedCacheService : IScopedCacheService
@@ -91,7 +92,8 @@ public sealed class ScopedCacheService : IScopedCacheService
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to delete Redis key {Key}", fullyQualifiedKey);
+            _logger.LogError(ex, CachingLogMessages.FailedToInvalidateRedisKey, fullyQualifiedKey);
+            throw;
         }
     }
 
