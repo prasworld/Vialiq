@@ -38,9 +38,9 @@ public static class CachingServiceExtensions
     /// </summary>
     public static IServiceCollection AddVialiqCachingInMemory(this IServiceCollection services)
     {
-        services.AddSingleton<IScopedCacheService, InMemoryScopedCacheService>();
+        services.AddScoped<IScopedCacheService, InMemoryScopedCacheService>();
         services.AddSingleton<IStudyLockService, InMemoryStudyLockService>();
-        services.AddSingleton<IProtocolWarmupService, InMemoryProtocolWarmupService>();
+        services.AddScoped<IProtocolWarmupService, InMemoryProtocolWarmupService>();
         return services;
     }
 }

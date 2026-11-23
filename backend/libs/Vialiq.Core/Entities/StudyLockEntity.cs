@@ -10,6 +10,11 @@ public enum LockStatus
     Broken = 4
 }
 
+public sealed record LockBreakAuditEntry(
+    string BrokenByUserId,
+    string BrokenReason,
+    DateTime BrokenAtUtc);
+
 /// <summary>
 /// MongoDB canonical durable source of truth for clinical form concurrency locks.
 /// Stored in study_{id}_prod.study_edit_leases collection.
@@ -29,4 +34,5 @@ public sealed class StudyLockEntity
     public string? BrokenByUserId { get; set; }
     public string? BrokenReason { get; set; }
     public DateTime? BrokenAtUtc { get; set; }
+    public System.Collections.Generic.List<LockBreakAuditEntry> BreakHistory { get; set; } = new();
 }

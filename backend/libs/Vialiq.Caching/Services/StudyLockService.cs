@@ -149,6 +149,11 @@ public sealed class StudyLockService : IStudyLockService
                 l.TargetCrfId == crfId &&
                 l.Status == LockStatus.Active).FirstOrDefaultAsync(ct).ConfigureAwait(false);
 
+            if (currentLock != null && currentLock.LockedByUserId == user.UserId)
+            {
+                return LockResult.Acquired(currentLock.ExpiresAtUtc);
+            }
+
             return currentLock != null
                 ? LockResult.Denied(currentLock.LockedByUserId, currentLock.LockedByFullName, currentLock.ExpiresAtUtc)
                 : LockResult.Denied(user.UserId, user.FullName, expiresAt);
@@ -235,15 +240,17 @@ public sealed class StudyLockService : IStudyLockService
         }
 
         var now = DateTime.UtcNow;
+        var breakEntry = new LockBreakAuditEntry(user.UserId, auditReason, now);
 
-        // 1. Break lock in MongoDB source of truth with audit reason
+        // 1. Break lock in MongoDB source of truth with immutable audit history entry
         await _locksCollection.UpdateOneAsync(
             l => l.TenantId == user.TenantId && l.StudyId == studyId && l.TargetCrfId == crfId,
             Builders<StudyLockEntity>.Update
                 .Set(l => l.Status, LockStatus.Broken)
                 .Set(l => l.BrokenByUserId, user.UserId)
                 .Set(l => l.BrokenReason, auditReason)
-                .Set(l => l.BrokenAtUtc, now),
+                .Set(l => l.BrokenAtUtc, now)
+                .Push(l => l.BreakHistory, breakEntry),
             cancellationToken: ct).ConfigureAwait(false);
 
         // 2. Evict from Redis

@@ -83,6 +83,24 @@ public interface IConnectionPoolManager : IAsyncDisposable, IDisposable
         WithClientAsync(tier.ToCanonicalClusterId(), func, cancellationToken);
 
     /// <summary>
+    /// Higher-order async transform execution passing cancellation token directly to the callback.
+    /// </summary>
+    Task<TResult> WithClientAsync<TResult>(
+        string clusterId,
+        Func<IMongoClient, CancellationToken, Task<TResult>> func,
+        CancellationToken cancellationToken = default) =>
+        WithClientAsync(clusterId, client => func(client, cancellationToken), cancellationToken);
+
+    /// <summary>
+    /// Higher-order async transform execution by tier passing cancellation token directly to the callback.
+    /// </summary>
+    Task<TResult> WithClientAsync<TResult>(
+        MongoClusterTier tier,
+        Func<IMongoClient, CancellationToken, Task<TResult>> func,
+        CancellationToken cancellationToken = default) =>
+        WithClientAsync(tier.ToCanonicalClusterId(), func, cancellationToken);
+
+    /// <summary>
     /// Higher-order synchronous transform execution.
     /// </summary>
     TResult WithClient<TResult>(string clusterId, Func<IMongoClient, TResult> func);
@@ -109,6 +127,26 @@ public interface IConnectionPoolManager : IAsyncDisposable, IDisposable
         MongoClusterTier tier,
         string databaseName,
         Func<IMongoDatabase, Task<TResult>> func,
+        CancellationToken cancellationToken = default) =>
+        WithDatabaseAsync(tier.ToCanonicalClusterId(), databaseName, func, cancellationToken);
+
+    /// <summary>
+    /// Primary Higher-Order Execution: Asynchronously executes a function directly on an isolated database in the designated cluster passing cancellation token to the callback.
+    /// </summary>
+    Task<TResult> WithDatabaseAsync<TResult>(
+        string clusterId,
+        string databaseName,
+        Func<IMongoDatabase, CancellationToken, Task<TResult>> func,
+        CancellationToken cancellationToken = default) =>
+        WithDatabaseAsync(clusterId, databaseName, db => func(db, cancellationToken), cancellationToken);
+
+    /// <summary>
+    /// Primary Higher-Order Execution: Asynchronously executes a function directly on an isolated database in the designated tier passing cancellation token to the callback.
+    /// </summary>
+    Task<TResult> WithDatabaseAsync<TResult>(
+        MongoClusterTier tier,
+        string databaseName,
+        Func<IMongoDatabase, CancellationToken, Task<TResult>> func,
         CancellationToken cancellationToken = default) =>
         WithDatabaseAsync(tier.ToCanonicalClusterId(), databaseName, func, cancellationToken);
 

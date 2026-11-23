@@ -18,7 +18,9 @@ public sealed class InMemoryProtocolWarmupService : IProtocolWarmupService
     {
         foreach (var formId in manifest.ModifiedFormIds)
         {
+            ct.ThrowIfCancellationRequested();
             var compiled = await formSchemaCompiler(formId);
+            ct.ThrowIfCancellationRequested();
             var cacheKey = $"study:{manifest.TenantId}:{manifest.StudyId}:{manifest.TargetVersion}:schema:{formId}";
             WarmedCache[cacheKey] = compiled;
         }
@@ -28,8 +30,10 @@ public sealed class InMemoryProtocolWarmupService : IProtocolWarmupService
         ProtocolAmendmentManifest manifest, 
         CancellationToken ct = default)
     {
+        ct.ThrowIfCancellationRequested();
         foreach (var formId in manifest.ModifiedFormIds)
         {
+            ct.ThrowIfCancellationRequested();
             var cacheKey = $"study:{manifest.TenantId}:{manifest.StudyId}:{manifest.TargetVersion}:schema:{formId}";
             WarmedCache.TryRemove(cacheKey, out _);
         }

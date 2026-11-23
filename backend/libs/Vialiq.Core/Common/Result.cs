@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 /// <typeparam name="TError">The error payload type.</typeparam>
 public readonly record struct Result<TValue, TError>
 {
+    private readonly bool _isInitialized;
     public bool IsSuccess { get; }
     public bool IsFailure => !IsSuccess;
     public TValue Value { get; }
@@ -21,6 +22,7 @@ public readonly record struct Result<TValue, TError>
 
     private Result(TValue value)
     {
+        _isInitialized = true;
         IsSuccess = true;
         Value = value;
         Error = default!;
@@ -28,6 +30,7 @@ public readonly record struct Result<TValue, TError>
 
     private Result(TError error)
     {
+        _isInitialized = true;
         IsSuccess = false;
         Value = default!;
         Error = error ?? throw new ArgumentNullException(nameof(error));
@@ -46,6 +49,10 @@ public readonly record struct Result<TValue, TError>
     {
         ArgumentNullException.ThrowIfNull(onSuccess);
         ArgumentNullException.ThrowIfNull(onFailure);
+        if (!_isInitialized)
+        {
+            throw new InvalidOperationException("Cannot match on an uninitialized Result.");
+        }
         return IsSuccess ? onSuccess(Value) : onFailure(Error);
     }
 
@@ -56,6 +63,10 @@ public readonly record struct Result<TValue, TError>
     {
         ArgumentNullException.ThrowIfNull(onSuccess);
         ArgumentNullException.ThrowIfNull(onFailure);
+        if (!_isInitialized)
+        {
+            throw new InvalidOperationException("Cannot match on an uninitialized Result.");
+        }
         return IsSuccess ? onSuccess(Value) : onFailure(Error);
     }
 

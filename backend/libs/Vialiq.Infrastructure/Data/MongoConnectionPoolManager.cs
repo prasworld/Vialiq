@@ -255,24 +255,26 @@ public sealed class MongoConnectionPoolManager : IConnectionPoolManager
                 InfrastructureErrorMessages.ClusterConnectionStringNotConfigured(clusterId));
         }
 
-        // Default replica set name if not specified
-        if (string.IsNullOrWhiteSpace(endpointOptions.ReplicaSetName))
-        {
-            endpointOptions.ReplicaSetName = clusterId;
-        }
+        // Pure functional fallback: compute effective replica set name locally without mutating shared endpoint options
+        var effectiveReplicaSetName = !string.IsNullOrWhiteSpace(endpointOptions.ReplicaSetName)
+            ? endpointOptions.ReplicaSetName
+            : clusterId;
 
         _logger.LogInformation(
             InfrastructureLogMessages.InitializingPooledClient,
-            clusterId, endpointOptions.ReplicaSetName, SanitizeEndpoints(endpointOptions.ConnectionString));
+            clusterId, effectiveReplicaSetName, SanitizeEndpoints(endpointOptions.ConnectionString));
 
-        var settings = MongoConnectionConfigurator.BuildClientSettings(endpointOptions, cb =>
-        {
-            cb.Subscribe<MongoDB.Driver.Core.Events.ServerHeartbeatFailedEvent>(e =>
+        var settings = MongoConnectionConfigurator.BuildClientSettings(
+            endpointOptions, 
+            cb =>
             {
-                _logger.LogWarning(InfrastructureLogMessages.HeartbeatFailed,
-                    clusterId, e.ServerId.EndPoint, e.Exception.Message);
-            });
-        });
+                cb.Subscribe<MongoDB.Driver.Core.Events.ServerHeartbeatFailedEvent>(e =>
+                {
+                    _logger.LogWarning(InfrastructureLogMessages.HeartbeatFailed,
+                        clusterId, e.ServerId.EndPoint, e.Exception.Message);
+                });
+            },
+            effectiveReplicaSetName);
 
         return new MongoClient(settings);
     }

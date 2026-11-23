@@ -19,17 +19,22 @@ public static class MongoConnectionConfigurator
     /// <returns>Hardened MongoClientSettings.</returns>
     public static MongoClientSettings BuildClientSettings(
         MongoClusterEndpointOptions options,
-        Action<ClusterBuilder>? configureCluster = null)
+        Action<ClusterBuilder>? configureCluster = null,
+        string? replicaSetNameOverride = null)
     {
         ArgumentNullException.ThrowIfNull(options);
 
         var url = new MongoUrl(options.ConnectionString);
         var settings = MongoClientSettings.FromUrl(url);
 
-        // 1. Replica Set Discovery & Verification
-        if (!string.IsNullOrWhiteSpace(options.ReplicaSetName))
+        // 1. Replica Set Discovery & Verification (pure functional - no mutation of input options)
+        var effectiveReplicaSetName = !string.IsNullOrWhiteSpace(replicaSetNameOverride)
+            ? replicaSetNameOverride
+            : options.ReplicaSetName;
+
+        if (!string.IsNullOrWhiteSpace(effectiveReplicaSetName))
         {
-            settings.ReplicaSetName = options.ReplicaSetName;
+            settings.ReplicaSetName = effectiveReplicaSetName;
         }
 
         // 2. Strict Operational Timeouts (Prevent thread-pool starvation under cluster partitions)

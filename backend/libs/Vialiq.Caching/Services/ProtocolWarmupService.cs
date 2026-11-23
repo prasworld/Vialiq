@@ -39,6 +39,7 @@ public sealed class ProtocolWarmupService : IProtocolWarmupService
             ct.ThrowIfCancellationRequested();
 
             var compiledJsonSchema = await formSchemaCompiler(formId);
+            ct.ThrowIfCancellationRequested();
             var cacheKey = $"vialiq:study:{manifest.TenantId}:{manifest.StudyId}:{manifest.TargetVersion}:schema:{formId}";
 
             // Eager write-through: Key is populated BEFORE users have access

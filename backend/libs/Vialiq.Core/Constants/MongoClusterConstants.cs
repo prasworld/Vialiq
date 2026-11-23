@@ -49,6 +49,11 @@ public static class MongoClusterConstants
     public const string Redacted = "[REDACTED]";
 
     /// <summary>
+    /// Default mask token for blinded clinical trial data.
+    /// </summary>
+    public const string DefaultMaskValue = "BLINDED";
+
+    /// <summary>
     /// Well-known character delimiters.
     /// </summary>
     public static class Delimiters
