@@ -1,0 +1,12 @@
+<Project>
+  <!-- Common build properties across all Vialiq .NET 9 projects -->
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <Deterministic>true</Deterministic>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <NoWarn>$(NoWarn);CA1848;CA1707;CA1859</NoWarn>
+  </PropertyGroup>
+</Project>
