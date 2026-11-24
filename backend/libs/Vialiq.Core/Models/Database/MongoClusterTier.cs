@@ -29,13 +29,16 @@ public enum MongoClusterTier
 }
 
 /// <summary>
-/// Pure functional mapping extensions for MongoClusterTier.
+/// Pure functional mapping extensions for <see cref="MongoClusterTier"/>.
 /// </summary>
 public static class MongoClusterTierExtensions
 {
     /// <summary>
     /// Resolves the canonical replica set cluster identifier string for a given tier.
     /// </summary>
+    /// <param name="tier">The cluster tier.</param>
+    /// <returns>The canonical cluster ID string (<c>"rs-admin"</c>, <c>"rs-dev"</c>, or <c>"rs-prod"</c>).</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when an unsupported tier is provided.</exception>
     public static string ToCanonicalClusterId(this MongoClusterTier tier) => tier switch
     {
         MongoClusterTier.Admin => MongoClusterConstants.CanonicalClusterIds.Admin,

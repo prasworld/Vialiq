@@ -6,8 +6,8 @@ using Vialiq.Core.Constants;
 
 /// <summary>
 /// Options for the 3-layer MongoDB architecture and dynamic multi-cluster production farm.
-/// Injected into services via Microsoft.Extensions.Options (IOptions&lt;MongoMultiClusterOptions&gt;).
-/// Bound to configuration sections (e.g. "MongoMultiCluster") or ConnectionStrings via Dependency Injection.
+/// Injected into services via Microsoft.Extensions.Options (<c>IOptions&lt;MongoMultiClusterOptions&gt;</c>).
+/// Bound to configuration sections (e.g. <c>"MongoMultiCluster"</c>) or ConnectionStrings via Dependency Injection.
 /// Contains ZERO hardcoded connection strings or environment secrets.
 /// </summary>
 public sealed class MongoMultiClusterOptions
@@ -42,6 +42,9 @@ public sealed class MongoMultiClusterOptions
     /// <summary>
     /// Pure functional selector: retrieves the endpoint options for a specified cluster tier.
     /// </summary>
+    /// <param name="tier">The target cluster tier (<see cref="MongoClusterTier.Admin"/>, <see cref="MongoClusterTier.Dev"/>, or <see cref="MongoClusterTier.Prod"/>).</param>
+    /// <returns>The corresponding <see cref="MongoClusterEndpointOptions"/>.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when an unknown tier is supplied.</exception>
     public MongoClusterEndpointOptions GetEndpoint(MongoClusterTier tier) => tier switch
     {
         MongoClusterTier.Admin => Admin,
@@ -54,6 +57,10 @@ public sealed class MongoMultiClusterOptions
     /// Pure functional selector: retrieves endpoint options for a dynamic cluster ID or canonical tier name.
     /// Evaluates dynamic Clusters dictionary first, then falls back to canonical tier names ("rs-admin", "rs-dev", "rs-prod").
     /// </summary>
+    /// <param name="clusterId">The cluster identifier or alias.</param>
+    /// <returns>The resolved <see cref="MongoClusterEndpointOptions"/>.</returns>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="clusterId"/> is null or whitespace.</exception>
+    /// <exception cref="KeyNotFoundException">Thrown when the requested cluster is not configured.</exception>
     public MongoClusterEndpointOptions GetEndpoint(string clusterId)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(clusterId);
@@ -89,8 +96,10 @@ public sealed class MongoMultiClusterOptions
     }
 
     /// <summary>
-    /// Checks whether a cluster endpoint is configured for the specified cluster ID.
+    /// Checks whether a cluster endpoint is configured for the specified cluster ID and has a valid non-empty connection string.
     /// </summary>
+    /// <param name="clusterId">The cluster identifier or alias to verify.</param>
+    /// <returns><c>true</c> if configured with a non-empty connection string; otherwise <c>false</c>.</returns>
     public bool HasCluster(string clusterId)
     {
         if (string.IsNullOrWhiteSpace(clusterId)) return false;

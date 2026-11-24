@@ -139,4 +139,55 @@ public class StudyLockServiceTests
         // Assert
         Assert.True(result.IsAcquired);
     }
+
+    [Fact]
+    public async Task AcquireFormLockAsync_ReturnsValidLockToken()
+    {
+        // Act
+        var result = await _lockService.AcquireFormLockAsync("study-101", "crf-vitals-01", _user1);
+
+        // Assert
+        Assert.True(result.IsAcquired);
+        Assert.False(string.IsNullOrWhiteSpace(result.LockToken));
+    }
+
+    [Fact]
+    public async Task ReleaseFormLockAsync_WithOlderLockToken_DoesNotReleaseNewerLockFromSameUser()
+    {
+        // Arrange - User 1 acquires first lock token in Tab 1
+        var tab1Result = await _lockService.AcquireFormLockAsync("study-101", "crf-vitals-01", _user1);
+        Assert.True(tab1Result.IsAcquired);
+        var oldToken = tab1Result.LockToken;
+
+        // User 1 re-acquires lock in Tab 2 (newer session, new token)
+        var tab2Result = await _lockService.AcquireFormLockAsync("study-101", "crf-vitals-01", _user1);
+        Assert.True(tab2Result.IsAcquired);
+        var newToken = tab2Result.LockToken;
+        Assert.NotEqual(oldToken, newToken);
+
+        // Act - Tab 1 sends delayed release with the old token
+        await _lockService.ReleaseFormLockAsync("study-101", "crf-vitals-01", _user1, oldToken);
+
+        // Assert - The lock must still be active; another user cannot acquire it
+        var user2Result = await _lockService.AcquireFormLockAsync("study-101", "crf-vitals-01", _user2);
+        Assert.False(user2Result.IsAcquired);
+        Assert.Equal(_user1.UserId, user2Result.LockedByUserId);
+
+        // Now releasing with the matching new token succeeds
+        await _lockService.ReleaseFormLockAsync("study-101", "crf-vitals-01", _user1, newToken);
+        var user2AcquireAfterRelease = await _lockService.AcquireFormLockAsync("study-101", "crf-vitals-01", _user2);
+        Assert.True(user2AcquireAfterRelease.IsAcquired);
+    }
+
+    [Fact]
+    public void StudyLockService_Constructors_ThrowArgumentNullException_OnNullArguments()
+    {
+        // Assert poolManager ctor
+        Assert.Throws<ArgumentNullException>(() =>
+            new Vialiq.Caching.Services.StudyLockService((Vialiq.Core.Interfaces.IConnectionPoolManager)null!, null!, null!));
+
+        // Assert studyDb ctor
+        Assert.Throws<ArgumentNullException>(() =>
+            new Vialiq.Caching.Services.StudyLockService((MongoDB.Driver.IMongoDatabase)null!, null!, null!));
+    }
 }

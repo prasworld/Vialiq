@@ -10,8 +10,15 @@ using Vialiq.Core.Constants;
 [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
 public sealed class BlindedRtsmAttribute : Attribute
 {
+    /// <summary>
+    /// Gets the mask string displayed in place of confidential blinded values.
+    /// </summary>
     public string MaskValue { get; }
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="BlindedRtsmAttribute"/> with an optional custom mask token.
+    /// </summary>
+    /// <param name="maskValue">The mask token to display. Defaults to <c>"BLINDED"</c>.</param>
     public BlindedRtsmAttribute(string maskValue = MongoClusterConstants.DefaultMaskValue)
     {
         MaskValue = maskValue;

@@ -9,12 +9,21 @@ using StackExchange.Redis;
 using Vialiq.Caching.Abstractions;
 using Vialiq.Core.Models;
 
+/// <summary>
+/// Production implementation of <see cref="IProtocolWarmupService"/> (ADR 008).
+/// Compiles and pre-populates modified form schemas into Redis during scheduled protocol amendment maintenance.
+/// </summary>
 public sealed class ProtocolWarmupService : IProtocolWarmupService
 {
     private readonly IRedisConnectionFactory _redisFactory;
     private readonly ILogger<ProtocolWarmupService> _logger;
     private static readonly TimeSpan DefaultSchemaTtl = TimeSpan.FromHours(24);
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="ProtocolWarmupService"/>.
+    /// </summary>
+    /// <param name="redisFactory">The Redis connection factory managing cache connections.</param>
+    /// <param name="logger">The structured logger instance.</param>
     public ProtocolWarmupService(
         IRedisConnectionFactory redisFactory, 
         ILogger<ProtocolWarmupService> logger)
@@ -23,6 +32,7 @@ public sealed class ProtocolWarmupService : IProtocolWarmupService
         _logger = logger;
     }
 
+    /// <inheritdoc />
     public async Task PreWarmAmendmentCacheAsync(
         ProtocolAmendmentManifest manifest, 
         Func<string, Task<string>> formSchemaCompiler,
@@ -60,6 +70,7 @@ public sealed class ProtocolWarmupService : IProtocolWarmupService
         await _redisFactory.GetSubscriber().PublishAsync(channel, notification);
     }
 
+    /// <inheritdoc />
     public async Task EvictAbortedAmendmentCacheAsync(
         ProtocolAmendmentManifest manifest, 
         CancellationToken ct = default)

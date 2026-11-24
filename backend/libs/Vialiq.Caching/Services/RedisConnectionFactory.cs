@@ -8,21 +8,42 @@ using Vialiq.Caching.Abstractions;
 using Vialiq.Caching.Constants;
 using Vialiq.Core.Constants;
 
+/// <summary>
+/// Thread-safe singleton factory managing the lifecycle of the StackExchange.Redis connection multiplexer.
+/// Supports both direct Redis standalone/cluster configurations and High-Availability Redis Sentinel topologies.
+/// </summary>
 public sealed class RedisConnectionFactory : IRedisConnectionFactory, IDisposable
 {
     private readonly Lazy<ConnectionMultiplexer> _connection;
     private readonly ILogger<RedisConnectionFactory> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="RedisConnectionFactory"/>.
+    /// </summary>
+    /// <param name="config">The application configuration containing Redis or Sentinel connection strings.</param>
+    /// <param name="logger">The structured logger instance.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
     public RedisConnectionFactory(IConfiguration config, ILogger<RedisConnectionFactory> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _connection = new Lazy<ConnectionMultiplexer>(() => CreateConnection(config));
     }
 
+    /// <inheritdoc />
     public IConnectionMultiplexer Connection => _connection.Value;
+
+    /// <inheritdoc />
     public IDatabase GetDatabase() => Connection.GetDatabase();
+
+    /// <inheritdoc />
     public ISubscriber GetSubscriber() => Connection.GetSubscriber();
 
+    /// <summary>
+    /// Resolves connection strings from configuration and initializes the Redis connection multiplexer with exponential retry policy.
+    /// </summary>
+    /// <param name="config">The application configuration.</param>
+    /// <returns>An initialized and connected <see cref="ConnectionMultiplexer"/>.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when neither Redis nor RedisSentinel connection strings are configured.</exception>
     private ConnectionMultiplexer CreateConnection(IConfiguration config)
     {
         var sentinelConnectionString = config.GetConnectionString(ConfigurationConstants.Keys.RedisSentinelConnectionString);
@@ -59,6 +80,9 @@ public sealed class RedisConnectionFactory : IRedisConnectionFactory, IDisposabl
         return multiplexer;
     }
 
+    /// <summary>
+    /// Disposes the underlying Redis connection multiplexer if initialized.
+    /// </summary>
     public void Dispose()
     {
         if (_connection.IsValueCreated)

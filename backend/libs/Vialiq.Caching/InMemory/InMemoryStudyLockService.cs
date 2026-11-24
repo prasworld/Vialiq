@@ -30,6 +30,7 @@ public sealed class InMemoryStudyLockService : IStudyLockService
         ClinicalUserRoles.SuperAdmin
     };
 
+    /// <inheritdoc />
     public Task<LockResult> AcquireFormLockAsync(
         string studyId, 
         string crfId, 
@@ -54,17 +55,20 @@ public sealed class InMemoryStudyLockService : IStudyLockService
                 }
             }
 
-            var newLock = new LockPayload(user.UserId, user.FullName, expiresAt);
+            var lockToken = Guid.NewGuid().ToString("N");
+            var newLock = new LockPayload(user.UserId, user.FullName, expiresAt, lockToken);
             _activeLocks[key] = newLock;
 
-            return Task.FromResult(LockResult.Acquired(expiresAt));
+            return Task.FromResult(LockResult.Acquired(expiresAt, lockToken));
         }
     }
 
+    /// <inheritdoc />
     public Task ReleaseFormLockAsync(
         string studyId, 
         string crfId, 
         UserContext user, 
+        string? lockToken = null,
         CancellationToken ct = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(studyId);
@@ -76,12 +80,16 @@ public sealed class InMemoryStudyLockService : IStudyLockService
         {
             if (_activeLocks.TryGetValue(key, out var existing) && existing.UserId == user.UserId)
             {
-                _activeLocks.TryRemove(key, out _);
+                if (string.IsNullOrWhiteSpace(lockToken) || existing.LockToken == lockToken)
+                {
+                    _activeLocks.TryRemove(key, out _);
+                }
             }
         }
         return Task.CompletedTask;
     }
 
+    /// <inheritdoc />
     public Task BreakFormLockAsync(
         string studyId, 
         string crfId, 
@@ -104,9 +112,13 @@ public sealed class InMemoryStudyLockService : IStudyLockService
         }
 
         var key = $"{user.TenantId}:{studyId}:{crfId}";
+        var now = DateTime.UtcNow;
         lock (_syncRoot)
         {
-            _activeLocks.TryRemove(key, out _);
+            if (_activeLocks.TryGetValue(key, out var existing) && existing.ExpiresAtUtc > now)
+            {
+                _activeLocks.TryRemove(key, out _);
+            }
         }
         return Task.CompletedTask;
     }
