@@ -1,0 +1,7 @@
+@Vialiq.TenantAdmin.Api_HostAddress = http://localhost:5200
+
+GET {{Vialiq.TenantAdmin.Api_HostAddress}}/health
+Accept: application/json
+
+###
+

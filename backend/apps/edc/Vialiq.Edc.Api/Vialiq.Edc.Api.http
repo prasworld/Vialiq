@@ -1,0 +1,6 @@
+@Vialiq.Edc.Api_HostAddress = http://localhost:5031
+
+GET {{Vialiq.Edc.Api_HostAddress}}/health
+Accept: application/json
+
+###

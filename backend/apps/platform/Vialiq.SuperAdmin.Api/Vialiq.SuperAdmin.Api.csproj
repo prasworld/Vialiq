@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <PackageReference Include="Swashbuckle.AspNetCore" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\libs\Vialiq.Core\Vialiq.Core.csproj" />
+    <ProjectReference Include="..\..\..\libs\Vialiq.Platform.Core\Vialiq.Platform.Core.csproj" />
+    <ProjectReference Include="..\..\..\libs\Vialiq.Caching\Vialiq.Caching.csproj" />
+    <ProjectReference Include="..\..\..\libs\Vialiq.Infrastructure\Vialiq.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>
+
